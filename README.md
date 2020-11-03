@@ -8,6 +8,7 @@ This Lens Extension adds a status bar item, and a menu item, that makes it easy 
 $ mkdir -p ~/.k8slens/extensions/lens-extension-cc
 $ git clone https://github.com/Mirantis/lens-extension-cc.git ~/.k8slens/extensions/lens-extension-cc
 $ cd ~/.k8slens/extensions/lens-extension-cc
+$ npm install
 $ npm run build
 ```
 
@@ -18,10 +19,11 @@ Then, restart Lens. You should now be able to choose the new `File > Add Cloud C
 Rather than cloning the repository into `~/.k8slens/extensions/lens-extension-cc`, clone the repository wherever you prefer to have your code, and then link to it:
 
 ```bash
-$ ~/.k8slens/extensions
 $ git clone https://github.com/Mirantis/lens-extension-cc.git /your/src/path
-$ ln -s ~/.k8slens/extensions/lens-extension-cc /your/src/path
+$ mkdir -p ~/.k8slens/extensions
+$ ln -s /your/src/path ~/.k8slens/extensions/lens-extension-cc
 $ cd /your/src/path
+$ npm install
 $ npm start
 ```
 
