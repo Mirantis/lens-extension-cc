@@ -6,5 +6,4 @@ export const layout = {
   pad: grid * 2,
 };
 
-export const theme = {
-};
+export const theme = {};

@@ -14,7 +14,7 @@
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
     "jsx": "react",
-    "resolveJsonModule": true,
+    "resolveJsonModule": true
   },
   "include": ["./src/*.ts", "./src/*.tsx"],
   "exclude": ["node_modules", "*.js"]

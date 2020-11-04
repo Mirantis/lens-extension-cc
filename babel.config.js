@@ -4,7 +4,7 @@ module.exports = {
     [
       // targets based on https://mirantis.jira.com/wiki/spaces/UIENG/pages/1995703215/Barracuda+Browser+Support+Matrix
       '@babel/preset-env',
-      { targets: { 'electron' : '9' } },
+      { targets: { electron: '9' } },
     ],
 
     // NOTE: any options related to `babel-plugin-transform-react-jsx` set here
@@ -31,15 +31,11 @@ module.exports = {
     // @see https://emotion.sh/docs/@emotion/babel-preset-css-prop
     // @see https://babeljs.io/docs/en/babel-plugin-transform-react-jsx
     '@emotion/babel-preset-css-prop',
-
   ],
   plugins: [
     'lodash',
 
     // @see https://babeljs.io/docs/en/babel-plugin-proposal-class-properties.html
-    [
-      '@babel/plugin-proposal-class-properties',
-      { loose: true }
-    ],
+    ['@babel/plugin-proposal-class-properties', { loose: true }],
   ],
 };

@@ -30,11 +30,10 @@ module.exports = [
     context: __dirname,
     target: 'electron-main',
     mode: process.env.TARGET || 'production',
-    devtool: process.env.TARGET !== 'production' ? 'eval-source-map' : undefined,
+    devtool:
+      process.env.TARGET !== 'production' ? 'eval-source-map' : undefined,
     module: {
-      rules: [
-        ...loaders,
-      ],
+      rules: [...loaders],
     },
     externals: [
       {
@@ -57,11 +56,10 @@ module.exports = [
     context: __dirname,
     target: 'electron-renderer',
     mode: process.env.TARGET || 'production',
-    devtool: process.env.TARGET !== 'production' ? 'eval-source-map' : undefined,
+    devtool:
+      process.env.TARGET !== 'production' ? 'eval-source-map' : undefined,
     module: {
-      rules: [
-        ...loaders,
-      ],
+      rules: [...loaders],
     },
     externals: [
       {
