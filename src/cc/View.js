@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
-import { Login } from './Login';
 import { useExtState } from './store/ExtStateProvider';
 import { useConfig } from './store/ConfigProvider';
 import { useAuth } from './store/AuthProvider';
 import { useClusters } from './store/ClustersProvider';
+import { Login } from './Login';
+import { ClusterList } from './ClusterList';
 import { layout } from './theme';
 
 const ViewContainer = styled.div(function () {
@@ -26,12 +27,21 @@ const ViewContainer = styled.div(function () {
   };
 });
 
+const Error = styled.p(function () {
+  return {
+    color: 'red',
+  };
+});
+
 export const View = function () {
   //
   // STATE
   //
 
-  const { state: { baseUrl, authState }, actions: extActions } = useExtState();
+  const {
+    state: { baseUrl, authState },
+    actions: extActions,
+  } = useExtState();
 
   const {
     state: {
@@ -44,11 +54,7 @@ export const View = function () {
   } = useConfig();
 
   const {
-    state: {
-      loading: authLoading,
-      loaded: authLoaded,
-      error: authError,
-    },
+    state: { loading: authLoading, loaded: authLoaded, error: authError },
     actions: authActions,
   } = useAuth();
 
@@ -57,10 +63,7 @@ export const View = function () {
       loading: clustersLoading,
       loaded: clustersLoaded,
       error: clustersError,
-      data: {
-        namespaces,
-        clusters,
-      }
+      data: { clusters },
     },
     actions: clustersActions,
   } = useClusters();
@@ -93,67 +96,91 @@ export const View = function () {
   // EFFECTS
   //
 
-  useEffect(function () {
-    if (baseUrl && authState.isValid() && !configLoading && !configLoaded) {
-      configActions.load(baseUrl);
-    }
-  }, [baseUrl, authState, configLoading, configLoaded, configActions]);
+  // 1. load the config object
+  useEffect(
+    function () {
+      if (baseUrl && authState.isValid() && !configLoading && !configLoaded) {
+        configActions.load(baseUrl);
+      }
+    },
+    [baseUrl, authState, configLoading, configLoaded, configActions]
+  );
 
-  useEffect(function () {
-    if (!configLoading && configLoaded) {
-      if (configError) {
-        setErrorMessage(configError);
-      } else if (!authLoading && !authLoaded) {
-        setErrorMessage(null);
-        if (authState.isValid()) {
-          // skip authentication, go straight for the clusters
-          authActions.setAuthenticated();
-        } else if (userCreds) {
-          authActions.authenticate({ authState, baseUrl, config, ...userCreds });
+  // 2. authenticate
+  useEffect(
+    function () {
+      if (!configLoading && configLoaded) {
+        if (configError) {
+          setErrorMessage(configError);
+        } else if (!authLoading && !authLoaded) {
+          setErrorMessage(null);
+          if (authState.isValid()) {
+            // skip authentication, go straight for the clusters
+            authActions.setAuthenticated();
+          } else if (userCreds) {
+            authActions.authenticate({
+              authState,
+              baseUrl,
+              config,
+              ...userCreds,
+            });
+          }
         }
       }
-    }
-  }, [
-    authState,
-    baseUrl,
-    userCreds,
-    configLoading,
-    configLoaded,
-    configError,
-    config,
-    authLoading,
-    authLoaded,
-    authActions,
-  ]);
+    },
+    [
+      authState,
+      baseUrl,
+      userCreds,
+      configLoading,
+      configLoaded,
+      configError,
+      config,
+      authLoading,
+      authLoaded,
+      authActions,
+    ]
+  );
 
-  useEffect(function () {
-    if (!clustersLoading && !clustersLoaded && baseUrl && config && authLoaded && authState.isValid()) {
-      clustersActions.load(baseUrl, config, authState);
-    } else {
-      if (authLoaded && authError) {
-        setErrorMessage(authError);
-      } else if (clustersLoaded && clustersError) {
-        setErrorMessage(clustersError);
+  // 3. get namespaces and clusters
+  useEffect(
+    function () {
+      if (
+        !clustersLoading &&
+        !clustersLoaded &&
+        baseUrl &&
+        config &&
+        authLoaded &&
+        authState.isValid()
+      ) {
+        clustersActions.load(baseUrl, config, authState);
       } else {
-        setErrorMessage(null);
-      }
+        if (authLoaded && authError) {
+          setErrorMessage(authError);
+        } else if (clustersLoaded && clustersError) {
+          setErrorMessage(clustersError);
+        } else {
+          setErrorMessage(null);
+        }
 
-      if (authState.changed) {
-        extActions.setAuthState(authState); // capture any changes
+        if (authState.changed) {
+          extActions.setAuthState(authState); // capture any changes
+        }
       }
-    }
-  }, [
-    baseUrl,
-    authState,
-    extActions,
-    config,
-    authLoaded,
-    authError,
-    clustersLoading,
-    clustersLoaded,
-    clustersError,
-    clustersActions,
-  ]);
+    },
+    [
+      baseUrl,
+      authState,
+      extActions,
+      config,
+      authLoaded,
+      authError,
+      clustersLoading,
+      clustersLoaded,
+      clustersError,
+      clustersActions,
+    ]
+  );
 
   //
   // RENDER
@@ -163,11 +190,14 @@ export const View = function () {
     <ViewContainer>
       <Login
         loading={loading}
-        errorMessage={errorMessage}
         baseUrl={baseUrl || undefined}
         username={authState ? authState.username : undefined}
         onLogin={handleLogin}
       />
+      {errorMessage ? <Error>{errorMessage}</Error> : null}
+      {!errorMessage && clustersLoaded ? (
+        <ClusterList clusters={clusters} />
+      ) : undefined}
     </ViewContainer>
   );
 };

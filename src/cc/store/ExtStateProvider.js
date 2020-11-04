@@ -10,11 +10,15 @@ import { AuthState } from '../auth/AuthState';
 const STORAGE_KEY = 'lens-mcc-ext';
 
 const extStateTs = {
-  baseUrl: [rtv.EXPECTED, rtv.STRING, (v) => {
-    if (v && v.match(/\/$/)) {
-      throw new Error('baseUrl must not end with a slash');
-    }
-  }], // MCC UI URL, does NOT end with a slash
+  baseUrl: [
+    rtv.EXPECTED,
+    rtv.STRING,
+    (v) => {
+      if (v && v.match(/\/$/)) {
+        throw new Error('baseUrl must not end with a slash');
+      }
+    },
+  ], // MCC UI URL, does NOT end with a slash
   authState: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: AuthState }],
 };
 
@@ -86,7 +90,7 @@ const _loadState = function () {
       const json = JSON.parse(jsonStr);
       const fromStorage = {
         ...json,
-        authState: new AuthState(json.authState)
+        authState: new AuthState(json.authState),
       };
 
       _validateState(fromStorage); // validate what we get

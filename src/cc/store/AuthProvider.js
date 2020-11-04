@@ -20,7 +20,7 @@ const _mkNewStore = function () {
 
 // The store defines the initial state and contains the current state
 const store = {
-  ..._mkNewStore()
+  ..._mkNewStore(),
 };
 
 //
@@ -77,11 +77,14 @@ const _reset = function (setState, loading = false) {
  * @param {string} options.password
  * @param {function} setState Function to call to update the context's state.
  */
-const _authenticate = async function ({ authState, config, baseUrl, username, password }, setState) {
+const _authenticate = async function (
+  { authState, config, baseUrl, username, password },
+  setState
+) {
   _reset(setState, true);
 
   const authClient = new AuthClient(baseUrl, config);
-  const {error, body} = await authClient.getToken(username, password);
+  const { error, body } = await authClient.getToken(username, password);
 
   store.loading = false;
   store.loaded = true;

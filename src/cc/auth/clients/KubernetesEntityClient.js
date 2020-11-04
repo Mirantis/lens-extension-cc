@@ -1,6 +1,6 @@
 import { request } from '../../netUtil';
 
- // no start nor end slashes
+// no start nor end slashes
 const clusterEndpoint = 'apis/cluster.k8s.io/v1alpha1';
 const kaasEndpoint = 'apis/kaas.mirantis.com/v1alpha1';
 const metalEndpoint = 'apis/metal3.io/v1alpha1';

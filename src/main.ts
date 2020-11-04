@@ -9,8 +9,8 @@ export default class ExtensionMain extends LensMainExtension {
       label: 'Add Cloud Cluster',
       click() {
         windowManager.navigate(getAddUrl());
-      }
-    }
+      },
+    },
   ];
 
   onActivate() {

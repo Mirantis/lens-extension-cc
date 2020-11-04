@@ -21,7 +21,7 @@ const _mkNewStore = function () {
 
 // The store defines the initial state and contains the current state
 const store = {
-  ..._mkNewStore()
+  ..._mkNewStore(),
 };
 
 //
@@ -77,7 +77,11 @@ const _reset = function (setState, loading = false) {
 const _loadConfig = async function getConfig(url, setState) {
   _reset(setState, true);
 
-  const res = await request(`${url}/config.js`, {}, { extractBodyMethod: 'text' });
+  const res = await request(
+    `${url}/config.js`,
+    {},
+    { extractBodyMethod: 'text' }
+  );
 
   store.loading = false;
   store.loaded = true;
@@ -85,7 +89,9 @@ const _loadConfig = async function getConfig(url, setState) {
   if (res.error) {
     store.error = res.error;
   } else {
-    const content = res.body.replace(/^window\.CONFIG\s*=\s*{/, '{').replace('};', '}');
+    const content = res.body
+      .replace(/^window\.CONFIG\s*=\s*{/, '{')
+      .replace('};', '}');
 
     try {
       store.config = JSON.parse(content);

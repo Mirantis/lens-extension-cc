@@ -107,7 +107,14 @@ export async function logout(baseUrl, config, authState) {
  * @param {Object} [options.args] Optional arguments for the `method` on the `entity`.
  * @returns {Object} If successful, `{body: Object}`; otherwise, `{error: string, status: number}`.
  */
-export async function authedRequest({baseUrl, config, authState, method, entity, args}) {
+export async function authedRequest({
+  baseUrl,
+  config,
+  authState,
+  method,
+  entity,
+  args,
+}) {
   // NOTE: it's useless to fetch if we don't have a token, or we can't refresh it
   if (!authState.token || authState.isRefreshTokenExpired()) {
     authState.clearTokens();

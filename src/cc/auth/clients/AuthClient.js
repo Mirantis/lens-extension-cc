@@ -21,7 +21,10 @@ export class AuthClient {
     this.clientId = keycloakConfig['client-id'];
 
     // remove any beginning and/or ending slashes
-    this.issuerRoute = (keycloakConfig['idp-issuer-url'] || '').replace(/(^\/|\/$)/g, '');
+    this.issuerRoute = (keycloakConfig['idp-issuer-url'] || '').replace(
+      /(^\/|\/$)/g,
+      ''
+    );
   }
 
   /**

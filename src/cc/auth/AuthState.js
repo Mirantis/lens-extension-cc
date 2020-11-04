@@ -4,13 +4,13 @@ import rtv from 'rtvjs';
 // DEBUG TODO do we need to provide a way for the user to kill their session (i.e. logout) for security reasons?
 
 /**
-  * Determines if a date has passed.
-  * @param {Date} date
-  * @returns {boolean} true if the date has passed; false otherwise.
-  */
+ * Determines if a date has passed.
+ * @param {Date} date
+ * @returns {boolean} true if the date has passed; false otherwise.
+ */
 const hasPassed = function (date) {
-  return (date.getTime() - Date.now()) < 0;
-}
+  return date.getTime() - Date.now() < 0;
+};
 
 /**
  * Captures API authorization tokens and expiries.
@@ -196,7 +196,9 @@ export class AuthState {
 
   /** @returns {boolean} True if the `refreshToken` has expired; false otherwise. */
   isRefreshTokenExpired() {
-    return !!this.refreshTokenValidTill && hasPassed(this.refreshTokenValidTill);
+    return (
+      !!this.refreshTokenValidTill && hasPassed(this.refreshTokenValidTill)
+    );
   }
 
   /**
@@ -231,7 +233,9 @@ export class AuthState {
     if (tokens.refreshExpiresAt) {
       this.refreshTokenValidTill = new Date(tokens.refreshExpiresAt * 1000);
     } else {
-      this.refreshTokenValidTill = new Date(Date.now() + this.refreshExpiresIn * 1000);
+      this.refreshTokenValidTill = new Date(
+        Date.now() + this.refreshExpiresIn * 1000
+      );
     }
   }
 
@@ -251,8 +255,12 @@ export class AuthState {
       refresh_token: this.refreshToken,
       refresh_expires_in: this.refreshExpiresIn,
 
-      expiresAt: this.tokenValidTill ? Math.floor(this.tokenValidTill.getTime() / 1000) : null,
-      refreshExpiresAt: this.refreshTokenValidTill ? Math.floor(this.refreshTokenValidTill.getTime() / 1000) : null,
+      expiresAt: this.tokenValidTill
+        ? Math.floor(this.tokenValidTill.getTime() / 1000)
+        : null,
+      refreshExpiresAt: this.refreshTokenValidTill
+        ? Math.floor(this.refreshTokenValidTill.getTime() / 1000)
+        : null,
       username: this.username,
     };
   }

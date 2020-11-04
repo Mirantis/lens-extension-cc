@@ -25,7 +25,7 @@ export default class ExtensionRenderer extends LensRendererExtension {
           <AddClusterIcon />
           <span>Add Cloud Cluster</span>
         </div>
-      )
-    }
+      ),
+    },
   ];
 }

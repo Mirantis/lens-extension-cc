@@ -32,13 +32,7 @@ const Field = styled.div(function () {
 
     'input#login-url': {
       width: 300,
-    }
-  };
-});
-
-const Error = styled.p(function () {
-  return {
-    color: 'red',
+    },
   };
 });
 
@@ -77,37 +71,54 @@ export const Login = function (props) {
   // EFFECTS
   //
 
-  useEffect(function () {
-    setValid(!!(baseUrl && username && password));
-  }, [username, password, baseUrl]);
+  useEffect(
+    function () {
+      setValid(!!(baseUrl && username && password));
+    },
+    [username, password, baseUrl]
+  );
 
   //
   // RENDER
   //
 
-  const { loading, errorMessage } = props;
+  const { loading } = props;
 
   return (
     <LoginContainer>
       <Field>
         <label htmlFor="login-url">MCC URL:</label>
-        <input type="text" id="login-url" value={baseUrl} onChange={handleUrlChange} />
+        <input
+          type="text"
+          id="login-url"
+          disabled={loading}
+          value={baseUrl}
+          onChange={handleUrlChange}
+        />
       </Field>
       <Field>
         <label htmlFor="login-username">Username:</label>
-        <input type="text" id="login-username" value={username} onChange={handleUsernameChange} />
+        <input
+          type="text"
+          id="login-username"
+          disabled={loading}
+          value={username}
+          onChange={handleUsernameChange}
+        />
       </Field>
       <Field>
         <label htmlFor="login-password">Password:</label>
-        <input type="password" id="login-password" value={password} onChange={handlePasswordChange} />
+        <input
+          type="password"
+          id="login-password"
+          disabled={loading}
+          value={password}
+          onChange={handlePasswordChange}
+        />
       </Field>
-      <button
-        disabled={loading || !valid}
-        onClick={handleClustersClick}
-      >
+      <button disabled={loading || !valid} onClick={handleClustersClick}>
         Get clusters...
       </button>
-      {errorMessage ? <Error>{errorMessage}</Error> : null}
     </LoginContainer>
   );
 };
@@ -115,7 +126,6 @@ export const Login = function (props) {
 Login.propTypes = {
   onLogin: propTypes.func.isRequired,
   loading: propTypes.bool,
-  errorMessage: propTypes.string,
   baseUrl: propTypes.string,
   username: propTypes.string,
 };

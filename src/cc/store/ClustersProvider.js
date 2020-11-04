@@ -3,8 +3,9 @@
 //
 
 import React, { createContext, useContext, useState, useMemo } from 'react';
-import { filter, cloneDeepWith } from 'lodash';
+import { cloneDeepWith, filter, find, fromPairs, get } from 'lodash';
 import { Namespace } from './Namespace';
+import { Cluster } from './Cluster';
 import { authedRequest, extractJwtPayload } from '../auth/authUtil';
 
 //
@@ -18,15 +19,15 @@ const _mkNewStore = function () {
     loaded: false, // {boolean} true if data has been loaded (regardless of error)
     error: undefined, // {string} if a load error occurred; undefined otherwise
     data: {
-      namespaces: {}, // DEBUG what's the type for this? object (map) or array?
-      clusters: {}, // DEBUG what's the type for this? object (map) or array?
-    }
+      namespaces: [], // {Array<Namespace>}
+      clusters: [], // {Array<Cluster>} use `Cluster.namespace` to find groups
+    },
   };
 };
 
 // The store defines the initial state and contains the current state
 const store = {
-  ..._mkNewStore()
+  ..._mkNewStore(),
 };
 
 //
@@ -81,19 +82,15 @@ const _reset = function (setState, loading = false) {
 
 /**
  * Deserialize the raw list of namespace data from the API into Namespace objects.
- * @param {Object} body Data response from /namespaces/list API.
- * @returns {Array<Namespace>} Array of Namespace objects. See mkNamespace() for shape.
+ * @param {Object} body Data response from /list/namespace API.
+ * @returns {Array<Namespace>} Array of Namespace objects.
  */
 const _deserializeNamespacesList = function (body) {
   if (!body || !Array.isArray(body.items)) {
-    return {error: 'Failed to parse namespace data: Unexpected data format.'};
+    return { error: 'Failed to parse namespace data: Unexpected data format.' };
   }
 
-  return {
-    data: body.items.map((item) => new Namespace(
-      {...item.metadata, ...item.status}
-    ))
-  };
+  return { data: body.items.map((item) => new Namespace(item)) };
 };
 
 /**
@@ -102,7 +99,8 @@ const _deserializeNamespacesList = function (body) {
  * @param {Object} config MCC Configuration object.
  * @param {AuthState} authState An AuthState object. Tokens will be updated/cleared
  *  if necessary.
- * @returns {Promise<Object>} On success `{ namespaces: Object }`; on error `{error: string}`.
+ * @returns {Promise<Object>} On success `{ namespaces: Array<Namespace< }`;
+ *  on error `{error: string}`.
  */
 const _fetchNamespaces = async function (baseUrl, config, authState) {
   const defaultNamespaces = config.ignoredNamespaces || [];
@@ -118,24 +116,87 @@ const _fetchNamespaces = async function (baseUrl, config, authState) {
     return { error };
   }
 
-  const {data, error: nsError} = _deserializeNamespacesList(body);
-  if (nsError) {
-    return { error: nsError };
+  const { data, error: dsError } = _deserializeNamespacesList(body);
+  if (dsError) {
+    return { error: dsError };
   }
 
   const userRoles = extractJwtPayload(authState.token).iam_roles || [];
 
-  const hasReadPermissions = (name) => (
+  const hasReadPermissions = (name) =>
     userRoles.includes(`m:kaas:${name}@reader`) ||
-    userRoles.includes(`m:kaas:${name}@writer`)
+    userRoles.includes(`m:kaas:${name}@writer`);
+
+  const namespaces = filter(
+    data,
+    (ns) => !defaultNamespaces.includes(ns.name) && hasReadPermissions(ns.name)
   );
 
-  const namespaces = filter(data, (ns) => (
-    !defaultNamespaces.includes(ns.name) &&
-    hasReadPermissions(ns.name)
-  ));
+  return { namespaces };
+};
 
-  return { namespaces }; // DEBUG is this an array or a map? update in JSDoc
+/**
+ * Deserialize the raw list of cluster data from the API into Cluster objects.
+ * @param {Object} body Data response from /list/cluster API.
+ * @returns {Array<Cluster>} Array of Cluster objects.
+ */
+const _deserializeClustersList = function (body) {
+  if (!body || !Array.isArray(body.items)) {
+    return { error: 'Failed to parse cluster data: Unexpected data format.' };
+  }
+
+  return { data: body.items.map((item) => new Cluster(item)) };
+};
+
+/**
+ * [ASYNC] Get all existing clusters from the management cluster, for each namespace
+ *  specified.
+ * @param {string} baseUrl MCC URL. Must NOT end with a slash.
+ * @param {Object} config MCC Configuration object.
+ * @param {AuthState} authState An AuthState object. Tokens will be updated/cleared
+ *  if necessary.
+ * @param {Array<string>} namespaces List of namespace NAMES for which to retrieve
+ *  clusters.
+ * @returns {Promise<Object>} On success `{ clusters: Array<Cluster< }` where the
+ *  list of clusters is flat and in the order of the specified namespaces (use
+ *  `Cluster.namespace` to identify which cluster belongs to which namespace);
+ *  on error `{error: string}`. The error will be the first-found error out of
+ *  all namespaces on which cluster retrieval was attempted.
+ */
+const _fetchClusters = async function (baseUrl, config, authState, namespaces) {
+  const results = await Promise.all(
+    namespaces.map((namespaceName) =>
+      authedRequest({
+        baseUrl,
+        authState,
+        config,
+        method: 'list',
+        entity: 'cluster',
+        args: { namespaceName }, // extra args
+      })
+    )
+  );
+
+  const errResult = find(results, (r) => !!r.error);
+  if (errResult) {
+    return { error: errResult.error };
+  }
+
+  let clusters = [];
+  let dsError;
+
+  results.every((result) => {
+    const { data, error } = _deserializeClustersList(result.body);
+    if (error) {
+      dsError = { error };
+      return false; // break
+    }
+
+    clusters = [...clusters, ...data];
+    return true; // next
+  });
+
+  return dsError || { clusters };
 };
 
 /**
@@ -146,18 +207,34 @@ const _fetchNamespaces = async function (baseUrl, config, authState) {
  *  instance MAY be updated if a token refresh is required during the load.
  * @param {function} setState Function to call to update the context's state.
  */
-const _loadData = async function(baseUrl, config, authState, setState) {
+const _loadData = async function (baseUrl, config, authState, setState) {
   _reset(setState, true);
 
   const nsResults = await _fetchNamespaces(baseUrl, config, authState);
 
-  store.loading = false;
-  store.loaded = true;
-
   if (nsResults.error) {
+    store.loading = false;
+    store.loaded = true;
     store.error = nsResults.error;
   } else {
     store.data.namespaces = nsResults.namespaces;
+
+    const namespaces = store.data.namespaces.map((ns) => ns.name);
+    const clResults = await _fetchClusters(
+      baseUrl,
+      config,
+      authState,
+      namespaces
+    );
+
+    store.loading = false;
+    store.loaded = true;
+
+    if (clResults.error) {
+      store.error = clResults.error;
+    } else {
+      store.data.clusters = clResults.clusters;
+    }
   }
 
   console.log('[ClustersProvider._loadData] store:', store); // DEBUG

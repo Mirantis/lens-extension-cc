@@ -21,6 +21,12 @@ const commonParserOptions = {
   sourceType: 'module',
 };
 
+const commonEnv = {
+  node: true,
+  browser: true,
+  es2017: true, // NOTE: 'es2018' (to match parser) is not valid; next is 'es2020'
+};
+
 module.exports = {
   overrides: [
     {
@@ -36,12 +42,11 @@ module.exports = {
         ...commonParserOptions,
         ecmaFeatures: {
           impliedStrict: true,
-          jsx: true
+          jsx: true,
         },
       },
       env: {
-        node: true,
-        browser: true,
+        ...commonEnv,
       },
       rules: {
         ...commonRules,
@@ -55,16 +60,16 @@ module.exports = {
 
         //// React-Hooks Plugin
 
-        'react-hooks/exhaustive-deps': 'error' // default is 'warn', we prefer errors (warnings just get ignored)
+        'react-hooks/exhaustive-deps': 'error', // default is 'warn', we prefer errors (warnings just get ignored)
       },
       settings: {
         //// React Plugin
 
         // a version needs to be specified, here it's set to detect (default value)
         react: {
-          version: 'detect'
-        }
-      }
+          version: 'detect',
+        },
+      },
     },
     {
       files: ['src/**/*.ts*'],
@@ -79,8 +84,7 @@ module.exports = {
         'prettier',
       ],
       env: {
-        node: true,
-        browser: true,
+        ...commonEnv,
       },
       rules: {
         ...commonRules,
