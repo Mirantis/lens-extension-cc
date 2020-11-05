@@ -73,12 +73,10 @@ const _reset = function (setState, loading = false) {
  *  instance WILL be cleared and updated with new tokens.
  * @param {string} options.baseUrl MCC URL. Must NOT end with a slash.
  * @param {Object} options.config MCC Config object.
- * @param {string} options.username
- * @param {string} options.password
  * @param {function} setState Function to call to update the context's state.
  */
 const _authenticate = async function (
-  { authState, config, baseUrl, username, password },
+  { authState, config, baseUrl },
   setState
 ) {
   _reset(setState, true);
@@ -132,8 +130,6 @@ export const useAuth = function () {
        *  This instance WILL be cleared and updated with new tokens.
        * @param {string} options.baseUrl MCC URL. Must NOT end with a slash.
        * @param {Object} options.config MCC Config object.
-       * @param {string} options.username
-       * @param {string} options.password
        */
       authenticate(options) {
         if (!store.loading) {

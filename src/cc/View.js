@@ -7,7 +7,6 @@ import { useClusters } from './store/ClustersProvider';
 import { useAddClusters } from './store/AddClustersProvider';
 import { Login } from './Login';
 import { ClusterList } from './ClusterList';
-import { layout } from './theme';
 
 const Error = styled.p(function () {
   return {
@@ -95,14 +94,6 @@ export const View = function () {
     actions: addClustersActions,
   } = useAddClusters();
 
-  const [userCreds, setUserCreds] = useState(
-    authState
-      ? {
-          username: authState.username,
-          password: authState.password,
-        }
-      : null
-  ); // @type {{username: string, password: string}|null}
   const [errorMessage, setErrorMessage] = useState(null); // @type {string}
 
   const loading =
@@ -125,7 +116,6 @@ export const View = function () {
 
       authState.username = info.username;
       authState.password = info.password;
-      // DEBUG setUserCreds({ username: info.username, password: info.password });
 
       const url = info.baseUrl.replace(/\/$/, ''); // remove end slash if any
 
@@ -261,13 +251,15 @@ export const View = function () {
   //
 
   console.log(
-    '[View] rendering: loading=%s, configLoading=%s, authState.hasCreds=%s, authLoading=%s, clustersLoading=%s, addClustersLoading=%s',
+    '[View] rendering: loading=%s, configLoading=%s, authState.hasCreds=%s, authLoading=%s, clustersLoading=%s, addClustersLoading=%s, clusters=%s',
     loading,
     configLoading,
     authState.hasCredentials(),
     authLoading,
     clustersLoading,
-    addClustersLoading
+    addClustersLoading,
+    clusters.length,
+    clusters
   ); // DEBUG
 
   return (

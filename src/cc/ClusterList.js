@@ -8,7 +8,6 @@ export const ClusterList = function ({ clusters }) {
       <p>CLUSTERS:</p>
       <ul>
         {clusters
-          .filter((cluster) => !cluster.isManagementCluster)
           .map((cluster) => (
             <li key={cluster.id}>{`- ${cluster.namespace}/${cluster.name}`}</li>
           ))}
