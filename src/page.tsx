@@ -39,8 +39,7 @@ interface Props {
   extension: LensRendererExtension;
 }
 
-export const AddClusterPage = function (props: Props) {
-  // DEBUG TODO drill extension object down with a provider
+export const AddClusterPage = function ({ extension }: Props) {
   return (
     <ThemeProvider theme={theme}>
       <ExtStateProvider>
@@ -48,7 +47,7 @@ export const AddClusterPage = function (props: Props) {
           <AuthProvider>
             <ClustersProvider>
               <AddClustersProvider>
-                <View />
+                <View extension={extension} />
               </AddClustersProvider>
             </ClustersProvider>
           </AuthProvider>
