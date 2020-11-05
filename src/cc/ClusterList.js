@@ -4,14 +4,14 @@ import { Cluster } from './store/Cluster';
 
 export const ClusterList = function ({ clusters }) {
   return (
-    <>
+    <div className="ClusterList">
       <p>CLUSTERS:</p>
       <ul>
-        {clusters.map((cluster) => (
+        {clusters.filter((cluster) => !cluster.isManagementCluster).map((cluster) => (
           <li key={cluster.id}>{`- ${cluster.namespace}/${cluster.name}`}</li>
         ))}
       </ul>
-    </>
+    </div>
   );
 };
 

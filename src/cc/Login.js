@@ -85,7 +85,7 @@ export const Login = function (props) {
   const { loading } = props;
 
   return (
-    <LoginContainer>
+    <LoginContainer className="Login">
       <Field>
         <label htmlFor="login-url">MCC URL:</label>
         <input

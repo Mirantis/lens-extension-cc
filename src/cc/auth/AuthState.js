@@ -1,6 +1,6 @@
 import rtv from 'rtvjs';
 
-// DEBUG TODO so LocalStorage works in Electron -- do we need to encrypt it?
+// DEBUG TODO so LocalStorage works in Electron -- do we need to encrypt it? Use https://atom.github.io/node-keytar/ to store AuthState instances in keychain in ExtStateProvider? And then include the password too?
 // DEBUG TODO do we need to provide a way for the user to kill their session (i.e. logout) for security reasons?
 
 /**
@@ -43,9 +43,9 @@ export class AuthState {
     ...Object.keys(AuthState.tokensTs).reduce((ts, key) => {
       ts[key] = AuthState.tokensTs[key].concat(); // shallow clone of property typeset
 
-      if (key !== 'expiresAt' && key !== 'refreshExpiresAt') {
-        // each API property becomes expected, which means it can be `null`, which supports
-        //  cloning from an empty state in ExtStateProvider
+      if (ts[key][0] === rtv.REQUIRED) {
+        // each API property becomes optional, which means it can be `null`, which
+        //  supports cloning from an empty state in ExtStateProvider
         ts[key][0] = rtv.EXPECTED;
       }
 
@@ -53,6 +53,8 @@ export class AuthState {
     }, {}),
 
     username: [rtv.EXPECTED, rtv.STRING],
+    password: [rtv.EXPECTED, rtv.STRING],
+    idpClientId: [rtv.OPTIONAL, rtv.STRING],
   };
 
   /**
@@ -72,6 +74,8 @@ export class AuthState {
     let _refreshExpiresIn = null;
     let _refreshTokenValidTill = null;
     let _username = null;
+    let _password = null;
+    let _idpClientId = undefined;
 
     /** @member {boolean} changed */
     Object.defineProperty(this, 'changed', {
@@ -84,87 +88,125 @@ export class AuthState {
       },
     });
 
-    /** @member {string} token */
+    /** @member {string|null} token */
     Object.defineProperty(this, 'token', {
       enumerable: true,
       get() {
         return _token;
       },
       set(newValue) {
+        rtv.verify({ token: newValue }, { token: AuthState.specTs.id_token });
         _changed = _changed || _token !== newValue;
-        _token = newValue;
+        _token = newValue || null; // normalize empty to null
       },
     });
 
-    /** @member {number} expiresIn */
+    /** @member {number|null} expiresIn */
     Object.defineProperty(this, 'expiresIn', {
       enumerable: true,
       get() {
         return _expiresIn;
       },
       set(newValue) {
+        rtv.verify({ expiresIn: newValue }, { expiresIn: AuthState.specTs.expires_in });
         _changed = _changed || _expiresIn !== newValue;
         _expiresIn = newValue;
       },
     });
 
-    /** @member {Date} tokenValidTill */
+    /** @member {Date|null} tokenValidTill */
     Object.defineProperty(this, 'tokenValidTill', {
       enumerable: true,
       get() {
         return _tokenValidTill;
       },
       set(newValue) {
+        rtv.verify({ tokenValidTill: newValue }, { tokenValidTill: [rtv.EXPECTED, rtv.DATE] });
         _changed = _changed || _tokenValidTill !== newValue;
         _tokenValidTill = newValue;
       },
     });
 
-    /** @member {string} refreshToken */
+    /** @member {string|null} refreshToken */
     Object.defineProperty(this, 'refreshToken', {
       enumerable: true,
       get() {
         return _refreshToken;
       },
       set(newValue) {
+        rtv.verify({ refreshToken: newValue }, { refreshToken: AuthState.specTs.refresh_token });
         _changed = _changed || _refreshToken !== newValue;
-        _refreshToken = newValue;
+        _refreshToken = newValue || null; // normalize empty to null
       },
     });
 
-    /** @member {number} refreshExpiresIn */
+    /** @member {number|null} refreshExpiresIn */
     Object.defineProperty(this, 'refreshExpiresIn', {
       enumerable: true,
       get() {
         return _refreshExpiresIn;
       },
       set(newValue) {
+        rtv.verify({ refreshExpiresIn: newValue }, { refreshExpiresIn: AuthState.specTs.refresh_expires_in });
         _changed = _changed || _refreshExpiresIn !== newValue;
         _refreshExpiresIn = newValue;
       },
     });
 
-    /** @member {Date} refreshTokenValidTill */
+    /** @member {Date|null} refreshTokenValidTill */
     Object.defineProperty(this, 'refreshTokenValidTill', {
       enumerable: true,
       get() {
         return _refreshTokenValidTill;
       },
       set(newValue) {
+        rtv.verify({ refreshTokenValidTill: newValue }, { refreshTokenValidTill: [rtv.EXPECTED, rtv.DATE] });
         _changed = _changed || _refreshTokenValidTill !== newValue;
         _refreshTokenValidTill = newValue;
       },
     });
 
-    /** @member {sting} username */
+    /** @member {sting|null} username */
     Object.defineProperty(this, 'username', {
       enumerable: true,
       get() {
         return _username;
       },
       set(newValue) {
+        rtv.verify({ username: newValue }, { username: AuthState.specTs.username });
         _changed = _changed || _username !== newValue;
-        _username = newValue;
+        _username = newValue || null; // normalize empty to null
+      },
+    });
+
+    /** @member {sting|null} password */
+    Object.defineProperty(this, 'password', {
+      enumerable: true,
+      get() {
+        return _password;
+      },
+      set(newValue) {
+        rtv.verify({ password: newValue }, { password: AuthState.specTs.password });
+        _changed = _changed || _password !== newValue;
+        _password = newValue || null; // normalize empty to null
+      },
+    });
+
+    /**
+     * @member {sting|null|undefined} idpClientId Client ID of the IDP associated
+     *  with the tokens. `undefined` means not specified; `null` means the tokens
+     *  are related to the default IDP, which is Keycloak; otherwise, it's a
+     *  string that identifies a custom IDP.
+     */
+    Object.defineProperty(this, 'idpClientId', {
+      enumerable: true,
+      get() {
+        return _idpClientId;
+      },
+      set(newValue) {
+        rtv.verify({ idpClientId: newValue }, { idpClientId: AuthState.specTs.idpClientId });
+        _changed = _changed || _idpClientId !== newValue;
+        _idpClientId = newValue;
       },
     });
 
@@ -176,17 +218,23 @@ export class AuthState {
     }
 
     this.username = spec ? spec.username : null;
+    this.password = spec ? spec.password : null;
+    this.idpClientId = spec ? spec.idpClientId || null : undefined;
 
     _changed = false; // make sure unchanged after initialization
   }
 
+  /** @returns {boolean} True if the username and password are defined. */
+  hasCredentials() {
+    return !!(this.username && this.password);
+  }
+
   /**
-   * @returns {boolean} True if tokens are valid; false if they have expired with
-   *  no way to renew them automatically.
+   * @returns {boolean} True if there are credentials, a token, and a valid way
+   *  to refresh it if it expires; false otherwise.
    */
   isValid() {
-    // as long as we have a token and a way to refresh it if it's expired, we're good
-    return this.token && !this.isRefreshTokenExpired();
+    return this.hasCredentials() && !!this.token && !this.isRefreshTokenExpired();
   }
 
   /** @returns {boolean} True if the `token` has expired; false otherwise. */
@@ -206,11 +254,15 @@ export class AuthState {
    *  for example.
    */
   clearTokens() {
-    Object.keys(this).forEach((key) => {
-      if (key !== 'username') {
-        this[key] = null;
-      }
-    });
+    this.token = null;
+    this.expiresIn = null;
+    this.expiresAt = null;
+    this.tokenValidTill = null;
+
+    this.refreshToken = null;
+    this.refreshExpiresIn = null;
+    this.refreshExpiresAt = null;
+    this.refreshTokenValidTill = null;
   }
 
   /**
@@ -246,9 +298,6 @@ export class AuthState {
    *  to create a new `AuthState` instance.
    */
   toJSON() {
-    // DEBUG there's a problem here, in that we need to store the 'expires AT'
-    //  milliseconds so that when we reload this from storage, we can tell
-    //  if the tokens have expired since being stored
     return {
       id_token: this.token,
       expires_in: this.expiresIn,
@@ -262,6 +311,8 @@ export class AuthState {
         ? Math.floor(this.refreshTokenValidTill.getTime() / 1000)
         : null,
       username: this.username,
+      password: this.password,
+      idpClientId: this.idpClientId,
     };
   }
 }

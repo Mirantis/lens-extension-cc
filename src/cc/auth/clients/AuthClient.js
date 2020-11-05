@@ -30,6 +30,14 @@ export class AuthClient {
   /**
    * Makes a network request with specified options.
    * @param {string} endpoint API endpoint. Does NOT begin or end with a slash.
+   * @param {Object} config
+   * @param {Object} [config.options] Request configuration options.
+   * @param {Array<number>} [config.expectedStatuses] List of expected success
+   *  statuses.
+   * @param {string} [config.extractDataMethod] Name of a method on a fetch
+   *  response object to call to deserialize/extract/parse data from the response.
+   *  Defaults to "json".
+   * @returns {Promise<Object>} See netUtil.request() for response shape.
    */
   request(
     endpoint,
@@ -73,7 +81,25 @@ export class AuthClient {
     });
   }
 
-  getToken(username, password, offline = false, customClientId) {
+  /**
+   * Get access tokens for the configured base URL.
+   * @param {string} username
+   * @param {string} password
+   * @param {boolean} [offline] If true, the refresh token generated for the
+   *  clusters will be enabled for offline access. WARNING: This is less secure
+   *  than a normal refresh token as it will never expire.
+   * @param {string} [customClientId] If specified, this ID will be used instead
+   *  of the client ID obtained from the `config` object used to create this
+   *  AuthClient instance. Set this to the `idpClientId` of a cluster if generating
+   *  access tokens for a specific cluster.
+   * @returns {Promise<Object>} See netUtil.request() for response shape. On success,
+   *  the `body` property will be an object with the following properties:
+   *  - id_token: string
+   *  - expires_in: number, SECONDS valid from now
+   *  - refresh_token: string
+   *  - refresh_expires_in: number, SECONDS valid from now
+   */
+  getToken(username, password, offline = false, customClientId = undefined) {
     return this.request('token', {
       options: {
         method: 'POST',
@@ -82,7 +108,7 @@ export class AuthClient {
           response_type: 'id_token',
           scope: offline ? 'offline_access openid' : 'openid',
           client_id: customClientId || this.clientId,
-          username: username,
+          username,
           password,
         }),
       },
@@ -90,7 +116,17 @@ export class AuthClient {
     });
   }
 
-  refreshToken(token) {
+  /**
+   * Obtain new access tokens given a valid refresh token.
+   * @param {string} refreshToken
+   * @returns {Promise<Object>} See netUtil.request() for response shape. On success,
+   *  the `body` property will be an object with the following properties:
+   *  - id_token: string
+   *  - expires_in: number, SECONDS valid from now
+   *  - refresh_token: string
+   *  - refresh_expires_in: number, SECONDS valid from now
+   */
+  refreshToken(refreshToken) {
     return this.request('token', {
       options: {
         method: 'POST',
@@ -99,7 +135,7 @@ export class AuthClient {
           response_type: 'id_token',
           scope: 'openid',
           client_id: this.clientId,
-          refresh_token: token,
+          refresh_token: refreshToken,
         }),
       },
       errorMessage: 'Failed to refresh token',
