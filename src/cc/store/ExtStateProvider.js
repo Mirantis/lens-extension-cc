@@ -76,10 +76,13 @@ const _saveState = function (state) {
 
   // TODO: consider using https://atom.github.io/node-keytar/ to store all credentials
   //  in the local keychain
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify({
-    ...state,
-    authState: undefined, // don't store any credentials (except for state.username)
-  }));
+  window.localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({
+      ...state,
+      authState: undefined, // don't store any credentials (except for state.username)
+    })
+  );
 };
 
 /**

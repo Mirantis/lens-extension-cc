@@ -108,7 +108,10 @@ export class AuthState {
         return _expiresIn;
       },
       set(newValue) {
-        rtv.verify({ expiresIn: newValue }, { expiresIn: AuthState.specTs.expires_in });
+        rtv.verify(
+          { expiresIn: newValue },
+          { expiresIn: AuthState.specTs.expires_in }
+        );
         _changed = _changed || _expiresIn !== newValue;
         _expiresIn = newValue;
       },
@@ -121,7 +124,10 @@ export class AuthState {
         return _tokenValidTill;
       },
       set(newValue) {
-        rtv.verify({ tokenValidTill: newValue }, { tokenValidTill: [rtv.EXPECTED, rtv.DATE] });
+        rtv.verify(
+          { tokenValidTill: newValue },
+          { tokenValidTill: [rtv.EXPECTED, rtv.DATE] }
+        );
         _changed = _changed || _tokenValidTill !== newValue;
         _tokenValidTill = newValue;
       },
@@ -134,7 +140,10 @@ export class AuthState {
         return _refreshToken;
       },
       set(newValue) {
-        rtv.verify({ refreshToken: newValue }, { refreshToken: AuthState.specTs.refresh_token });
+        rtv.verify(
+          { refreshToken: newValue },
+          { refreshToken: AuthState.specTs.refresh_token }
+        );
         _changed = _changed || _refreshToken !== newValue;
         _refreshToken = newValue || null; // normalize empty to null
       },
@@ -147,7 +156,10 @@ export class AuthState {
         return _refreshExpiresIn;
       },
       set(newValue) {
-        rtv.verify({ refreshExpiresIn: newValue }, { refreshExpiresIn: AuthState.specTs.refresh_expires_in });
+        rtv.verify(
+          { refreshExpiresIn: newValue },
+          { refreshExpiresIn: AuthState.specTs.refresh_expires_in }
+        );
         _changed = _changed || _refreshExpiresIn !== newValue;
         _refreshExpiresIn = newValue;
       },
@@ -160,7 +172,10 @@ export class AuthState {
         return _refreshTokenValidTill;
       },
       set(newValue) {
-        rtv.verify({ refreshTokenValidTill: newValue }, { refreshTokenValidTill: [rtv.EXPECTED, rtv.DATE] });
+        rtv.verify(
+          { refreshTokenValidTill: newValue },
+          { refreshTokenValidTill: [rtv.EXPECTED, rtv.DATE] }
+        );
         _changed = _changed || _refreshTokenValidTill !== newValue;
         _refreshTokenValidTill = newValue;
       },
@@ -173,7 +188,10 @@ export class AuthState {
         return _username;
       },
       set(newValue) {
-        rtv.verify({ username: newValue }, { username: AuthState.specTs.username });
+        rtv.verify(
+          { username: newValue },
+          { username: AuthState.specTs.username }
+        );
         _changed = _changed || _username !== newValue;
         _username = newValue || null; // normalize empty to null
       },
@@ -186,7 +204,10 @@ export class AuthState {
         return _password;
       },
       set(newValue) {
-        rtv.verify({ password: newValue }, { password: AuthState.specTs.password });
+        rtv.verify(
+          { password: newValue },
+          { password: AuthState.specTs.password }
+        );
         _changed = _changed || _password !== newValue;
         _password = newValue || null; // normalize empty to null
       },
@@ -204,7 +225,10 @@ export class AuthState {
         return _idpClientId;
       },
       set(newValue) {
-        rtv.verify({ idpClientId: newValue }, { idpClientId: AuthState.specTs.idpClientId });
+        rtv.verify(
+          { idpClientId: newValue },
+          { idpClientId: AuthState.specTs.idpClientId }
+        );
         _changed = _changed || _idpClientId !== newValue;
         _idpClientId = newValue;
       },
@@ -234,7 +258,9 @@ export class AuthState {
    *  to refresh it if it expires; false otherwise.
    */
   isValid() {
-    return this.hasCredentials() && !!this.token && !this.isRefreshTokenExpired();
+    return (
+      this.hasCredentials() && !!this.token && !this.isRefreshTokenExpired()
+    );
   }
 
   /** @returns {boolean} True if the `token` has expired; false otherwise. */
