@@ -33,6 +33,7 @@ export class Namespace {
     /** @member {boolean} */
     this.deleteInProgress = !!data.metadata.deletionTimestamp; // 'Active', 'Terminating', others?
 
-    /** @member {string} */ this.phase = data.status.phase;
+    /** @member {string} */
+    this.phase = data.status.phase;
   }
 }

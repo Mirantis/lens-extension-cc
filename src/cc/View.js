@@ -1,35 +1,53 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import styled from '@emotion/styled';
 import { useExtState } from './store/ExtStateProvider';
 import { useConfig } from './store/ConfigProvider';
 import { useAuth } from './store/AuthProvider';
 import { useClusters } from './store/ClustersProvider';
+import { useAddClusters } from './store/AddClustersProvider';
 import { Login } from './Login';
 import { ClusterList } from './ClusterList';
 import { layout } from './theme';
 
-const ViewContainer = styled.div(function () {
-  return {
-    display: 'flex',
-    flexDirection: 'column',
-    width: '100vw',
-    height: '100vh',
-
-    header: {
-      width: '100%',
-      height: 50,
-      display: 'flex',
-      alignItems: 'center',
-      backgroundColor: 'lightgray',
-      marginBottom: layout.grid * 4,
-      padding: layout.pad,
-    },
-  };
-});
-
 const Error = styled.p(function () {
   return {
     color: 'red',
+  };
+});
+
+const ViewContainer = styled.div(function () {
+  // NOTE: Lens applies these styles to immediate children of its global page
+  //  container:
+  //  ```
+  //  ClusterManager main > * {
+  //    position: absolute;
+  //    left: 0;
+  //    top: 0;
+  //    right: 0;
+  //    bottom: 0;
+  //    display: flex;
+  //    background-color: var(--mainBackground);
+  //  }
+  //  ```
+  //  This means ViewContainer is a flex child, and also doesn't need width/height.
+  return {
+    display: 'flex',
+    flexDirection: 'column',
+
+    // Lens wants to set all immediate children `ClusterManager main > * > *`
+    //  to have `flex: 1`, which doesn't work for the layout we want, so
+    //  forcefully reset
+    '> *': {
+      flex: 'none !important',
+    },
+
+    '> .ClusterList': {
+      flex: '1 0 auto !important',
+    },
+
+    button: {
+      width: 200,
+    },
   };
 });
 
@@ -68,18 +86,37 @@ export const View = function () {
     actions: clustersActions,
   } = useClusters();
 
-  const [userCreds, setUserCreds] = useState(null); // @type {{username: string, password: string}|null}
+  const {
+    state: {
+      loading: addClustersLoading,
+      loaded: addClustersLoaded,
+      error: addClustersError,
+    },
+    actions: addClustersActions,
+  } = useAddClusters();
+
+  const [userCreds, setUserCreds] = useState(authState
+    ? {
+        username: authState.username,
+        password: authState.password,
+      }
+    : null); // @type {{username: string, password: string}|null}
   const [errorMessage, setErrorMessage] = useState(null); // @type {string}
 
-  const loading = configLoading || authLoading || clustersLoading;
+  const loading = configLoading || (configLoaded && !configError && !authLoaded && authState.hasCredentials()) ||
+    authLoading || (authLoaded && !authError && !clustersLoaded) ||
+    clustersLoading;
 
   //
   // EVENTS
   //
 
-  const handleLogin = function (info) {
+  const handleLogin = useCallback(function (info) {
     setErrorMessage(null);
-    setUserCreds({ username: info.username, password: info.password });
+
+    authState.username = info.username;
+    authState.password = info.password;
+    // DEBUG setUserCreds({ username: info.username, password: info.password });
 
     const url = info.baseUrl.replace(/\/$/, ''); // remove end slash if any
 
@@ -90,7 +127,20 @@ export const View = function () {
     clustersActions.reset();
 
     configActions.load(url); // implicit reset
-  };
+  }, [authState, extActions, authActions, clustersActions, configActions]);
+
+  const handleAddClick = useCallback(async function () {
+    if (!addClustersLoading) {
+      addClustersActions.addToLens({
+        clusters,
+        baseUrl,
+        config,
+        username: authState.username,
+        password: authState.password,
+        // DEBUG TODO: add offline choice with `offline: true/false` option
+      });
+    }
+  }, [baseUrl, authState, config, clusters, addClustersLoading, addClustersActions]);
 
   //
   // EFFECTS
@@ -99,7 +149,7 @@ export const View = function () {
   // 1. load the config object
   useEffect(
     function () {
-      if (baseUrl && authState.isValid() && !configLoading && !configLoaded) {
+      if (baseUrl && authState.hasCredentials() && !configLoading && !configLoaded) {
         configActions.load(baseUrl);
       }
     },
@@ -117,12 +167,11 @@ export const View = function () {
           if (authState.isValid()) {
             // skip authentication, go straight for the clusters
             authActions.setAuthenticated();
-          } else if (userCreds) {
+          } else if (authState.hasCredentials()) {
             authActions.authenticate({
               authState,
               baseUrl,
               config,
-              ...userCreds,
             });
           }
         }
@@ -131,7 +180,6 @@ export const View = function () {
     [
       authState,
       baseUrl,
-      userCreds,
       configLoading,
       configLoaded,
       configError,
@@ -186,17 +234,26 @@ export const View = function () {
   // RENDER
   //
 
+  console.log('[View] rendering: loading=%s, configLoading=%s, authState.hasCreds=%s, authLoading=%s, clustersLoading=%s, addClustersLoading=%s', loading, configLoading, authState.hasCredentials(), authLoading, clustersLoading, addClustersLoading); // DEBUG
+
   return (
     <ViewContainer>
+      <h1>Add Mirantis Container Cloud Clusters</h1>
       <Login
         loading={loading}
         baseUrl={baseUrl || undefined}
         username={authState ? authState.username : undefined}
+        password={authState ? authState.password : undefined}
         onLogin={handleLogin}
       />
       {errorMessage ? <Error>{errorMessage}</Error> : null}
-      {!errorMessage && clustersLoaded ? (
-        <ClusterList clusters={clusters} />
+      {!errorMessage && authState.isValid() && clustersLoaded ? (
+        <>
+          <ClusterList clusters={clusters} />
+          <button onClick={handleAddClick}>
+            Add selected clusters...
+          </button>
+        </>
       ) : undefined}
     </ViewContainer>
   );

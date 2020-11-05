@@ -134,6 +134,7 @@ export const useConfig = function () {
        */
       load(url) {
         if (!store.loading) {
+          console.log('[ConfigProvider] loading...'); // DEBUG
           _loadConfig(url, setState);
         }
       },

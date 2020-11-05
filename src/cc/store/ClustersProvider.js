@@ -3,7 +3,7 @@
 //
 
 import React, { createContext, useContext, useState, useMemo } from 'react';
-import { cloneDeepWith, filter, find, fromPairs, get } from 'lodash';
+import { cloneDeepWith, filter, find } from 'lodash';
 import { Namespace } from './Namespace';
 import { Cluster } from './Cluster';
 import { authedRequest, extractJwtPayload } from '../auth/authUtil';
@@ -103,7 +103,6 @@ const _deserializeNamespacesList = function (body) {
  *  on error `{error: string}`.
  */
 const _fetchNamespaces = async function (baseUrl, config, authState) {
-  const defaultNamespaces = config.ignoredNamespaces || [];
   const { error, body } = await authedRequest({
     baseUrl,
     authState,
@@ -127,9 +126,14 @@ const _fetchNamespaces = async function (baseUrl, config, authState) {
     userRoles.includes(`m:kaas:${name}@reader`) ||
     userRoles.includes(`m:kaas:${name}@writer`);
 
+  // always ignore the default namespace (since it could have multiple clusters
+  //  with various names that all shouldn't be used directly), plus any other
+  //  ones that are configured to be ignored
+  const ignoredNamespaces = ['default', ...config.ignoredNamespaces];
+
   const namespaces = filter(
     data,
-    (ns) => !defaultNamespaces.includes(ns.name) && hasReadPermissions(ns.name)
+    (ns) => !ignoredNamespaces.includes(ns.name) && hasReadPermissions(ns.name)
   );
 
   return { namespaces };
@@ -276,6 +280,7 @@ export const useClusters = function () {
        */
       load(baseUrl, config, authState) {
         if (!store.loading) {
+          console.log('[ClusterProvider] loading...'); // DEBUG
           _loadData(baseUrl, config, authState, setState);
         }
       },

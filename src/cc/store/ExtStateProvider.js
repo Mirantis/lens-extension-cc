@@ -19,6 +19,7 @@ const extStateTs = {
       }
     },
   ], // MCC UI URL, does NOT end with a slash
+  username: [rtv.EXPECTED, rtv.STRING],
   authState: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: AuthState }],
 };
 
@@ -31,6 +32,7 @@ let stateLoaded = false; // {boolean} true if the state has been loaded from sto
 // the store defines the initial state and contains the current state
 const store = {
   baseUrl: null,
+  username: null,
   authState: new AuthState(),
 };
 
@@ -72,15 +74,18 @@ const _validateState = function (state) {
 const _saveState = function (state) {
   _validateState(state);
 
-  // TODO: encrypt this payload...
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  // TODO: consider using https://atom.github.io/node-keytar/ to store all credentials
+  //  in the local keychain
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    ...state,
+    authState: undefined, // don't store any credentials (except for state.username)
+  }));
 };
 
 /**
  * Initializes the store with app state from storage, if it exists.
  */
 const _loadState = function () {
-  // DEBUG TODO: decrypt this payload...
   const jsonStr = window.localStorage.getItem(STORAGE_KEY);
 
   let useInitialState = false;
@@ -90,11 +95,13 @@ const _loadState = function () {
       const json = JSON.parse(jsonStr);
       const fromStorage = {
         ...json,
-        authState: new AuthState(json.authState),
+        authState: new AuthState(),
       };
 
       _validateState(fromStorage); // validate what we get
       Object.assign(store, fromStorage); // put it into the store
+
+      store.authState.username = store.username;
     } catch (err) {
       useInitialState = true;
     }
@@ -172,10 +179,13 @@ export const useExtState = function () {
        */
       setAuthState(newAuthState) {
         store.authState = newAuthState;
+        store.username = newAuthState ? newAuthState.username : null;
+
         if (store.authState) {
           // mark it as no longer being changed if it was
           store.authState.changed = false;
         }
+
         _onStateChanged(setState);
       },
 

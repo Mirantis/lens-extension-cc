@@ -6,6 +6,7 @@ import { ExtStateProvider } from './cc/store/ExtStateProvider';
 import { ConfigProvider } from './cc/store/ConfigProvider';
 import { AuthProvider } from './cc/store/AuthProvider';
 import { ClustersProvider } from './cc/store/ClustersProvider';
+import { AddClustersProvider } from './cc/store/AddClustersProvider';
 import { theme } from './cc/theme';
 
 export const AddClusterIcon = function () {
@@ -46,9 +47,9 @@ export const AddClusterPage = function (props: Props) {
         <ConfigProvider>
           <AuthProvider>
             <ClustersProvider>
-              <div className="MccExtension">
+              <AddClustersProvider>
                 <View />
-              </div>
+              </AddClustersProvider>
             </ClustersProvider>
           </AuthProvider>
         </ConfigProvider>

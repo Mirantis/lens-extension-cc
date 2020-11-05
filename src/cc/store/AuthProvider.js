@@ -84,16 +84,13 @@ const _authenticate = async function (
   _reset(setState, true);
 
   const authClient = new AuthClient(baseUrl, config);
-  const { error, body } = await authClient.getToken(username, password);
+  const { error, body } = await authClient.getToken(authState.username, authState.password);
 
   store.loading = false;
   store.loaded = true;
   store.error = error || undefined;
 
-  if (error) {
-    store.error = error;
-  } else {
-    authState.username = username;
+  if (!error) {
     authState.updateTokens(body);
   }
 
@@ -137,6 +134,8 @@ export const useAuth = function () {
        */
       authenticate(options) {
         if (!store.loading) {
+          console.log('[AuthProvider] authenticating...'); // DEBUG
+
           _authenticate(options, setState);
         }
       },
@@ -147,6 +146,8 @@ export const useAuth = function () {
        */
       setAuthenticated() {
         if (!store.loading) {
+          console.log('[AuthProvider] authenticated'); // DEBUG
+
           store.loaded = true;
           store.error = undefined;
           _onStateChanged(setState);

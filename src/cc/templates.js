@@ -2,22 +2,6 @@
 // Templates used to generate various configuration files
 //
 
-// DEBUG REMOVE
-/*
-      const jsConfig = kubeconfig({
-        username: this.props.uiState.username,
-        idToken,
-        refreshToken
-
-        clusterName: this.props.cluster.name,
-        clientId: this.props.cluster.clientID,
-        idpCertificateAuthorityData: this.props.cluster.oidcCertificate,
-        idpIssuerUrl: this.props.cluster.issuerURL,
-        server: this.props.cluster.server,
-        apiCertificate: this.props.cluster.apiCertificate,
-      });
-*/
-
 /**
  * Generates a KubeConfig for a specific cluster.
  * @param {Object} config Configuration parameters for the template.
@@ -27,7 +11,7 @@
  * @param {Cluster} config.cluster Cluster for which to generate the config.
  * @returns {Object} JSON object representing the KubeConfig for accessing the cluster.
  */
-export const kubeConfig = function ({
+export const kubeConfigTemplate = function ({
   username,
   token,
   refreshToken,
@@ -65,7 +49,7 @@ export const kubeConfig = function ({
               'client-id': cluster.idpClientId,
               'id-token': token,
               'idp-certificate-authority-data': cluster.idpCertificate,
-              'idp-issuer-url': cluster.dpIssuerUrl,
+              'idp-issuer-url': cluster.idpIssuerUrl,
               'refresh-token': refreshToken,
             },
             name: 'oidc',

@@ -7,7 +7,7 @@ const isManagementCluster = function (data) {
 };
 
 const getServerUrl = function (data) {
-  const ip = get(data.status, 'loadBalancerHost');
+  const ip = data.status.providerStatus.loadBalancerHost;
   return ip ? `https://${ip}:443` : null;
 };
 
@@ -113,7 +113,7 @@ export class Cluster {
       data.metadata,
       'labels["kaas.mirantis.com/provider"]',
       null
-    ); // e.g. 'east'
+    ); // e.g. 'region-one'
 
     /** @member {string|null} */ this.region = get(
       data.metadata,
