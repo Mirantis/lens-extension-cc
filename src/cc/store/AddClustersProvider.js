@@ -85,7 +85,9 @@ const _initialize = function () {
   try {
     mkdirSync(CONFIGS_PATH, { recursive: true }); // like `mkdir -p`
   } catch (err) {
-    console.error(`[${pkg.name}] ERROR: Failed to create ${CONFIGS_PATH} directory to store Kube Config files: ${err.message}`);
+    console.error(
+      `[${pkg.name}] ERROR: Failed to create ${CONFIGS_PATH} directory to store Kube Config files: ${err.message}`
+    );
   }
 };
 
@@ -102,7 +104,14 @@ const _initialize = function () {
  * @returns {Promise<Object>} On success, `{authState: AuthState}`, a new AuthState
  *  object that contains the token information; on error, `{error: string}`.
  */
-const _getClusterAccess = async function ({ cluster, baseUrl, config, username, password, offline = false }) {
+const _getClusterAccess = async function ({
+  cluster,
+  baseUrl,
+  config,
+  username,
+  password,
+  offline = false,
+}) {
   const authClient = new AuthClient(baseUrl, config);
 
   const { error, body } = await authClient.getToken(
@@ -117,7 +126,14 @@ const _getClusterAccess = async function ({ cluster, baseUrl, config, username, 
   }
 
   // DEBUG TODO: rename AuthState to AuthAccess, and authState to authAccess everywhere
-  return { authState: new AuthState({ ...body, username, password, idpClientId: cluster.idpClientId }) };
+  return {
+    authState: new AuthState({
+      ...body,
+      username,
+      password,
+      idpClientId: cluster.idpClientId,
+    }),
+  };
 };
 
 /**
@@ -133,7 +149,14 @@ const _getClusterAccess = async function ({ cluster, baseUrl, config, username, 
  * @returns {Promise<Object>} On success, `{model: ClusterModel}`, a cluster model
  *  to use to add the cluster to Lens; on error, `{error: string}`.
  */
-const _createClusterFile = async function ({ cluster, baseUrl, config, username, password, offline = false }) {
+const _createClusterFile = async function ({
+  cluster,
+  baseUrl,
+  config,
+  username,
+  password,
+  offline = false,
+}) {
   const errPrefix = `Failed to create a Kube Config file for cluster ${cluster.id}`;
 
   const { error: accessError, authState } = await _getClusterAccess({
@@ -147,7 +170,7 @@ const _createClusterFile = async function ({ cluster, baseUrl, config, username,
 
   if (accessError) {
     return { error: `${errPrefix}: ${accessError}` };
-  };
+  }
 
   const json = kubeConfigTemplate({
     username: authState.username,
@@ -181,7 +204,10 @@ const _createClusterFile = async function ({ cluster, baseUrl, config, username,
  *  than a normal refresh token as it will never expire.
  * @param {function} setState Function to call to update the context's state.
  */
-const _addToLens = async function ({ clusters, baseUrl, config, username, password, offline = false }, setState) {
+const _addToLens = async function (
+  { clusters, baseUrl, config, username, password, offline = false },
+  setState
+) {
   _reset(setState, true);
 
   const promises = clusters.map((cluster) =>
@@ -230,7 +256,9 @@ const AddClustersContext = createContext();
 export const useAddClusters = function () {
   const context = useContext(AddClustersContext);
   if (!context) {
-    throw new Error('useAddClusters must be used within an AddClustersProvider');
+    throw new Error(
+      'useAddClusters must be used within an AddClustersProvider'
+    );
   }
 
   // NOTE: `context` is the value of the `value` prop we set on the

@@ -84,7 +84,10 @@ const _authenticate = async function (
   _reset(setState, true);
 
   const authClient = new AuthClient(baseUrl, config);
-  const { error, body } = await authClient.getToken(authState.username, authState.password);
+  const { error, body } = await authClient.getToken(
+    authState.username,
+    authState.password
+  );
 
   store.loading = false;
   store.loaded = true;
