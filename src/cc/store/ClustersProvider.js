@@ -126,11 +126,7 @@ const _fetchNamespaces = async function (baseUrl, config, authState) {
     userRoles.includes(`m:kaas:${name}@reader`) ||
     userRoles.includes(`m:kaas:${name}@writer`);
 
-  // always ignore the default namespace (since it could have multiple clusters
-  //  with various names that all shouldn't be used directly), plus any other
-  //  ones that are configured to be ignored
-  const ignoredNamespaces = ['default', ...config.ignoredNamespaces];
-
+  const ignoredNamespaces = config.ignoredNamespaces || [];
   const namespaces = filter(
     data,
     (ns) => !ignoredNamespaces.includes(ns.name) && hasReadPermissions(ns.name)

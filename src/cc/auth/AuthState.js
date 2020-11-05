@@ -1,6 +1,5 @@
 import rtv from 'rtvjs';
 
-// DEBUG TODO so LocalStorage works in Electron -- do we need to encrypt it? Use https://atom.github.io/node-keytar/ to store AuthState instances in keychain in ExtStateProvider? And then include the password too?
 // DEBUG TODO do we need to provide a way for the user to kill their session (i.e. logout) for security reasons?
 
 /**

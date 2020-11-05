@@ -58,29 +58,6 @@ export class AuthClient {
     );
   }
 
-  getTokenFromCode(code, offline = false, customClientId) {
-    throw new Error(
-      'need to fix this method so it does not refer to window.location.origin...'
-    ); // DEBUG
-
-    return this.request('token', {
-      options: {
-        method: 'POST',
-        body: queryString.stringify({
-          grant_type: 'authorization_code',
-          response_type: 'id_token',
-          scope: offline ? 'offline_access openid' : 'openid',
-          client_id: customClientId || this.clientId,
-          redirect_uri: `${window.location.origin}/${
-            customClientId ? 'token' : 'auth'
-          }`,
-          code,
-        }),
-      },
-      errorMessage: 'Failed to get token',
-    });
-  }
-
   /**
    * Get access tokens for the configured base URL.
    * @param {string} username
