@@ -97,15 +97,15 @@ const _deserializeNamespacesList = function (body) {
  * [ASYNC] Get all existing namespaces from the management cluster.
  * @param {string} baseUrl MCC URL. Must NOT end with a slash.
  * @param {Object} config MCC Configuration object.
- * @param {AuthState} authState An AuthState object. Tokens will be updated/cleared
+ * @param {AuthAccess} authAccess An AuthAccess object. Tokens will be updated/cleared
  *  if necessary.
  * @returns {Promise<Object>} On success `{ namespaces: Array<Namespace< }`;
  *  on error `{error: string}`.
  */
-const _fetchNamespaces = async function (baseUrl, config, authState) {
+const _fetchNamespaces = async function (baseUrl, config, authAccess) {
   const { error, body } = await authedRequest({
     baseUrl,
-    authState,
+    authAccess,
     config,
     method: 'list',
     entity: 'namespace',
@@ -120,7 +120,7 @@ const _fetchNamespaces = async function (baseUrl, config, authState) {
     return { error: dsError };
   }
 
-  const userRoles = extractJwtPayload(authState.token).iam_roles || [];
+  const userRoles = extractJwtPayload(authAccess.token).iam_roles || [];
 
   const hasReadPermissions = (name) =>
     userRoles.includes(`m:kaas:${name}@reader`) ||
@@ -153,7 +153,7 @@ const _deserializeClustersList = function (body) {
  *  specified.
  * @param {string} baseUrl MCC URL. Must NOT end with a slash.
  * @param {Object} config MCC Configuration object.
- * @param {AuthState} authState An AuthState object. Tokens will be updated/cleared
+ * @param {AuthAccess} authAccess An AuthAccess object. Tokens will be updated/cleared
  *  if necessary.
  * @param {Array<string>} namespaces List of namespace NAMES for which to retrieve
  *  clusters.
@@ -163,12 +163,12 @@ const _deserializeClustersList = function (body) {
  *  on error `{error: string}`. The error will be the first-found error out of
  *  all namespaces on which cluster retrieval was attempted.
  */
-const _fetchClusters = async function (baseUrl, config, authState, namespaces) {
+const _fetchClusters = async function (baseUrl, config, authAccess, namespaces) {
   const results = await Promise.all(
     namespaces.map((namespaceName) =>
       authedRequest({
         baseUrl,
-        authState,
+        authAccess,
         config,
         method: 'list',
         entity: 'cluster',
@@ -203,14 +203,14 @@ const _fetchClusters = async function (baseUrl, config, authState, namespaces) {
  * [ASYNC] Loads namespaces and clusters from the API.
  * @param {string} baseUrl MCC URL. Must NOT end with a slash.
  * @param {Object} config MCC Configuration object.
- * @param {AuthState} authState Current authentication information. This
+ * @param {AuthAccess} authAccess Current authentication information. This
  *  instance MAY be updated if a token refresh is required during the load.
  * @param {function} setState Function to call to update the context's state.
  */
-const _loadData = async function (baseUrl, config, authState, setState) {
+const _loadData = async function (baseUrl, config, authAccess, setState) {
   _reset(setState, true);
 
-  const nsResults = await _fetchNamespaces(baseUrl, config, authState);
+  const nsResults = await _fetchNamespaces(baseUrl, config, authAccess);
 
   if (nsResults.error) {
     store.loading = false;
@@ -223,7 +223,7 @@ const _loadData = async function (baseUrl, config, authState, setState) {
     const clResults = await _fetchClusters(
       baseUrl,
       config,
-      authState,
+      authAccess,
       namespaces
     );
 
@@ -271,13 +271,13 @@ export const useClusters = function () {
        * [ASYNC] Loads namespaces and clusters.
        * @param {string} baseUrl MCC URL. Must NOT end with a slash.
        * @param {Object} config MCC Configuration object.
-       * @param {AuthState} authState Current authentication information. This
+       * @param {AuthAccess} authAccess Current authentication information. This
        *  instance MAY be updated if a token refresh is required during the load.
        */
-      load(baseUrl, config, authState) {
+      load(baseUrl, config, authAccess) {
         if (!store.loading) {
           console.log('[ClusterProvider] loading...'); // DEBUG
-          _loadData(baseUrl, config, authState, setState);
+          _loadData(baseUrl, config, authAccess, setState);
         }
       },
 

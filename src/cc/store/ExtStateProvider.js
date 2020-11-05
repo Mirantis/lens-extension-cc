@@ -5,7 +5,7 @@
 import React, { createContext, useContext, useState, useMemo } from 'react';
 import rtv from 'rtvjs';
 import { cloneDeep, cloneDeepWith } from 'lodash';
-import { AuthState } from '../auth/AuthState';
+import { AuthAccess } from '../auth/AuthAccess';
 
 const STORAGE_KEY = 'lens-mcc-ext';
 
@@ -20,7 +20,7 @@ const extStateTs = {
     },
   ], // MCC UI URL, does NOT end with a slash
   username: [rtv.EXPECTED, rtv.STRING],
-  authState: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: AuthState }],
+  authAccess: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: AuthAccess }],
 };
 
 let stateLoaded = false; // {boolean} true if the state has been loaded from storage
@@ -33,7 +33,7 @@ let stateLoaded = false; // {boolean} true if the state has been loaded from sto
 const store = {
   baseUrl: null,
   username: null,
-  authState: new AuthState(),
+  authAccess: new AuthAccess(),
 };
 
 //
@@ -46,9 +46,9 @@ const store = {
  */
 const _cloneStore = function () {
   return cloneDeepWith(store, (value, key) => {
-    if (key === 'authState') {
+    if (key === 'authAccess') {
       // instead of letting Lodash dig deep into this object, clone it manually
-      return new AuthState(cloneDeep(value.toJSON()));
+      return new AuthAccess(cloneDeep(value.toJSON()));
     }
     // else, let Lodash do the cloning
   });
@@ -80,7 +80,7 @@ const _saveState = function (state) {
     STORAGE_KEY,
     JSON.stringify({
       ...state,
-      authState: undefined, // don't store any credentials (except for state.username)
+      authAccess: undefined, // don't store any credentials (except for state.username)
     })
   );
 };
@@ -98,13 +98,13 @@ const _loadState = function () {
       const json = JSON.parse(jsonStr);
       const fromStorage = {
         ...json,
-        authState: new AuthState(),
+        authAccess: new AuthAccess(),
       };
 
       _validateState(fromStorage); // validate what we get
       Object.assign(store, fromStorage); // put it into the store
 
-      store.authState.username = store.username;
+      store.authAccess.username = store.username;
     } catch (err) {
       useInitialState = true;
     }
@@ -177,16 +177,16 @@ export const useExtState = function () {
       },
 
       /**
-       * Sets a new AuthState object into the store.
-       * @param {AuthState|null} newAuthState
+       * Sets a new AuthAccess object into the store.
+       * @param {AuthAccess|null} newAuthAccess
        */
-      setAuthState(newAuthState) {
-        store.authState = newAuthState;
-        store.username = newAuthState ? newAuthState.username : null;
+      setAuthAccess(newAuthAccess) {
+        store.authAccess = newAuthAccess;
+        store.username = newAuthAccess ? newAuthAccess.username : null;
 
-        if (store.authState) {
+        if (store.authAccess) {
           // mark it as no longer being changed if it was
-          store.authState.changed = false;
+          store.authAccess.changed = false;
         }
 
         _onStateChanged(setState);

@@ -56,7 +56,7 @@ export const View = function () {
   //
 
   const {
-    state: { baseUrl, authState },
+    state: { baseUrl, authAccess },
     actions: extActions,
   } = useExtState();
 
@@ -101,7 +101,7 @@ export const View = function () {
     (configLoaded &&
       !configError &&
       !authLoaded &&
-      authState.hasCredentials()) ||
+      authAccess.hasCredentials()) ||
     authLoading ||
     (authLoaded && !authError && !clustersLoaded) ||
     clustersLoading;
@@ -114,20 +114,20 @@ export const View = function () {
     function (info) {
       setErrorMessage(null);
 
-      authState.username = info.username;
-      authState.password = info.password;
+      authAccess.username = info.username;
+      authAccess.password = info.password;
 
       const url = info.baseUrl.replace(/\/$/, ''); // remove end slash if any
 
-      authState.clearTokens();
+      authAccess.clearTokens();
       extActions.setBaseUrl(url);
-      extActions.setAuthState(authState);
+      extActions.setAuthAccess(authAccess);
       authActions.reset();
       clustersActions.reset();
 
       configActions.load(url); // implicit reset
     },
-    [authState, extActions, authActions, clustersActions, configActions]
+    [authAccess, extActions, authActions, clustersActions, configActions]
   );
 
   const handleAddClick = useCallback(
@@ -137,15 +137,15 @@ export const View = function () {
           clusters,
           baseUrl,
           config,
-          username: authState.username,
-          password: authState.password,
+          username: authAccess.username,
+          password: authAccess.password,
           // DEBUG TODO: add offline choice with `offline: true/false` option
         });
       }
     },
     [
       baseUrl,
-      authState,
+      authAccess,
       config,
       clusters,
       addClustersLoading,
@@ -162,14 +162,14 @@ export const View = function () {
     function () {
       if (
         baseUrl &&
-        authState.hasCredentials() &&
+        authAccess.hasCredentials() &&
         !configLoading &&
         !configLoaded
       ) {
         configActions.load(baseUrl);
       }
     },
-    [baseUrl, authState, configLoading, configLoaded, configActions]
+    [baseUrl, authAccess, configLoading, configLoaded, configActions]
   );
 
   // 2. authenticate
@@ -180,12 +180,12 @@ export const View = function () {
           setErrorMessage(configError);
         } else if (!authLoading && !authLoaded) {
           setErrorMessage(null);
-          if (authState.isValid()) {
+          if (authAccess.isValid()) {
             // skip authentication, go straight for the clusters
             authActions.setAuthenticated();
-          } else if (authState.hasCredentials()) {
+          } else if (authAccess.hasCredentials()) {
             authActions.authenticate({
-              authState,
+              authAccess,
               baseUrl,
               config,
             });
@@ -194,7 +194,7 @@ export const View = function () {
       }
     },
     [
-      authState,
+      authAccess,
       baseUrl,
       configLoading,
       configLoaded,
@@ -215,9 +215,9 @@ export const View = function () {
         baseUrl &&
         config &&
         authLoaded &&
-        authState.isValid()
+        authAccess.isValid()
       ) {
-        clustersActions.load(baseUrl, config, authState);
+        clustersActions.load(baseUrl, config, authAccess);
       } else {
         if (authLoaded && authError) {
           setErrorMessage(authError);
@@ -227,14 +227,14 @@ export const View = function () {
           setErrorMessage(null);
         }
 
-        if (authState.changed) {
-          extActions.setAuthState(authState); // capture any changes
+        if (authAccess.changed) {
+          extActions.setAuthAccess(authAccess); // capture any changes
         }
       }
     },
     [
       baseUrl,
-      authState,
+      authAccess,
       extActions,
       config,
       authLoaded,
@@ -251,10 +251,10 @@ export const View = function () {
   //
 
   console.log(
-    '[View] rendering: loading=%s, configLoading=%s, authState.hasCreds=%s, authLoading=%s, clustersLoading=%s, addClustersLoading=%s, clusters=%s',
+    '[View] rendering: loading=%s, configLoading=%s, authAccess.hasCreds=%s, authLoading=%s, clustersLoading=%s, addClustersLoading=%s, clusters=%s',
     loading,
     configLoading,
-    authState.hasCredentials(),
+    authAccess.hasCredentials(),
     authLoading,
     clustersLoading,
     addClustersLoading,
@@ -268,12 +268,12 @@ export const View = function () {
       <Login
         loading={loading}
         baseUrl={baseUrl || undefined}
-        username={authState ? authState.username : undefined}
-        password={authState ? authState.password : undefined}
+        username={authAccess ? authAccess.username : undefined}
+        password={authAccess ? authAccess.password : undefined}
         onLogin={handleLogin}
       />
       {errorMessage ? <Error>{errorMessage}</Error> : null}
-      {!errorMessage && authState.isValid() && clustersLoaded ? (
+      {!errorMessage && authAccess.isValid() && clustersLoaded ? (
         <>
           <ClusterList clusters={clusters} />
           <button onClick={handleAddClick}>Add selected clusters...</button>
