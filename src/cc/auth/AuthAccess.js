@@ -13,9 +13,9 @@ const hasPassed = function (date) {
 
 /**
  * Captures API authorization tokens and expiries.
- * @class AuthState
+ * @class AuthAccess
  */
-export class AuthState {
+export class AuthAccess {
   /** @static {Object} RTV Typeset (shape) for an API tokens payload. */
   static tokensTs = {
     id_token: [rtv.REQUIRED, rtv.STRING],
@@ -35,12 +35,12 @@ export class AuthState {
   };
 
   /**
-   * @static {Object} RTV Typeset (shape) for a new AuthState instance. All members
+   * @static {Object} RTV Typeset (shape) for a new AuthAccess instance. All members
    *  are expected, which means properties must exist but may have `null` values.
    */
   static specTs = {
-    ...Object.keys(AuthState.tokensTs).reduce((ts, key) => {
-      ts[key] = AuthState.tokensTs[key].concat(); // shallow clone of property typeset
+    ...Object.keys(AuthAccess.tokensTs).reduce((ts, key) => {
+      ts[key] = AuthAccess.tokensTs[key].concat(); // shallow clone of property typeset
 
       if (ts[key][0] === rtv.REQUIRED) {
         // each API property becomes optional, which means it can be `null`, which
@@ -63,7 +63,7 @@ export class AuthState {
    *  is called to set token properties, and `username` is updated to a valid string.
    */
   constructor(spec) {
-    rtv.verify({ spec }, { spec: [rtv.OPTIONAL, AuthState.specTs] });
+    rtv.verify({ spec }, { spec: [rtv.OPTIONAL, AuthAccess.specTs] });
 
     let _changed = false; // true if any property has changed since the last time the flag was reset
     let _token = null;
@@ -94,7 +94,7 @@ export class AuthState {
         return _token;
       },
       set(newValue) {
-        rtv.verify({ token: newValue }, { token: AuthState.specTs.id_token });
+        rtv.verify({ token: newValue }, { token: AuthAccess.specTs.id_token });
         _changed = _changed || _token !== newValue;
         _token = newValue || null; // normalize empty to null
       },
@@ -109,7 +109,7 @@ export class AuthState {
       set(newValue) {
         rtv.verify(
           { expiresIn: newValue },
-          { expiresIn: AuthState.specTs.expires_in }
+          { expiresIn: AuthAccess.specTs.expires_in }
         );
         _changed = _changed || _expiresIn !== newValue;
         _expiresIn = newValue;
@@ -141,7 +141,7 @@ export class AuthState {
       set(newValue) {
         rtv.verify(
           { refreshToken: newValue },
-          { refreshToken: AuthState.specTs.refresh_token }
+          { refreshToken: AuthAccess.specTs.refresh_token }
         );
         _changed = _changed || _refreshToken !== newValue;
         _refreshToken = newValue || null; // normalize empty to null
@@ -157,7 +157,7 @@ export class AuthState {
       set(newValue) {
         rtv.verify(
           { refreshExpiresIn: newValue },
-          { refreshExpiresIn: AuthState.specTs.refresh_expires_in }
+          { refreshExpiresIn: AuthAccess.specTs.refresh_expires_in }
         );
         _changed = _changed || _refreshExpiresIn !== newValue;
         _refreshExpiresIn = newValue;
@@ -189,7 +189,7 @@ export class AuthState {
       set(newValue) {
         rtv.verify(
           { username: newValue },
-          { username: AuthState.specTs.username }
+          { username: AuthAccess.specTs.username }
         );
         _changed = _changed || _username !== newValue;
         _username = newValue || null; // normalize empty to null
@@ -205,7 +205,7 @@ export class AuthState {
       set(newValue) {
         rtv.verify(
           { password: newValue },
-          { password: AuthState.specTs.password }
+          { password: AuthAccess.specTs.password }
         );
         _changed = _changed || _password !== newValue;
         _password = newValue || null; // normalize empty to null
@@ -226,7 +226,7 @@ export class AuthState {
       set(newValue) {
         rtv.verify(
           { idpClientId: newValue },
-          { idpClientId: AuthState.specTs.idpClientId }
+          { idpClientId: AuthAccess.specTs.idpClientId }
         );
         _changed = _changed || _idpClientId !== newValue;
         _idpClientId = newValue;
@@ -295,7 +295,7 @@ export class AuthState {
    * @param {Object} tokens API token payload. See `tokensTs` for expected shape.
    */
   updateTokens(tokens) {
-    rtv.verify({ tokens }, { tokens: AuthState.tokensTs });
+    rtv.verify({ tokens }, { tokens: AuthAccess.tokensTs });
 
     this.token = tokens.id_token;
     this.expiresIn = tokens.expires_in;
@@ -318,9 +318,9 @@ export class AuthState {
 
   /**
    * Serializes this instance to a JSON object for storage. Called automatically
-   *  by `JSON.stringify(authState)`.
+   *  by `JSON.stringify(authAccess)`.
    * @returns {Object} This object can subsequently be used as a `spec` object
-   *  to create a new `AuthState` instance.
+   *  to create a new `AuthAccess` instance.
    */
   toJSON() {
     return {

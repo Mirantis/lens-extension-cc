@@ -8,7 +8,7 @@ import path from 'path';
 import { AuthClient } from '../auth/clients/AuthClient';
 import { Store } from '@k8slens/extensions';
 import { kubeConfigTemplate } from '../templates';
-import { AuthState } from '../auth/AuthState';
+import { AuthAccess } from '../auth/AuthAccess';
 import { every } from '../util';
 import pkg from '../../../package.json';
 
@@ -96,12 +96,12 @@ const _initialize = function () {
  * @param {Cluster} options.cluster
  * @param {string} options.baseUrl MCC URL. Must NOT end with a slash.
  * @param {Object} options.config MCC Config object.
- * @param {AuthState} options.username
+ * @param {AuthAccess} options.username
  * @param {string} options.password
  * @param {boolean} [options.offline] If true, the refresh token generated for the
  *  clusters will be enabled for offline access. WARNING: This is less secure
  *  than a normal refresh token as it will never expire.
- * @returns {Promise<Object>} On success, `{authState: AuthState}`, a new AuthState
+ * @returns {Promise<Object>} On success, `{authAccess: AuthAccess}`, a new AuthAccess
  *  object that contains the token information; on error, `{error: string}`.
  */
 const _getClusterAccess = async function ({
@@ -125,9 +125,8 @@ const _getClusterAccess = async function ({
     return { error };
   }
 
-  // DEBUG TODO: rename AuthState to AuthAccess, and authState to authAccess everywhere
   return {
-    authState: new AuthState({
+    authAccess: new AuthAccess({
       ...body,
       username,
       password,
@@ -141,7 +140,7 @@ const _getClusterAccess = async function ({
  * @param {Cluster} options.cluster
  * @param {string} options.baseUrl MCC URL. Must NOT end with a slash.
  * @param {Object} options.config MCC Config object.
- * @param {AuthState} options.username
+ * @param {AuthAccess} options.username
  * @param {string} options.password
  * @param {boolean} [options.offline] If true, the refresh token generated for the
  *  clusters will be enabled for offline access. WARNING: This is less secure
@@ -159,7 +158,7 @@ const _createClusterFile = async function ({
 }) {
   const errPrefix = `Failed to create a Kube Config file for cluster ${cluster.id}`;
 
-  const { error: accessError, authState } = await _getClusterAccess({
+  const { error: accessError, authAccess } = await _getClusterAccess({
     cluster,
     baseUrl,
     config,
@@ -173,9 +172,9 @@ const _createClusterFile = async function ({
   }
 
   const json = kubeConfigTemplate({
-    username: authState.username,
-    token: authState.token,
-    refreshToken: authState.refreshToken,
+    username: authAccess.username,
+    token: authAccess.token,
+    refreshToken: authAccess.refreshToken,
     cluster,
   });
 
@@ -197,7 +196,7 @@ const _createClusterFile = async function ({
  * @param {Array<Cluster>} options.clusters
  * @param {string} options.baseUrl MCC URL. Must NOT end with a slash.
  * @param {Object} options.config MCC Config object.
- * @param {AuthState} options.username Used to generate access tokens for MCC clusters.
+ * @param {AuthAccess} options.username Used to generate access tokens for MCC clusters.
  * @param {string} options.password User password.
  * @param {boolean} [options.offline] If true, the refresh token generated for the
  *  clusters will be enabled for offline access. WARNING: This is less secure
@@ -280,7 +279,7 @@ export const useAddClusters = function () {
        * @param {Array<Cluster>} options.clusters
        * @param {string} options.baseUrl MCC URL. Must NOT end with a slash.
        * @param {Object} options.config MCC Config object.
-       * @param {AuthState} options.username Used to generate access tokens for MCC clusters.
+       * @param {AuthAccess} options.username Used to generate access tokens for MCC clusters.
        * @param {string} options.password User password.
        * @param {boolean} [options.offline] If true, the refresh token generated for the
        *  clusters will be enabled for offline access. WARNING: This is less secure

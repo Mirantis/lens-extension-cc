@@ -69,22 +69,22 @@ const _reset = function (setState, loading = false) {
 /**
  * [ASYNC] Authenticate with MCC and get authorization tokens.
  * @param {Object} options
- * @param {AuthState} options.authState Current authentication information. This
+ * @param {AuthAccess} options.authAccess Current authentication information. This
  *  instance WILL be cleared and updated with new tokens.
  * @param {string} options.baseUrl MCC URL. Must NOT end with a slash.
  * @param {Object} options.config MCC Config object.
  * @param {function} setState Function to call to update the context's state.
  */
 const _authenticate = async function (
-  { authState, config, baseUrl },
+  { authAccess, config, baseUrl },
   setState
 ) {
   _reset(setState, true);
 
   const authClient = new AuthClient(baseUrl, config);
   const { error, body } = await authClient.getToken(
-    authState.username,
-    authState.password
+    authAccess.username,
+    authAccess.password
   );
 
   store.loading = false;
@@ -92,7 +92,7 @@ const _authenticate = async function (
   store.error = error || undefined;
 
   if (!error) {
-    authState.updateTokens(body);
+    authAccess.updateTokens(body);
   }
 
   _onStateChanged(setState);
@@ -126,7 +126,7 @@ export const useAuth = function () {
       /**
        * Authenticates with the MCC server.
        * @param {Object} options
-       * @param {AuthState} options.authState Current authentication information.
+       * @param {AuthAccess} options.authAccess Current authentication information.
        *  This instance WILL be cleared and updated with new tokens.
        * @param {string} options.baseUrl MCC URL. Must NOT end with a slash.
        * @param {Object} options.config MCC Config object.
@@ -141,7 +141,7 @@ export const useAuth = function () {
 
       /**
        * Imperatively Update the loaded state to `true`. Use this if you already
-       *  have a valid AuthState instance and don't need to authenticate.
+       *  have a valid AuthAccess instance and don't need to authenticate.
        */
       setAuthenticated() {
         if (!store.loading) {
