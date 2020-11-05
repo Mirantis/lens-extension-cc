@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import propTypes from 'prop-types';
 import styled from '@emotion/styled';
 import { useExtState } from './store/ExtStateProvider';
 import { useConfig } from './store/ConfigProvider';
@@ -281,4 +282,8 @@ export const View = function () {
       ) : undefined}
     </ViewContainer>
   );
+};
+
+View.propTypes = {
+  extension: propTypes.object.isRequired, // @type {LensRendererExtension}
 };
