@@ -171,7 +171,7 @@ const _createClusterFile = async function ({
     return { error: `${errPrefix}: ${accessError}` };
   }
 
-  const json = kubeConfigTemplate({
+  const kc = kubeConfigTemplate({
     username: authAccess.username,
     token: authAccess.token,
     refreshToken: authAccess.refreshToken,
@@ -182,12 +182,28 @@ const _createClusterFile = async function ({
 
   try {
     // overwrite if already exists for some reason (failed to delete last time?)
-    await fs.writeFile(kubeConfigPath, JSON.stringify(json, undefined, 2));
+    await fs.writeFile(kubeConfigPath, JSON.stringify(kc, undefined, 2));
   } catch (err) {
     return { error: `${errPrefix}: ${err.message}` };
   }
 
-  return { model: { kubeConfigPath } };
+
+  // id - unique id (up to extension to decide what it is)
+  // contextName - used contextName in given kubeConfig
+  // workspace: workspace id, all clusters need to belong to a workspace (there is “default” workspace always available)
+
+  return {
+    model: {
+      kubeConfigPath,
+      id: cluster.id, // can be anything provided it's unique
+      contextName: kc.contexts[0].name, // must be same context name used in the Kube Config file
+      workspace: Store.workspaceStore.currentWorkspaceId,
+
+      // ownerRef: unique ref/id (up to extension to decide what it is), if unset
+      //  then Lens allows the user to remove the cluster; otherwise, only the
+      //  extension itself can remove it
+    }
+  };
 };
 
 /**
@@ -232,12 +248,6 @@ const _addToLens = async function (
     results.forEach(({ model }) => {
       Store.clusterStore.addCluster(model);
     });
-
-    // now delete the kube configs since they are no longer needed (ignoring failures, if any)
-    // DEBUG
-    // await every(results.map(({ model }) =>
-    //   fs.unlink(model.kubeConfigPath)
-    // ));
 
     store.loading = false;
     store.loaded = true;
