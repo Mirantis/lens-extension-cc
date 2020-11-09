@@ -3,21 +3,12 @@
 //
 
 import React, { createContext, useContext, useState, useMemo } from 'react';
-import { promises as fs, mkdirSync } from 'fs';
+import { promises as fs } from 'fs';
 import path from 'path';
 import { AuthClient } from '../auth/clients/AuthClient';
 import { Store } from '@k8slens/extensions';
 import { kubeConfigTemplate } from '../templates';
 import { AuthAccess } from '../auth/AuthAccess';
-import { every } from '../util';
-import pkg from '../../../package.json';
-
-// @type {string} absolute path to the directory where Kube Config files are
-//  generated prior to clusters being added to Lens (this ends-up being located
-//  in the extension's `./dist` directory
-const CONFIGS_PATH = path.resolve(__dirname, 'kubeConfigs');
-
-let initialized = false; // {boolean} true if the provider has been one-time initialized
 
 //
 // Store
@@ -80,17 +71,6 @@ const _reset = function (setState, loading = false) {
   _onStateChanged(setState);
 };
 
-/** One-time initialization of this Provider. */
-const _initialize = function () {
-  try {
-    mkdirSync(CONFIGS_PATH, { recursive: true }); // like `mkdir -p`
-  } catch (err) {
-    console.error(
-      `[${pkg.name}] ERROR: Failed to create ${CONFIGS_PATH} directory to store Kube Config files: ${err.message}`
-    );
-  }
-};
-
 /**
  * [ASYNC] Gets access tokens for the specified cluster.
  * @param {Cluster} options.cluster
@@ -136,8 +116,9 @@ const _getClusterAccess = async function ({
 };
 
 /**
- * [ASYNC] Creates a Kube Config file for the given cluster on the local disk.
+ * [ASYNC] Creates a kubeconfig file for the given cluster on the local disk.
  * @param {Cluster} options.cluster
+ * @param {string} options.savePath Absolute path where kubeconfigs are to be saved.
  * @param {string} options.baseUrl MCC URL. Must NOT end with a slash.
  * @param {Object} options.config MCC Config object.
  * @param {AuthAccess} options.username
@@ -150,13 +131,14 @@ const _getClusterAccess = async function ({
  */
 const _createClusterFile = async function ({
   cluster,
+  savePath,
   baseUrl,
   config,
   username,
   password,
   offline = false,
 }) {
-  const errPrefix = `Failed to create a Kube Config file for cluster ${cluster.id}`;
+  const errPrefix = `Failed to create kubeconfig file for cluster ${cluster.id}`;
 
   const { error: accessError, authAccess } = await _getClusterAccess({
     cluster,
@@ -178,7 +160,10 @@ const _createClusterFile = async function ({
     cluster,
   });
 
-  const kubeConfigPath = path.resolve(CONFIGS_PATH, `${cluster.id}.json`);
+  const kubeConfigPath = path.resolve(
+    savePath,
+    `${cluster.namespace}-${cluster.name}-${cluster.id}.json`
+  );
 
   try {
     // overwrite if already exists for some reason (failed to delete last time?)
@@ -186,7 +171,6 @@ const _createClusterFile = async function ({
   } catch (err) {
     return { error: `${errPrefix}: ${err.message}` };
   }
-
 
   // id - unique id (up to extension to decide what it is)
   // contextName - used contextName in given kubeConfig
@@ -196,20 +180,21 @@ const _createClusterFile = async function ({
     model: {
       kubeConfigPath,
       id: cluster.id, // can be anything provided it's unique
-      contextName: kc.contexts[0].name, // must be same context name used in the Kube Config file
+      contextName: kc.contexts[0].name, // must be same context name used in the kubeconfig file
       workspace: Store.workspaceStore.currentWorkspaceId,
 
       // ownerRef: unique ref/id (up to extension to decide what it is), if unset
       //  then Lens allows the user to remove the cluster; otherwise, only the
       //  extension itself can remove it
-    }
+    },
   };
 };
 
 /**
  * [ASYNC] Add the specified clusters to Lens.
  * @param {Object} options
- * @param {Array<Cluster>} options.clusters
+ * @param {Array<Cluster>} options.clusters Clusters to add.
+ * @param {string} options.savePath Absolute path where kubeconfigs are to be saved.
  * @param {string} options.baseUrl MCC URL. Must NOT end with a slash.
  * @param {Object} options.config MCC Config object.
  * @param {AuthAccess} options.username Used to generate access tokens for MCC clusters.
@@ -220,7 +205,7 @@ const _createClusterFile = async function ({
  * @param {function} setState Function to call to update the context's state.
  */
 const _addToLens = async function (
-  { clusters, baseUrl, config, username, password, offline = false },
+  { clusters, savePath, baseUrl, config, username, password, offline = false },
   setState
 ) {
   _reset(setState, true);
@@ -228,6 +213,7 @@ const _addToLens = async function (
   const promises = clusters.map((cluster) =>
     _createClusterFile({
       cluster,
+      savePath,
       baseUrl,
       config,
       username,
@@ -286,7 +272,8 @@ export const useAddClusters = function () {
       /**
        * [ASYNC] Add the specified clusters to Lens.
        * @param {Object} options
-       * @param {Array<Cluster>} options.clusters
+       * @param {Array<Cluster>} options.clusters Clusters to add.
+       * @param {string} options.savePath Absolute path where kubeconfigs are to be saved.
        * @param {string} options.baseUrl MCC URL. Must NOT end with a slash.
        * @param {Object} options.config MCC Config object.
        * @param {AuthAccess} options.username Used to generate access tokens for MCC clusters.
@@ -296,8 +283,12 @@ export const useAddClusters = function () {
        *  than a normal refresh token as it will never expire.
        */
       addToLens(options) {
-        if (!store.loading || options.clusters.length <= 0) {
-          console.log('[AddClustersProvider] adding...'); // DEBUG
+        if (!store.loading && options.clusters.length > 0) {
+          console.log(
+            '[AddClustersProvider] adding %s clusters to %s...',
+            options.clusters.length,
+            options.savePath
+          ); // DEBUG
           _addToLens(options, setState);
         }
       },
@@ -319,11 +310,6 @@ export const AddClustersProvider = function (props) {
   //  that is a shallow clone of the `store`
   const [state, setState] = useState(_cloneStore());
   const value = useMemo(() => [state, setState], [state]);
-
-  if (!initialized) {
-    _initialize();
-    initialized = true;
-  }
 
   return <AddClustersContext.Provider value={value} {...props} />;
 };

@@ -1,11 +1,12 @@
 import { LensMainExtension, windowManager } from '@k8slens/extensions';
 import { getAddUrl } from './routes';
+import * as strings from './strings';
 
 export default class ExtensionMain extends LensMainExtension {
   appMenus = [
     {
       parentId: 'file',
-      label: 'Add Cloud Cluster',
+      label: strings.extension.menu['label'](),
       click() {
         windowManager.navigate(getAddUrl());
       },

@@ -8,14 +8,11 @@ import { useClusters } from './store/ClustersProvider';
 import { useAddClusters } from './store/AddClustersProvider';
 import { Login } from './Login';
 import { ClusterList } from './ClusterList';
+import { AddClusters } from './AddClusters';
+import * as strings from '../strings';
+import { layout } from './theme';
 
-const Error = styled.p(function () {
-  return {
-    color: 'red',
-  };
-});
-
-const ViewContainer = styled.div(function () {
+const Container = styled.div(function () {
   // NOTE: Lens applies these styles to immediate children of its global page
   //  container:
   //  ```
@@ -31,8 +28,10 @@ const ViewContainer = styled.div(function () {
   //  ```
   //  This means ViewContainer is a flex child, and also doesn't need width/height.
   return {
-    display: 'flex',
-    flexDirection: 'column',
+    // NOTE: Emotion doesn't auto-add the 'px' units suffix when assigning CSS variables
+    '--flex-gap': `${layout.gap}px`, // override default (1em), match what Lens seems to use
+
+    padding: layout.gap,
 
     // Lens wants to set all immediate children `ClusterManager main > * > *`
     //  to have `flex: 1`, which doesn't work for the layout we want, so
@@ -41,13 +40,26 @@ const ViewContainer = styled.div(function () {
       flex: 'none !important',
     },
 
-    '> .ClusterList': {
+    '> .lecc-ClusterList': {
       flex: '1 0 auto !important',
     },
 
     button: {
       width: 200,
     },
+  };
+});
+
+// DEBUG TODO: Lens may already have an error notification type thing to use?
+const Error = styled.p(function () {
+  return {
+    backgroundColor: 'var(--colorError)',
+    borderColor: 'var(--colorSoftError)',
+    borderWidth: 1,
+    borderStyle: 'solid',
+    borderRadius: layout.grid,
+    color: 'white',
+    padding: layout.pad,
   };
 });
 
@@ -97,6 +109,10 @@ export const View = function () {
 
   const [errorMessage, setErrorMessage] = useState(null); // @type {string}
 
+  // @type {null|Array<Cluster>} null until clusters are loaded, then an array
+  //  that represents the current selection, could be empty
+  const [selectedClusters, setSelectedClusters] = useState(null);
+
   const loading =
     configLoading ||
     (configLoaded &&
@@ -105,7 +121,8 @@ export const View = function () {
       authAccess.hasCredentials()) ||
     authLoading ||
     (authLoaded && !authError && !clustersLoaded) ||
-    clustersLoading;
+    clustersLoading ||
+    addClustersLoading;
 
   //
   // EVENTS
@@ -113,8 +130,6 @@ export const View = function () {
 
   const handleLogin = useCallback(
     function (info) {
-      setErrorMessage(null);
-
       authAccess.username = info.username;
       authAccess.password = info.password;
 
@@ -125,22 +140,45 @@ export const View = function () {
       extActions.setAuthAccess(authAccess);
       authActions.reset();
       clustersActions.reset();
+      setErrorMessage(null);
 
-      configActions.load(url); // implicit reset
+      configActions.load(url); // implicit reset of current config
     },
     [authAccess, extActions, authActions, clustersActions, configActions]
   );
 
-  const handleAddClick = useCallback(
-    async function () {
+  const handleClusterSelection = useCallback(
+    function ({ cluster, selected }) {
+      const idx = selectedClusters.indexOf(cluster);
+      if (selected && idx < 0) {
+        setSelectedClusters(selectedClusters.concat(cluster));
+      } else if (!selected && idx >= 0) {
+        const newSelection = selectedClusters.concat();
+        newSelection.splice(idx, 1);
+        setSelectedClusters(newSelection);
+      }
+    },
+    [selectedClusters]
+  );
+
+  const handleClusterSelectAll = useCallback(
+    function ({ selected }) {
+      setSelectedClusters(selected ? clusters.concat() : []);
+    },
+    [clusters]
+  );
+
+  const handleClustersAdd = useCallback(
+    function ({ savePath, offline }) {
       if (!addClustersLoading) {
         addClustersActions.addToLens({
-          clusters,
+          clusters: selectedClusters,
+          savePath,
           baseUrl,
           config,
           username: authAccess.username,
           password: authAccess.password,
-          // DEBUG TODO: add offline choice with `offline: true/false` option
+          offline,
         });
       }
     },
@@ -148,7 +186,7 @@ export const View = function () {
       baseUrl,
       authAccess,
       config,
-      clusters,
+      selectedClusters,
       addClustersLoading,
       addClustersActions,
     ]
@@ -157,6 +195,33 @@ export const View = function () {
   //
   // EFFECTS
   //
+
+  // display any error messages that might come up
+  useEffect(
+    function () {
+      if (configLoaded && configError) {
+        setErrorMessage(configError);
+      } else if (authLoaded && authError) {
+        setErrorMessage(authError);
+      } else if (clustersLoaded && clustersError) {
+        setErrorMessage(clustersError);
+      } else if (addClustersLoaded && addClustersError) {
+        setErrorMessage(addClustersError);
+      } else {
+        setErrorMessage(null);
+      }
+    },
+    [
+      configLoaded,
+      configError,
+      authLoaded,
+      authError,
+      clustersLoaded,
+      clustersError,
+      addClustersLoaded,
+      addClustersError,
+    ]
+  );
 
   // 1. load the config object
   useEffect(
@@ -176,38 +241,39 @@ export const View = function () {
   // 2. authenticate
   useEffect(
     function () {
-      if (!configLoading && configLoaded) {
-        if (configError) {
-          setErrorMessage(configError);
-        } else if (!authLoading && !authLoaded) {
-          setErrorMessage(null);
-          if (authAccess.isValid()) {
-            // skip authentication, go straight for the clusters
-            authActions.setAuthenticated();
-          } else if (authAccess.hasCredentials()) {
-            authActions.authenticate({
-              authAccess,
-              baseUrl,
-              config,
-            });
-          }
+      if (
+        !configLoading &&
+        configLoaded &&
+        !configError &&
+        !authLoading &&
+        !authLoaded
+      ) {
+        if (authAccess.isValid()) {
+          // skip authentication, go straight for the clusters
+          authActions.setAuthenticated();
+        } else if (authAccess.hasCredentials()) {
+          authActions.authenticate({
+            authAccess,
+            baseUrl,
+            config,
+          });
         }
       }
     },
     [
-      authAccess,
-      baseUrl,
       configLoading,
       configLoaded,
       configError,
-      config,
       authLoading,
       authLoaded,
       authActions,
+      authAccess,
+      baseUrl,
+      config,
     ]
   );
 
-  // 3. get namespaces and clusters
+  // 3. get clusters
   useEffect(
     function () {
       if (
@@ -219,18 +285,8 @@ export const View = function () {
         authAccess.isValid()
       ) {
         clustersActions.load(baseUrl, config, authAccess);
-      } else {
-        if (authLoaded && authError) {
-          setErrorMessage(authError);
-        } else if (clustersLoaded && clustersError) {
-          setErrorMessage(clustersError);
-        } else {
-          setErrorMessage(null);
-        }
-
-        if (authAccess.changed) {
-          extActions.setAuthAccess(authAccess); // capture any changes
-        }
+      } else if (authAccess.changed) {
+        extActions.setAuthAccess(authAccess); // capture any changes after loading clusters
       }
     },
     [
@@ -239,12 +295,23 @@ export const View = function () {
       extActions,
       config,
       authLoaded,
-      authError,
       clustersLoading,
       clustersLoaded,
-      clustersError,
       clustersActions,
     ]
+  );
+
+  // 4. set initial selection after cluster load
+  useEffect(
+    function () {
+      if (clustersLoading && selectedClusters) {
+        setSelectedClusters(null); // clear selection because we (re-)loading clusters
+      } else if (clustersLoaded && !selectedClusters) {
+        // set initial selection
+        setSelectedClusters(clusters.concat()); // shallow clone the array to disassociate from source
+      }
+    },
+    [clustersLoading, clustersLoaded, clusters, selectedClusters]
   );
 
   //
@@ -264,8 +331,12 @@ export const View = function () {
   ); // DEBUG
 
   return (
-    <ViewContainer>
-      <h1>Add Mirantis Container Cloud Clusters</h1>
+    <Container className="lecc-View flex column gaps">
+      <h1>{strings.view.title()}</h1>
+      {errorMessage ? (
+        // DEBUG TODO switch to adding/removing Notification to Lens?
+        <Error>{errorMessage}</Error>
+      ) : null}
       <Login
         loading={loading}
         baseUrl={baseUrl || undefined}
@@ -273,14 +344,21 @@ export const View = function () {
         password={authAccess ? authAccess.password : undefined}
         onLogin={handleLogin}
       />
-      {errorMessage ? <Error>{errorMessage}</Error> : null}
-      {!errorMessage && authAccess.isValid() && clustersLoaded ? (
+      {!errorMessage &&
+      authAccess.isValid() &&
+      clustersLoaded &&
+      selectedClusters ? (
         <>
-          <ClusterList clusters={clusters} />
-          <button onClick={handleAddClick}>Add selected clusters...</button>
+          <ClusterList
+            clusters={clusters}
+            selectedClusters={selectedClusters}
+            onSelection={handleClusterSelection}
+            onSelectAll={handleClusterSelectAll}
+          />
+          <AddClusters clusters={selectedClusters} onAdd={handleClustersAdd} />
         </>
       ) : undefined}
-    </ViewContainer>
+    </Container>
   );
 };
 

@@ -2,6 +2,7 @@ import React from 'react';
 import { LensRendererExtension, Navigation } from '@k8slens/extensions';
 import { addRoute, getAddUrl } from './routes';
 import { AddClusterIcon, AddClusterPage } from './page';
+import * as strings from './strings';
 
 export default class ExtensionRenderer extends LensRendererExtension {
   globalPages = [
@@ -23,7 +24,7 @@ export default class ExtensionRenderer extends LensRendererExtension {
           onClick={() => Navigation.navigate(getAddUrl())}
         >
           <AddClusterIcon />
-          <span>Add Cloud Cluster</span>
+          <span>{strings.extension.statusBar['label']()}</span>
         </div>
       ),
     },
