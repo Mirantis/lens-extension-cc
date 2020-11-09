@@ -18,6 +18,7 @@
  *   provided in the resolved object.
  */
 export const every = function (promises) {
+  // DEBUG no longer needed? save this somewhere for the future...
   return new Promise(function (resolve) {
     const output = { results: [], errors: [] };
 

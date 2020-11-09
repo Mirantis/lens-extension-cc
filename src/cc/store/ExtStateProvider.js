@@ -21,6 +21,7 @@ const extStateTs = {
   ], // MCC UI URL, does NOT end with a slash
   username: [rtv.EXPECTED, rtv.STRING],
   authAccess: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: AuthAccess }],
+  savePath: [rtv.EXPECTED, rtv.STRING], // absolute path on local system where to save kubeconfig files
 };
 
 let stateLoaded = false; // {boolean} true if the state has been loaded from storage
@@ -29,11 +30,19 @@ let stateLoaded = false; // {boolean} true if the state has been loaded from sto
 // Store
 //
 
+/** @returns {Object} A new store object in its initial state. */
+const _mkNewStore = function () {
+  return {
+    baseUrl: null,
+    username: null,
+    authAccess: new AuthAccess(),
+    savePath: __dirname, // extension's `./dist` directory by default
+  };
+};
+
 // the store defines the initial state and contains the current state
 const store = {
-  baseUrl: null,
-  username: null,
-  authAccess: new AuthAccess(),
+  ..._mkNewStore(),
 };
 
 //
@@ -137,6 +146,15 @@ const _onStateChanged = function (setState) {
   _triggerContextUpdate(setState);
 };
 
+/**
+ * Resets store state forgetting ALL previous data.
+ * @param {function} setState Function to call to update the context's state.
+ */
+const _reset = function (setState) {
+  Object.assign(store, _mkNewStore()); // replace all properties with totally new ones
+  _onStateChanged(setState);
+};
+
 //
 // Provider Definition
 //
@@ -164,25 +182,16 @@ export const useExtState = function () {
     actions: {
       /** Reset the state, forgetting all data. */
       reset() {
-        let changed = false;
-
-        Object.keys(store).forEach((key) => {
-          changed = changed || store[key] !== null;
-          store[key] = null;
-        });
-
-        if (changed) {
-          _onStateChanged(setState);
-        }
+        _reset(setState);
       },
 
       /**
        * Sets a new AuthAccess object into the store.
-       * @param {AuthAccess|null} newAuthAccess
+       * @param {AuthAccess|null} newValue
        */
-      setAuthAccess(newAuthAccess) {
-        store.authAccess = newAuthAccess;
-        store.username = newAuthAccess ? newAuthAccess.username : null;
+      setAuthAccess(newValue) {
+        store.authAccess = newValue;
+        store.username = newValue ? newValue.username : null;
 
         if (store.authAccess) {
           // mark it as no longer being changed if it was
@@ -194,10 +203,19 @@ export const useExtState = function () {
 
       /**
        * Updates the MCC base URL.
-       * @param {string} newBaseUrl Must not end with a slash.
+       * @param {string} newValue Must not end with a slash.
        */
-      setBaseUrl(newBaseUrl) {
-        store.baseUrl = newBaseUrl;
+      setBaseUrl(newValue) {
+        store.baseUrl = newValue;
+        _onStateChanged(setState);
+      },
+
+      /**
+       * Updates the save path where kubeconfig files should be saved on the local system.
+       * @param {string} newValue Must not end with a slash.
+       */
+      setSavePath(newValue) {
+        store.savePath = newValue;
         _onStateChanged(setState);
       },
     },

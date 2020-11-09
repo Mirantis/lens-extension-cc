@@ -163,7 +163,12 @@ const _deserializeClustersList = function (body) {
  *  on error `{error: string}`. The error will be the first-found error out of
  *  all namespaces on which cluster retrieval was attempted.
  */
-const _fetchClusters = async function (baseUrl, config, authAccess, namespaces) {
+const _fetchClusters = async function (
+  baseUrl,
+  config,
+  authAccess,
+  namespaces
+) {
   const results = await Promise.all(
     namespaces.map((namespaceName) =>
       authedRequest({

@@ -2,15 +2,12 @@ import React, { useState, useEffect } from 'react';
 import propTypes from 'prop-types';
 import styled from '@emotion/styled';
 import { layout } from './theme';
+import * as strings from '../strings';
 
 const gap = layout.grid * 4;
 
-const LoginContainer = styled.div(function () {
+const Section = styled.section(function () {
   return {
-    display: 'flex',
-    flexDirection: 'column',
-    padding: gap,
-
     button: {
       width: layout.grid * 30,
       marginTop: gap,
@@ -85,41 +82,46 @@ export const Login = function (props) {
   const { loading } = props;
 
   return (
-    <LoginContainer className="Login">
+    <Section className="lecc-Login flex column gap">
+      <h2>{strings.login.title()}</h2>
       <Field>
-        <label htmlFor="login-url">MCC URL:</label>
+        <label htmlFor="lecc-login-url">{strings.login.url.label()}</label>
         <input
           type="text"
-          id="login-url"
+          id="lecc-login-url"
           disabled={loading}
           value={baseUrl}
           onChange={handleUrlChange}
         />
       </Field>
       <Field>
-        <label htmlFor="login-username">Username:</label>
+        <label htmlFor="lecc-login-username">
+          {strings.login.username.label()}
+        </label>
         <input
           type="text"
-          id="login-username"
+          id="lecc-login-username"
           disabled={loading}
           value={username}
           onChange={handleUsernameChange}
         />
       </Field>
       <Field>
-        <label htmlFor="login-password">Password:</label>
+        <label htmlFor="lecc-login-password">
+          {strings.login.password.label()}
+        </label>
         <input
           type="password"
-          id="login-password"
+          id="lecc-login-password"
           disabled={loading}
           value={password}
           onChange={handlePasswordChange}
         />
       </Field>
       <button disabled={loading || !valid} onClick={handleClustersClick}>
-        Get clusters...
+        {strings.login.action.label()}
       </button>
-    </LoginContainer>
+    </Section>
   );
 };
 
