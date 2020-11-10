@@ -45,7 +45,7 @@ export const view: Dict = {
 };
 
 export const login: Dict = {
-  title: () => 'MCC Login',
+  title: () => '1. Sign in to MCC',
   url: { label: () => 'MCC URL:' },
   username: { label: () => 'Username:' },
   password: { label: () => 'Password:' },
@@ -55,7 +55,7 @@ export const login: Dict = {
 };
 
 export const clusterList: Dict = {
-  title: () => 'Available Clusters',
+  title: () => '2. Select clusters',
   action: {
     selectAll: {
       label: () => 'Select all',
@@ -67,7 +67,7 @@ export const clusterList: Dict = {
 };
 
 export const addClusters: Dict = {
-  title: () => 'Add to Lens',
+  title: () => '3. Add to Lens',
   location: {
     label: () => 'Location',
     tip: () =>
