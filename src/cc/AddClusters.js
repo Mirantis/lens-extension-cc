@@ -121,7 +121,7 @@ export const AddClusters = function ({ onAdd, clusters }) {
       <Component.Checkbox
         label={strings.addClusters.offline.label()}
         disabled={addingClusters}
-        checked={offline}
+        value={offline}
         onChange={handleOfflineChange}
       />
       <small className="lecc-AddClusters--offline-hint hint">
@@ -148,4 +148,8 @@ export const AddClusters = function ({ onAdd, clusters }) {
 AddClusters.propTypes = {
   clusters: propTypes.arrayOf(propTypes.instanceOf(Cluster)),
   onAdd: propTypes.func, // ({ savePath: string, offline: boolean }) => void
+};
+
+AddClusters.defaultProps = {
+  clusters: [],
 };
