@@ -28,24 +28,61 @@ const Container = styled.div(function () {
   //  ```
   //  This means ViewContainer is a flex child, and also doesn't need width/height.
   return {
-    // NOTE: Emotion doesn't auto-add the 'px' units suffix when assigning CSS variables
-    '--flex-gap': `${layout.gap}px`, // override default (1em), match what Lens seems to use
+    // DEBUG '--flex-gap': `${layout.grid * 6}px`, // override default (1em), match what Lens seems to use
 
     padding: layout.gap,
 
-    // Lens wants to set all immediate children `ClusterManager main > * > *`
-    //  to have `flex: 1`, which doesn't work for the layout we want, so
-    //  forcefully reset
-    '> *': {
-      flex: 'none !important',
-    },
+    // DEBUG REMOVE?
+    // '> *': {
+    //   // Lens wants to set all immediate children `ClusterManager main > * > *`
+    //   //  to have `flex: 1`, which doesn't work for the layout we want, so
+    //   //  forcefully reset
+    //   flex: 'none !important',
 
-    '> .lecc-ClusterList': {
-      flex: '1 0 auto !important',
-    },
+    // DEBUG REMOVE?
+    //   marginBottom: layout.grid * 6,
+    // },
 
-    button: {
-      width: 200,
+    // DEBUG REMOVE?
+    // '> *:last-child': {
+    //   marginBottom: 0,
+    // },
+
+    // DEBUG REMOVE?
+    // '> .lecc-ClusterList': {
+    //   flex: '1 0 auto !important',
+    // },
+  };
+});
+
+const columnStyles = {
+  borderRadius: layout.grid,
+  backgroundColor: 'var(--contentColor)',
+  marginRight: layout.gap,
+  padding: layout.gap,
+
+  '> *': {
+    marginBottom: layout.grid * 6,
+  },
+
+  '> *:last-child': {
+    marginBottom: 0,
+  },
+};
+
+const MainColumn = styled.div(function () {
+  return {
+    ...columnStyles,
+  };
+});
+
+const HelpColumn = styled.div(function () {
+  return {
+    ...columnStyles,
+    marginRight: 0,
+
+    '> p': {
+      marginBottom: layout.gap,
     },
   };
 });
@@ -331,33 +368,42 @@ export const View = function () {
   ); // DEBUG
 
   return (
-    <Container className="lecc-View flex column gaps">
-      <h1>{strings.view.title()}</h1>
-      {errorMessage ? (
-        // DEBUG TODO switch to adding/removing Notification to Lens?
-        <Error>{errorMessage}</Error>
-      ) : null}
-      <Login
-        loading={loading}
-        baseUrl={baseUrl || undefined}
-        username={authAccess ? authAccess.username : undefined}
-        password={authAccess ? authAccess.password : undefined}
-        onLogin={handleLogin}
+    <Container className="lecc-View flex">
+      <MainColumn className="flex column">
+        <h2>{strings.view.main.title()}</h2>
+        {errorMessage ? (
+          // DEBUG TODO switch to adding/removing Notification to Lens?
+          <Error>{errorMessage}</Error>
+        ) : null}
+        <Login
+          loading={loading}
+          baseUrl={baseUrl || undefined}
+          username={authAccess ? authAccess.username : undefined}
+          password={authAccess ? authAccess.password : undefined}
+          onLogin={handleLogin}
+        />
+        {!errorMessage &&
+        authAccess.isValid() &&
+        clustersLoaded &&
+        selectedClusters ? (
+          <>
+            <ClusterList
+              clusters={clusters} // DEBUG TEST: undefined
+              selectedClusters={selectedClusters} // DEBUG TEST: undefined
+              onSelection={handleClusterSelection}
+              onSelectAll={handleClusterSelectAll}
+            />
+            <AddClusters
+              clusters={selectedClusters}
+              onAdd={handleClustersAdd}
+            />
+          </>
+        ) : undefined}
+      </MainColumn>
+      <HelpColumn
+        className="flex column"
+        dangerouslySetInnerHTML={{ __html: strings.view.help.html() }}
       />
-      {!errorMessage &&
-      authAccess.isValid() &&
-      clustersLoaded &&
-      selectedClusters ? (
-        <>
-          <ClusterList
-            clusters={clusters}
-            selectedClusters={selectedClusters}
-            onSelection={handleClusterSelection}
-            onSelectAll={handleClusterSelectAll}
-          />
-          <AddClusters clusters={selectedClusters} onAdd={handleClustersAdd} />
-        </>
-      ) : undefined}
     </Container>
   );
 };

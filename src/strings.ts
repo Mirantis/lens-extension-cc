@@ -23,7 +23,25 @@ export const extension: Dict = {
 };
 
 export const view: Dict = {
-  title: () => 'Add Mirantis Container Cloud Clusters',
+  main: {
+    title: () => 'Add Mirantis Container Cloud Clusters',
+  },
+  help: {
+    html: () =>
+      `
+<h2>Adding Clusters</h2>
+<p>
+  This extension make it easy to add some or all clusters from an Mirantis Container
+  Cloud instance.
+</p>
+<p>
+  When clusters are added, <code>kubeconfig</code> files are automatically generated
+  for each cluster, and stored in the configured directory. Do not remove the generated
+  files (unless you remove the pertaining cluster from Lens) because Lens references
+  them whenever a related cluster is activated.
+</p>
+`,
+  },
 };
 
 export const login: Dict = {
@@ -32,12 +50,20 @@ export const login: Dict = {
   username: { label: () => 'Username:' },
   password: { label: () => 'Password:' },
   action: {
-    label: () => 'Get clusters...',
+    label: () => 'Get clusters',
   },
 };
 
 export const clusterList: Dict = {
   title: () => 'Available Clusters',
+  action: {
+    selectAll: {
+      label: () => 'Select all',
+    },
+    selectNone: {
+      label: () => 'Select none',
+    },
+  },
 };
 
 export const addClusters: Dict = {
@@ -56,7 +82,7 @@ export const addClusters: Dict = {
       'WARNING: Generating tokens for offline use is less secure because they will never expire',
   },
   action: {
-    label: () => 'Add selected clusters...',
+    label: () => 'Add selected clusters',
     disabledTip: () => 'Select at least one cluster to add',
   },
 };
