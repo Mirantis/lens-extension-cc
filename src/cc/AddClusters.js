@@ -11,10 +11,25 @@ import { Component } from '@k8slens/extensions';
 import { Cluster } from './store/Cluster';
 import { useAddClusters } from './store/AddClustersProvider';
 import { useExtState } from './store/ExtStateProvider';
+import { layout } from './theme';
 import * as strings from '../strings';
 
-const Section = styled.section(function () {
-  // DEBUG TODO any styles needed?
+const Section = styled.section(function ({ offline }) {
+  return {
+    '--flex-gap': `${layout.gap}px`,
+
+    small: {
+      marginTop: -(layout.gap - layout.grid),
+    },
+
+    '.lecc-AddClusters--folder-icon': {
+      marginLeft: -layout.pad,
+    },
+
+    '.lecc-AddClusters--offline-hint': {
+      opacity: offline ? 1.0 : 0.5,
+    },
+  };
 });
 
 export const AddClusters = function ({ onAdd, clusters }) {
@@ -54,6 +69,7 @@ export const AddClusters = function ({ onAdd, clusters }) {
     }
   };
 
+  // DEBUG TODO: when switch to Component.Input, callback signature change to (value: any, event: ChangeEvent) => void
   const handleSavePathChange = function (event) {
     extActions.setSavePath(event.target.value);
   };
@@ -62,8 +78,8 @@ export const AddClusters = function ({ onAdd, clusters }) {
     extActions.setSavePath(savePath.replace('~', os.homedir()));
   };
 
-  const handleOfflineChange = function (event) {
-    setOffline(event.target.checked);
+  const handleOfflineChange = function (checked) {
+    setOffline(checked);
   };
 
   const handleAddClick = function () {
@@ -80,11 +96,11 @@ export const AddClusters = function ({ onAdd, clusters }) {
     '[AddClusters] rendering: addingClusters=%s, clusters.length=%s',
     addingClusters,
     clusters.length
-  );
+  ); // DEBUG
 
   return (
-    <Section className="lecc-AddClusters flex column gaps">
-      <h2>{strings.addClusters.title()}</h2>
+    <Section className="lecc-AddClusters flex column gaps" offline={offline}>
+      <h3>{strings.addClusters.title()}</h3>
       <div className="flex gaps align-center">
         <input // DEBUG TODO: Component.Input causes crash, doesn't seem to be provided
           className="box grow"
@@ -94,6 +110,7 @@ export const AddClusters = function ({ onAdd, clusters }) {
           onBlur={handleSavePathBlur}
         />
         <Component.Icon
+          className="lecc-AddClusters--folder-icon"
           material="folder"
           disabled={addingClusters}
           onClick={handleBrowseClick}
@@ -107,19 +124,23 @@ export const AddClusters = function ({ onAdd, clusters }) {
         checked={offline}
         onChange={handleOfflineChange}
       />
-      <small className="hint">{strings.addClusters.offline.tip()}</small>
-      <Component.Button
-        primary
-        disabled={clusters.length <= 0 || addingClusters}
-        label={strings.addClusters.action.label()}
-        waiting={addingClusters}
-        tooltip={
-          clusters.length <= 0
-            ? strings.addClusters.action.disabledTip()
-            : undefined
-        }
-        onClick={handleAddClick}
-      />
+      <small className="lecc-AddClusters--offline-hint hint">
+        {strings.addClusters.offline.tip()}
+      </small>
+      <div>
+        <Component.Button
+          primary
+          disabled={clusters.length <= 0 || addingClusters}
+          label={strings.addClusters.action.label()}
+          waiting={addingClusters}
+          tooltip={
+            clusters.length <= 0
+              ? strings.addClusters.action.disabledTip()
+              : undefined
+          }
+          onClick={handleAddClick}
+        />
+      </div>
     </Section>
   );
 };
