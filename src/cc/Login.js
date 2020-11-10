@@ -3,21 +3,28 @@ import propTypes from 'prop-types';
 import styled from '@emotion/styled';
 import { Component } from '@k8slens/extensions';
 import { layout } from './theme';
+import { Section } from './Section';
 import * as strings from '../strings';
 
-const Section = styled.section(function () {
-  return {
-    '--flex-gap': `${layout.gap}px`,
-  };
-});
+const urlInputId = 'lecc-login-url';
 
 const Field = styled.div(function () {
   return {
+    display: 'flex',
+    alignItems: 'center',
+    marginBottom: layout.gap,
+
+    ':last-child': {
+      marginBottom: 0,
+    },
+
+    [`#${urlInputId}`]: {
+      flex: 1,
+    },
+
     label: {
-      // NOTE: defining --flex-gap as a Field container style ends-up setting
-      //  the gap not only between children, but also between each Field container,
-      //  rather than just between children, so we have to override here
-      marginRight: `${layout.pad}px !important`, // override --flex-gap
+      minWidth: layout.grid * 17,
+      marginRight: `${layout.pad}px`,
     },
   };
 });
@@ -72,42 +79,38 @@ export const Login = function (props) {
   //
 
   const { loading } = props;
-  const fieldClassnames = 'flex gaps align-center';
 
   return (
-    <Section className="lecc-Login flex column gaps">
+    <Section className="lecc-Login">
       <h3>{strings.login.title()}</h3>
-      <Field className={fieldClassnames}>
-        <label htmlFor="lecc-login-url">{strings.login.url.label()}</label>
+      <Field>
+        <label htmlFor={urlInputId}>{strings.login.url.label()}</label>
         <input // DEBUG TODO: Component.Input causes crash, doesn't seem to be provided
           type="text"
-          id="lecc-login-url"
-          className="box grow"
+          id={urlInputId}
           disabled={loading}
           value={baseUrl}
           onChange={handleUrlChange}
         />
       </Field>
-      <Field className={fieldClassnames}>
+      <Field>
         <label htmlFor="lecc-login-username">
           {strings.login.username.label()}
         </label>
         <input // DEBUG TODO: Component.Input causes crash, doesn't seem to be provided
           type="text"
           id="lecc-login-username"
-          className="box"
           disabled={loading}
           value={username}
           onChange={handleUsernameChange}
         />
       </Field>
-      <Field className={fieldClassnames}>
+      <Field>
         <label htmlFor="lecc-login-password">
           {strings.login.password.label()}
         </label>
         <input // DEBUG TODO: Component.Input causes crash, doesn't seem to be provided
           type="password"
-          className="box"
           id="lecc-login-password"
           disabled={loading}
           value={password}
@@ -116,7 +119,6 @@ export const Login = function (props) {
       </Field>
       <div>
         <Component.Button
-          className="box nogrow"
           primary
           disabled={loading || !valid}
           label={strings.login.action.label()}

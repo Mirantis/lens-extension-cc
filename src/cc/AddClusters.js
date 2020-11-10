@@ -11,23 +11,34 @@ import { Component } from '@k8slens/extensions';
 import { Cluster } from './store/Cluster';
 import { useAddClusters } from './store/AddClustersProvider';
 import { useExtState } from './store/ExtStateProvider';
+import { Section as BaseSection } from './Section';
 import { layout } from './theme';
 import * as strings from '../strings';
 
-const Section = styled.section(function ({ offline }) {
+const Section = styled(BaseSection)(function ({ offline }) {
   return {
-    '--flex-gap': `${layout.gap}px`,
-
     small: {
       marginTop: -(layout.gap - layout.grid),
     },
 
-    '.lecc-AddClusters--folder-icon': {
-      marginLeft: -layout.pad,
-    },
-
     '.lecc-AddClusters--offline-hint': {
       opacity: offline ? 1.0 : 0.5,
+    },
+  };
+});
+
+const SavePath = styled.div(function () {
+  return {
+    display: 'flex',
+    alignItems: 'center',
+
+    input: {
+      flex: 1,
+      marginRight: layout.pad,
+    },
+
+    '.lecc-AddClusters--folder-icon': {
+      flex: 'none',
     },
   };
 });
@@ -99,9 +110,9 @@ export const AddClusters = function ({ onAdd, clusters }) {
   ); // DEBUG
 
   return (
-    <Section className="lecc-AddClusters flex column gaps" offline={offline}>
+    <Section className="lecc-AddClusters" offline={offline}>
       <h3>{strings.addClusters.title()}</h3>
-      <div className="flex gaps align-center">
+      <SavePath>
         <input // DEBUG TODO: Component.Input causes crash, doesn't seem to be provided
           className="box grow"
           value={savePath}
@@ -116,7 +127,7 @@ export const AddClusters = function ({ onAdd, clusters }) {
           onClick={handleBrowseClick}
           tooltip={strings.addClusters.location.icon()}
         />
-      </div>
+      </SavePath>
       <small className="hint">{strings.addClusters.location.tip()}</small>
       <Component.Checkbox
         label={strings.addClusters.offline.label()}

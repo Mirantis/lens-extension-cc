@@ -4,18 +4,13 @@ import styled from '@emotion/styled';
 import { Component } from '@k8slens/extensions';
 import { useAddClusters } from './store/AddClustersProvider';
 import { Cluster } from './store/Cluster';
-import { layout } from './theme';
+import { Section } from './Section';
+import { layout, flexColumnGaps } from './theme';
 import * as strings from '../strings';
-
-const Section = styled.section(function () {
-  return {
-    '--flex-gap': `${layout.gap}px`,
-  };
-});
 
 const CheckList = styled.div(function () {
   return {
-    '--flex-gap': `${layout.pad}px`,
+    ...flexColumnGaps(layout.pad),
 
     backgroundColor: 'var(--mainBackground)',
     padding: layout.pad,
@@ -76,9 +71,9 @@ export const ClusterList = function ({
   };
 
   return (
-    <Section className="lecc-ClusterList flex column gaps">
+    <Section className="lecc-ClusterList">
       <h3>{strings.clusterList.title()}</h3>
-      <CheckList className="flex column gaps">
+      <CheckList>
         {clusters.sort(compareClusters).map((cluster) => (
           <Component.Checkbox
             key={cluster.id}

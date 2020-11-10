@@ -10,7 +10,7 @@ import { Login } from './Login';
 import { ClusterList } from './ClusterList';
 import { AddClusters } from './AddClusters';
 import * as strings from '../strings';
-import { layout } from './theme';
+import { layout, flexColumnGaps } from './theme';
 
 const Container = styled.div(function () {
   // NOTE: Lens applies these styles to immediate children of its global page
@@ -28,46 +28,23 @@ const Container = styled.div(function () {
   //  ```
   //  This means ViewContainer is a flex child, and also doesn't need width/height.
   return {
-    // DEBUG '--flex-gap': `${layout.grid * 6}px`, // override default (1em), match what Lens seems to use
-
+    display: 'flex',
     padding: layout.gap,
-
-    // DEBUG REMOVE?
-    // '> *': {
-    //   // Lens wants to set all immediate children `ClusterManager main > * > *`
-    //   //  to have `flex: 1`, which doesn't work for the layout we want, so
-    //   //  forcefully reset
-    //   flex: 'none !important',
-
-    // DEBUG REMOVE?
-    //   marginBottom: layout.grid * 6,
-    // },
-
-    // DEBUG REMOVE?
-    // '> *:last-child': {
-    //   marginBottom: 0,
-    // },
-
-    // DEBUG REMOVE?
-    // '> .lecc-ClusterList': {
-    //   flex: '1 0 auto !important',
-    // },
   };
 });
 
 const columnStyles = {
+  // as flex children, grow/shrink evenly
+  flex: 1,
+
+  // as flex containers
+  ...flexColumnGaps(layout.grid * 6),
+
   borderRadius: layout.grid,
   backgroundColor: 'var(--contentColor)',
   marginRight: layout.gap,
   padding: layout.gap,
-
-  '> *': {
-    marginBottom: layout.grid * 6,
-  },
-
-  '> *:last-child': {
-    marginBottom: 0,
-  },
+  overflow: 'auto',
 };
 
 const MainColumn = styled.div(function () {
@@ -368,8 +345,8 @@ export const View = function () {
   ); // DEBUG
 
   return (
-    <Container className="lecc-View flex">
-      <MainColumn className="flex column">
+    <Container className="lecc-View">
+      <MainColumn>
         <h2>{strings.view.main.title()}</h2>
         {errorMessage ? (
           // DEBUG TODO switch to adding/removing Notification to Lens?
@@ -382,26 +359,26 @@ export const View = function () {
           password={authAccess ? authAccess.password : undefined}
           onLogin={handleLogin}
         />
-        {!errorMessage &&
+        {!errorMessage /* &&
         authAccess.isValid() &&
         clustersLoaded &&
-        selectedClusters ? (
+        selectedClusters */ ? (
+          // DEBUG
           <>
             <ClusterList
-              clusters={clusters} // DEBUG
-              selectedClusters={selectedClusters} // DEBUG
+              // DEBUG clusters={clusters}
+              // DEBUG selectedClusters={selectedClusters}
               onSelection={handleClusterSelection}
               onSelectAll={handleClusterSelectAll}
             />
             <AddClusters
-              clusters={selectedClusters} // DEBUG
+              // DEBUG clusters={selectedClusters}
               onAdd={handleClustersAdd}
             />
           </>
         ) : undefined}
       </MainColumn>
       <HelpColumn
-        className="flex column"
         dangerouslySetInnerHTML={{ __html: strings.view.help.html() }}
       />
     </Container>
