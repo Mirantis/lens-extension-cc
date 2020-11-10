@@ -388,13 +388,13 @@ export const View = function () {
         selectedClusters ? (
           <>
             <ClusterList
-              clusters={clusters} // DEBUG TEST: undefined
-              selectedClusters={selectedClusters} // DEBUG TEST: undefined
+              clusters={clusters} // DEBUG
+              selectedClusters={selectedClusters} // DEBUG
               onSelection={handleClusterSelection}
               onSelectAll={handleClusterSelectAll}
             />
             <AddClusters
-              clusters={selectedClusters}
+              clusters={selectedClusters} // DEBUG
               onAdd={handleClustersAdd}
             />
           </>

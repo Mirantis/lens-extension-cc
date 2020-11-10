@@ -80,24 +80,13 @@ export const ClusterList = function ({
       <h3>{strings.clusterList.title()}</h3>
       <CheckList className="flex column gaps">
         {clusters.sort(compareClusters).map((cluster) => (
-          // DEBUG
-          // <Component.Checkbox
-          //   key={cluster.id}
-          //   label={`${cluster.namespace} / ${cluster.name}`}
-          //   disabled={addingClusters}
-          //   checked={isClusterSelected(cluster)}
-          //   onChange={(checked) => handleClusterSelect(checked, cluster)}
-          // />
-          <label key={cluster.id}>
-            {`${cluster.namespace} / ${cluster.name}`}
-            <input
-              type="checkbox"
-              checked={isClusterSelected(cluster)}
-              onChange={(event) =>
-                handleClusterSelect(event.target.checked, cluster)
-              }
-            />
-          </label>
+          <Component.Checkbox
+            key={cluster.id}
+            label={`${cluster.namespace} / ${cluster.name}`}
+            disabled={addingClusters}
+            value={isClusterSelected(cluster)}
+            onChange={(checked) => handleClusterSelect(checked, cluster)}
+          />
         ))}
       </CheckList>
       <div>
@@ -126,56 +115,56 @@ ClusterList.propTypes = {
 ClusterList.defaultProps = {
   clusters: [
     // DEBUG REMOVE
-    // {
-    //   id: '0',
-    //   namespace: 'foo',
-    //   name: 'cluster-0',
-    // },
-    // {
-    //   id: '1',
-    //   namespace: 'foo',
-    //   name: 'cluster-1',
-    // },
-    // {
-    //   id: '2',
-    //   namespace: 'foo',
-    //   name: 'cluster-2',
-    // },
-    // {
-    //   id: '3',
-    //   namespace: 'foo',
-    //   name: 'cluster-3',
-    // },
-    // {
-    //   id: '4',
-    //   namespace: 'foo',
-    //   name: 'cluster-4',
-    // },
-    // {
-    //   id: '5',
-    //   namespace: 'bar',
-    //   name: 'cluster-5',
-    // },
-    // {
-    //   id: '6',
-    //   namespace: 'bar',
-    //   name: 'cluster-6',
-    // },
-    // {
-    //   id: '7',
-    //   namespace: 'bar',
-    //   name: 'cluster-7',
-    // },
-    // {
-    //   id: '8',
-    //   namespace: 'bar',
-    //   name: 'cluster-8',
-    // },
-    // {
-    //   id: '9',
-    //   namespace: 'bar',
-    //   name: 'cluster-9',
-    // },
+    {
+      id: '0',
+      namespace: 'foo',
+      name: 'cluster-0',
+    },
+    {
+      id: '1',
+      namespace: 'foo',
+      name: 'cluster-1',
+    },
+    {
+      id: '2',
+      namespace: 'foo',
+      name: 'cluster-2',
+    },
+    {
+      id: '3',
+      namespace: 'foo',
+      name: 'cluster-3',
+    },
+    {
+      id: '4',
+      namespace: 'foo',
+      name: 'cluster-4',
+    },
+    {
+      id: '5',
+      namespace: 'bar',
+      name: 'cluster-5',
+    },
+    {
+      id: '6',
+      namespace: 'bar',
+      name: 'cluster-6',
+    },
+    {
+      id: '7',
+      namespace: 'bar',
+      name: 'cluster-7',
+    },
+    {
+      id: '8',
+      namespace: 'bar',
+      name: 'cluster-8',
+    },
+    {
+      id: '9',
+      namespace: 'bar',
+      name: 'cluster-9',
+    },
   ],
   selectedClusters: [],
 };
