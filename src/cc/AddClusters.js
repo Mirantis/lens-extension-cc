@@ -12,7 +12,7 @@ import { Cluster } from './store/Cluster';
 import { useAddClusters } from './store/AddClustersProvider';
 import { useExtState } from './store/ExtStateProvider';
 import { Section as BaseSection } from './Section';
-import { layout } from './theme';
+import { layout } from './styles';
 import * as strings from '../strings';
 
 const Section = styled(BaseSection)(function ({ offline }) {

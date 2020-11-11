@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { LensRendererExtension } from '@k8slens/extensions';
 import { ThemeProvider } from 'emotion-theming';
 import { View } from './cc/View';
@@ -7,7 +7,7 @@ import { ConfigProvider } from './cc/store/ConfigProvider';
 import { AuthProvider } from './cc/store/AuthProvider';
 import { ClustersProvider } from './cc/store/ClustersProvider';
 import { AddClustersProvider } from './cc/store/AddClustersProvider';
-import { darkTheme } from './cc/theme';
+import { lightThemeClassName, lightTheme, darkTheme } from './cc/theme';
 
 export const AddClusterIcon = function () {
   // this is the current Mirantis Container Cloud icon
@@ -40,9 +40,58 @@ interface Props {
 }
 
 export const AddClusterPage = function ({ extension }: Props) {
-  // DEBUG TODO: how do we know when the theme has changed in Lens preferences?
+  //
+  // STATE
+  //
+
+  const [theme, setTheme] = useState(
+    document.body.classList.contains(lightThemeClassName)
+      ? lightTheme
+      : darkTheme
+  );
+
+  //
+  // EFFECTS
+  //
+
+  useEffect(function () {
+    const observer = new MutationObserver(function (
+      mutations: MutationRecord[]
+    ) {
+      mutations.forEach((mutation: MutationRecord) => {
+        if (
+          mutation.type === 'attributes' &&
+          mutation.attributeName === 'class'
+        ) {
+          if (
+            (mutation.target as HTMLElement).classList.contains(
+              lightThemeClassName
+            )
+          ) {
+            setTheme(lightTheme);
+          } else {
+            setTheme(darkTheme);
+          }
+        }
+      });
+    });
+
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+
+    return function () {
+      observer.disconnect();
+    };
+  }, []); // run once on mount
+
+  //
+  // RENDER
+  //
+
   return (
-    <ThemeProvider theme={darkTheme}>
+    <ThemeProvider theme={theme}>
       <ExtStateProvider>
         <ConfigProvider>
           <AuthProvider>
