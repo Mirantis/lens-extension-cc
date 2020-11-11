@@ -7,6 +7,9 @@
 
 const path = require('path');
 const babelConfig = require('./babel.config');
+const { DefinePlugin } = require('webpack');
+
+const buildTarget = process.env.TARGET || 'production';
 
 const loaders = [
   {
@@ -24,12 +27,19 @@ const loaders = [
   },
 ];
 
+const plugins = [
+  new DefinePlugin({
+    DEV_ENV: JSON.stringify(buildTarget !== 'production'),
+    'process.env.TARGET': JSON.stringify(buildTarget),
+  }),
+];
+
 module.exports = [
   {
     entry: './src/main.ts',
     context: __dirname,
     target: 'electron-main',
-    mode: process.env.TARGET || 'production',
+    mode: buildTarget,
     devtool:
       process.env.TARGET !== 'production' ? 'eval-source-map' : undefined,
     module: {
@@ -42,6 +52,7 @@ module.exports = [
         react: 'var global.React',
       },
     ],
+    plugins,
     resolve: {
       extensions: ['.tsx', '.ts', '.js'],
     },
@@ -55,7 +66,7 @@ module.exports = [
     entry: './src/renderer.tsx',
     context: __dirname,
     target: 'electron-renderer',
-    mode: process.env.TARGET || 'production',
+    mode: buildTarget,
     devtool:
       process.env.TARGET !== 'production' ? 'eval-source-map' : undefined,
     module: {
@@ -68,6 +79,7 @@ module.exports = [
         react: 'var global.React',
       },
     ],
+    plugins,
     resolve: {
       extensions: ['.tsx', '.ts', '.js'],
 

@@ -2,6 +2,7 @@ import { KubernetesClient } from './clients/KubernetesClient';
 import { KubernetesEntityClient } from './clients/KubernetesEntityClient';
 import { KubernetesAuthorizationClient } from './clients/KubernetesAuthorizationClient';
 import { AuthClient } from './clients/AuthClient';
+import * as strings from '../../strings';
 
 const entityToClient = {
   cluster: KubernetesEntityClient,
@@ -65,7 +66,7 @@ export async function refreshToken(baseUrl, config, authAccess) {
   );
 
   if (response && response.status === 400) {
-    return 'Session expired';
+    return strings.authUtil.errors.sessionExpired();
   } else if (error) {
     return error;
   }
@@ -118,7 +119,7 @@ export async function authedRequest({
   // NOTE: it's useless to fetch if we don't have a token, or we can't refresh it
   if (!authAccess.token || authAccess.isRefreshTokenExpired()) {
     authAccess.clearTokens();
-    return { error: 'Invalid credentials', status: 401 };
+    return { error: strings.authUtil.errors.invalidCredentials(), status: 401 };
   }
 
   const Client = entityToClient[entity];

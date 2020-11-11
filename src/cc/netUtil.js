@@ -1,5 +1,6 @@
 import { get } from 'lodash';
 import nodeFetch from 'node-fetch';
+import * as strings from '../strings';
 
 async function tryExtractBody(response, extractMethod) {
   let body = null;
@@ -65,7 +66,7 @@ export async function request(
   } catch (e) {
     return {
       expectedStatuses,
-      error: `${errorMessage || `Network request to ${url} failed`}: ${
+      error: `${errorMessage || strings.netUtil.errors.requestFailed(url)}: ${
         e.message
       }`,
     };
@@ -99,8 +100,8 @@ export async function request(
           response,
           expectedStatuses,
           error:
-            `${errorMessage || `Network request to ${url} failed`}. ` +
-            `Reason: "${message}"`,
+            `${errorMessage || strings.netUtil.errors.requestFailed(url)}. ` +
+            strings.netUtil.errors.reason(message),
         };
       }
     }
@@ -109,10 +110,10 @@ export async function request(
       response,
       expectedStatuses,
       error:
-        `${errorMessage || `Network request to ${url} failed`}. ` +
+        `${errorMessage || strings.netUtil.errors.requestFailed(url)}. ` +
         (response.statusText
-          ? `Server response: "${response.statusText}".`
-          : `Server response code: ${response.status}`),
+          ? strings.netUtil.errors.serverResponse(response.statusText)
+          : strings.netUtil.errors.responseCode(response.status)),
     };
   }
 
@@ -123,7 +124,7 @@ export async function request(
       return {
         response,
         expectedStatuses,
-        error: `Extracting response data for ${url} failed: invalid response format.`,
+        error: strings.netUtil.errors.invalidResponseData(url),
       };
     }
     body = extracted.body;

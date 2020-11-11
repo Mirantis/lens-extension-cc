@@ -1,6 +1,7 @@
 // DEBUG TODO is this client needed?
 
 import { request } from '../../netUtil';
+import * as strings from '../../../strings';
 
 /**
  * @param {string} baseUrl The MCC base URL (i.e. the URL to the MCC UI). Expected to
@@ -49,7 +50,7 @@ export class KubernetesAuthorizationClient {
         }),
       },
       expectedStatuses: [201],
-      errorMessage: `Failed to get user permissions for "${namespaceName}"`,
+      errorMessage: strings.apiClient.errors.failedUserPerms(namespaceName),
     });
   }
 
@@ -66,7 +67,7 @@ export class KubernetesAuthorizationClient {
         }),
       },
       expectedStatuses: [201],
-      errorMessage: 'Failed to get user permissions for projects',
+      errorMessage: strings.apiClient.errors.failedProjectPerms(),
     });
   }
 }

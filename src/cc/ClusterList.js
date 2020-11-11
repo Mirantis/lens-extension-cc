@@ -5,21 +5,23 @@ import { Component } from '@k8slens/extensions';
 import { useAddClusters } from './store/AddClustersProvider';
 import { Cluster } from './store/Cluster';
 import { Section } from './Section';
-import { layout, flexColumnGaps } from './theme';
+import { layout, mixinFlexColumnGaps, mixinCustomScrollbar } from './theme';
 import * as strings from '../strings';
 
-const CheckList = styled.div(function () {
+const CheckList = styled.div(function ({ theme }) {
   return {
-    ...flexColumnGaps(layout.pad),
+    ...mixinFlexColumnGaps(layout.pad),
 
     backgroundColor: 'var(--mainBackground)',
     padding: layout.pad,
-    overflow: 'auto',
+    ...mixinCustomScrollbar({ theme }),
 
     borderRadius: layout.grid,
     borderStyle: 'solid',
     borderWidth: 1,
     borderColor: 'var(--borderColor)',
+
+    boxShadow: '0 0 4px 0 inset var(--boxShadow)',
   };
 });
 

@@ -1,7 +1,5 @@
 import rtv from 'rtvjs';
 
-// DEBUG TODO do we need to provide a way for the user to kill their session (i.e. logout) for security reasons?
-
 /**
  * Determines if a date has passed.
  * @param {Date} date
@@ -63,7 +61,8 @@ export class AuthAccess {
    *  is called to set token properties, and `username` is updated to a valid string.
    */
   constructor(spec) {
-    rtv.verify({ spec }, { spec: [rtv.OPTIONAL, AuthAccess.specTs] });
+    DEV_ENV &&
+      rtv.verify({ spec }, { spec: [rtv.OPTIONAL, AuthAccess.specTs] });
 
     let _changed = false; // true if any property has changed since the last time the flag was reset
     let _token = null;
@@ -94,7 +93,11 @@ export class AuthAccess {
         return _token;
       },
       set(newValue) {
-        rtv.verify({ token: newValue }, { token: AuthAccess.specTs.id_token });
+        DEV_ENV &&
+          rtv.verify(
+            { token: newValue },
+            { token: AuthAccess.specTs.id_token }
+          );
         _changed = _changed || _token !== newValue;
         _token = newValue || null; // normalize empty to null
       },
@@ -107,10 +110,11 @@ export class AuthAccess {
         return _expiresIn;
       },
       set(newValue) {
-        rtv.verify(
-          { expiresIn: newValue },
-          { expiresIn: AuthAccess.specTs.expires_in }
-        );
+        DEV_ENV &&
+          rtv.verify(
+            { expiresIn: newValue },
+            { expiresIn: AuthAccess.specTs.expires_in }
+          );
         _changed = _changed || _expiresIn !== newValue;
         _expiresIn = newValue;
       },
@@ -123,10 +127,11 @@ export class AuthAccess {
         return _tokenValidTill;
       },
       set(newValue) {
-        rtv.verify(
-          { tokenValidTill: newValue },
-          { tokenValidTill: [rtv.EXPECTED, rtv.DATE] }
-        );
+        DEV_ENV &&
+          rtv.verify(
+            { tokenValidTill: newValue },
+            { tokenValidTill: [rtv.EXPECTED, rtv.DATE] }
+          );
         _changed = _changed || _tokenValidTill !== newValue;
         _tokenValidTill = newValue;
       },
@@ -139,10 +144,11 @@ export class AuthAccess {
         return _refreshToken;
       },
       set(newValue) {
-        rtv.verify(
-          { refreshToken: newValue },
-          { refreshToken: AuthAccess.specTs.refresh_token }
-        );
+        DEV_ENV &&
+          rtv.verify(
+            { refreshToken: newValue },
+            { refreshToken: AuthAccess.specTs.refresh_token }
+          );
         _changed = _changed || _refreshToken !== newValue;
         _refreshToken = newValue || null; // normalize empty to null
       },
@@ -155,10 +161,11 @@ export class AuthAccess {
         return _refreshExpiresIn;
       },
       set(newValue) {
-        rtv.verify(
-          { refreshExpiresIn: newValue },
-          { refreshExpiresIn: AuthAccess.specTs.refresh_expires_in }
-        );
+        DEV_ENV &&
+          rtv.verify(
+            { refreshExpiresIn: newValue },
+            { refreshExpiresIn: AuthAccess.specTs.refresh_expires_in }
+          );
         _changed = _changed || _refreshExpiresIn !== newValue;
         _refreshExpiresIn = newValue;
       },
@@ -171,10 +178,11 @@ export class AuthAccess {
         return _refreshTokenValidTill;
       },
       set(newValue) {
-        rtv.verify(
-          { refreshTokenValidTill: newValue },
-          { refreshTokenValidTill: [rtv.EXPECTED, rtv.DATE] }
-        );
+        DEV_ENV &&
+          rtv.verify(
+            { refreshTokenValidTill: newValue },
+            { refreshTokenValidTill: [rtv.EXPECTED, rtv.DATE] }
+          );
         _changed = _changed || _refreshTokenValidTill !== newValue;
         _refreshTokenValidTill = newValue;
       },
@@ -187,10 +195,11 @@ export class AuthAccess {
         return _username;
       },
       set(newValue) {
-        rtv.verify(
-          { username: newValue },
-          { username: AuthAccess.specTs.username }
-        );
+        DEV_ENV &&
+          rtv.verify(
+            { username: newValue },
+            { username: AuthAccess.specTs.username }
+          );
         _changed = _changed || _username !== newValue;
         _username = newValue || null; // normalize empty to null
       },
@@ -203,10 +212,11 @@ export class AuthAccess {
         return _password;
       },
       set(newValue) {
-        rtv.verify(
-          { password: newValue },
-          { password: AuthAccess.specTs.password }
-        );
+        DEV_ENV &&
+          rtv.verify(
+            { password: newValue },
+            { password: AuthAccess.specTs.password }
+          );
         _changed = _changed || _password !== newValue;
         _password = newValue || null; // normalize empty to null
       },
@@ -224,10 +234,11 @@ export class AuthAccess {
         return _idpClientId;
       },
       set(newValue) {
-        rtv.verify(
-          { idpClientId: newValue },
-          { idpClientId: AuthAccess.specTs.idpClientId }
-        );
+        DEV_ENV &&
+          rtv.verify(
+            { idpClientId: newValue },
+            { idpClientId: AuthAccess.specTs.idpClientId }
+          );
         _changed = _changed || _idpClientId !== newValue;
         _idpClientId = newValue;
       },
@@ -295,7 +306,7 @@ export class AuthAccess {
    * @param {Object} tokens API token payload. See `tokensTs` for expected shape.
    */
   updateTokens(tokens) {
-    rtv.verify({ tokens }, { tokens: AuthAccess.tokensTs });
+    DEV_ENV && rtv.verify({ tokens }, { tokens: AuthAccess.tokensTs });
 
     this.token = tokens.id_token;
     this.expiresIn = tokens.expires_in;

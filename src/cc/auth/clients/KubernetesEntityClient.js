@@ -1,4 +1,5 @@
 import { request } from '../../netUtil';
+import * as strings from '../../../strings';
 
 // no start nor end slashes
 const clusterEndpoint = 'apis/cluster.k8s.io/v1alpha1';
@@ -60,19 +61,25 @@ export class KubernetesEntityClient {
 
   get(entity, { namespaceName, name, entityDescriptionName } = {}) {
     return this.request(`${namespacePrefix(namespaceName)}${entity}s/${name}`, {
-      errorMessage: `Failed to get ${entityDescriptionName || entity}`,
+      errorMessage: strings.apiClient.errors.failedToGet(
+        entityDescriptionName || entity
+      ),
     });
   }
 
   list(entity, { namespaceName, entityDescriptionName } = {}) {
     return this.request(`${namespacePrefix(namespaceName)}${entity}s`, {
-      errorMessage: `Failed to get ${entityDescriptionName || entity}s list`,
+      errorMessage: strings.apiClient.errors.failedToGetList(
+        entityDescriptionName || entity
+      ),
     });
   }
 
   listAll(entity, { entityDescriptionName } = {}) {
     return this.request(`${entity}s`, {
-      errorMessage: `Failed to get ${entityDescriptionName || entity}s list`,
+      errorMessage: strings.apiClient.errors.failedToGetList(
+        entityDescriptionName || entity
+      ),
     });
   }
 
@@ -80,24 +87,18 @@ export class KubernetesEntityClient {
     return this.request(`${namespacePrefix(namespaceName)}${entity}s/create`, {
       options: { method: 'POST', body: JSON.stringify(config) },
       expectedStatuses: [201],
-      errorMessage: `Failed to create ${entityDescriptionName || entity}`,
+      errorMessage: strings.apiClient.errors.failedToCreate(
+        entityDescriptionName || entity
+      ),
     });
   }
 
-  delete(
-    entity,
-    {
-      namespaceName,
-      name,
-      actionDescription = 'delete',
-      entityDescriptionName,
-    } = {}
-  ) {
+  delete(entity, { namespaceName, name, entityDescriptionName } = {}) {
     return this.request(`${namespacePrefix(namespaceName)}${entity}s/${name}`, {
       options: { method: 'DELETE' },
-      errorMessage: `Failed to ${actionDescription} ${
-        entityDescriptionName || entity
-      } "${name}"`,
+      errorMessage: strings.apiClient.errors.failedToDelete(
+        `${entityDescriptionName || entity} "${name}"`
+      ),
     });
   }
 
@@ -108,9 +109,9 @@ export class KubernetesEntityClient {
         body: JSON.stringify(patch),
         headers: { 'Content-Type': 'application/merge-patch+json' },
       },
-      errorMessage: `Failed to update ${
-        entityDescriptionName || entity
-      } "${name}"`,
+      errorMessage: strings.apiClient.errors.failedToUpdate(
+        `${entityDescriptionName || entity} "${name}"`
+      ),
     });
   }
 }

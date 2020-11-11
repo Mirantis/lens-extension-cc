@@ -7,7 +7,7 @@ import { ConfigProvider } from './cc/store/ConfigProvider';
 import { AuthProvider } from './cc/store/AuthProvider';
 import { ClustersProvider } from './cc/store/ClustersProvider';
 import { AddClustersProvider } from './cc/store/AddClustersProvider';
-import { theme } from './cc/theme';
+import { darkTheme } from './cc/theme';
 
 export const AddClusterIcon = function () {
   // this is the current Mirantis Container Cloud icon
@@ -40,8 +40,9 @@ interface Props {
 }
 
 export const AddClusterPage = function ({ extension }: Props) {
+  // DEBUG TODO: how do we know when the theme has changed in Lens preferences?
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={darkTheme}>
       <ExtStateProvider>
         <ConfigProvider>
           <AuthProvider>

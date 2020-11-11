@@ -1,5 +1,6 @@
 import queryString from 'query-string';
 import { request } from '../../netUtil';
+import * as strings from '../../../strings';
 
 const authRoute = 'protocol/openid-connect'; // NEVER begins/ends with a slash
 
@@ -89,7 +90,7 @@ export class AuthClient {
           password,
         }),
       },
-      errorMessage: 'Failed to get token',
+      errorMessage: strings.apiClient.errors.failedToGetToken(),
     });
   }
 
@@ -115,7 +116,7 @@ export class AuthClient {
           refresh_token: refreshToken,
         }),
       },
-      errorMessage: 'Failed to refresh token',
+      errorMessage: strings.apiClient.errors.failedToRefreshToken(),
     });
   }
 
@@ -128,7 +129,7 @@ export class AuthClient {
           refresh_token: token,
         }),
       },
-      errorMessage: 'Failed to logout',
+      errorMessage: strings.apiClient.errors.failedToLogout(),
       expectedStatuses: [200, 204],
       extractDataMethod: null,
     });

@@ -1,6 +1,7 @@
 // DEBUG TODO is this client needed?
 
 import { request } from '../../netUtil';
+import * as strings from '../../../strings';
 
 /**
  * @param {string} baseUrl The MCC base URL (i.e. the URL to the MCC UI). Expected to
@@ -45,7 +46,9 @@ export class KubernetesClient {
       event: `namespaces/${namespaceName}/events`,
     };
     return this.request(url[entity], {
-      errorMessage: `Failed to get ${entityDescriptionName || entity}s`,
+      errorMessage: strings.apiClient.errors.failedToGet(
+        entityDescriptionName || entity
+      ),
     });
   }
 
@@ -57,9 +60,9 @@ export class KubernetesClient {
     return this.request(url[entity], {
       options: { method: 'POST', body: JSON.stringify(config) },
       expectedStatuses: [201],
-      errorMessage: `Failed to create ${entityDescriptionName || entity} "${
-        config.metadata.name
-      }"`,
+      errorMessage: strings.apiClient.errors.failedToCreate(
+        `${entityDescriptionName || entity} "${config.metadata.name}"`
+      ),
     });
   }
 
@@ -70,9 +73,9 @@ export class KubernetesClient {
     };
     return this.request(url[entity], {
       options: { method: 'DELETE' },
-      errorMessage: `Failed to delete ${
-        entityDescriptionName || entity
-      } "${name}"`,
+      errorMessage: strings.apiClient.errors.failedToDelete(
+        `${entityDescriptionName || entity} "${name}"`
+      ),
     });
   }
 }
