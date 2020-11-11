@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import propTypes from 'prop-types';
 import styled from '@emotion/styled';
 import { Component } from '@k8slens/extensions';
-import { layout } from './theme';
+import { layout } from './styles';
 import { Section } from './Section';
 import * as strings from '../strings';
 

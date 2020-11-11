@@ -10,7 +10,7 @@ import { Login } from './Login';
 import { ClusterList } from './ClusterList';
 import { AddClusters } from './AddClusters';
 import * as strings from '../strings';
-import { layout, mixinFlexColumnGaps, mixinCustomScrollbar } from './theme';
+import { layout, mixinFlexColumnGaps, mixinCustomScrollbar } from './styles';
 
 const Container = styled.div(function () {
   return {

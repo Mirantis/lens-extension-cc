@@ -1,5 +1,5 @@
 import styled from '@emotion/styled';
-import { mixinFlexColumnGaps, layout } from './theme';
+import { mixinFlexColumnGaps, layout } from './styles';
 
 // gap, in pixels, between each immediate child in a section
 export const childGap = layout.gap;

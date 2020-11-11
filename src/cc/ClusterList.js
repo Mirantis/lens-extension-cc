@@ -5,7 +5,7 @@ import { Component } from '@k8slens/extensions';
 import { useAddClusters } from './store/AddClustersProvider';
 import { Cluster } from './store/Cluster';
 import { Section } from './Section';
-import { layout, mixinFlexColumnGaps, mixinCustomScrollbar } from './theme';
+import { layout, mixinFlexColumnGaps, mixinCustomScrollbar } from './styles';
 import * as strings from '../strings';
 
 const CheckList = styled.div(function ({ theme }) {
