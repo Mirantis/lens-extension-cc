@@ -32,7 +32,7 @@ const SavePath = styled.div(function () {
     display: 'flex',
     alignItems: 'center',
 
-    input: {
+    'div.Input': {
       flex: 1,
       marginRight: layout.pad,
     },
@@ -80,9 +80,8 @@ export const AddClusters = function ({ onAdd, clusters }) {
     }
   };
 
-  // DEBUG TODO: when switch to Component.Input, callback signature change to (value: any, event: ChangeEvent) => void
-  const handleSavePathChange = function (event) {
-    extActions.setSavePath(event.target.value);
+  const handleSavePathChange = function (value) {
+    extActions.setSavePath(value);
   };
 
   const handleSavePathBlur = function () {
@@ -113,8 +112,9 @@ export const AddClusters = function ({ onAdd, clusters }) {
     <Section className="lecc-AddClusters" offline={offline}>
       <h3>{strings.addClusters.title()}</h3>
       <SavePath>
-        <input // DEBUG TODO: Component.Input causes crash, doesn't seem to be provided
-          className="box grow"
+        <Component.Input
+          type="text"
+          theme="round-black" // borders on all sides, rounded corners
           value={savePath}
           disabled={addingClusters}
           onChange={handleSavePathChange}
