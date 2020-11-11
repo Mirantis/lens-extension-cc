@@ -13,23 +13,15 @@ import * as strings from '../strings';
 import { layout, mixinFlexColumnGaps, mixinCustomScrollbar } from './theme';
 
 const Container = styled.div(function () {
-  // NOTE: Lens applies these styles to immediate children of its global page
-  //  container:
-  //  ```
-  //  ClusterManager main > * {
-  //    position: absolute;
-  //    left: 0;
-  //    top: 0;
-  //    right: 0;
-  //    bottom: 0;
-  //    display: flex;
-  //    background-color: var(--mainBackground);
-  //  }
-  //  ```
-  //  This means ViewContainer is a flex child, and also doesn't need width/height.
   return {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    right: 0,
+    bottom: 0,
     display: 'flex',
     padding: layout.gap,
+    backgroundColor: 'var(--mainBackground)',
   };
 });
 
