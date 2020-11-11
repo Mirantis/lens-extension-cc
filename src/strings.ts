@@ -31,7 +31,7 @@ export const view: Dict = {
       `
 <h2>Adding Clusters</h2>
 <p>
-  This extension make it easy to add some or all clusters from an Mirantis Container
+  This extension make it easy to add some or all clusters from a Mirantis Container
   Cloud instance.
 </p>
 <p>

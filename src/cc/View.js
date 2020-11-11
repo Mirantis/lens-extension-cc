@@ -347,7 +347,8 @@ export const View = function () {
           <Error>{errorMessage}</Error>
         ) : null}
         <Login
-          loading={loading}
+          loading={loading && !addClustersLoading}
+          disabled={loading}
           baseUrl={baseUrl || undefined}
           username={authAccess ? authAccess.username : undefined}
           password={authAccess ? authAccess.password : undefined}
