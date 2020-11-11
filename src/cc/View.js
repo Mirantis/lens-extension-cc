@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import propTypes from 'prop-types';
 import styled from '@emotion/styled';
+import { Component } from '@k8slens/extensions';
 import { useExtState } from './store/ExtStateProvider';
 import { useConfig } from './store/ConfigProvider';
 import { useAuth } from './store/AuthProvider';
@@ -11,6 +11,8 @@ import { ClusterList } from './ClusterList';
 import { AddClusters } from './AddClusters';
 import * as strings from '../strings';
 import { layout, mixinFlexColumnGaps, mixinCustomScrollbar } from './styles';
+
+const { Notifications } = Component;
 
 const Container = styled.div(function () {
   return {
@@ -55,19 +57,6 @@ const HelpColumn = styled.div(function ({ theme }) {
     '> p': {
       marginBottom: layout.gap,
     },
-  };
-});
-
-// DEBUG TODO: Lens may already have an error notification type thing to use?
-const Error = styled.p(function () {
-  return {
-    backgroundColor: 'var(--colorError)',
-    borderColor: 'var(--colorSoftError)',
-    borderWidth: 1,
-    borderStyle: 'solid',
-    borderRadius: layout.grid,
-    color: 'white',
-    padding: layout.pad,
   };
 });
 
@@ -209,12 +198,16 @@ export const View = function () {
     function () {
       if (configLoaded && configError) {
         setErrorMessage(configError);
+        Notifications.error(configError); // DEBUG
       } else if (authLoaded && authError) {
         setErrorMessage(authError);
+        Notifications.error(authError); // DEBUG
       } else if (clustersLoaded && clustersError) {
         setErrorMessage(clustersError);
+        Notifications.error(clustersError); // DEBUG
       } else if (addClustersLoaded && addClustersError) {
         setErrorMessage(addClustersError);
+        Notifications.error(addClustersError); // DEBUG
       } else {
         setErrorMessage(null);
       }
@@ -342,10 +335,6 @@ export const View = function () {
     <Container className="lecc-View">
       <MainColumn>
         <h2>{strings.view.main.title()}</h2>
-        {errorMessage ? (
-          // DEBUG TODO switch to adding/removing Notification to Lens?
-          <Error>{errorMessage}</Error>
-        ) : null}
         <Login
           loading={loading && !addClustersLoading}
           disabled={loading}
@@ -378,8 +367,4 @@ export const View = function () {
       />
     </Container>
   );
-};
-
-View.propTypes = {
-  extension: propTypes.object.isRequired, // @type {LensRendererExtension}
 };
