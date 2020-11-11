@@ -9,6 +9,7 @@ import { AuthClient } from '../auth/clients/AuthClient';
 import { Store } from '@k8slens/extensions';
 import { kubeConfigTemplate } from '../templates';
 import { AuthAccess } from '../auth/AuthAccess';
+import * as strings from '../../strings';
 
 //
 // Store
@@ -138,7 +139,9 @@ const _createClusterFile = async function ({
   password,
   offline = false,
 }) {
-  const errPrefix = `Failed to create kubeconfig file for cluster ${cluster.id}`;
+  const errPrefix = strings.addClustersProvider.errors.kubeconfigCreate(
+    cluster.id
+  );
 
   const { error: accessError, authAccess } = await _getClusterAccess({
     cluster,

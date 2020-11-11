@@ -48,7 +48,7 @@ export const AddClusters = function ({ onAdd, clusters }) {
   // STATE
   //
 
-  const [offline, setOffline] = useState(false);
+  const [offline, setOffline] = useState(true); // typically Lens users use offline tokens
 
   const {
     state: { savePath },

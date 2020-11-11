@@ -1,4 +1,4 @@
-const commonRules = {
+const rules = {
   'no-warning-comments': [
     'error',
     {
@@ -16,15 +16,19 @@ const commonRules = {
   ],
 };
 
-const commonParserOptions = {
+const parserOptions = {
   ecmaVersion: 2018,
   sourceType: 'module',
 };
 
-const commonEnv = {
+const env = {
   node: true,
   browser: true,
   es2017: true, // NOTE: 'es2018' (to match parser) is not valid; next is 'es2020'
+};
+
+const globals = {
+  DEV_ENV: 'readonly',
 };
 
 module.exports = {
@@ -39,17 +43,16 @@ module.exports = {
       ],
       parser: 'babel-eslint',
       parserOptions: {
-        ...commonParserOptions,
+        ...parserOptions,
         ecmaFeatures: {
           impliedStrict: true,
           jsx: true,
         },
       },
-      env: {
-        ...commonEnv,
-      },
+      globals,
+      env,
       rules: {
-        ...commonRules,
+        ...rules,
 
         //// React Plugin
 
@@ -74,20 +77,17 @@ module.exports = {
     {
       files: ['src/**/*.ts*'],
       parser: '@typescript-eslint/parser',
-      parserOptions: {
-        ...commonParserOptions,
-      },
+      parserOptions,
       extends: [
         'eslint:recommended',
         'plugin:@typescript-eslint/eslint-recommended',
         'plugin:@typescript-eslint/recommended',
         'prettier',
       ],
-      env: {
-        ...commonEnv,
-      },
+      globals,
+      env,
       rules: {
-        ...commonRules,
+        ...rules,
         '@typescript-eslint/explicit-function-return-type': 'off',
         '@typescript-eslint/no-explicit-any': 'off',
         '@typescript-eslint/no-unused-vars': 'off',

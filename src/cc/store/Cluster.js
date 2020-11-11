@@ -18,60 +18,61 @@ const getServerUrl = function (data) {
  */
 export class Cluster {
   constructor(data) {
-    rtv.verify(
-      { data },
-      {
-        data: {
-          metadata: {
-            name: rtv.STRING,
-            namespace: rtv.STRING,
-            uid: rtv.STRING,
-            creationTimestamp: rtv.STRING, // ISO8601 timestamp
-            deletionTimestamp: [rtv.OPTIONAL, rtv.STRING], // ISO8601 timestamp; only exists if being deleted
-            labels: [
-              rtv.OPTIONAL,
-              {
-                'kaas.mirantis.com/provider': [rtv.OPTIONAL, rtv.STRING],
-                'kaas.mirantis.com/region': [rtv.OPTIONAL, rtv.STRING],
+    DEV_ENV &&
+      rtv.verify(
+        { data },
+        {
+          data: {
+            metadata: {
+              name: rtv.STRING,
+              namespace: rtv.STRING,
+              uid: rtv.STRING,
+              creationTimestamp: rtv.STRING, // ISO8601 timestamp
+              deletionTimestamp: [rtv.OPTIONAL, rtv.STRING], // ISO8601 timestamp; only exists if being deleted
+              labels: [
+                rtv.OPTIONAL,
+                {
+                  'kaas.mirantis.com/provider': [rtv.OPTIONAL, rtv.STRING],
+                  'kaas.mirantis.com/region': [rtv.OPTIONAL, rtv.STRING],
+                },
+              ],
+            },
+            spec: {
+              providerSpec: {
+                value: {
+                  kaas: [
+                    rtv.OPTIONAL,
+                    {
+                      management: [
+                        rtv.OPTIONAL,
+                        {
+                          enabled: rtv.BOOLEAN,
+                        },
+                      ],
+                      regional: [rtv.OPTIONAL, rtv.ARRAY],
+                    },
+                  ],
+                  region: [rtv.OPTIONAL, rtv.STRING],
+                },
               },
-            ],
-          },
-          spec: {
-            providerSpec: {
-              value: {
-                kaas: [
-                  rtv.OPTIONAL,
-                  {
-                    management: [
-                      rtv.OPTIONAL,
-                      {
-                        enabled: rtv.BOOLEAN,
-                      },
-                    ],
-                    regional: [rtv.OPTIONAL, rtv.ARRAY],
-                  },
-                ],
-                region: [rtv.OPTIONAL, rtv.STRING],
+            },
+            status: {
+              providerStatus: {
+                oidc: {
+                  certificate: rtv.STRING,
+                  clientId: rtv.STRING,
+                  groupsClaim: rtv.STRING,
+                  issuerUrl: rtv.STRING,
+                  ready: rtv.BOOLEAN,
+                },
+                apiServerCertificate: rtv.STRING,
+                ucpDashboard: [rtv.OPTIONAL, rtv.STRING], // if managed by UCP, the URL
+                loadBalancerHost: [rtv.OPTIONAL, rtv.STRING],
               },
             },
           },
-          status: {
-            providerStatus: {
-              oidc: {
-                certificate: rtv.STRING,
-                clientId: rtv.STRING,
-                groupsClaim: rtv.STRING,
-                issuerUrl: rtv.STRING,
-                ready: rtv.BOOLEAN,
-              },
-              apiServerCertificate: rtv.STRING,
-              ucpDashboard: [rtv.OPTIONAL, rtv.STRING], // if managed by UCP, the URL
-              loadBalancerHost: [rtv.OPTIONAL, rtv.STRING],
-            },
-          },
-        },
-      }
-    );
+        }
+      );
 
     /** @member {string} */
     this.id = data.metadata.uid;

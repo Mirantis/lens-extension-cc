@@ -10,7 +10,7 @@ import { Login } from './Login';
 import { ClusterList } from './ClusterList';
 import { AddClusters } from './AddClusters';
 import * as strings from '../strings';
-import { layout, flexColumnGaps } from './theme';
+import { layout, mixinFlexColumnGaps, mixinCustomScrollbar } from './theme';
 
 const Container = styled.div(function () {
   // NOTE: Lens applies these styles to immediate children of its global page
@@ -33,29 +33,31 @@ const Container = styled.div(function () {
   };
 });
 
-const columnStyles = {
-  // as flex children, grow/shrink evenly
-  flex: 1,
+const getColumnStyles = function (theme) {
+  return {
+    // as flex children, grow/shrink evenly
+    flex: 1,
 
-  // as flex containers
-  ...flexColumnGaps(layout.grid * 6),
+    // as flex containers
+    ...mixinFlexColumnGaps(layout.grid * 6),
 
-  borderRadius: layout.grid,
-  backgroundColor: 'var(--contentColor)',
-  marginRight: layout.gap,
-  padding: layout.gap,
-  overflow: 'auto',
+    borderRadius: layout.grid,
+    backgroundColor: 'var(--contentColor)',
+    marginRight: layout.gap,
+    padding: layout.gap,
+    ...mixinCustomScrollbar({ theme }),
+  };
 };
 
-const MainColumn = styled.div(function () {
+const MainColumn = styled.div(function ({ theme }) {
   return {
-    ...columnStyles,
+    ...getColumnStyles(theme),
   };
 });
 
-const HelpColumn = styled.div(function () {
+const HelpColumn = styled.div(function ({ theme }) {
   return {
-    ...columnStyles,
+    ...getColumnStyles(theme),
     marginRight: 0,
 
     '> p': {
@@ -359,20 +361,20 @@ export const View = function () {
           password={authAccess ? authAccess.password : undefined}
           onLogin={handleLogin}
         />
-        {!errorMessage /* &&
+        {!errorMessage &&
         authAccess.isValid() &&
         clustersLoaded &&
-        selectedClusters */ ? (
+        selectedClusters ? (
           // DEBUG
           <>
             <ClusterList
-              // DEBUG clusters={clusters}
-              // DEBUG selectedClusters={selectedClusters}
+              clusters={clusters} // DEBUG
+              selectedClusters={selectedClusters} // DEBUG
               onSelection={handleClusterSelection}
               onSelectAll={handleClusterSelectAll}
             />
             <AddClusters
-              // DEBUG clusters={selectedClusters}
+              clusters={selectedClusters} // DEBUG
               onAdd={handleClustersAdd}
             />
           </>

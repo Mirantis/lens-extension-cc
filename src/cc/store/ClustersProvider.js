@@ -7,6 +7,7 @@ import { cloneDeepWith, filter, find } from 'lodash';
 import { Namespace } from './Namespace';
 import { Cluster } from './Cluster';
 import { authedRequest, extractJwtPayload } from '../auth/authUtil';
+import * as strings from '../../strings';
 
 //
 // Store
@@ -87,10 +88,15 @@ const _reset = function (setState, loading = false) {
  */
 const _deserializeNamespacesList = function (body) {
   if (!body || !Array.isArray(body.items)) {
-    return { error: 'Failed to parse namespace data: Unexpected data format.' };
+    return { error: strings.clustersProvider.errors.invalidNamespacePayload() };
   }
 
-  return { data: body.items.map((item) => new Namespace(item)) };
+  try {
+    return { data: body.items.map((item) => new Namespace(item)) };
+  } catch (err) {
+    console.error(err.message, err);
+    return { error: strings.clustersProvider.errors.invalidNamespace() };
+  }
 };
 
 /**
@@ -142,10 +148,15 @@ const _fetchNamespaces = async function (baseUrl, config, authAccess) {
  */
 const _deserializeClustersList = function (body) {
   if (!body || !Array.isArray(body.items)) {
-    return { error: 'Failed to parse cluster data: Unexpected data format.' };
+    return { error: strings.clusterProvider.error.invalidClusterPayload() };
   }
 
-  return { data: body.items.map((item) => new Cluster(item)) };
+  try {
+    return { data: body.items.map((item) => new Cluster(item)) };
+  } catch (err) {
+    console.error(err.message, err);
+    return { error: strings.clustersProvider.errors.invalidCluster() };
+  }
 };
 
 /**

@@ -77,12 +77,66 @@ export const addClusters: Dict = {
     action: () => 'Use location',
   },
   offline: {
-    label: () => 'Offline use (less secure)',
+    label: () => 'Offline use',
     tip: () =>
       'WARNING: Generating tokens for offline use is less secure because they will never expire',
   },
   action: {
     label: () => 'Add selected clusters',
     disabledTip: () => 'Select at least one cluster to add',
+  },
+};
+
+export const clustersProvider: Dict = {
+  errors: {
+    invalidNamespacePayload: () =>
+      'Failed to parse namespace payload: Unexpected data format.',
+    invalidNamespace: () =>
+      'Encountered at least one namespace with unexpected or missing metadata.',
+    invalidClusterPayload: () =>
+      'Failed to parse cluster payload: Unexpected data format.',
+    invalidCluster: () =>
+      'Encountered at least one cluster with unexpected or missing metadata.',
+  },
+};
+
+export const addClustersProvider: Dict = {
+  errors: {
+    kubeconfigCreate: (clusterId = 'unknown') =>
+      `Failed to create kubeconfig file for cluster ${clusterId}`,
+  },
+};
+
+export const authUtil: Dict = {
+  errors: {
+    sessionExpired: () => 'Session expired',
+    invalidCredentials: () => 'Invalid credentials',
+  },
+};
+
+export const netUtil: Dict = {
+  errors: {
+    requestFailed: (url = 'unknown') => `Network request to ${url} failed`,
+    invalidResponseData: (url = 'unknown') =>
+      `Extracting response data for ${url} failed: Invalid response format.`,
+    reason: (message = '') => `Reason: "${message}"`,
+    serverResponse: (statusText = '') => `Server response: "${statusText}".`,
+    responseCode: (status = '-1') => `Server response code: ${status}`,
+  },
+};
+
+export const apiClient: Dict = {
+  errors: {
+    failedToGetToken: () => 'Failed to get token',
+    failedToRefreshToken: () => 'Failed to refresh token',
+    failedToLogout: () => 'Failed to log out',
+    failedUserPerms: (entity = 'unknown') =>
+      `Failed to get user permissions for "${entity}"`,
+    failedProjectPerms: () => 'Failed to get user permissions for projects',
+    failedToGet: (entity = 'unknown') => `Failed to get ${entity}`,
+    failedToGetList: (entity = 'unknown') => `Failed to get ${entity} list`,
+    failedToCreate: (entity = 'unknown') => `Failed to create ${entity}`,
+    failedToUpdate: (entity = 'unknown') => `Failed to update ${entity}`,
+    failedToDelete: (entity = 'unknown') => `Failed to delete ${entity}`,
   },
 };
