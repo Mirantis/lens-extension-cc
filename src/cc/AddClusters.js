@@ -49,8 +49,7 @@ export const AddClusters = function ({ onAdd, clusters }) {
   //
 
   const [offline, setOffline] = useState(true); // typically Lens users use offline tokens
-  const addToNew = false;
-  const setAddToNew = () => {}; // DEBUG (restore once `Workspace` class is included in global scope) [addToNew, setAddToNew] = useState(true); // add to new workspaces or the active one
+  const [addToNew, setAddToNew] = useState(true); // add to new workspaces or the active one
 
   const {
     state: { savePath },
@@ -141,7 +140,7 @@ export const AddClusters = function ({ onAdd, clusters }) {
       <small className="hint">{strings.addClusters.location.tip()}</small>
       <Component.Checkbox
         label={strings.addClusters.addToNew.label()}
-        disabled={addingClusters && false} // DEBUG TODO enable once `Workspace` class is included in global scope
+        disabled={addingClusters}
         value={addToNew}
         onChange={handleAddToNewChange}
       />
