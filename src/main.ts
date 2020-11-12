@@ -1,5 +1,5 @@
-import { LensMainExtension, windowManager } from '@k8slens/extensions';
-import { getAddUrl } from './routes';
+import { LensMainExtension } from '@k8slens/extensions';
+import { addRoute } from './routes';
 import * as strings from './strings';
 
 export default class ExtensionMain extends LensMainExtension {
@@ -7,8 +7,8 @@ export default class ExtensionMain extends LensMainExtension {
     {
       parentId: 'file',
       label: strings.extension.menu['label'](),
-      click() {
-        windowManager.navigate(getAddUrl());
+      click: () => {
+        this.navigate(addRoute);
       },
     },
   ];
