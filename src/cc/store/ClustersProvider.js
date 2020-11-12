@@ -8,78 +8,40 @@ import { Namespace } from './Namespace';
 import { Cluster } from './Cluster';
 import { authedRequest, extractJwtPayload } from '../auth/authUtil';
 import * as strings from '../../strings';
+import { ProviderStore } from './ProviderStore';
 
 //
 // Store
 //
 
-/** @returns {Object} A new store object in its initial state. */
-const _mkNewStore = function () {
-  return {
-    loading: false, // {boolean} true if data is being loaded
-    loaded: false, // {boolean} true if data has been loaded (regardless of error)
-    error: undefined, // {string} if a load error occurred; undefined otherwise
-    data: {
-      namespaces: [], // {Array<Namespace>}
-      clusters: [], // {Array<Cluster>} use `Cluster.namespace` to find groups
-    },
-  };
-};
+class ClustersProviderStore extends ProviderStore {
+  makeNew() {
+    return {
+      ...super.makeNew(),
+      data: {
+        namespaces: [], // {Array<Namespace>}
+        clusters: [], // {Array<Cluster>} use `Cluster.namespace` to find groups
+      },
+    };
+  }
 
-// The store defines the initial state and contains the current state
-const store = {
-  ..._mkNewStore(),
-};
+  clone() {
+    return cloneDeepWith(this.store, (value, key) => {
+      if (key === 'data') {
+        // instead of letting Lodash dig deep into this object, shallow-clone it
+        //  since we don't actively set any properties beneath it's immediate ones
+        return { ...value };
+      }
+      // else, let Lodash do the cloning
+    });
+  }
+}
+
+const pr = new ClustersProviderStore();
 
 //
 // Internal Methods
 //
-
-/**
- * Creates a full clone of the `store`.
- * @returns {Object} Cloned store object.
- */
-const _cloneStore = function () {
-  return cloneDeepWith(store, (value, key) => {
-    if (key === 'data') {
-      // instead of letting Lodash dig deep into this object, shallow-clone it
-      //  since we don't actively set any properties beneath it's immediate ones
-      return { ...value };
-    }
-    // else, let Lodash do the cloning
-  });
-};
-
-/**
- * Forces an update to this context's state.
- * @param {function} setState Function to call to update the context's state.
- */
-const _triggerContextUpdate = function (setState) {
-  // NOTE: by deep-cloning the store, React will detect changes to the root object,
-  //  as well as to any nested objects, triggering a render regardless of whether a
-  //  component is depending on the root, or on one of its children
-  setState(_cloneStore());
-};
-
-/**
- * Called when a state property has changed.
- * @param {function} setState Function to call to update the context's state.
- */
-const _onStateChanged = function (setState) {
-  _triggerContextUpdate(setState);
-};
-
-/**
- * Resets store state. Data will need to be reloaded.
- * @param {function} setState Function to call to update the context's state.
- * @param {boolean} [loading] True if resetting because data is loading; false if
- *  just resetting to initial state.
- */
-const _reset = function (setState, loading = false) {
-  Object.assign(store, _mkNewStore()); // replace all properties with totally new ones
-  store.loading = loading;
-  _onStateChanged(setState);
-};
 
 /**
  * Deserialize the raw list of namespace data from the API into Namespace objects.
@@ -221,21 +183,20 @@ const _fetchClusters = async function (
  * @param {Object} config MCC Configuration object.
  * @param {AuthAccess} authAccess Current authentication information. This
  *  instance MAY be updated if a token refresh is required during the load.
- * @param {function} setState Function to call to update the context's state.
  */
-const _loadData = async function (baseUrl, config, authAccess, setState) {
-  _reset(setState, true);
+const _loadData = async function (baseUrl, config, authAccess) {
+  pr.reset(true);
 
   const nsResults = await _fetchNamespaces(baseUrl, config, authAccess);
 
   if (nsResults.error) {
-    store.loading = false;
-    store.loaded = true;
-    store.error = nsResults.error;
+    pr.store.loading = false;
+    pr.store.loaded = true;
+    pr.store.error = nsResults.error;
   } else {
-    store.data.namespaces = nsResults.namespaces;
+    pr.store.data.namespaces = nsResults.namespaces;
 
-    const namespaces = store.data.namespaces.map((ns) => ns.name);
+    const namespaces = pr.store.data.namespaces.map((ns) => ns.name);
     const clResults = await _fetchClusters(
       baseUrl,
       config,
@@ -243,19 +204,19 @@ const _loadData = async function (baseUrl, config, authAccess, setState) {
       namespaces
     );
 
-    store.loading = false;
-    store.loaded = true;
+    pr.store.loading = false;
+    pr.store.loaded = true;
 
     if (clResults.error) {
-      store.error = clResults.error;
+      pr.store.error = clResults.error;
     } else {
-      store.data.clusters = clResults.clusters;
+      pr.store.data.clusters = clResults.clusters;
     }
   }
 
-  console.log('[ClustersProvider._loadData] store:', store); // DEBUG
+  console.log('[ClustersProvider._loadData] store:', pr.store); // DEBUG
 
-  _onStateChanged(setState);
+  pr.onChange();
 };
 
 //
@@ -274,7 +235,7 @@ export const useClusters = function () {
   //  <ClustersContext.Provider value={...}/> we return as the <ClustersProvider/>
   //  component to wrap all children that should have access to the state (i.e.
   //  all the children that will be able to `useClusters()` to access the state)
-  const [state, setState] = context;
+  const [state] = context;
 
   // this is what you actually get from `useClusters()` when you consume it
   return {
@@ -291,16 +252,16 @@ export const useClusters = function () {
        *  instance MAY be updated if a token refresh is required during the load.
        */
       load(baseUrl, config, authAccess) {
-        if (!store.loading) {
+        if (!pr.store.loading) {
           console.log('[ClusterProvider] loading...'); // DEBUG
-          _loadData(baseUrl, config, authAccess, setState);
+          _loadData(baseUrl, config, authAccess);
         }
       },
 
       /** Resets store state. Data will need to be reloaded. */
       reset() {
-        if (!store.loading) {
-          _reset(setState);
+        if (!pr.store.loading) {
+          pr.reset();
         }
       },
     },
@@ -312,8 +273,10 @@ export const ClustersProvider = function (props) {
   //  returned by the provider, even the initial state should be a clone of the
   //  `store` so that we consistently return a `state` property (in the context)
   //  that is a shallow clone of the `store`
-  const [state, setState] = useState(_cloneStore());
+  const [state, setState] = useState(pr.clone());
   const value = useMemo(() => [state, setState], [state]);
+
+  pr.setState = setState;
 
   return <ClustersContext.Provider value={value} {...props} />;
 };
