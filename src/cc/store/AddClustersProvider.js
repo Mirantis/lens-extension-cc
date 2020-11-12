@@ -11,6 +11,7 @@ import { kubeConfigTemplate } from '../templates';
 import { AuthAccess } from '../auth/AuthAccess';
 import * as strings from '../../strings';
 import { workspacePrefix } from '../../constants';
+import { ProviderStore } from './ProviderStore';
 
 const { workspaceStore } = Store;
 
@@ -18,63 +19,20 @@ const { workspaceStore } = Store;
 // Store
 //
 
-/** @returns {Object} A new store object in its initial state. */
-const _mkNewStore = function () {
-  return {
-    loading: false, // {boolean} true if adding clusters
-    loaded: false, // {boolean} true if the cluster add operation is done (regardless of error)
-    error: undefined, // {string} if an error occurred while adding clusters; undefined otherwise
-    newWorkspaces: [], // {Array<Workspace>} list of new workspaces created, if any; shape: https://github.com/lensapp/lens/blob/00be4aa184089c1a6c7247bdbfd408665f325665/src/common/workspace-store.ts#L27
-  };
-};
+class AddClustersProviderStore extends ProviderStore {
+  makeNew() {
+    return {
+      ...super.makeNew(),
+      newWorkspaces: [], // {Array<Workspace>} list of new workspaces created, if any; shape: https://github.com/lensapp/lens/blob/00be4aa184089c1a6c7247bdbfd408665f325665/src/common/workspace-pr.store.ts#L27
+    };
+  }
+}
 
-// The store defines the initial state and contains the current state
-const store = {
-  ..._mkNewStore(),
-};
+const pr = new AddClustersProviderStore();
 
 //
 // Internal Methods
 //
-
-/**
- * Creates a full clone of the `store`.
- * @returns {Object} Cloned store object.
- */
-const _cloneStore = function () {
-  return { ...store }; // only primitive props so no need to deep-clone.
-};
-
-/**
- * Forces an update to this context's state.
- * @param {function} setState Function to call to update the context's state.
- */
-const _triggerContextUpdate = function (setState) {
-  // NOTE: by deep-cloning the store, React will detect changes to the root object,
-  //  as well as to any nested objects, triggering a render regardless of whether a
-  //  component is depending on the root, or on one of its children
-  setState(_cloneStore());
-};
-
-/**
- * Called when a state property has changed.
- * @param {function} setState Function to call to update the context's state.
- */
-const _onStateChanged = function (setState) {
-  _triggerContextUpdate(setState);
-};
-
-/**
- * Resets store state. Data will need to be reloaded.
- * @param {function} setState Function to call to update the context's state.
- * @param {boolean} [loading] True if resetting because data is loading; false if
- *  just resetting to initial state.
- */
-const _reset = function (setState, loading = false) {
-  Object.assign(store, _mkNewStore()); // replace all properties with totally new ones
-  store.loading = loading;
-  _onStateChanged(setState);
-};
 
 /**
  * [ASYNC] Gets access tokens for the specified cluster.
@@ -201,7 +159,7 @@ const _createClusterFile = async function ({
 /**
  * Assigns each cluster to an existing or new workspace that correlates to its
  *  original MCC namespace. New workspaces are created if necessary and added
- *  to this Provider's `store.newWorkspaces` list.
+ *  to this Provider's `pr.store.newWorkspaces` list.
  * @param {Array<Cluster>} clusters Clusters being added.
  * @param {Array<ClusterModel>} models Cluster models to add to Lens. These are
  *  modified in-place.
@@ -223,7 +181,7 @@ const _createNewWorkspaces = function (clusters, models) {
       model.workspace = wsId;
     } else {
       // create new
-      // @see https://github.com/lensapp/lens/blob/00be4aa184089c1a6c7247bdbfd408665f325665/src/common/workspace-store.ts#L27
+      // @see https://github.com/lensapp/lens/blob/00be4aa184089c1a6c7247bdbfd408665f325665/src/common/workspace-pr.store.ts#L27
       const ws = new Workspace({
         id: wsId,
         name: wsId,
@@ -231,7 +189,7 @@ const _createNewWorkspaces = function (clusters, models) {
       });
 
       workspaceStore.addWorkspace(ws);
-      store.newWorkspaces.push(ws);
+      pr.store.newWorkspaces.push(ws);
     }
   });
 };
@@ -252,22 +210,18 @@ const _createNewWorkspaces = function (clusters, models) {
  *  to new (or existing if the workspaces already exist) workspaces that
  *  correlate to their original MCC namespaces; otherwise, they will all
  *  be added to the active workspace.
- * @param {function} setState Function to call to update the context's state.
  */
-const _addToLens = async function (
-  {
-    clusters,
-    savePath,
-    baseUrl,
-    config,
-    username,
-    password,
-    offline = false,
-    addToNew = false,
-  },
-  setState
-) {
-  _reset(setState, true);
+const _addToLens = async function ({
+  clusters,
+  savePath,
+  baseUrl,
+  config,
+  username,
+  password,
+  offline = false,
+  addToNew = false,
+}) {
+  pr.reset(true);
 
   const promises = clusters.map((cluster) =>
     _createClusterFile({
@@ -286,9 +240,9 @@ const _addToLens = async function (
 
   // abort if there's at least one error
   if (failure) {
-    store.loading = false;
-    store.loaded = true;
-    store.error = failure.error;
+    pr.store.loading = false;
+    pr.store.loaded = true;
+    pr.store.error = failure.error;
   } else {
     const models = results.map(({ model }) => model);
 
@@ -300,11 +254,11 @@ const _addToLens = async function (
       Store.clusterStore.addCluster(model);
     });
 
-    store.loading = false;
-    store.loaded = true;
+    pr.store.loading = false;
+    pr.store.loaded = true;
   }
 
-  _onStateChanged(setState);
+  pr.onChange();
 };
 
 //
@@ -325,7 +279,7 @@ export const useAddClusters = function () {
   //  <AddClustersContext.Provider value={...}/> we return as the <AddClustersProvider/>
   //  component to wrap all children that should have access to the state (i.e.
   //  all the children that will be able to `useAddClusters()` to access the state)
-  const [state, setState] = context;
+  const [state] = context;
 
   // this is what you actually get from `useAddClusters()` when you consume it
   return {
@@ -352,20 +306,20 @@ export const useAddClusters = function () {
        *  be added to the active workspace.
        */
       addToLens(options) {
-        if (!store.loading && options.clusters.length > 0) {
+        if (!pr.store.loading && options.clusters.length > 0) {
           console.log(
             '[AddClustersProvider] adding %s clusters to %s...',
             options.clusters.length,
             options.savePath
           ); // DEBUG
-          _addToLens(options, setState);
+          _addToLens(options);
         }
       },
 
       /** Resets store state. Data will need to be reloaded. */
       reset() {
-        if (!store.loading) {
-          _reset(setState);
+        if (!pr.store.loading) {
+          pr.reset();
         }
       },
     },
@@ -377,8 +331,10 @@ export const AddClustersProvider = function (props) {
   //  returned by the provider, even the initial state should be a clone of the
   //  `store` so that we consistently return a `state` property (in the context)
   //  that is a shallow clone of the `store`
-  const [state, setState] = useState(_cloneStore());
+  const [state, setState] = useState(pr.clone());
   const value = useMemo(() => [state, setState], [state]);
+
+  pr.setState = setState;
 
   return <AddClustersContext.Provider value={value} {...props} />;
 };

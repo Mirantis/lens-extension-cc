@@ -4,67 +4,21 @@
 
 import React, { createContext, useContext, useState, useMemo } from 'react';
 import { AuthClient } from '../auth/clients/AuthClient';
+import { ProviderStore } from './ProviderStore';
 
 //
 // Store
 //
 
-/** @returns {Object} A new store object in its initial state. */
-const _mkNewStore = function () {
-  return {
-    loading: false, // {boolean} true if currently authenticating
-    loaded: false, // {boolean} true if authentication is complete (regardless of error)
-    error: undefined, // {string} if an authentication error occurred; undefined otherwise
-  };
-};
+class AuthProviderStore extends ProviderStore {
+  // basic store is all that is needed for now
+}
 
-// The store defines the initial state and contains the current state
-const store = {
-  ..._mkNewStore(),
-};
+const pr = new AuthProviderStore();
 
 //
 // Internal Methods
 //
-
-/**
- * Creates a full clone of the `store`.
- * @returns {Object} Cloned store object.
- */
-const _cloneStore = function () {
-  return { ...store }; // only primitive props so no need to deep-clone.
-};
-
-/**
- * Forces an update to this context's state.
- * @param {function} setState Function to call to update the context's state.
- */
-const _triggerContextUpdate = function (setState) {
-  // NOTE: by deep-cloning the store, React will detect changes to the root object,
-  //  as well as to any nested objects, triggering a render regardless of whether a
-  //  component is depending on the root, or on one of its children
-  setState(_cloneStore());
-};
-
-/**
- * Called when a state property has changed.
- * @param {function} setState Function to call to update the context's state.
- */
-const _onStateChanged = function (setState) {
-  _triggerContextUpdate(setState);
-};
-
-/**
- * Resets store state. Data will need to be reloaded.
- * @param {function} setState Function to call to update the context's state.
- * @param {boolean} [loading] True if resetting because data is loading; false if
- *  just resetting to initial state.
- */
-const _reset = function (setState, loading = false) {
-  Object.assign(store, _mkNewStore()); // replace all properties with totally new ones
-  store.loading = loading;
-  _onStateChanged(setState);
-};
 
 /**
  * [ASYNC] Authenticate with MCC and get authorization tokens.
@@ -73,13 +27,9 @@ const _reset = function (setState, loading = false) {
  *  instance WILL be cleared and updated with new tokens.
  * @param {string} options.baseUrl MCC URL. Must NOT end with a slash.
  * @param {Object} options.config MCC Config object.
- * @param {function} setState Function to call to update the context's state.
  */
-const _authenticate = async function (
-  { authAccess, config, baseUrl },
-  setState
-) {
-  _reset(setState, true);
+const _authenticate = async function ({ authAccess, config, baseUrl }) {
+  pr.reset(true);
 
   const authClient = new AuthClient(baseUrl, config);
   const { error, body } = await authClient.getToken(
@@ -87,15 +37,15 @@ const _authenticate = async function (
     authAccess.password
   );
 
-  store.loading = false;
-  store.loaded = true;
-  store.error = error || undefined;
+  pr.store.loading = false;
+  pr.store.loaded = true;
+  pr.store.error = error || undefined;
 
   if (!error) {
     authAccess.updateTokens(body);
   }
 
-  _onStateChanged(setState);
+  pr.onChange();
 };
 
 //
@@ -114,7 +64,7 @@ export const useAuth = function () {
   //  <AuthContext.Provider value={...}/> we return as the <AuthProvider/>
   //  component to wrap all children that should have access to the state (i.e.
   //  all the children that will be able to `useAuth()` to access the state)
-  const [state, setState] = context;
+  const [state] = context;
 
   // this is what you actually get from `useAuth()` when you consume it
   return {
@@ -132,10 +82,10 @@ export const useAuth = function () {
        * @param {Object} options.config MCC Config object.
        */
       authenticate(options) {
-        if (!store.loading) {
+        if (!pr.store.loading) {
           console.log('[AuthProvider] authenticating...'); // DEBUG
 
-          _authenticate(options, setState);
+          _authenticate(options);
         }
       },
 
@@ -144,19 +94,19 @@ export const useAuth = function () {
        *  have a valid AuthAccess instance and don't need to authenticate.
        */
       setAuthenticated() {
-        if (!store.loading) {
+        if (!pr.store.loading) {
           console.log('[AuthProvider] authenticated'); // DEBUG
 
-          store.loaded = true;
-          store.error = undefined;
-          _onStateChanged(setState);
+          pr.store.loaded = true;
+          pr.store.error = undefined;
+          pr.onChange();
         }
       },
 
       /** Resets store state. Data will need to be reloaded. */
       reset() {
-        if (!store.loading) {
-          _reset(setState);
+        if (!pr.store.loading) {
+          pr.reset();
         }
       },
     },
@@ -168,8 +118,10 @@ export const AuthProvider = function (props) {
   //  returned by the provider, even the initial state should be a clone of the
   //  `store` so that we consistently return a `state` property (in the context)
   //  that is a shallow clone of the `store`
-  const [state, setState] = useState(_cloneStore());
+  const [state, setState] = useState(pr.clone());
   const value = useMemo(() => [state, setState], [state]);
+
+  pr.setState = setState;
 
   return <AuthContext.Provider value={value} {...props} />;
 };
