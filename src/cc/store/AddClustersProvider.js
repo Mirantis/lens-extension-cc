@@ -24,7 +24,7 @@ const _mkNewStore = function () {
     loading: false, // {boolean} true if adding clusters
     loaded: false, // {boolean} true if the cluster add operation is done (regardless of error)
     error: undefined, // {string} if an error occurred while adding clusters; undefined otherwise
-    newWorkspaces: [] // {Array<Workspace>} list of new workspaces created, if any; shape: https://github.com/lensapp/lens/blob/00be4aa184089c1a6c7247bdbfd408665f325665/src/common/workspace-store.ts#L27
+    newWorkspaces: [], // {Array<Workspace>} list of new workspaces created, if any; shape: https://github.com/lensapp/lens/blob/00be4aa184089c1a6c7247bdbfd408665f325665/src/common/workspace-store.ts#L27
   };
 };
 
@@ -209,7 +209,8 @@ const _createClusterFile = async function ({
  *  NOTE: `model.id` is expected to be the ID of the related cluster.
  */
 const _createNewWorkspaces = function (clusters, models) {
-  const findWorkspace = (id) => workspaceStore.workspacesList.find((ws) => ws.id === id);
+  const findWorkspace = (id) =>
+    workspaceStore.workspacesList.find((ws) => ws.id === id);
   const findCluster = (id) => clusters.find((cluster) => cluster.id === id);
 
   models.forEach((model) => {
@@ -217,9 +218,11 @@ const _createNewWorkspaces = function (clusters, models) {
     const wsId = `${workspacePrefix}${cluster.namespace}`;
     const workspace = findWorkspace(wsId);
 
-    if (workspace) { // assign to existing
+    if (workspace) {
+      // assign to existing
       model.workspace = wsId;
-    } else { // create new
+    } else {
+      // create new
       // @see https://github.com/lensapp/lens/blob/00be4aa184089c1a6c7247bdbfd408665f325665/src/common/workspace-store.ts#L27
       const ws = new Workspace({
         id: wsId,
@@ -252,7 +255,16 @@ const _createNewWorkspaces = function (clusters, models) {
  * @param {function} setState Function to call to update the context's state.
  */
 const _addToLens = async function (
-  { clusters, savePath, baseUrl, config, username, password, offline = false, addToNew = false },
+  {
+    clusters,
+    savePath,
+    baseUrl,
+    config,
+    username,
+    password,
+    offline = false,
+    addToNew = false,
+  },
   setState
 ) {
   _reset(setState, true);

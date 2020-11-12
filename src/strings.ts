@@ -55,7 +55,8 @@ export const view: Dict = {
 `,
   },
   notifications: {
-    newWorkspaces: (names = []) => `The following new workspaces were created: ${names.join(', ')}`,
+    newWorkspaces: (names = []) =>
+      `The following new workspaces were created: ${names.join(', ')}`,
   },
 };
 
