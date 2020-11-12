@@ -6,7 +6,9 @@
 //  can optionally accept tokens as arguments to use in the generated string.
 //
 
-export type Prop = (...tokens: string[]) => string;
+import { workspacePrefix } from './constants';
+
+export type Prop = (...tokens: any[]) => string;
 
 export interface Dict {
   [index: string]: Dict | Prop;
@@ -31,7 +33,7 @@ export const view: Dict = {
       `
 <h2>Adding Clusters</h2>
 <p>
-  This extension make it easy to add some or all clusters from a Mirantis Container
+  This extension makes it easy to add clusters from a Mirantis Container
   Cloud instance.
 </p>
 <p>
@@ -40,12 +42,25 @@ export const view: Dict = {
   files (unless you remove the pertaining cluster from Lens) because Lens references
   them whenever a related cluster is activated.
 </p>
+<h3>Workspaces</h3>
+<p>
+  By default, clusters are added to new workspaces that match their MCC namespace
+  names with an added <code>${workspacePrefix}</code> prefix.
+</p>
+<p>
+  For example, if a cluster from a <code>demo</code> namespace is added, it will
+  be added to the <code>${workspacePrefix}demo</code> workspace (and the workspace will be
+  created if it doesn't exist already).
+</p>
 `,
+  },
+  notifications: {
+    newWorkspaces: (names = []) => `The following new workspaces were created: ${names.join(', ')}`,
   },
 };
 
 export const login: Dict = {
-  title: () => '1. Sign in to MCC',
+  title: () => '1. Sign in',
   url: { label: () => 'MCC URL:' },
   username: { label: () => 'Username:' },
   password: { label: () => 'Password:' },
@@ -76,6 +91,13 @@ export const addClusters: Dict = {
     message: () => 'Choose kubeconfig file location',
     action: () => 'Use location',
   },
+  addToNew: {
+    label: () => 'Add to MCC workspaces',
+    tipOn: () =>
+      'Add clusters to new workspaces that correlate to their original MCC namespace names',
+    tipOff: (workspace = '') =>
+      `Add clusters to the active workspace "${workspace}"`,
+  },
   offline: {
     label: () => 'Offline use',
     tip: () =>
@@ -105,6 +127,9 @@ export const addClustersProvider: Dict = {
     kubeconfigCreate: (clusterId = 'unknown') =>
       `Failed to create kubeconfig file for cluster ${clusterId}`,
   },
+  workspaces: {
+    description: () => 'MCC workspace',
+  },
 };
 
 export const authUtil: Dict = {
@@ -121,7 +146,7 @@ export const netUtil: Dict = {
       `Extracting response data for ${url} failed: Invalid response format.`,
     reason: (message = '') => `Reason: "${message}"`,
     serverResponse: (statusText = '') => `Server response: "${statusText}".`,
-    responseCode: (status = '-1') => `Server response code: ${status}`,
+    responseCode: (status = -1) => `Server response code: ${status}`,
   },
 };
 

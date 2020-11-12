@@ -100,6 +100,7 @@ export const View = function () {
       loading: addClustersLoading,
       loaded: addClustersLoaded,
       error: addClustersError,
+      newWorkspaces,
     },
     actions: addClustersActions,
   } = useAddClusters();
@@ -166,7 +167,7 @@ export const View = function () {
   );
 
   const handleClustersAdd = useCallback(
-    function ({ savePath, offline }) {
+    function ({ savePath, offline, addToNew }) {
       if (!addClustersLoading) {
         addClustersActions.addToLens({
           clusters: selectedClusters,
@@ -176,6 +177,7 @@ export const View = function () {
           username: authAccess.username,
           password: authAccess.password,
           offline,
+          addToNew
         });
       }
     },
@@ -223,6 +225,12 @@ export const View = function () {
       addClustersError,
     ]
   );
+
+  useEffect( function () {
+    if (addClustersLoaded && newWorkspaces.length > 0) {
+      Notifications.info(strings.view.notifications.newWorkspaces(newWorkspaces.map((ws) => ws.name)));
+    }
+  }, [addClustersLoaded, newWorkspaces]);
 
   // 1. load the config object
   useEffect(
