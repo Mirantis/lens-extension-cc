@@ -105,8 +105,6 @@ export const View = function () {
     actions: addClustersActions,
   } = useAddClusters();
 
-  const [errorMessage, setErrorMessage] = useState(null); // @type {string}
-
   // @type {null|Array<Cluster>} null until clusters are loaded, then an array
   //  that represents the current selection, could be empty
   const [selectedClusters, setSelectedClusters] = useState(null);
@@ -121,6 +119,10 @@ export const View = function () {
     (authLoaded && !authError && !clustersLoaded) ||
     clustersLoading ||
     addClustersLoading;
+
+  // in order of execution/precedence
+  const errorMessage =
+    configError || authError || clustersError || addClustersError || null;
 
   //
   // EVENTS
@@ -138,7 +140,6 @@ export const View = function () {
       extActions.setAuthAccess(authAccess);
       authActions.reset();
       clustersActions.reset();
-      setErrorMessage(null);
 
       configActions.load(url); // implicit reset of current config
     },
@@ -177,7 +178,7 @@ export const View = function () {
           username: authAccess.username,
           password: authAccess.password,
           offline,
-          addToNew
+          addToNew,
         });
       }
     },
@@ -199,19 +200,13 @@ export const View = function () {
   useEffect(
     function () {
       if (configLoaded && configError) {
-        setErrorMessage(configError);
-        Notifications.error(configError); // DEBUG
+        Notifications.error(configError);
       } else if (authLoaded && authError) {
-        setErrorMessage(authError);
-        Notifications.error(authError); // DEBUG
+        Notifications.error(authError);
       } else if (clustersLoaded && clustersError) {
-        setErrorMessage(clustersError);
-        Notifications.error(clustersError); // DEBUG
+        Notifications.error(clustersError);
       } else if (addClustersLoaded && addClustersError) {
-        setErrorMessage(addClustersError);
-        Notifications.error(addClustersError); // DEBUG
-      } else {
-        setErrorMessage(null);
+        Notifications.error(addClustersError);
       }
     },
     [
@@ -226,11 +221,18 @@ export const View = function () {
     ]
   );
 
-  useEffect( function () {
-    if (addClustersLoaded && newWorkspaces.length > 0) {
-      Notifications.info(strings.view.notifications.newWorkspaces(newWorkspaces.map((ws) => ws.name)));
-    }
-  }, [addClustersLoaded, newWorkspaces]);
+  useEffect(
+    function () {
+      if (addClustersLoaded && newWorkspaces.length > 0) {
+        Notifications.info(
+          strings.view.notifications.newWorkspaces(
+            newWorkspaces.map((ws) => ws.name)
+          )
+        );
+      }
+    },
+    [addClustersLoaded, newWorkspaces]
+  );
 
   // 1. load the config object
   useEffect(
