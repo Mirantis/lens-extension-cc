@@ -6,7 +6,7 @@ import React, { createContext, useContext, useState, useMemo } from 'react';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { AuthClient } from '../auth/clients/AuthClient';
-import { Store, Workspace } from '@k8slens/extensions';
+import { Store } from '@k8slens/extensions';
 import { kubeConfigTemplate } from '../templates';
 import { AuthAccess } from '../auth/AuthAccess';
 import * as strings from '../../strings';
@@ -176,13 +176,15 @@ const _createNewWorkspaces = function (clusters, models) {
     const wsId = `${workspacePrefix}${cluster.namespace}`;
     const workspace = findWorkspace(wsId);
 
-    if (workspace) {
-      // assign to existing
-      model.workspace = wsId;
-    } else {
-      // create new
+    model.workspace = wsId; // re-assign cluster to custom workspace
+
+    if (!workspace) {
+      // create new workspace
       // @see https://github.com/lensapp/lens/blob/00be4aa184089c1a6c7247bdbfd408665f325665/src/common/workspace-pr.store.ts#L27
-      const ws = new Workspace({
+      // NOTE: the Workspace class should be a global but Lens 4.0.0-alpha.5 is
+      //  not providing it (only the type declaration via its `@k8slens/extensions`
+      //  package, but the class is still available as part of the Store global
+      const ws = new Store.Workspace({
         id: wsId,
         name: wsId,
         description: strings.addClustersProvider.workspaces.description(),
