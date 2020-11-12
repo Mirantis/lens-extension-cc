@@ -6,10 +6,13 @@ import React, { createContext, useContext, useState, useMemo } from 'react';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { AuthClient } from '../auth/clients/AuthClient';
-import { Store } from '@k8slens/extensions';
+import { Store, Workspace } from '@k8slens/extensions';
 import { kubeConfigTemplate } from '../templates';
 import { AuthAccess } from '../auth/AuthAccess';
 import * as strings from '../../strings';
+import { workspacePrefix } from '../../constants';
+
+const { workspaceStore } = Store;
 
 //
 // Store
@@ -21,6 +24,7 @@ const _mkNewStore = function () {
     loading: false, // {boolean} true if adding clusters
     loaded: false, // {boolean} true if the cluster add operation is done (regardless of error)
     error: undefined, // {string} if an error occurred while adding clusters; undefined otherwise
+    newWorkspaces: [] // {Array<Workspace>} list of new workspaces created, if any; shape: https://github.com/lensapp/lens/blob/00be4aa184089c1a6c7247bdbfd408665f325665/src/common/workspace-store.ts#L27
   };
 };
 
@@ -128,7 +132,8 @@ const _getClusterAccess = async function ({
  *  clusters will be enabled for offline access. WARNING: This is less secure
  *  than a normal refresh token as it will never expire.
  * @returns {Promise<Object>} On success, `{model: ClusterModel}`, a cluster model
- *  to use to add the cluster to Lens; on error, `{error: string}`.
+ *  to use to add the cluster to Lens; on error, `{error: string}`. All clusters
+ *  are configured to be added to the active workspace.
  */
 const _createClusterFile = async function ({
   cluster,
@@ -184,13 +189,48 @@ const _createClusterFile = async function ({
       kubeConfigPath,
       id: cluster.id, // can be anything provided it's unique
       contextName: kc.contexts[0].name, // must be same context name used in the kubeconfig file
-      workspace: Store.workspaceStore.currentWorkspaceId,
+      workspace: workspaceStore.currentWorkspaceId,
 
       // ownerRef: unique ref/id (up to extension to decide what it is), if unset
       //  then Lens allows the user to remove the cluster; otherwise, only the
       //  extension itself can remove it
     },
   };
+};
+
+/**
+ * Assigns each cluster to an existing or new workspace that correlates to its
+ *  original MCC namespace. New workspaces are created if necessary and added
+ *  to this Provider's `store.newWorkspaces` list.
+ * @param {Array<Cluster>} clusters Clusters being added.
+ * @param {Array<ClusterModel>} models Cluster models to add to Lens. These are
+ *  modified in-place.
+ *
+ *  NOTE: `model.id` is expected to be the ID of the related cluster.
+ */
+const _createNewWorkspaces = function (clusters, models) {
+  const findWorkspace = (id) => workspaceStore.workspacesList.find((ws) => ws.id === id);
+  const findCluster = (id) => clusters.find((cluster) => cluster.id === id);
+
+  models.forEach((model) => {
+    const cluster = findCluster(model.id);
+    const wsId = `${workspacePrefix}${cluster.namespace}`;
+    const workspace = findWorkspace(wsId);
+
+    if (workspace) { // assign to existing
+      model.workspace = wsId;
+    } else { // create new
+      // @see https://github.com/lensapp/lens/blob/00be4aa184089c1a6c7247bdbfd408665f325665/src/common/workspace-store.ts#L27
+      const ws = new Workspace({
+        id: wsId,
+        name: wsId,
+        description: strings.addClustersProvider.workspaces.description(),
+      });
+
+      workspaceStore.addWorkspace(ws);
+      store.newWorkspaces.push(ws);
+    }
+  });
 };
 
 /**
@@ -205,10 +245,14 @@ const _createClusterFile = async function ({
  * @param {boolean} [options.offline] If true, the refresh token generated for the
  *  clusters will be enabled for offline access. WARNING: This is less secure
  *  than a normal refresh token as it will never expire.
+ * @param {boolean} [options.addToNew] If true, the clusters will be added
+ *  to new (or existing if the workspaces already exist) workspaces that
+ *  correlate to their original MCC namespaces; otherwise, they will all
+ *  be added to the active workspace.
  * @param {function} setState Function to call to update the context's state.
  */
 const _addToLens = async function (
-  { clusters, savePath, baseUrl, config, username, password, offline = false },
+  { clusters, savePath, baseUrl, config, username, password, offline = false, addToNew = false },
   setState
 ) {
   _reset(setState, true);
@@ -234,7 +278,13 @@ const _addToLens = async function (
     store.loaded = true;
     store.error = failure.error;
   } else {
-    results.forEach(({ model }) => {
+    const models = results.map(({ model }) => model);
+
+    if (addToNew) {
+      _createNewWorkspaces(clusters, models);
+    }
+
+    models.forEach((model) => {
       Store.clusterStore.addCluster(model);
     });
 
@@ -284,6 +334,10 @@ export const useAddClusters = function () {
        * @param {boolean} [options.offline] If true, the refresh token generated for the
        *  clusters will be enabled for offline access. WARNING: This is less secure
        *  than a normal refresh token as it will never expire.
+       * @param {boolean} [options.addToNew] If true, the clusters will be added
+       *  to new (or existing if the workspaces already exist) workspaces that
+       *  correlate to their original MCC namespaces; otherwise, they will all
+       *  be added to the active workspace.
        */
       addToLens(options) {
         if (!store.loading && options.clusters.length > 0) {

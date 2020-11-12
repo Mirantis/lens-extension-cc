@@ -7,7 +7,7 @@ import os from 'os';
 import propTypes from 'prop-types';
 import styled from '@emotion/styled';
 import { remote } from 'electron';
-import { Component } from '@k8slens/extensions';
+import { Component, Store } from '@k8slens/extensions';
 import { Cluster } from './store/Cluster';
 import { useAddClusters } from './store/AddClustersProvider';
 import { useExtState } from './store/ExtStateProvider';
@@ -49,6 +49,7 @@ export const AddClusters = function ({ onAdd, clusters }) {
   //
 
   const [offline, setOffline] = useState(true); // typically Lens users use offline tokens
+  const addToNew = false; const setAddToNew = () => {}; // DEBUG (restore once `Workspace` class is included in global scope) [addToNew, setAddToNew] = useState(true); // add to new workspaces or the active one
 
   const {
     state: { savePath },
@@ -88,13 +89,17 @@ export const AddClusters = function ({ onAdd, clusters }) {
     extActions.setSavePath(savePath.replace('~', os.homedir()));
   };
 
+  const handleAddToNewChange = function (checked) {
+    setAddToNew(checked);
+  };
+
   const handleOfflineChange = function (checked) {
     setOffline(checked);
   };
 
   const handleAddClick = function () {
     if (typeof onAdd === 'function') {
-      onAdd({ savePath, offline });
+      onAdd({ savePath, offline, addToNew });
     }
   };
 
@@ -107,6 +112,10 @@ export const AddClusters = function ({ onAdd, clusters }) {
     addingClusters,
     clusters.length
   ); // DEBUG
+
+  const activeWorkspaceName = Store.workspaceStore.currentWorkspace
+    ? Store.workspaceStore.currentWorkspace.name
+    : Store.workspaceStore.currentWorkspaceId;
 
   return (
     <Section className="lecc-AddClusters" offline={offline}>
@@ -129,6 +138,18 @@ export const AddClusters = function ({ onAdd, clusters }) {
         />
       </SavePath>
       <small className="hint">{strings.addClusters.location.tip()}</small>
+      <Component.Checkbox
+        label={strings.addClusters.addToNew.label()}
+        disabled={addingClusters && false} // DEBUG TODO enable once `Workspace` class is included in global scope
+        value={addToNew}
+        onChange={handleAddToNewChange}
+      />
+      <small className="lecc-AddClusters--addToNew-hint hint">
+        {addToNew
+          ? strings.addClusters.addToNew.tipOn()
+          : strings.addClusters.addToNew.tipOff(activeWorkspaceName)
+        }
+      </small>
       <Component.Checkbox
         label={strings.addClusters.offline.label()}
         disabled={addingClusters}
@@ -158,7 +179,7 @@ export const AddClusters = function ({ onAdd, clusters }) {
 
 AddClusters.propTypes = {
   clusters: propTypes.arrayOf(propTypes.instanceOf(Cluster)),
-  onAdd: propTypes.func, // ({ savePath: string, offline: boolean }) => void
+  onAdd: propTypes.func, // ({ savePath: string, offline: boolean, addToNew: boolean }) => void
 };
 
 AddClusters.defaultProps = {

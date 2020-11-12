@@ -36,7 +36,7 @@ export const Login = function ({ loading, disabled, onLogin, ...props }) {
 
   const [baseUrl, setBaseUrl] = useState(props.baseUrl || '');
   const [username, setUsername] = useState(props.username || '');
-  const [password, setPassword] = useState('');
+  const [password, setPassword] = useState(props.password || '');
   const [valid, setValid] = useState(false);
 
   //
@@ -134,4 +134,5 @@ Login.propTypes = {
   disabled: propTypes.bool, // if login should be disabled entirely
   baseUrl: propTypes.string,
   username: propTypes.string,
+  password: propTypes.string,
 };

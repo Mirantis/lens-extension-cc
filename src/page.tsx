@@ -97,7 +97,7 @@ export const AddClusterPage = function ({ extension }: Props) {
           <AuthProvider>
             <ClustersProvider>
               <AddClustersProvider>
-                <View extension={extension} />
+                <View />
               </AddClustersProvider>
             </ClustersProvider>
           </AuthProvider>
