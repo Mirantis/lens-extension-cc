@@ -37,7 +37,9 @@ You can also run a one-off development build with `npm run dev`.
 
 ```bash
 $ npm version <patch|minor|major>
-$ npm publish
+$ npm publish --access public        # <- NOTE the '--access public' part, very important!
 ```
+
+> By default, packages published to an NPM scope/org are __private__. Use the `--access public` option to publish it as a public package instead. You can also [configure NPM](https://docs.npmjs.com/configuring-your-npm-client-with-your-organization-settings#setting-package-visibility-to-public-for-a-single-package) to always publish that single package publicly by running `npm config set access public` within the repository root directory (i.e. package root).
 
 The `prepublishOnly` script will automatically produce a production build in the `./dist` directory, which will be published.
