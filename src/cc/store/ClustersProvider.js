@@ -9,12 +9,14 @@ import { Cluster } from './Cluster';
 import { authedRequest, extractJwtPayload } from '../auth/authUtil';
 import * as strings from '../../strings';
 import { ProviderStore } from './ProviderStore';
+import pkg from '../../../package.json';
 
 //
 // Store
 //
 
 class ClustersProviderStore extends ProviderStore {
+  // @override
   makeNew() {
     return {
       ...super.makeNew(),
@@ -25,6 +27,7 @@ class ClustersProviderStore extends ProviderStore {
     };
   }
 
+  // @override
   clone() {
     return cloneDeepWith(this.store, (value, key) => {
       if (key === 'data') {
@@ -56,7 +59,10 @@ const _deserializeNamespacesList = function (body) {
   try {
     return { data: body.items.map((item) => new Namespace(item)) };
   } catch (err) {
-    console.error(err.message, err);
+    console.error(
+      `[${pkg.name}/ClustersProvider._deserializeNamespacesList()] ERROR: ${err.message}`,
+      err
+    );
     return { error: strings.clustersProvider.errors.invalidNamespace() };
   }
 };
@@ -116,7 +122,10 @@ const _deserializeClustersList = function (body) {
   try {
     return { data: body.items.map((item) => new Cluster(item)) };
   } catch (err) {
-    console.error(err.message, err);
+    console.error(
+      `[${pkg.name}/ClustersProvider._deserializeClustersList()] ERROR: ${err.message}`,
+      err
+    );
     return { error: strings.clustersProvider.errors.invalidCluster() };
   }
 };

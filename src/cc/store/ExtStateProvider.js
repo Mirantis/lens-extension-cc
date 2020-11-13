@@ -6,6 +6,8 @@ import React, { createContext, useContext, useState, useMemo } from 'react';
 import rtv from 'rtvjs';
 import { cloneDeep, cloneDeepWith } from 'lodash';
 import { AuthAccess } from '../auth/AuthAccess';
+import { ProviderStore } from './ProviderStore';
+import pkg from '../../../package.json';
 
 const STORAGE_KEY = 'lens-mcc-ext';
 
@@ -26,140 +28,118 @@ const extStateTs = {
   addToNew: [rtv.EXPECTED, rtv.BOOLEAN], // if workspaces should be created to match cluster namespaces
 };
 
-let stateLoaded = false; // {boolean} true if the state has been loaded from storage
-
-// DEBUG TODO: convert to ProviderStore
+let storeLoaded = false; // {boolean} true if the store has been loaded from storage
 
 //
 // Store
 //
 
-/** @returns {Object} A new store object in its initial state. */
-const _mkNewStore = function () {
-  return {
-    baseUrl: null,
-    username: null,
-    authAccess: new AuthAccess(),
-    savePath: __dirname, // extension's `./dist` directory by default
-    offline: true,
-    addToNew: true,
-  };
-};
+class ExtStateProviderStore extends ProviderStore {
+  // @override
+  makeNew() {
+    const newStore = {
+      ...super.makeNew(),
+      baseUrl: null,
+      username: null,
+      authAccess: new AuthAccess(),
+      savePath: __dirname, // extension's `./dist` directory by default
+      offline: true,
+      addToNew: true,
+    };
 
-// the store defines the initial state and contains the current state
-const store = {
-  ..._mkNewStore(),
-};
+    // remove super properties that aren't applicable
+    delete newStore.loading;
+    delete newStore.loaded;
+    delete newStore.error;
+
+    return newStore;
+  }
+
+  // @override
+  clone() {
+    return cloneDeepWith(this.store, (value, key) => {
+      if (key === 'authAccess') {
+        // instead of letting Lodash dig deep into this object, clone it manually
+        return new AuthAccess(cloneDeep(value.toJSON()));
+      }
+      // else, let Lodash do the cloning
+    });
+  }
+
+  // @override
+  validate() {
+    const result = rtv.check({ state: this.store }, { state: extStateTs });
+
+    if (!result.valid) {
+      throw new Error(
+        `[ExtStateProvider] Invalid extension state, error="${result.message}"`
+      );
+    }
+  }
+
+  // @override
+  onChange() {
+    super.onChange(); // will validate
+    this.save();
+  }
+
+  /**
+   * Initializes the store from local storage, if it exists.
+   */
+  load() {
+    const jsonStr = window.localStorage.getItem(STORAGE_KEY);
+
+    let useInitialState = false;
+
+    if (jsonStr) {
+      try {
+        const json = JSON.parse(jsonStr);
+        const fromStorage = {
+          ...json,
+          authAccess: new AuthAccess(),
+        };
+
+        Object.assign(this.store, fromStorage); // put it into the store
+        this.validate();
+
+        this.store.authAccess.username = this.store.username;
+      } catch (err) {
+        console.error(
+          `[${pkg.name}/ExtStateProviderStore.load()] ERROR: ${err.message}`,
+          err
+        );
+        useInitialState = true;
+      }
+    } else {
+      useInitialState = true;
+    }
+
+    if (useInitialState) {
+      this.validate(); // validate we're starting with something good
+    }
+  }
+
+  /**
+   * Saves the specified ExtState to storage.
+   */
+  save() {
+    // TODO: consider using https://atom.github.io/node-keytar/ to store all credentials
+    //  in the local keychain to restore after restarting Lens
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        ...this.store,
+        authAccess: undefined, // don't store any credentials (except for `store.username`)
+      })
+    );
+  }
+}
+
+const pr = new ExtStateProviderStore();
 
 //
 // Internal Methods
 //
-
-/**
- * Creates a full clone of the `store`.
- * @returns {Object} Cloned store object.
- */
-const _cloneStore = function () {
-  return cloneDeepWith(store, (value, key) => {
-    if (key === 'authAccess') {
-      // instead of letting Lodash dig deep into this object, clone it manually
-      return new AuthAccess(cloneDeep(value.toJSON()));
-    }
-    // else, let Lodash do the cloning
-  });
-};
-
-/**
- * Validates the specified state.
- * @param {ExtState} state State to validate.
- * @throws {Error} if the state is invalid.
- */
-const _validateState = function (state) {
-  const result = rtv.check({ state }, { state: extStateTs });
-
-  if (!result.valid) {
-    throw new Error(`Invalid extension state, error="${result.message}"`);
-  }
-};
-
-/**
- * Saves the specified ExtState to storage.
- * @param {ExtState} state State to store.
- */
-const _saveState = function (state) {
-  _validateState(state);
-
-  // TODO: consider using https://atom.github.io/node-keytar/ to store all credentials
-  //  in the local keychain
-  window.localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify({
-      ...state,
-      authAccess: undefined, // don't store any credentials (except for state.username)
-    })
-  );
-};
-
-/**
- * Initializes the store with app state from storage, if it exists.
- */
-const _loadState = function () {
-  const jsonStr = window.localStorage.getItem(STORAGE_KEY);
-
-  let useInitialState = false;
-
-  if (jsonStr) {
-    try {
-      const json = JSON.parse(jsonStr);
-      const fromStorage = {
-        ...json,
-        authAccess: new AuthAccess(),
-      };
-
-      _validateState(fromStorage); // validate what we get
-      Object.assign(store, fromStorage); // put it into the store
-
-      store.authAccess.username = store.username;
-    } catch (err) {
-      useInitialState = true;
-    }
-  } else {
-    useInitialState = true;
-  }
-
-  if (useInitialState) {
-    _validateState(store); // validate we're starting with something good
-  }
-};
-
-/**
- * Forces an update to this context's state.
- * @param {function} setState Function to call to update the context's state.
- */
-const _triggerContextUpdate = function (setState) {
-  // NOTE: by deep-cloning the store, React will detect changes to the root object,
-  //  as well as to any nested objects, triggering a render regardless of whether a
-  //  component is depending on the root, or on one of its children
-  setState(_cloneStore());
-};
-
-/**
- * Called when a state property has changed.
- * @param {function} setState Function to call to update the context's state.
- */
-const _onStateChanged = function (setState) {
-  _saveState(store);
-  _triggerContextUpdate(setState);
-};
-
-/**
- * Resets store state forgetting ALL previous data.
- * @param {function} setState Function to call to update the context's state.
- */
-const _reset = function (setState) {
-  Object.assign(store, _mkNewStore()); // replace all properties with totally new ones
-  _onStateChanged(setState);
-};
 
 //
 // Provider Definition
@@ -177,7 +157,7 @@ export const useExtState = function () {
   //  <ExtStateContext.Provider value={...}/> we return as the <ExtStateProvider/>
   //  component to wrap all children that should have access to the state (i.e.
   //  all the children that will be able to `useExtState()` to access the state)
-  const [state, setState] = context;
+  const [state] = context;
 
   // this is what you actually get from `useExtState()` when you consume it
   return {
@@ -188,7 +168,7 @@ export const useExtState = function () {
     actions: {
       /** Reset the state, forgetting all data. */
       reset() {
-        _reset(setState);
+        pr.reset();
       },
 
       /**
@@ -196,15 +176,15 @@ export const useExtState = function () {
        * @param {AuthAccess|null} newValue
        */
       setAuthAccess(newValue) {
-        store.authAccess = newValue;
-        store.username = newValue ? newValue.username : null;
+        pr.store.authAccess = newValue;
+        pr.store.username = newValue ? newValue.username : null;
 
-        if (store.authAccess) {
+        if (pr.store.authAccess) {
           // mark it as no longer being changed if it was
-          store.authAccess.changed = false;
+          pr.store.authAccess.changed = false;
         }
 
-        _onStateChanged(setState);
+        pr.onChange();
       },
 
       /**
@@ -212,8 +192,8 @@ export const useExtState = function () {
        * @param {string} newValue Must not end with a slash.
        */
       setBaseUrl(newValue) {
-        store.baseUrl = newValue;
-        _onStateChanged(setState);
+        pr.store.baseUrl = newValue;
+        pr.onChange();
       },
 
       /**
@@ -221,8 +201,8 @@ export const useExtState = function () {
        * @param {string} newValue Must not end with a slash.
        */
       setSavePath(newValue) {
-        store.savePath = newValue;
-        _onStateChanged(setState);
+        pr.store.savePath = newValue;
+        pr.onChange();
       },
 
       /**
@@ -230,8 +210,8 @@ export const useExtState = function () {
        * @param {boolean} newValue
        */
       setOffline(newValue) {
-        store.offline = newValue;
-        _onStateChanged(setState);
+        pr.store.offline = newValue;
+        pr.onChange();
       },
 
       /**
@@ -239,8 +219,8 @@ export const useExtState = function () {
        * @param {boolean} newValue
        */
       setAddToNew(newValue) {
-        store.addToNew = newValue;
-        _onStateChanged(setState);
+        pr.store.addToNew = newValue;
+        pr.onChange();
       },
     },
   };
@@ -248,17 +228,19 @@ export const useExtState = function () {
 
 export const ExtStateProvider = function (props) {
   // load state from storage only once
-  if (!stateLoaded) {
-    _loadState();
-    stateLoaded = true;
+  if (!storeLoaded) {
+    pr.load();
+    storeLoaded = true;
   }
 
   // NOTE: since the state is passed directly (by reference) into the context
   //  returned by the provider, even the initial state should be a clone of the
   //  `store` so that we consistently return a `state` property (in the context)
   //  that is a shallow clone of the `store`
-  const [state, setState] = useState(_cloneStore());
+  const [state, setState] = useState(pr.clone());
   const value = useMemo(() => [state, setState], [state]);
+
+  pr.setState = setState;
 
   return <ExtStateContext.Provider value={value} {...props} />;
 };

@@ -11,6 +11,7 @@ import { ProviderStore } from './ProviderStore';
 //
 
 class ConfigProviderStore extends ProviderStore {
+  // @override
   makeNew() {
     return {
       ...super.makeNew(),

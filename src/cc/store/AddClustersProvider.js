@@ -21,6 +21,7 @@ const { Notifications } = Component;
 //
 
 class AddClustersProviderStore extends ProviderStore {
+  // @override
   makeNew() {
     return {
       ...super.makeNew(),
