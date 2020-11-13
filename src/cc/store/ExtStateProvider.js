@@ -22,9 +22,13 @@ const extStateTs = {
   username: [rtv.EXPECTED, rtv.STRING],
   authAccess: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: AuthAccess }],
   savePath: [rtv.EXPECTED, rtv.STRING], // absolute path on local system where to save kubeconfig files
+  offline: [rtv.EXPECTED, rtv.BOOLEAN], // if kubeconfigs should use offline tokens
+  addToNew: [rtv.EXPECTED, rtv.BOOLEAN], // if workspaces should be created to match cluster namespaces
 };
 
 let stateLoaded = false; // {boolean} true if the state has been loaded from storage
+
+// DEBUG TODO: convert to ProviderStore
 
 //
 // Store
@@ -37,6 +41,8 @@ const _mkNewStore = function () {
     username: null,
     authAccess: new AuthAccess(),
     savePath: __dirname, // extension's `./dist` directory by default
+    offline: true,
+    addToNew: true,
   };
 };
 
@@ -216,6 +222,24 @@ export const useExtState = function () {
        */
       setSavePath(newValue) {
         store.savePath = newValue;
+        _onStateChanged(setState);
+      },
+
+      /**
+       * Updates the offline option when generating cluster access tokens.
+       * @param {boolean} newValue
+       */
+      setOffline(newValue) {
+        store.offline = newValue;
+        _onStateChanged(setState);
+      },
+
+      /**
+       * Updates the 'add to new' option when adding clusters.
+       * @param {boolean} newValue
+       */
+      setAddToNew(newValue) {
+        store.addToNew = newValue;
         _onStateChanged(setState);
       },
     },

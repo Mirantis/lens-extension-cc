@@ -6,7 +6,7 @@ import React, { createContext, useContext, useState, useMemo } from 'react';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { AuthClient } from '../auth/clients/AuthClient';
-import { Store } from '@k8slens/extensions';
+import { Store, Workspace } from '@k8slens/extensions';
 import { kubeConfigTemplate } from '../templates';
 import { AuthAccess } from '../auth/AuthAccess';
 import * as strings from '../../strings';

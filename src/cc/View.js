@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import styled from '@emotion/styled';
-import { Component } from '@k8slens/extensions';
+import { Component, Store } from '@k8slens/extensions';
 import { useExtState } from './store/ExtStateProvider';
 import { useConfig } from './store/ConfigProvider';
 import { useAuth } from './store/AuthProvider';
@@ -108,6 +108,10 @@ export const View = function () {
   // @type {null|Array<Cluster>} null until clusters are loaded, then an array
   //  that represents the current selection, could be empty
   const [selectedClusters, setSelectedClusters] = useState(null);
+
+  // to prevent repeating the new workspaces notification whenever the user returns
+  //  to the extension after previously adding clusters
+  const [notifiedNewWorkspaces, setNotifiedNewWorkspaces] = useState(false);
 
   const loading =
     configLoading ||
@@ -223,15 +227,37 @@ export const View = function () {
 
   useEffect(
     function () {
-      if (addClustersLoaded && newWorkspaces.length > 0) {
+      if (addClustersLoading) {
+        setNotifiedNewWorkspaces(false);
+      }
+    },
+    [addClustersLoading]
+  );
+
+  useEffect(
+    function () {
+      if (
+        addClustersLoaded &&
+        newWorkspaces.length > 0 &&
+        !notifiedNewWorkspaces
+      ) {
+        setNotifiedNewWorkspaces(true);
+
+        // notify all new workspace names
         Notifications.info(
           strings.view.notifications.newWorkspaces(
             newWorkspaces.map((ws) => ws.name)
           )
         );
+
+        // activate the first new workspace
+        Store.workspaceStore.setActive(newWorkspaces[0].id);
+        Notifications.info(
+          strings.view.notifications.workspaceActivated(newWorkspaces[0].name)
+        );
       }
     },
-    [addClustersLoaded, newWorkspaces]
+    [addClustersLoaded, newWorkspaces, notifiedNewWorkspaces]
   );
 
   // 1. load the config object
