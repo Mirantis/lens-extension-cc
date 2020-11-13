@@ -226,7 +226,7 @@ const _notifyAndSwitchToNew = function () {
   Notifications.info(
     <p
       dangerouslySetInnerHTML={{
-        __html: strings.addClustersProvider.notifications.workspaceActivated(
+        __html: strings.addClustersProvider.notifications.workspaceActivatedHtml(
           firstWorkspace.name
         ),
       }}
