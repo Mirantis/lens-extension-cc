@@ -6,7 +6,7 @@ import React, { createContext, useContext, useState, useMemo } from 'react';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { AuthClient } from '../auth/clients/AuthClient';
-import { Store, Workspace } from '@k8slens/extensions';
+import { Store, Component } from '@k8slens/extensions';
 import { kubeConfigTemplate } from '../templates';
 import { AuthAccess } from '../auth/AuthAccess';
 import * as strings from '../../strings';
@@ -14,6 +14,7 @@ import { workspacePrefix } from '../../constants';
 import { ProviderStore } from './ProviderStore';
 
 const { workspaceStore } = Store;
+const { Notifications } = Component;
 
 //
 // Store
@@ -197,6 +198,43 @@ const _createNewWorkspaces = function (clusters, models) {
 };
 
 /**
+ * Posts a notification about new workspaces created, and switches to the first
+ *  new workspace in `pr.store.newWorkspaces` in Lens.
+ * @throws {Error} If `pr.store.newWorkspaces` is empty.
+ */
+const _notifyAndSwitchToNew = function () {
+  if (pr.store.newWorkspaces.length <= 0) {
+    throw new Error(
+      '[lens-extension-cc/AddClustersProvider._notifyAndSwitchToNew] There must be at least one new workspace to switch to!'
+    );
+  }
+
+  // notify all new workspace names
+  Notifications.info(
+    <p
+      dangerouslySetInnerHTML={{
+        __html: strings.addClustersProvider.notifications.newWorkspacesHtml(
+          pr.store.newWorkspaces.map((ws) => ws.name)
+        ),
+      }}
+    />
+  );
+
+  // activate the first new workspace
+  const firstWorkspace = pr.store.newWorkspaces[0];
+  Store.workspaceStore.setActive(firstWorkspace.id);
+  Notifications.info(
+    <p
+      dangerouslySetInnerHTML={{
+        __html: strings.addClustersProvider.notifications.workspaceActivated(
+          firstWorkspace.name
+        ),
+      }}
+    />
+  );
+};
+
+/**
  * [ASYNC] Add the specified clusters to Lens.
  * @param {Object} options
  * @param {Array<Cluster>} options.clusters Clusters to add.
@@ -240,10 +278,11 @@ const _addToLens = async function ({
   const results = await Promise.all(promises); // these promises are designed NOT to reject
   const failure = results.find((res) => !!res.error); // look for any errors, use first-found
 
+  pr.store.loading = false;
+  pr.store.loaded = true;
+
   // abort if there's at least one error
   if (failure) {
-    pr.store.loading = false;
-    pr.store.loaded = true;
     pr.store.error = failure.error;
   } else {
     const models = results.map(({ model }) => model);
@@ -256,10 +295,12 @@ const _addToLens = async function ({
       Store.clusterStore.addCluster(model);
     });
 
-    pr.store.loading = false;
-    pr.store.loaded = true;
+    if (addToNew && pr.store.newWorkspaces.length > 0) {
+      _notifyAndSwitchToNew();
+    }
   }
 
+  pr.notifyIfError();
   pr.onChange();
 };
 

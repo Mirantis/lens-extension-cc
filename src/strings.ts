@@ -7,12 +7,16 @@
 //
 
 import { workspacePrefix } from './constants';
+import pkg from '../package.json';
 
 export type Prop = (...tokens: any[]) => string;
 
 export interface Dict {
   [index: string]: Dict | Prop;
 }
+
+// owner info to add to all posted notifications; does NOT start/end with a space
+export const noteOwner = `(${pkg.name})`;
 
 // strings for main, renderer, and page modules
 export const extension: Dict = {
@@ -53,12 +57,6 @@ export const view: Dict = {
   created if it doesn't exist already).
 </p>
 `,
-  },
-  notifications: {
-    newWorkspaces: (names = []) =>
-      `The following new workspaces were created: ${names.join(', ')}`,
-    workspaceActivated: (name = '') =>
-      `The ${name} workspace has been activated.`,
   },
 };
 
@@ -132,6 +130,14 @@ export const addClustersProvider: Dict = {
   },
   workspaces: {
     description: () => 'MCC workspace',
+  },
+  notifications: {
+    newWorkspacesHtml: (names = []) =>
+      `The following new workspaces were created: ${names
+        .map((name) => `<strong>${name}</strong>`)
+        .join(', ')} <em>${noteOwner}</em>`,
+    workspaceActivatedHtml: (name = '') =>
+      `The <strong>${name}</strong> workspace has been activated. <em>${noteOwner}</em>`,
   },
 };
 
