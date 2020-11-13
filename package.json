@@ -1,5 +1,4 @@
 {
-  "private": true,
   "name": "@mirantis/lens-extension-cc",
   "publisher": "mirantis",
   "version": "0.0.1",
