@@ -103,65 +103,13 @@ export const ClusterList = function ({
 };
 
 ClusterList.propTypes = {
-  clusters: propTypes.array, // DEBUG propTypes.arrayOf(propTypes.instanceOf(Cluster)),
+  clusters: propTypes.arrayOf(propTypes.instanceOf(Cluster)),
   selectedClusters: propTypes.arrayOf(propTypes.instanceOf(Cluster)),
   onSelection: propTypes.func, // ({ cluster: Cluster, selected: boolean }) => void
   onSelectAll: propTypes.func, // ({ selected: boolean }) => void
 };
 
 ClusterList.defaultProps = {
-  clusters: [
-    // DEBUG REMOVE
-    {
-      id: '0',
-      namespace: 'foo',
-      name: 'cluster-0',
-    },
-    {
-      id: '1',
-      namespace: 'foo',
-      name: 'cluster-1',
-    },
-    {
-      id: '2',
-      namespace: 'foo',
-      name: 'cluster-2',
-    },
-    {
-      id: '3',
-      namespace: 'foo',
-      name: 'cluster-3',
-    },
-    {
-      id: '4',
-      namespace: 'foo',
-      name: 'cluster-4',
-    },
-    {
-      id: '5',
-      namespace: 'bar',
-      name: 'cluster-5',
-    },
-    {
-      id: '6',
-      namespace: 'bar',
-      name: 'cluster-6',
-    },
-    {
-      id: '7',
-      namespace: 'bar',
-      name: 'cluster-7',
-    },
-    {
-      id: '8',
-      namespace: 'bar',
-      name: 'cluster-8',
-    },
-    {
-      id: '9',
-      namespace: 'bar',
-      name: 'cluster-9',
-    },
-  ],
+  clusters: [],
   selectedClusters: [],
 };

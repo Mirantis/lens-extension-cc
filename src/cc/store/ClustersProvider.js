@@ -214,8 +214,6 @@ const _loadData = async function (baseUrl, config, authAccess) {
     }
   }
 
-  console.log('[ClustersProvider._loadData] store:', pr.store); // DEBUG
-
   pr.notifyIfError();
   pr.onChange();
 };
@@ -254,7 +252,6 @@ export const useClusters = function () {
        */
       load(baseUrl, config, authAccess) {
         if (!pr.store.loading) {
-          console.log('[ClusterProvider] loading...'); // DEBUG
           _loadData(baseUrl, config, authAccess);
         }
       },

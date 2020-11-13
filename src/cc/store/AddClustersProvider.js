@@ -381,11 +381,6 @@ export const useAddClusters = function () {
        */
       addClusters(options) {
         if (!pr.store.loading && options.clusters.length > 0) {
-          console.log(
-            '[AddClustersProvider] adding %s clusters to %s...',
-            options.clusters.length,
-            options.savePath
-          ); // DEBUG
           _addClusters(options);
         }
       },

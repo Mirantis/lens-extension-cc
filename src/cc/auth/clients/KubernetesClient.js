@@ -1,5 +1,3 @@
-// DEBUG TODO is this client needed?
-
 import { request } from '../../netUtil';
 import * as strings from '../../../strings';
 

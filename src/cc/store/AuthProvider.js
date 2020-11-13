@@ -84,8 +84,6 @@ export const useAuth = function () {
        */
       authenticate(options) {
         if (!pr.store.loading) {
-          console.log('[AuthProvider] authenticating...'); // DEBUG
-
           _authenticate(options);
         }
       },
@@ -96,8 +94,6 @@ export const useAuth = function () {
        */
       setAuthenticated() {
         if (!pr.store.loading) {
-          console.log('[AuthProvider] authenticated'); // DEBUG
-
           pr.store.loaded = true;
           pr.store.error = undefined;
           pr.onChange();
