@@ -138,6 +138,10 @@ export const addClustersProvider: Dict = {
         .join(', ')} <em>${noteOwner}</em>`,
     workspaceActivatedHtml: (name = '') =>
       `The <strong>${name}</strong> workspace has been activated. <em>${noteOwner}</em>`,
+    skippedClusters: (names = []) =>
+      `The following clusters were <strong>skipped</strong> because they were already in Lens: ${names
+        .map((name) => `<strong>${name}</strong>`)
+        .join(', ')} <em>${noteOwner}</em>`,
   },
 };
 

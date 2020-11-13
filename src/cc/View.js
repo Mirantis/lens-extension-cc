@@ -165,7 +165,7 @@ export const View = function () {
   const handleClustersAdd = useCallback(
     function ({ savePath, offline, addToNew }) {
       if (!addClustersLoading) {
-        addClustersActions.addToLens({
+        addClustersActions.addClusters({
           clusters: selectedClusters,
           savePath,
           baseUrl,

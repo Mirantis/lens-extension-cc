@@ -161,11 +161,11 @@ const _createClusterFile = async function ({
  * Assigns each cluster to an existing or new workspace that correlates to its
  *  original MCC namespace. New workspaces are created if necessary and added
  *  to this Provider's `pr.store.newWorkspaces` list.
- * @param {Array<Cluster>} clusters Clusters being added.
- * @param {Array<ClusterModel>} models Cluster models to add to Lens. These are
- *  modified in-place.
- *
- *  NOTE: `model.id` is expected to be the ID of the related cluster.
+ * @param {Array<Cluster>} clusters Clusters being added. Can be greater than
+ *  `models`, but must at least contain a cluster for each model.
+ * @param {Array<ClusterModel>} models Cluster models to add to Lens, one for
+ *  each item in `clusters`. These are modified in-place. NOTE: `model.id` is
+ *  expected to be the ID of the related cluster.
  */
 const _createNewWorkspaces = function (clusters, models) {
   const findWorkspace = (id) =>
@@ -251,7 +251,7 @@ const _notifyAndSwitchToNew = function () {
  *  correlate to their original MCC namespaces; otherwise, they will all
  *  be added to the active workspace.
  */
-const _addToLens = async function ({
+const _addClusters = async function ({
   clusters,
   savePath,
   baseUrl,
@@ -281,22 +281,53 @@ const _addToLens = async function ({
   pr.store.loading = false;
   pr.store.loaded = true;
 
-  // abort if there's at least one error
   if (failure) {
     pr.store.error = failure.error;
   } else {
-    const models = results.map(({ model }) => model);
+    const existingLensClusters = Store.clusterStore.clustersList;
+    const skippedClusters = []; // {Array<Cluster>} clusters already existing in Lens that were not added
+
+    // filter the models down to only clusters that aren't already in Lens
+    const models = results
+      .map(({ model }) => model)
+      .filter((model) => {
+        if (
+          existingLensClusters.find(
+            (lensCluster) => lensCluster.id === model.id
+          )
+        ) {
+          const cluster = clusters.find((cluster) => cluster.id === model.id);
+          skippedClusters.push(cluster);
+          return false; // skip it
+        }
+
+        return true; // add it
+      });
 
     if (addToNew) {
       _createNewWorkspaces(clusters, models);
     }
 
     models.forEach((model) => {
-      Store.clusterStore.addCluster(model);
+      Store.clusterStore.addCluster(model); // officially add to Lens
     });
 
     if (addToNew && pr.store.newWorkspaces.length > 0) {
       _notifyAndSwitchToNew();
+    }
+
+    if (skippedClusters.length > 0) {
+      Notifications.info(
+        <p
+          dangerouslySetInnerHTML={{
+            __html: strings.addClustersProvider.notifications.skippedClusters(
+              skippedClusters.map(
+                (cluster) => `${cluster.namespace}/${cluster.name}`
+              )
+            ),
+          }}
+        />
+      );
     }
   }
 
@@ -348,14 +379,14 @@ export const useAddClusters = function () {
        *  correlate to their original MCC namespaces; otherwise, they will all
        *  be added to the active workspace.
        */
-      addToLens(options) {
+      addClusters(options) {
         if (!pr.store.loading && options.clusters.length > 0) {
           console.log(
             '[AddClustersProvider] adding %s clusters to %s...',
             options.clusters.length,
             options.savePath
           ); // DEBUG
-          _addToLens(options);
+          _addClusters(options);
         }
       },
 
