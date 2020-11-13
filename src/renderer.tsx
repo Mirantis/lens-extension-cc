@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from '@emotion/styled';
 import { LensRendererExtension } from '@k8slens/extensions';
-import { AddClusterIcon, AddClusterPage } from './page';
+import { ContainerCloudIcon, AddClusterPage } from './page';
 import * as strings from './strings';
 import { addRoute } from './routes';
 
@@ -31,7 +31,7 @@ export default class ExtensionRenderer extends LensRendererExtension {
           className="flex align-center gaps"
           onClick={() => this.navigate(addRoute)}
         >
-          <AddClusterIcon />
+          <ContainerCloudIcon />
           <span>{strings.extension.statusBar['label']()}</span>
         </Item>
       ),

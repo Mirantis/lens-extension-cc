@@ -2,7 +2,7 @@
 // Add Clusters Panel
 //
 
-import React, { useState } from 'react';
+import React from 'react';
 import os from 'os';
 import propTypes from 'prop-types';
 import styled from '@emotion/styled';
@@ -48,11 +48,8 @@ export const AddClusters = function ({ onAdd, clusters }) {
   // STATE
   //
 
-  const [offline, setOffline] = useState(true); // typically Lens users use offline tokens
-  const [addToNew, setAddToNew] = useState(true); // add to new workspaces or the active one
-
   const {
-    state: { savePath },
+    state: { savePath, offline, addToNew },
     actions: extActions,
   } = useExtState();
 
@@ -90,11 +87,11 @@ export const AddClusters = function ({ onAdd, clusters }) {
   };
 
   const handleAddToNewChange = function (checked) {
-    setAddToNew(checked);
+    extActions.setAddToNew(checked);
   };
 
   const handleOfflineChange = function (checked) {
-    setOffline(checked);
+    extActions.setOffline(checked);
   };
 
   const handleAddClick = function () {
