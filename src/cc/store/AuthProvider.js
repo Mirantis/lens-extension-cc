@@ -45,6 +45,7 @@ const _authenticate = async function ({ authAccess, config, baseUrl }) {
     authAccess.updateTokens(body);
   }
 
+  pr.notifyIfError();
   pr.onChange();
 };
 

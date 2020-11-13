@@ -1,3 +1,8 @@
+import { Component } from '@k8slens/extensions';
+import { noteOwner } from '../../strings';
+
+const { Notifications } = Component;
+
 /**
  * Defines common functionality for use when implementing a React context provider
  *  that provides async state updates.
@@ -67,6 +72,16 @@ export class ProviderStore {
    */
   triggerContextUpdate() {
     this.setState(this.clone());
+  }
+
+  /**
+   * Checks the store's `error` property and if it's not empty/falsy, posts
+   *  an error notification to the UI with its content.
+   */
+  notifyIfError() {
+    if (this.store.error) {
+      Notifications.error(`${this.store.error} ${noteOwner}`);
+    }
   }
 
   /**

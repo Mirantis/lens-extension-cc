@@ -55,6 +55,7 @@ const _loadConfig = async function getConfig(url) {
     }
   }
 
+  pr.notifyIfError();
   pr.onChange();
 };
 

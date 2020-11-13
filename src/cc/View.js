@@ -96,22 +96,13 @@ export const View = function () {
   } = useClusters();
 
   const {
-    state: {
-      loading: addClustersLoading,
-      loaded: addClustersLoaded,
-      error: addClustersError,
-      newWorkspaces,
-    },
+    state: { loading: addClustersLoading, error: addClustersError },
     actions: addClustersActions,
   } = useAddClusters();
 
   // @type {null|Array<Cluster>} null until clusters are loaded, then an array
   //  that represents the current selection, could be empty
   const [selectedClusters, setSelectedClusters] = useState(null);
-
-  // to prevent repeating the new workspaces notification whenever the user returns
-  //  to the extension after previously adding clusters
-  const [notifiedNewWorkspaces, setNotifiedNewWorkspaces] = useState(false);
 
   const loading =
     configLoading ||
@@ -125,7 +116,7 @@ export const View = function () {
     addClustersLoading;
 
   // in order of execution/precedence
-  const errorMessage =
+  const hasError =
     configError || authError || clustersError || addClustersError || null;
 
   //
@@ -199,66 +190,6 @@ export const View = function () {
   //
   // EFFECTS
   //
-
-  // display any error messages that might come up
-  useEffect(
-    function () {
-      if (configLoaded && configError) {
-        Notifications.error(configError);
-      } else if (authLoaded && authError) {
-        Notifications.error(authError);
-      } else if (clustersLoaded && clustersError) {
-        Notifications.error(clustersError);
-      } else if (addClustersLoaded && addClustersError) {
-        Notifications.error(addClustersError);
-      }
-    },
-    [
-      configLoaded,
-      configError,
-      authLoaded,
-      authError,
-      clustersLoaded,
-      clustersError,
-      addClustersLoaded,
-      addClustersError,
-    ]
-  );
-
-  useEffect(
-    function () {
-      if (addClustersLoading) {
-        setNotifiedNewWorkspaces(false);
-      }
-    },
-    [addClustersLoading]
-  );
-
-  useEffect(
-    function () {
-      if (
-        addClustersLoaded &&
-        newWorkspaces.length > 0 &&
-        !notifiedNewWorkspaces
-      ) {
-        setNotifiedNewWorkspaces(true);
-
-        // notify all new workspace names
-        Notifications.info(
-          strings.view.notifications.newWorkspaces(
-            newWorkspaces.map((ws) => ws.name)
-          )
-        );
-
-        // activate the first new workspace
-        Store.workspaceStore.setActive(newWorkspaces[0].id);
-        Notifications.info(
-          strings.view.notifications.workspaceActivated(newWorkspaces[0].name)
-        );
-      }
-    },
-    [addClustersLoaded, newWorkspaces, notifiedNewWorkspaces]
-  );
 
   // 1. load the config object
   useEffect(
@@ -379,7 +310,7 @@ export const View = function () {
           password={authAccess ? authAccess.password : undefined}
           onLogin={handleLogin}
         />
-        {!errorMessage &&
+        {!hasError &&
         authAccess.isValid() &&
         clustersLoaded &&
         selectedClusters ? (

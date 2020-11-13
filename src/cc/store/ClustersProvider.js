@@ -216,6 +216,7 @@ const _loadData = async function (baseUrl, config, authAccess) {
 
   console.log('[ClustersProvider._loadData] store:', pr.store); // DEBUG
 
+  pr.notifyIfError();
   pr.onChange();
 };
 
