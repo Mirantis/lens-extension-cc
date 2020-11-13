@@ -85,9 +85,16 @@ export class ProviderStore {
   }
 
   /**
+   * Called when a store property has changed to validate the current store data.
+   *  Base implementation does nothing. Override should throw an error on failure.
+   */
+  validate() {}
+
+  /**
    * Called when a store property has changed.
    */
   onChange() {
+    this.validate();
     this.triggerContextUpdate();
   }
 }
