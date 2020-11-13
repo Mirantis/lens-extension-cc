@@ -20,12 +20,13 @@
     "clean": "rm -rf ./dist",
     "build": "npm run clean && webpack",
     "dev": "TARGET=development npm run build",
+    "start": "TARGET=development npm run build -- --watch",
     "fmt": "prettier --write \"{*,src/**/*}.+(js|ts*|yml|json)\"",
     "fmt:check": "prettier --check \"{*,src/**/*}.+(js|ts*|yml|json)\"",
     "lint": "eslint \"{*,src/**/*}.+(js|ts*)\"",
-    "prepublishOnly": "npm run build",
-    "start": "TARGET=development npm run build -- --watch",
-    "test": "npm run lint && npm run fmt:check"
+    "check": "npm run lint && npm run fmt:check",
+    "test": "echo 'Works for me! ¯\\_(ツ)_/¯'",
+    "prepublishOnly": "npm run check && npm test && npm run build"
   },
   "devDependencies": {
     "@babel/cli": "^7.12.1",
