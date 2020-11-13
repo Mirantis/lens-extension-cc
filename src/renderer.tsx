@@ -16,6 +16,7 @@ const Item = styled.div(function () {
 export default class ExtensionRenderer extends LensRendererExtension {
   globalPages = [
     {
+      id: addRoute,
       routePath: addRoute,
       components: {
         Page: () => <AddClusterPage extension={this} />,
