@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { LensRendererExtension } from '@k8slens/extensions';
 import { ThemeProvider } from 'emotion-theming';
 import { View } from './cc/View';
 import { ExtStateProvider } from './cc/store/ExtStateProvider';

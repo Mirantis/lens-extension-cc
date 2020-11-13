@@ -20,7 +20,7 @@ export const noteOwner = `(${pkg.name})`;
 
 // strings for main, renderer, and page modules
 export const extension: Dict = {
-  menu: {
+  appMenu: {
     label: () => 'Add Cloud Clusters',
   },
   statusBar: {

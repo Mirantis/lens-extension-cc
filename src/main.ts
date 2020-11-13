@@ -6,7 +6,7 @@ export default class ExtensionMain extends LensMainExtension {
   appMenus = [
     {
       parentId: 'file',
-      label: strings.extension.menu['label'](),
+      label: strings.extension.appMenu['label'](),
       click: () => {
         this.navigate(addRoute);
       },

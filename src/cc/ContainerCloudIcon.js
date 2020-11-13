@@ -1,14 +1,10 @@
 import React from 'react';
+import propTypes from 'prop-types';
 
 // this is the current Mirantis Container Cloud icon
-export const ContainerCloudIcon = function () {
+export const ContainerCloudIcon = function ({ width, height, fill }) {
   return (
-    <svg
-      viewBox="0 0 64 73.593"
-      width="16"
-      height="16"
-      style={{ fill: 'var(--iconActiveColor)' }}
-    >
+    <svg viewBox="0 0 64 73.593" width={width} height={height} style={{ fill }}>
       <g transform="translate(-285.428 -293.889)">
         <path d="M317.869,353.583l-24.692-14.256,4.284-2.489L315.238,347.1a1,1,0,0,0,1-1.732l-23.061-13.315c.133-.069,4.854-2.881,4.855-2.7l6.51-3.783a1.007,1.007,0,0,0,0-1.73l-6.555-3.785a1,1,0,0,0-1,0l-6.509,3.783a1.008,1.008,0,0,0,0,1.731l4.952,2.859-4.747,2.759a1,1,0,0,0,0,1.731l4.784,2.761-4.786,2.781a1.007,1.007,0,0,0,0,1.73l26.187,15.119A1,1,0,0,0,317.869,353.583Zm-24.9-28.877,4.516-2.625,4.558,2.632-4.517,2.625Z" />
         <path d="M348.925,311.922l-31.209-17.9a.993.993,0,0,0-1,0l-30.791,17.9a1,1,0,0,0-.5.864v35.8a1,1,0,0,0,.5.864l30.791,17.9a.993.993,0,0,0,1,0l31.209-17.9a1,1,0,0,0,.5-.867v-35.8A1,1,0,0,0,348.925,311.922Zm-1.5,36.083-30.207,17.323-29.793-17.319V313.364l29.793-17.319,30.207,17.323Z" />
@@ -24,4 +20,16 @@ export const ContainerCloudIcon = function () {
       </g>
     </svg>
   );
+};
+
+ContainerCloudIcon.propTypes = {
+  width: propTypes.number, // pixels
+  height: propTypes.number, // pixels
+  fill: propTypes.string, // CSS value
+};
+
+ContainerCloudIcon.defaultProps = {
+  width: 16,
+  height: 16,
+  fill: 'var(--iconActiveColor)',
 };
