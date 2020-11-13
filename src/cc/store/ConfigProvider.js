@@ -90,7 +90,6 @@ export const useConfig = function () {
        */
       load(url) {
         if (!pr.loading) {
-          console.log('[ConfigProvider] loading...'); // DEBUG
           _loadConfig(url);
         }
       },

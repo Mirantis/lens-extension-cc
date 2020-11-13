@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import styled from '@emotion/styled';
-import { Component, Store } from '@k8slens/extensions';
 import { useExtState } from './store/ExtStateProvider';
 import { useConfig } from './store/ConfigProvider';
 import { useAuth } from './store/AuthProvider';
@@ -11,8 +10,6 @@ import { ClusterList } from './ClusterList';
 import { AddClusters } from './AddClusters';
 import * as strings from '../strings';
 import { layout, mixinFlexColumnGaps, mixinCustomScrollbar } from './styles';
-
-const { Notifications } = Component;
 
 const Container = styled.div(function () {
   return {
@@ -286,18 +283,6 @@ export const View = function () {
   // RENDER
   //
 
-  console.log(
-    '[View] rendering: loading=%s, configLoading=%s, authAccess.hasCreds=%s, authLoading=%s, clustersLoading=%s, addClustersLoading=%s, clusters=%s',
-    loading,
-    configLoading,
-    authAccess.hasCredentials(),
-    authLoading,
-    clustersLoading,
-    addClustersLoading,
-    clusters.length,
-    clusters
-  ); // DEBUG
-
   return (
     <Container className="lecc-View">
       <MainColumn>
@@ -314,16 +299,15 @@ export const View = function () {
         authAccess.isValid() &&
         clustersLoaded &&
         selectedClusters ? (
-          // DEBUG
           <>
             <ClusterList
-              clusters={clusters} // DEBUG
-              selectedClusters={selectedClusters} // DEBUG
+              clusters={clusters}
+              selectedClusters={selectedClusters}
               onSelection={handleClusterSelection}
               onSelectAll={handleClusterSelectAll}
             />
             <AddClusters
-              clusters={selectedClusters} // DEBUG
+              clusters={selectedClusters}
               onAdd={handleClustersAdd}
             />
           </>

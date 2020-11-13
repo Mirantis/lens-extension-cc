@@ -104,12 +104,6 @@ export const AddClusters = function ({ onAdd, clusters }) {
   // RENDER
   //
 
-  console.log(
-    '[AddClusters] rendering: addingClusters=%s, clusters.length=%s',
-    addingClusters,
-    clusters.length
-  ); // DEBUG
-
   const activeWorkspaceName = Store.workspaceStore.currentWorkspace
     ? Store.workspaceStore.currentWorkspace.name
     : Store.workspaceStore.currentWorkspaceId;
