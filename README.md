@@ -4,17 +4,21 @@ This Lens Extension adds a status bar item, and a menu item, that makes it easy 
 
 ## Install
 
+> NPM 7.x is recommended since the `package-lock.json` file uses the v2 format. NPM <= 6 uses the older v1 format.
+
 ```bash
 $ mkdir -p ~/.k8slens/extensions/lens-extension-cc
 $ git clone https://github.com/Mirantis/lens-extension-cc.git ~/.k8slens/extensions/lens-extension-cc
 $ cd ~/.k8slens/extensions/lens-extension-cc
-$ npm install
+$ npm ci # to avoid lock file changes, especially if you use an older version of NPM
 $ npm run build
 ```
 
 Then, restart Lens. You should now be able to choose the new `File > Add Cloud Cluster` menu item, or click on the `Add Cloud Cluster` status bar item (far right side of the status bar at the bottom of the app), to get started.
 
 ## Development
+
+> NPM 7.x is __required__ since `package-lock.json` uses the v2 format. NPM <= 6 uses the older v1 format.
 
 Rather than cloning the repository into `~/.k8slens/extensions/lens-extension-cc`, clone the repository wherever you prefer to have your code, and then link to it:
 
