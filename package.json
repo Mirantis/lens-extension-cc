@@ -9,6 +9,17 @@
   "main": "dist/main.js",
   "renderer": "dist/renderer.js",
   "license": "MIT",
+  "author": {
+    "name" : "Stefan Cameron",
+    "url" : "https://github.com/stefcameron"
+  },
+  "homepage": "https://github.com/Mirantis/lens-extension-cc#readme",
+  "bugs": "https://github.com/Mirantis/lens-extension-cc/issues",
+  "keywords": ["lens", "mirantis", "cluster"],
+  "repository": {
+    "type" : "git",
+    "url" : "https://github.com/Mirantis/lens-extension-cc.git"
+  },
   "files": [
     "package.json",
     "CHANGELOG.md",
