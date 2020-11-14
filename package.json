@@ -1,7 +1,7 @@
 {
   "name": "@mirantis/lens-extension-cc",
   "publisher": "mirantis",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Lens extension that loads Mirantis Container Cloud clusters.",
   "engines": {
     "lens": ">= 4.0.0"
@@ -10,15 +10,19 @@
   "renderer": "dist/renderer.js",
   "license": "MIT",
   "author": {
-    "name" : "Stefan Cameron",
-    "url" : "https://github.com/stefcameron"
+    "name": "Stefan Cameron",
+    "url": "https://github.com/stefcameron"
   },
   "homepage": "https://github.com/Mirantis/lens-extension-cc#readme",
   "bugs": "https://github.com/Mirantis/lens-extension-cc/issues",
-  "keywords": ["lens", "mirantis", "cluster"],
+  "keywords": [
+    "lens",
+    "mirantis",
+    "cluster"
+  ],
   "repository": {
-    "type" : "git",
-    "url" : "https://github.com/Mirantis/lens-extension-cc.git"
+    "type": "git",
+    "url": "https://github.com/Mirantis/lens-extension-cc.git"
   },
   "files": [
     "package.json",
