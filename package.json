@@ -8,6 +8,7 @@
   },
   "main": "dist/main.js",
   "renderer": "dist/renderer.js",
+  "license": "MIT",
   "files": [
     "package.json",
     "CHANGELOG.md",
