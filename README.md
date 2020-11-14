@@ -8,7 +8,7 @@ This [Lens](https://k8slens.dev/) Extension adds a status bar item, and a menu i
 
 These instructions will help you install the extension for direct use with Lens. Follow the [development](#development) instructions below if you intend to work on the extension to improve it.
 
-> NPM 7.x is recommended since the `package-lock.json` file uses the v2 format. NPM <= 6 uses the older v1 format.
+> NPM 6 or later is required to use the [npm pack](https://docs.npmjs.com/cli/v6/commands/npm-pack) command.
 
 First, quit Lens if it's currently running, then:
 
