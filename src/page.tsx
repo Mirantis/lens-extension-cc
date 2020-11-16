@@ -30,6 +30,8 @@ export const AddClusterPage = function ({ extension }: Props) {
   // EFFECTS
   //
 
+  // TODO: use mobx reaction() to detect theme updates once https://github.com/lensapp/lens/issues/1336
+  //  is fixed and https://github.com/lensapp/lens/pull/1371 is shipped (beta.3)
   useEffect(function () {
     const observer = new MutationObserver(function (
       mutations: MutationRecord[]
