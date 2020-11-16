@@ -14,7 +14,7 @@ export const lightTheme = {
   color: {
     scrollbar: {
       // @see https://github.com/lensapp/lens/blob/70a8982c9f6396107f92aeced465620761d90726/src/renderer/components/mixins.scss#L27
-      background: '#bbb',
+      background: '#bbb', // TODO: get from CSS var once https://github.com/lensapp/lens/issues/1337 is fixed
     },
   },
 };
@@ -24,7 +24,7 @@ export const darkTheme = {
   color: {
     scrollbar: {
       // @see https://github.com/lensapp/lens/blob/70a8982c9f6396107f92aeced465620761d90726/src/renderer/components/mixins.scss#L28
-      background: '#5f6064',
+      background: '#5f6064', // TODO: get from CSS var once https://github.com/lensapp/lens/issues/1337 is fixed
     },
   },
 };

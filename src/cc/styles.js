@@ -45,8 +45,8 @@ export const mixinFlexColumnGaps = function (gap = layout.gap) {
  */
 export const mixinCustomScrollbar = function ({
   theme,
-  size = 7,
-  borderWidth = 5,
+  size = 7, // TODO: get from CSS var once https://github.com/lensapp/lens/issues/1337 is fixed
+  borderWidth = 5, // TODO: get from CSS var once https://github.com/lensapp/lens/issues/1337 is fixed
   scrollable = true,
 }) {
   const backgroundColor = theme.color.scrollbar.background;
