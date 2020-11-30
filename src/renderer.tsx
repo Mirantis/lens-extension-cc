@@ -5,11 +5,14 @@ import { ContainerCloudIcon, AddClusterPage } from './page';
 import * as strings from './strings';
 import { addRoute } from './routes';
 
+const itemColor = 'white'; // CSS color; Lens hard-codes the color of the workspace indicator item to 'white' also
+
 const Item = styled.div(function () {
   return {
-    color: 'var(--textColorAccent)',
+    color: itemColor,
     cursor: 'pointer',
     fontSize: 'var(--font-size-small)',
+    padding: '2px 4px', // same as used for active workspace indicator on the left corner
   };
 });
 
@@ -30,7 +33,7 @@ export default class ExtensionRenderer extends LensRendererExtension {
           className="flex align-center gaps"
           onClick={() => this.navigate(addRoute)}
         >
-          <ContainerCloudIcon />
+          <ContainerCloudIcon fill={itemColor} />
           <span>{strings.extension.statusBar['label']()}</span>
         </Item>
       ),

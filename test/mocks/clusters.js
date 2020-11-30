@@ -1,6 +1,7 @@
 // mock clusters to use in ClusterList view when you don't have full
-//  /src/cc/store/Cluster objects to test with (set this array as the
-//  the `ClusterList.defaultProps.clusters` value)
+//  /src/cc/store/Cluster objects to test with (e.g. set this array as
+//  the `ClusterList.defaultProps.clusters` value and then don't provide
+//  any clusters to the component's instance)
 export const clusters = [
   {
     id: '0',

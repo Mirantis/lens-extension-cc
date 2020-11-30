@@ -32,6 +32,8 @@ export const AddClusterPage = function ({ extension }: Props) {
 
   // TODO: use mobx reaction() to detect theme updates once https://github.com/lensapp/lens/issues/1336
   //  is fixed and https://github.com/lensapp/lens/pull/1371 is shipped (beta.3)
+  // Update (2020/11/27): Apparently, per the proposed fix for #1336, the right thing to
+  //  do is use `mobx` to observe changes to `Theme.getActiveTheme().name`
   useEffect(function () {
     const observer = new MutationObserver(function (
       mutations: MutationRecord[]

@@ -11,22 +11,12 @@ export const themeModes = Object.freeze({
 
 export const lightTheme = {
   mode: themeModes.LIGHT,
-  color: {
-    scrollbar: {
-      // @see https://github.com/lensapp/lens/blob/70a8982c9f6396107f92aeced465620761d90726/src/renderer/components/mixins.scss#L27
-      background: '#bbb', // TODO: get from CSS var once https://github.com/lensapp/lens/issues/1337 is fixed
-    },
-  },
+  // nothing needed at the moment; all colors needed are provided by Lens as CSS vars
 };
 
 export const darkTheme = {
   mode: themeModes.DARK,
-  color: {
-    scrollbar: {
-      // @see https://github.com/lensapp/lens/blob/70a8982c9f6396107f92aeced465620761d90726/src/renderer/components/mixins.scss#L28
-      background: '#5f6064', // TODO: get from CSS var once https://github.com/lensapp/lens/issues/1337 is fixed
-    },
-  },
+  // nothing needed at the moment; all colors needed are provided by Lens as CSS vars
 };
 
 if (DEV_ENV) {
@@ -37,11 +27,6 @@ if (DEV_ENV) {
       {
         theme: {
           mode: [rtv.STRING, { oneOf: Object.values(themeModes) }],
-          color: {
-            scrollbar: {
-              background: rtv.STRING,
-            },
-          },
         },
       }
     );

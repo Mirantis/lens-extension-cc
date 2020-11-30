@@ -9,7 +9,7 @@ import { Login } from './Login';
 import { ClusterList } from './ClusterList';
 import { AddClusters } from './AddClusters';
 import * as strings from '../strings';
-import { layout, mixinFlexColumnGaps, mixinCustomScrollbar } from './styles';
+import { layout, mixinFlexColumnGaps } from './styles';
 
 const Container = styled.div(function () {
   return {
@@ -24,7 +24,7 @@ const Container = styled.div(function () {
   };
 });
 
-const getColumnStyles = function (theme) {
+const getColumnStyles = function () {
   return {
     // as flex children, grow/shrink evenly
     flex: 1,
@@ -36,19 +36,19 @@ const getColumnStyles = function (theme) {
     backgroundColor: 'var(--contentColor)',
     marginRight: layout.gap,
     padding: layout.gap,
-    ...mixinCustomScrollbar({ theme }),
+    overflow: 'auto',
   };
 };
 
-const MainColumn = styled.div(function ({ theme }) {
+const MainColumn = styled.div(function () {
   return {
-    ...getColumnStyles(theme),
+    ...getColumnStyles(),
   };
 });
 
-const HelpColumn = styled.div(function ({ theme }) {
+const HelpColumn = styled.div(function () {
   return {
-    ...getColumnStyles(theme),
+    ...getColumnStyles(),
     marginRight: 0,
 
     '> p': {

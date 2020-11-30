@@ -5,16 +5,16 @@ import { Component } from '@k8slens/extensions';
 import { useAddClusters } from './store/AddClustersProvider';
 import { Cluster } from './store/Cluster';
 import { Section } from './Section';
-import { layout, mixinFlexColumnGaps, mixinCustomScrollbar } from './styles';
+import { layout, mixinFlexColumnGaps } from './styles';
 import * as strings from '../strings';
 
-const CheckList = styled.div(function ({ theme }) {
+const CheckList = styled.div(function () {
   return {
     ...mixinFlexColumnGaps(layout.pad),
 
     backgroundColor: 'var(--mainBackground)',
     padding: layout.pad,
-    ...mixinCustomScrollbar({ theme }),
+    overflow: 'auto',
 
     borderRadius: layout.grid,
     borderStyle: 'solid',
