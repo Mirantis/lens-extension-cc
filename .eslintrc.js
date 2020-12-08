@@ -14,6 +14,7 @@ const rules = {
       allowTemplateLiterals: false,
     },
   ],
+  'no-console': 'error',
 };
 
 const parserOptions = {

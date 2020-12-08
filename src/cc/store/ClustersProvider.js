@@ -59,6 +59,7 @@ const _deserializeNamespacesList = function (body) {
   try {
     return { data: body.items.map((item) => new Namespace(item)) };
   } catch (err) {
+    // eslint-disable-next-line no-console -- OK to show errors
     console.error(
       `[${pkg.name}/ClustersProvider._deserializeNamespacesList()] ERROR: ${err.message}`,
       err
@@ -122,6 +123,7 @@ const _deserializeClustersList = function (body) {
   try {
     return { data: body.items.map((item) => new Cluster(item)) };
   } catch (err) {
+    // eslint-disable-next-line no-console -- OK to show errors
     console.error(
       `[${pkg.name}/ClustersProvider._deserializeClustersList()] ERROR: ${err.message}`,
       err

@@ -104,6 +104,7 @@ class ExtStateProviderStore extends ProviderStore {
 
         this.store.authAccess.username = this.store.username;
       } catch (err) {
+        // eslint-disable-next-line no-console -- OK to show errors
         console.error(
           `[${pkg.name}/ExtStateProviderStore.load()] ERROR: ${err.message}`,
           err
