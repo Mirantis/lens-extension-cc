@@ -42,7 +42,7 @@
     "check": "npm run lint && npm run fmt:check",
     "test:unit": "echo 'Works for me! ¯\\_(ツ)_/¯'",
     "test": "npm run check && npm run test:unit",
-    "prepublishOnly": "npm run check && npm test && npm run build"
+    "prepublishOnly": "npm test && npm run build"
   },
   "devDependencies": {
     "@babel/cli": "^7.12.1",
