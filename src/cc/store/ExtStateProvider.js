@@ -21,10 +21,10 @@ const extStateTs = {
       }
     },
   ], // MCC UI URL, does NOT end with a slash
-  username: [rtv.EXPECTED, rtv.STRING],
+  username: [rtv.EXPECTED, rtv.STRING], // INTERNAL only for storage purposes (not exposed via hook API)
   authAccess: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: AuthAccess }],
-  savePath: [rtv.EXPECTED, rtv.STRING], // absolute path on local system where to save kubeconfig files
-  offline: [rtv.EXPECTED, rtv.BOOLEAN], // if kubeconfigs should use offline tokens
+  savePath: [rtv.EXPECTED, rtv.STRING], // absolute path on local system where to save kubeConfig files
+  offline: [rtv.EXPECTED, rtv.BOOLEAN], // if kubeConfigs should use offline tokens
   addToNew: [rtv.EXPECTED, rtv.BOOLEAN], // if workspaces should be created to match cluster namespaces
 };
 
@@ -198,7 +198,7 @@ export const useExtState = function () {
       },
 
       /**
-       * Updates the save path where kubeconfig files should be saved on the local system.
+       * Updates the save path where kubeConfig files should be saved on the local system.
        * @param {string} newValue Must not end with a slash.
        */
       setSavePath(newValue) {

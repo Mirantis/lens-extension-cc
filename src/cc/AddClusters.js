@@ -2,12 +2,10 @@
 // Add Clusters Panel
 //
 
-import React from 'react';
-import os from 'os';
+import React, { useState } from 'react';
 import propTypes from 'prop-types';
 import styled from '@emotion/styled';
-import { remote } from 'electron';
-import { Component, Store } from '@k8slens/extensions';
+import { Component } from '@k8slens/extensions';
 import { Cluster } from './store/Cluster';
 import { useAddClusters } from './store/AddClustersProvider';
 import { useExtState } from './store/ExtStateProvider';
@@ -15,88 +13,40 @@ import { Section as BaseSection } from './Section';
 import { layout } from './styles';
 import * as strings from '../strings';
 
-const Section = styled(BaseSection)(function ({ offline }) {
+const Section = styled(BaseSection)(function () {
   return {
     small: {
       marginTop: -(layout.gap - layout.grid),
     },
-
-    '.lecc-AddClusters--offline-hint': {
-      opacity: offline ? 1.0 : 0.5,
-    },
   };
 });
 
-const SavePath = styled.div(function () {
-  return {
-    display: 'flex',
-    alignItems: 'center',
-
-    'div.Input': {
-      flex: 1,
-      marginRight: layout.pad,
-    },
-
-    '.lecc-AddClusters--folder-icon': {
-      flex: 'none',
-    },
-  };
-});
-
-export const AddClusters = function ({ onAdd, clusters }) {
+export const AddClusters = function ({ onAdd, clusters, passwordRequired }) {
   //
   // STATE
   //
 
   const {
-    state: { savePath, offline, addToNew },
-    actions: extActions,
+    state: { authAccess },
   } = useExtState();
 
   const {
     state: { loading: addingClusters },
   } = useAddClusters();
 
+  const [password, setPassword] = useState('');
+
   //
   // EVENTS
   //
 
-  const handleBrowseClick = async function () {
-    const { dialog, BrowserWindow } = remote;
-    const { canceled, filePaths } = await dialog.showOpenDialog(
-      BrowserWindow.getFocusedWindow(),
-      {
-        defaultPath: savePath,
-        properties: ['openDirectory', 'createDirectory', 'showHiddenFiles'],
-        message: strings.addClusters.location.message(),
-        buttonLabel: strings.addClusters.location.action(),
-      }
-    );
-
-    if (!canceled && filePaths.length > 0) {
-      extActions.setSavePath(filePaths[0]);
-    }
-  };
-
-  const handleSavePathChange = function (value) {
-    extActions.setSavePath(value);
-  };
-
-  const handleSavePathBlur = function () {
-    extActions.setSavePath(savePath.replace('~', os.homedir()));
-  };
-
-  const handleAddToNewChange = function (checked) {
-    extActions.setAddToNew(checked);
-  };
-
-  const handleOfflineChange = function (checked) {
-    extActions.setOffline(checked);
+  const handlePasswordChange = function (value) {
+    setPassword(value);
   };
 
   const handleAddClick = function () {
     if (typeof onAdd === 'function') {
-      onAdd({ savePath, offline, addToNew });
+      onAdd({ password: passwordRequired ? password : null });
     }
   };
 
@@ -104,55 +54,36 @@ export const AddClusters = function ({ onAdd, clusters }) {
   // RENDER
   //
 
-  const activeWorkspaceName = Store.workspaceStore.currentWorkspace
-    ? Store.workspaceStore.currentWorkspace.name
-    : Store.workspaceStore.currentWorkspaceId;
-
+  // DEBUG TODO: May need to know, via config.js, if it's SSO or not to know what to do in either case...
   return (
-    <Section className="lecc-AddClusters" offline={offline}>
+    <Section className="lecc-AddClusters">
       <h3>{strings.addClusters.title()}</h3>
-      <SavePath>
-        <Component.Input
-          type="text"
-          theme="round-black" // borders on all sides, rounded corners
-          value={savePath}
-          disabled={addingClusters}
-          onChange={handleSavePathChange}
-          onBlur={handleSavePathBlur}
-        />
-        <Component.Icon
-          className="lecc-AddClusters--folder-icon"
-          material="folder"
-          disabled={addingClusters}
-          onClick={handleBrowseClick}
-          tooltip={strings.addClusters.location.icon()}
-        />
-      </SavePath>
-      <small className="hint">{strings.addClusters.location.tip()}</small>
-      <Component.Checkbox
-        label={strings.addClusters.addToNew.label()}
-        disabled={addingClusters}
-        value={addToNew}
-        onChange={handleAddToNewChange}
-      />
-      <small className="lecc-AddClusters--addToNew-hint hint">
-        {addToNew
-          ? strings.addClusters.addToNew.tipOn()
-          : strings.addClusters.addToNew.tipOff(activeWorkspaceName)}
-      </small>
-      <Component.Checkbox
-        label={strings.addClusters.offline.label()}
-        disabled={addingClusters}
-        value={offline}
-        onChange={handleOfflineChange}
-      />
-      <small className="lecc-AddClusters--offline-hint hint">
-        {strings.addClusters.offline.tip()}
-      </small>
+
+      {/* required when responding to an EXT_EVENT_CLUSTERS where we get tokens without a password */}
+      {passwordRequired && (
+        <>
+          <Component.Input
+            style={{ width: 200 }}
+            type="password"
+            theme="round-black" // borders on all sides, rounded corners
+            disabled={addingClusters}
+            value={password}
+            onChange={handlePasswordChange}
+          />
+          <small className="hint">
+            {strings.addClusters.password.tip(authAccess.username)}
+          </small>
+        </>
+      )}
+
       <div>
         <Component.Button
           primary
-          disabled={clusters.length <= 0 || addingClusters}
+          disabled={
+            clusters.length <= 0 ||
+            addingClusters ||
+            (passwordRequired && !password)
+          }
           label={strings.addClusters.action.label()}
           waiting={addingClusters}
           tooltip={
@@ -169,9 +100,15 @@ export const AddClusters = function ({ onAdd, clusters }) {
 
 AddClusters.propTypes = {
   clusters: propTypes.arrayOf(propTypes.instanceOf(Cluster)),
-  onAdd: propTypes.func, // ({ savePath: string, offline: boolean, addToNew: boolean }) => void
+  passwordRequired: propTypes.bool,
+
+  // ({ password: string|null }) => void
+  // `password` is null if `passwordRequired` was `false` and therefore a value was not collected
+  //  from the user
+  onAdd: propTypes.func,
 };
 
 AddClusters.defaultProps = {
   clusters: [],
+  passwordRequired: false,
 };
