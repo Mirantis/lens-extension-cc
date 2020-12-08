@@ -30,7 +30,20 @@ export const extension: Dict = {
 
 export const view: Dict = {
   main: {
-    title: () => 'Add Mirantis Container Cloud Clusters',
+    titles: {
+      generic: () => 'Add Mirantis Container Cloud Clusters',
+      kubeConfig: () => 'Adding Mirantis Container Cloud Cluster',
+    },
+    loaders: {
+      clustersHtml: (url) => `Retrieving clusters from <code>${url}</code>...`,
+      kubeConfig: () => 'Loading kubeConfig...',
+    },
+    kubeConfigEvent: {
+      clusterAdded: (name) =>
+        `The ${name} cluster was successfully added to Lens.`,
+      clusterSkipped: (name) => `The ${name} cluster was already in Lens.`,
+    },
+    close: () => 'Reset back to normal view',
   },
   help: {
     html: () =>
@@ -41,7 +54,7 @@ export const view: Dict = {
   Cloud instance.
 </p>
 <p>
-  When clusters are added, <code>kubeconfig</code> files are automatically generated
+  When clusters are added, <code>kubeConfig</code> files are automatically generated
   for each cluster, and stored in the configured directory. Do not remove the generated
   files (unless you remove the pertaining cluster from Lens) because Lens references
   them whenever a related cluster is activated.
@@ -84,30 +97,38 @@ export const clusterList: Dict = {
 
 export const addClusters: Dict = {
   title: () => '3. Add to Lens',
+  password: {
+    tip: (username) =>
+      `Password for user "${username}" is required to generate kubeConfigs`,
+  },
+  action: {
+    label: () => 'Add selected clusters',
+    disabledTip: () => 'Select at least one cluster to add',
+  },
+};
+
+export const preferencesPanel: Dict = {
+  title: () => 'Extension Preferences',
   location: {
     label: () => 'Location',
     tip: () =>
-      'Directory where generated kubeconfig files will be stored and read by Lens',
+      'Directory where new kubeConfig files created by this extension will be stored and read by Lens. Existing kubeConfig files will remain where they were last stored and Lens will continue accessing them from there.',
     icon: () => 'Browse',
-    message: () => 'Choose kubeconfig file location',
+    message: () => 'Choose kubeConfig file location',
     action: () => 'Use location',
   },
   addToNew: {
     label: () => 'Add to MCC workspaces',
     tipOn: () =>
-      'Add clusters to new workspaces that correlate to their original MCC namespace names',
-    tipOff: (workspace = '') =>
-      `Add clusters to the active workspace "${workspace}"`,
+      'Add clusters to new workspaces that correlate to their original MCC namespaces',
+    tipOff: () => 'Add clusters to the active workspace',
   },
   offline: {
     label: () => 'Offline use',
     tip: () =>
       'WARNING: Generating tokens for offline use is less secure because they will never expire',
   },
-  action: {
-    label: () => 'Add selected clusters',
-    disabledTip: () => 'Select at least one cluster to add',
-  },
+  saved: () => 'Preferences saved!',
 };
 
 export const clustersProvider: Dict = {
@@ -125,8 +146,10 @@ export const clustersProvider: Dict = {
 
 export const addClustersProvider: Dict = {
   errors: {
-    kubeconfigCreate: (clusterId = 'unknown') =>
-      `Failed to create kubeconfig file for cluster ${clusterId}`,
+    kubeConfigCreate: (clusterId = 'unknown') =>
+      `Failed to create kubeConfig for cluster ${clusterId}`,
+    kubeConfigSave: (clusterId = 'unknown') =>
+      `Failed to save kubeConfig file to disk for cluster ${clusterId}`,
   },
   workspaces: {
     description: () => 'MCC workspace',
@@ -134,6 +157,10 @@ export const addClustersProvider: Dict = {
   notifications: {
     newWorkspacesHtml: (names = []) =>
       `The following new workspaces were created: ${names
+        .map((name) => `<strong>${name}</strong>`)
+        .join(', ')} <em>${noteOwner}</em>`,
+    newClustersHtml: (names = []) =>
+      `The following new clusters were added: ${names
         .map((name) => `<strong>${name}</strong>`)
         .join(', ')} <em>${noteOwner}</em>`,
     workspaceActivatedHtml: (name = '') =>

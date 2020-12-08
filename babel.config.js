@@ -35,7 +35,12 @@ module.exports = {
   plugins: [
     'lodash',
 
+    // @see https://babeljs.io/docs/en/babel-plugin-proposal-decorators.html
+    // NOTE: must come BEFORE class-properties
+    ['@babel/plugin-proposal-decorators', { legacy: true }],
+
     // @see https://babeljs.io/docs/en/babel-plugin-proposal-class-properties.html
+    // NOTE: must use `loose` because of proposal-decorators legacy flag
     ['@babel/plugin-proposal-class-properties', { loose: true }],
   ],
 };

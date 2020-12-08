@@ -264,13 +264,17 @@ export class AuthAccess {
   }
 
   /**
+   * @param {boolean} [passwordRequired] if true, requires a valid password;
+   *  otherwise, requires only a username (useful in the case where having
+   *  valid tokens and a username is enough to list clusters, for example).
    * @returns {boolean} True if there are credentials, a token, and a valid way
    *  to refresh it if it expires; false otherwise.
    */
-  isValid() {
-    return (
-      this.hasCredentials() && !!this.token && !this.isRefreshTokenExpired()
-    );
+  isValid(passwordRequired = true) {
+    const credsValid = passwordRequired
+      ? this.hasCredentials()
+      : !!this.username;
+    return credsValid && !!this.token && !this.isRefreshTokenExpired();
   }
 
   /** @returns {boolean} True if the `token` has expired; false otherwise. */
