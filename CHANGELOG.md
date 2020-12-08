@@ -1,5 +1,9 @@
 # ChangeLog
 
+## 1.0.5
+
+Update for Lens `4.0.0` official release.
+
 ## 1.0.4
 
 ### Changed

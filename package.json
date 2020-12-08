@@ -40,7 +40,8 @@
     "fmt:check": "prettier --check \"{*,src/**/*}.+(js|ts*|yml|json)\"",
     "lint": "eslint \"{*,src/**/*}.+(js|ts*)\"",
     "check": "npm run lint && npm run fmt:check",
-    "test": "echo 'Works for me! ¯\\_(ツ)_/¯'",
+    "test:unit": "echo 'Works for me! ¯\\_(ツ)_/¯'",
+    "test": "npm run check && npm run test:unit",
     "prepublishOnly": "npm run check && npm test && npm run build"
   },
   "devDependencies": {
@@ -54,7 +55,7 @@
     "@emotion/core": "^10.0.35",
     "@emotion/styled": "^10.0.27",
     "@emotion/styled-base": "^10.0.31",
-    "@k8slens/extensions": "^4.0.0-rc.1",
+    "@k8slens/extensions": "^4.0.0",
     "@types/node": "^12.0.0",
     "@types/react": "^16.9.35",
     "@types/react-router": "^5.1.8",
