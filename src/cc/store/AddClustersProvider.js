@@ -12,6 +12,8 @@ import { AuthAccess } from '../auth/AuthAccess';
 import * as strings from '../../strings';
 import { workspacePrefix } from '../../constants';
 import { ProviderStore } from './ProviderStore';
+import { Cluster } from './Cluster';
+import pkg from '../../../package.json';
 
 const { workspaceStore } = Store;
 const { Notifications } = Component;
@@ -26,6 +28,7 @@ class AddClustersProviderStore extends ProviderStore {
     return {
       ...super.makeNew(),
       newWorkspaces: [], // {Array<Workspace>} list of new workspaces created, if any; shape: https://github.com/lensapp/lens/blob/00be4aa184089c1a6c7247bdbfd408665f325665/src/common/workspace-pr.store.ts#L27
+      kubeClusterAdded: false, // true if the cluster added via single kubeConfig was added; false if it was skipped because it was already in Lens
     };
   }
 }
@@ -35,6 +38,46 @@ const pr = new AddClustersProviderStore();
 //
 // Internal Methods
 //
+
+/**
+ * Determines if a cluster is already in Lens.
+ * @param {string|Cluster} cluster Cluster ID, or cluster object, to check.
+ * @returns {boolean} True if the cluster is already in Lens; false otherwise.
+ */
+const _clusterInLens = function (cluster) {
+  const existingLensClusters = Store.clusterStore.clustersList;
+  const clusterId = cluster instanceof Cluster ? cluster.id : cluster;
+
+  return !!existingLensClusters.find(
+    (lensCluster) => lensCluster.id === clusterId
+  );
+};
+
+/**
+ * Filters clusters into separate lists.
+ * @param {Array<Cluster>} clusters
+ * @returns {{ newClusters: Array<Cluster>, existingClusters: Array<Cluster>}}
+ *  `newClusters` are those which do not exist in Lens; `existingClusters` are
+ *  those that do.
+ */
+const _filterClusters = function (clusters) {
+  const existingClusters = []; // {Array<Cluster>} clusters already existing in Lens
+
+  // filter the clusters down to only clusters that aren't already in Lens
+  const newClusters = clusters.filter((cluster) => {
+    if (_clusterInLens(cluster)) {
+      existingClusters.push(cluster);
+      return false; // skip it
+    }
+
+    return true; // add it
+  });
+
+  return {
+    newClusters,
+    existingClusters,
+  };
+};
 
 /**
  * [ASYNC] Gets access tokens for the specified cluster.
@@ -81,9 +124,8 @@ const _getClusterAccess = async function ({
 };
 
 /**
- * [ASYNC] Creates a kubeconfig file for the given cluster on the local disk.
+ * [ASYNC] Generates a kubeConfig for the given cluster.
  * @param {Cluster} options.cluster
- * @param {string} options.savePath Absolute path where kubeconfigs are to be saved.
  * @param {string} options.baseUrl MCC URL. Must NOT end with a slash.
  * @param {Object} options.config MCC Config object.
  * @param {AuthAccess} options.username
@@ -91,20 +133,19 @@ const _getClusterAccess = async function ({
  * @param {boolean} [options.offline] If true, the refresh token generated for the
  *  clusters will be enabled for offline access. WARNING: This is less secure
  *  than a normal refresh token as it will never expire.
- * @returns {Promise<Object>} On success, `{model: ClusterModel}`, a cluster model
- *  to use to add the cluster to Lens; on error, `{error: string}`. All clusters
- *  are configured to be added to the active workspace.
+ * @returns {Promise<Object>} On success, `{cluster: Cluster, kubeConfig: Object}`,
+ *  the provided `cluster`, and its kubeConfig JSON object to save to disk and add
+ *  to Lens; on error, `{error: string}`.
  */
-const _createClusterFile = async function ({
+const _createKubeConfig = async function ({
   cluster,
-  savePath,
   baseUrl,
   config,
   username,
   password,
   offline = false,
 }) {
-  const errPrefix = strings.addClustersProvider.errors.kubeconfigCreate(
+  const errPrefix = strings.addClustersProvider.errors.kubeConfigCreate(
     cluster.id
   );
 
@@ -121,21 +162,50 @@ const _createClusterFile = async function ({
     return { error: `${errPrefix}: ${accessError}` };
   }
 
-  const kc = kubeConfigTemplate({
-    username: authAccess.username,
-    token: authAccess.token,
-    refreshToken: authAccess.refreshToken,
+  return {
     cluster,
-  });
+    kubeConfig: kubeConfigTemplate({
+      username: authAccess.username,
+      token: authAccess.token,
+      refreshToken: authAccess.refreshToken,
+      cluster,
+    }),
+  };
+};
+
+/**
+ * [ASYNC] Writes a kubeConfig to the local disk for the given cluster.
+ * @param {string} options.namespace MCC namespace the cluster comes from.
+ * @param {string} options.clusterName Name of the cluster in MCC.
+ * @param {string} options.clusterId ID of the cluster in MCC.
+ * @param {Object} options.kubeConfig Kubeconfig JSON object for the cluster.
+ * @param {string} options.savePath Absolute path where kubeConfigs are to be saved.
+ * @returns {Promise<Object>} On success, `{model: ClusterModel}`, a cluster model
+ *  to use to add the cluster to Lens; on error, `{error: string}`. All clusters
+ *  are configured to be added to the active workspace by default.
+ */
+const _writeKubeConfig = async function ({
+  namespace,
+  clusterName,
+  clusterId,
+  kubeConfig,
+  savePath,
+}) {
+  const errPrefix = strings.addClustersProvider.errors.kubeConfigSave(
+    clusterId
+  );
 
   const kubeConfigPath = path.resolve(
     savePath,
-    `${cluster.namespace}-${cluster.name}-${cluster.id}.json`
+    `${namespace}-${clusterName}-${clusterId}.json`
   );
 
   try {
     // overwrite if already exists for some reason (failed to delete last time?)
-    await fs.writeFile(kubeConfigPath, JSON.stringify(kc, undefined, 2));
+    await fs.writeFile(
+      kubeConfigPath,
+      JSON.stringify(kubeConfig, undefined, 2)
+    );
   } catch (err) {
     return { error: `${errPrefix}: ${err.message}` };
   }
@@ -147,8 +217,8 @@ const _createClusterFile = async function ({
   return {
     model: {
       kubeConfigPath,
-      id: cluster.id, // can be anything provided it's unique
-      contextName: kc.contexts[0].name, // must be same context name used in the kubeconfig file
+      id: clusterId, // can be anything provided it's unique
+      contextName: kubeConfig.contexts[0].name, // must be same context name used in the kubeConfig file
       workspace: workspaceStore.currentWorkspaceId,
 
       // ownerRef: unique ref/id (up to extension to decide what it is), if unset
@@ -156,6 +226,37 @@ const _createClusterFile = async function ({
       //  extension itself can remove it
     },
   };
+};
+
+/**
+ * Assigns a cluster model to an existing or new workspace that correlates to its
+ *  original MCC namespace. New workspaces are created if necessary and added
+ *  to this Provider's `pr.store.newWorkspaces` list.
+ * @param {ClusterModel} model Model for the cluster being added. This model is
+ *  modified in-place. NOTE: `model.id` is expected to be the ID of the cluster.
+ * @param {string} namespace MCC namespace of the cluster the model represents.
+ */
+const _assignWorkspace = function (model, namespace) {
+  const findWorkspace = (id) =>
+    workspaceStore.workspacesList.find((ws) => ws.id === id);
+
+  const wsId = `${workspacePrefix}${namespace}`;
+  const workspace = findWorkspace(wsId);
+
+  model.workspace = wsId; // re-assign cluster to custom workspace
+
+  if (!workspace) {
+    // create new workspace
+    // @see https://github.com/lensapp/lens/blob/00be4aa184089c1a6c7247bdbfd408665f325665/src/common/workspace-pr.store.ts#L27
+    const ws = new Store.Workspace({
+      id: wsId,
+      name: wsId,
+      description: strings.addClustersProvider.workspaces.description(),
+    });
+
+    workspaceStore.addWorkspace(ws);
+    pr.store.newWorkspaces.push(ws);
+  }
 };
 
 /**
@@ -168,34 +269,32 @@ const _createClusterFile = async function ({
  *  each item in `clusters`. These are modified in-place. NOTE: `model.id` is
  *  expected to be the ID of the related cluster.
  */
-const _createNewWorkspaces = function (clusters, models) {
-  const findWorkspace = (id) =>
-    workspaceStore.workspacesList.find((ws) => ws.id === id);
+const _assignClustersToWorkspaces = function (clusters, models) {
   const findCluster = (id) => clusters.find((cluster) => cluster.id === id);
 
   models.forEach((model) => {
     const cluster = findCluster(model.id);
-    const wsId = `${workspacePrefix}${cluster.namespace}`;
-    const workspace = findWorkspace(wsId);
-
-    model.workspace = wsId; // re-assign cluster to custom workspace
-
-    if (!workspace) {
-      // create new workspace
-      // @see https://github.com/lensapp/lens/blob/00be4aa184089c1a6c7247bdbfd408665f325665/src/common/workspace-pr.store.ts#L27
-      // NOTE: the Workspace class should be a global but Lens 4.0.0-alpha.5 is
-      //  not providing it (only the type declaration via its `@k8slens/extensions`
-      //  package, but the class is still available as part of the Store global
-      const ws = new Store.Workspace({
-        id: wsId,
-        name: wsId,
-        description: strings.addClustersProvider.workspaces.description(),
-      });
-
-      workspaceStore.addWorkspace(ws);
-      pr.store.newWorkspaces.push(ws);
-    }
+    _assignWorkspace(model, cluster.namespace);
   });
+};
+
+/**
+ * Posts a notification about new clusters added to Lens.
+ * @param {Array<{namespace: string, id: string, name: string}>} clusterShims List
+ *  objects with basic cluster info about which clusters were added.
+ * @param {boolean} [sticky] True if the notification should be sticky; false
+ *  if it should be quickly dismissed.
+ */
+const _notifyNewClusters = function (clusterShims, sticky = true) {
+  Notifications[sticky ? 'info' : 'ok'](
+    <p
+      dangerouslySetInnerHTML={{
+        __html: strings.addClustersProvider.notifications.newClustersHtml(
+          clusterShims.map((c) => `${c.namespace}/${c.name}`)
+        ),
+      }}
+    />
+  );
 };
 
 /**
@@ -206,7 +305,7 @@ const _createNewWorkspaces = function (clusters, models) {
 const _notifyAndSwitchToNew = function () {
   if (pr.store.newWorkspaces.length <= 0) {
     throw new Error(
-      '[lens-extension-cc/AddClustersProvider._notifyAndSwitchToNew] There must be at least one new workspace to switch to!'
+      `[${pkg.name}/AddClustersProvider._notifyAndSwitchToNew] There must be at least one new workspace to switch to!`
     );
   }
 
@@ -239,7 +338,7 @@ const _notifyAndSwitchToNew = function () {
  * [ASYNC] Add the specified clusters to Lens.
  * @param {Object} options
  * @param {Array<Cluster>} options.clusters Clusters to add.
- * @param {string} options.savePath Absolute path where kubeconfigs are to be saved.
+ * @param {string} options.savePath Absolute path where kubeConfigs are to be saved.
  * @param {string} options.baseUrl MCC URL. Must NOT end with a slash.
  * @param {Object} options.config MCC Config object.
  * @param {AuthAccess} options.username Used to generate access tokens for MCC clusters.
@@ -264,8 +363,11 @@ const _addClusters = async function ({
 }) {
   pr.reset(true);
 
-  const promises = clusters.map((cluster) =>
-    _createClusterFile({
+  const { newClusters, existingClusters } = _filterClusters(clusters);
+
+  // start by creating the kubeConfigs for each cluster
+  let promises = newClusters.map((cluster) =>
+    _createKubeConfig({
       cluster,
       savePath,
       baseUrl,
@@ -276,8 +378,26 @@ const _addClusters = async function ({
     })
   );
 
-  const results = await Promise.all(promises); // these promises are designed NOT to reject
-  const failure = results.find((res) => !!res.error); // look for any errors, use first-found
+  // these promises are designed NOT to reject
+  let results = await Promise.all(promises); // {Array<{cluster: Cluster, kubeConfig: Object}>} on success
+  let failure = results.find((res) => !!res.error); // look for any errors, use first-found
+
+  if (!failure) {
+    // write each kubeConfig to disk
+    promises = results.map(({ cluster, kubeConfig }) =>
+      _writeKubeConfig({
+        namespace: cluster.namespace,
+        clusterName: cluster.name,
+        clusterId: cluster.id,
+        kubeConfig,
+        savePath,
+      })
+    );
+
+    // these promises are designed NOT to reject
+    results = await Promise.all(promises); // {Array<{model: ClusterModel}>} on success
+    failure = results.find((res) => !!res.error); // look for any errors, use first-found
+  }
 
   pr.store.loading = false;
   pr.store.loaded = true;
@@ -285,44 +405,30 @@ const _addClusters = async function ({
   if (failure) {
     pr.store.error = failure.error;
   } else {
-    const existingLensClusters = Store.clusterStore.clustersList;
-    const skippedClusters = []; // {Array<Cluster>} clusters already existing in Lens that were not added
-
-    // filter the models down to only clusters that aren't already in Lens
-    const models = results
-      .map(({ model }) => model)
-      .filter((model) => {
-        if (
-          existingLensClusters.find(
-            (lensCluster) => lensCluster.id === model.id
-          )
-        ) {
-          const cluster = clusters.find((cluster) => cluster.id === model.id);
-          skippedClusters.push(cluster);
-          return false; // skip it
-        }
-
-        return true; // add it
-      });
+    const models = results.map(({ model }) => model);
 
     if (addToNew) {
-      _createNewWorkspaces(clusters, models);
+      _assignClustersToWorkspaces(newClusters, models);
     }
 
     models.forEach((model) => {
       Store.clusterStore.addCluster(model); // officially add to Lens
     });
 
+    if (newClusters.length > 0) {
+      _notifyNewClusters(newClusters);
+    }
+
     if (addToNew && pr.store.newWorkspaces.length > 0) {
       _notifyAndSwitchToNew();
     }
 
-    if (skippedClusters.length > 0) {
+    if (existingClusters.length > 0) {
       Notifications.info(
         <p
           dangerouslySetInnerHTML={{
             __html: strings.addClustersProvider.notifications.skippedClusters(
-              skippedClusters.map(
+              existingClusters.map(
                 (cluster) => `${cluster.namespace}/${cluster.name}`
               )
             ),
@@ -331,6 +437,80 @@ const _addClusters = async function ({
       );
     }
   }
+
+  pr.notifyIfError();
+  pr.onChange();
+};
+
+/**
+ * [ASYNC] Add the specified cluster via kubeConfig to Lens.
+ * @param {Object} options
+ * @param {string} options.savePath Absolute path where kubeConfigs are to be saved.
+ * @param {Object} options.kubeConfig KubeConfig object for the cluster to add.
+ * @param {string} options.namespace MCC namespace to which the cluster belongs.
+ * @param {string} options.clusterName Name of the cluster.
+ * @param {string} options.clusterId ID of the cluster.
+ * @param {boolean} [options.addToNew] If true, the clusters will be added
+ *  to new (or existing if the workspaces already exist) workspaces that
+ *  correlate to their original MCC namespaces; otherwise, they will all
+ *  be added to the active workspace.
+ */
+const _addKubeCluster = async function ({
+  savePath,
+  kubeConfig,
+  namespace,
+  clusterName,
+  clusterId,
+  addToNew = false,
+}) {
+  pr.reset(true);
+
+  if (_clusterInLens(clusterId)) {
+    // when adding just one cluster via kubeConfig, use the non-sticky OK
+    //  notification since we'll also display a static message in the UI
+    Notifications.ok(
+      <p
+        dangerouslySetInnerHTML={{
+          __html: strings.addClustersProvider.notifications.skippedClusters([
+            `${namespace}/${clusterName}`,
+          ]),
+        }}
+      />
+    );
+  } else {
+    const { model, error } = await _writeKubeConfig({
+      namespace,
+      clusterName,
+      clusterId,
+      kubeConfig,
+      savePath,
+    });
+
+    if (error) {
+      pr.store.error = error;
+    } else {
+      if (addToNew) {
+        _assignWorkspace(model, namespace);
+      }
+
+      Store.clusterStore.addCluster(model); // officially add to Lens
+      pr.store.kubeClusterAdded = true;
+
+      // don't use a sticky notification for the cluster since the UI will display
+      //  a related message about the new cluster.
+      _notifyNewClusters(
+        [{ namespace, id: clusterId, name: clusterName }],
+        false
+      );
+
+      if (addToNew && pr.store.newWorkspaces.length > 0) {
+        _notifyAndSwitchToNew();
+      }
+    }
+  }
+
+  pr.store.loading = false;
+  pr.store.loaded = true;
 
   pr.notifyIfError();
   pr.onChange();
@@ -367,10 +547,10 @@ export const useAddClusters = function () {
        * [ASYNC] Add the specified clusters to Lens.
        * @param {Object} options
        * @param {Array<Cluster>} options.clusters Clusters to add.
-       * @param {string} options.savePath Absolute path where kubeconfigs are to be saved.
+       * @param {string} options.savePath Absolute path where kubeConfigs are to be saved.
        * @param {string} options.baseUrl MCC URL. Must NOT end with a slash.
        * @param {Object} options.config MCC Config object.
-       * @param {AuthAccess} options.username Used to generate access tokens for MCC clusters.
+       * @param {string} options.username Used to generate access tokens for MCC clusters.
        * @param {string} options.password User password.
        * @param {boolean} [options.offline] If true, the refresh token generated for the
        *  clusters will be enabled for offline access. WARNING: This is less secure
@@ -383,6 +563,25 @@ export const useAddClusters = function () {
       addClusters(options) {
         if (!pr.store.loading && options.clusters.length > 0) {
           _addClusters(options);
+        }
+      },
+
+      /**
+       * [ASYNC] Add the specified cluster via kubeConfig to Lens.
+       * @param {Object} options
+       * @param {string} options.savePath Absolute path where kubeConfigs are to be saved.
+       * @param {Object} options.kubeConfig Kubeconfig object for the cluster to add.
+       * @param {string} options.namespace MCC namespace to which the cluster belongs.
+       * @param {string} options.clusterName Name of the cluster.
+       * @param {string} options.clusterId ID of the cluster.
+       * @param {boolean} [options.addToNew] If true, the clusters will be added
+       *  to new (or existing if the workspaces already exist) workspaces that
+       *  correlate to their original MCC namespaces; otherwise, they will all
+       *  be added to the active workspace.
+       */
+      addKubeCluster(options) {
+        if (!pr.store.loading) {
+          _addKubeCluster(options);
         }
       },
 

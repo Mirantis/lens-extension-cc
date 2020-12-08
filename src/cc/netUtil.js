@@ -22,6 +22,15 @@ function splitOnWords(key) {
 }
 
 /**
+ * Normalize the URL by ensuring it's written in the expected way.
+ * @param {string} url
+ * @returns {string} Normalized URL.
+ */
+export function normalizeUrl(url) {
+  return url.replace(/\/$/, ''); // remove end slash if any
+}
+
+/**
  * [ASYNC] Performs a network request using node-fetch (nearly same API as
  *  browser fetch()). See https://www.npmjs.com/package/node-fetch
  *

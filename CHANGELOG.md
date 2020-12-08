@@ -1,5 +1,20 @@
 # ChangeLog
 
+## UNRELEASED
+
+### Added
+
+- New Preferences Panel, which moves the preferences out of the main extension body and into the side panel.
+- New `lens://` protocol integrations:
+    - Add clusters directly from MCC in the browser as kubeConfigs.
+    - Add selected clusters from MCC in the browser. This requires providing your password prior to adding the clusters you select (because each cluster gets its own kubeConfig file, and each one needs its own cluster access-specific token), but no longer requires you to copy/paste the MCC instance URL into the extension and signing in that way.
+
+### Changed
+
+- When adding clusters, kubeConfig files will not be generated for clusters which are already in Lens.
+- The "save location" field is now read-only. You must use the folder picker to choose an existing folder.
+- A notification is now posted listing all new clusters added to Lens.
+
 ## 1.0.5
 
 Update for Lens `4.0.0` official release.
