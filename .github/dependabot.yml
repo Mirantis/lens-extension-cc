@@ -1,0 +1,19 @@
+version: 2
+updates:
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'daily'
+      time: '00:00'
+      timezone: 'America/Chicago' # 12am Central Time
+    commit-message:
+      prefix: '[DEPENDABOT]'
+    labels:
+      - 'dependencies'
+      - 'dependabot'
+    open-pull-requests-limit: 8
+    reviewers:
+      - 'stefcameron'
+    versioning-strategy: 'increase'
+    ignore:
+      - dependency-name: 'electron' # must be upgraded in lock-step with what Lens uses
