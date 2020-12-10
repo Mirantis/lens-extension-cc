@@ -2,6 +2,12 @@
 
 ## 2.0.0-alpha.1
 
+### Changed
+
+- Fixed: Protocol request handlers are now removed when the extension is deactivated.
+
+## 2.0.0-alpha.0
+
 ### Added
 
 - New Preferences Panel, which moves the preferences out of the main extension body and into the side panel.
