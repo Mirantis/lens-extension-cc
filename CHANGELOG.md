@@ -1,11 +1,11 @@
 # ChangeLog
 
-## UNRELEASED
+## 2.0.0-alpha.1
 
 ### Added
 
 - New Preferences Panel, which moves the preferences out of the main extension body and into the side panel.
-- New `lens://` protocol integrations:
+- New `lens://` protocol integrations (requires code on Lens [hackweek-protocol-handler](https://github.com/lensapp/lens/tree/hackweek-protocol-handler) branch to work with Lens):
     - Add clusters directly from MCC in the browser as kubeConfigs.
     - Add selected clusters from MCC in the browser. This requires providing your password prior to adding the clusters you select (because each cluster gets its own kubeConfig file, and each one needs its own cluster access-specific token), but no longer requires you to copy/paste the MCC instance URL into the extension and signing in that way.
 
