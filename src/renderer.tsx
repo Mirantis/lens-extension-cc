@@ -128,7 +128,7 @@ export default class ExtensionRenderer extends LensRendererExtension {
   };
 
   onActivate() {
-    // TODO remove this HACK once updated type is published that includes the new method
+    // TODO remove this HACK once updated type is published that includes the new method;
     //  for how, this just gets around the TSC complaining the method isn't defined on `this`
     const that = this as any;
     if (typeof that.onProtocolRequest === 'function') {
@@ -140,7 +140,17 @@ export default class ExtensionRenderer extends LensRendererExtension {
         `/${EXT_EVENT_KUBECONFIG}`,
         this.handleProtocolKubeConfig
       );
-      console.log(`[${pkg.name}/renderer/onActivate] == ADDED HANDLERS`); // DEBUG REMOVE
+      console.log(`[${pkg.name}/renderer/onActivate] == HANDLERS ADDED`); // DEBUG REMOVE
+    }
+  }
+
+  onDeactivate() {
+    // TODO remove this HACK once updated type is published that includes the new method;
+    //  for how, this just gets around the TSC complaining the method isn't defined on `this`
+    const that = this as any;
+    if (typeof that.removeProtocolHandlers === 'function') {
+      that.removeProtocolHandlers();
+      console.log(`[${pkg.name}/renderer/onDeactivate] == HANDLERS REMOVED`); // DEBUG REMOVE
     }
   }
 }
