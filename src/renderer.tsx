@@ -76,7 +76,7 @@ export default class ExtensionRenderer extends LensRendererExtension {
     },
   ];
 
-  onProtocolClusters = ({ search }) => {
+  protected handleProtocolClusters = ({ search }) => {
     let tokens;
     try {
       tokens = JSON.parse(atob(search.tokens));
@@ -101,7 +101,7 @@ export default class ExtensionRenderer extends LensRendererExtension {
     });
   };
 
-  onProtocolKubeConfig = ({ search }) => {
+  protected handleProtocolKubeConfig = ({ search }) => {
     let kubeConfig;
     try {
       kubeConfig = JSON.parse(atob(search.kubeConfig));
@@ -128,8 +128,19 @@ export default class ExtensionRenderer extends LensRendererExtension {
   };
 
   onActivate() {
-    // DEBUG TODO: TSC complaining it doesn't know about `onProtocolRequest` on the base class...
-    // this.onProtocolRequest(`/${EXT_EVENT_CLUSTERS}`, this.onProtocolClusters);
-    // this.onProtocolRequest(`/${EXT_EVENT_KUBECONFIG}`, this.onProtocolKubeConfig);
+    // TODO remove this HACK once updated type is published that includes the new method
+    //  for how, this just gets around the TSC complaining the method isn't defined on `this`
+    const that = this as any;
+    if (typeof that.onProtocolRequest === 'function') {
+      that.onProtocolRequest(
+        `/${EXT_EVENT_CLUSTERS}`,
+        this.handleProtocolClusters
+      );
+      that.onProtocolRequest(
+        `/${EXT_EVENT_KUBECONFIG}`,
+        this.handleProtocolKubeConfig
+      );
+      console.log(`[${pkg.name}/renderer/onActivate] == ADDED HANDLERS`); // DEBUG REMOVE
+    }
   }
 }
