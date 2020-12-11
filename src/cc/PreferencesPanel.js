@@ -8,7 +8,7 @@ import styled from '@emotion/styled';
 import { remote } from 'electron';
 import { Component } from '@k8slens/extensions';
 import { useExtState } from './store/ExtStateProvider';
-import { useAddClusters } from './store/AddClustersProvider';
+import { useClusterActions } from './store/ClusterActionsProvider';
 import { Section as BaseSection } from './Section';
 import { layout } from './styles';
 import * as strings from '../strings';
@@ -91,7 +91,7 @@ export const PreferencesPanel = function () {
 
   const {
     state: { loading: addingClusters },
-  } = useAddClusters();
+  } = useClusterActions();
 
   const [showSaved, setShowSaved] = useState(false);
 
