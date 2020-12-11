@@ -75,3 +75,9 @@ $ git push && git push --tags
 > By default, packages published to an NPM scope/org are __private__. Use the `--access public` option to publish it as a public package instead. You can also [configure NPM](https://docs.npmjs.com/configuring-your-npm-client-with-your-organization-settings#setting-package-visibility-to-public-for-a-single-package) to always publish that single package publicly by running `npm config set access public` within the repository root directory (i.e. package root).
 
 The `prepublishOnly` script will automatically produce a production build in the `./dist` directory, which will be published.
+
+## Help
+
+### SSO Not Supported
+
+MCC instances that use third-party SSO authentication (e.g. Google OAuth) are __not supported__ at this time. We plan on adding support [soon](https://github.com/Mirantis/lens-extension-cc/issues/12).

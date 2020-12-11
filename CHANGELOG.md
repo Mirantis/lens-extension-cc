@@ -1,5 +1,15 @@
 # ChangeLog
 
+## UNRELEASED
+
+### Added
+
+- Another protocol integration: Ability to open an already added MCC cluster in Lens.
+
+### Changed
+
+- Removed the '1-2-3' sequence on the main headings since not all steps are always visible depending on whether the extension is being used normally, or as a result of clicking on a `lens://` link.
+
 ## 2.0.0-alpha.1
 
 ### Changed

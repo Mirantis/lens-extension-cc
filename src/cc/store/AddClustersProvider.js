@@ -3,6 +3,7 @@
 //
 
 import React, { createContext, useContext, useState, useMemo } from 'react';
+import propTypes from 'prop-types';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { AuthClient } from '../auth/clients/AuthClient';
@@ -17,6 +18,8 @@ import pkg from '../../../package.json';
 
 const { workspaceStore } = Store;
 const { Notifications } = Component;
+
+let extension; // reference to the LensRendererExtension instance
 
 //
 // Store
@@ -40,15 +43,16 @@ const pr = new AddClustersProviderStore();
 //
 
 /**
- * Determines if a cluster is already in Lens.
+ * Determines if a cluster is already in Lens and returns its Lens Cluster object.
  * @param {string|Cluster} cluster Cluster ID, or cluster object, to check.
- * @returns {boolean} True if the cluster is already in Lens; false otherwise.
+ * @returns {LensCluster|undefined} Lens Cluster if the cluster is already in Lens;
+ *  `undefined` otherwise.
  */
-const _clusterInLens = function (cluster) {
+const _getLensCluster = function (cluster) {
   const existingLensClusters = Store.clusterStore.clustersList;
   const clusterId = cluster instanceof Cluster ? cluster.id : cluster;
 
-  return !!existingLensClusters.find(
+  return existingLensClusters.find(
     (lensCluster) => lensCluster.id === clusterId
   );
 };
@@ -65,7 +69,7 @@ const _filterClusters = function (clusters) {
 
   // filter the clusters down to only clusters that aren't already in Lens
   const newClusters = clusters.filter((cluster) => {
-    if (_clusterInLens(cluster)) {
+    if (_getLensCluster(cluster)) {
       existingClusters.push(cluster);
       return false; // skip it
     }
@@ -302,7 +306,7 @@ const _notifyNewClusters = function (clusterShims, sticky = true) {
  *  new workspace in `pr.store.newWorkspaces` in Lens.
  * @throws {Error} If `pr.store.newWorkspaces` is empty.
  */
-const _notifyAndSwitchToNew = function () {
+const _switchToNewWorkspace = function () {
   if (pr.store.newWorkspaces.length <= 0) {
     throw new Error(
       `[${pkg.name}/AddClustersProvider._notifyAndSwitchToNew] There must be at least one new workspace to switch to!`
@@ -332,6 +336,23 @@ const _notifyAndSwitchToNew = function () {
       }}
     />
   );
+};
+
+/**
+ * Switch to the specified cluster.
+ * @param {string} clusterId ID of the cluster in Lens.
+ */
+const _switchToCluster = function (clusterId) {
+  // DEBUG TODO: need to activate the cluster... `Store.clusterStore.activeClusterId = clusterId` does NOT do anything and setActive(id) is missing
+  // activate the cluster
+  if (typeof Store.clusterStore.setActive === 'function') {
+    // API may not exist
+    Store.clusterStore.setActive(clusterId);
+  } else {
+    Store.clusterStore.activeClusterId = clusterId; // DEBUG TODO: currently does not work
+  }
+
+  extension.navigate(`/cluster/${clusterId}`); // DEBUG TODO still not enough... wrong path?
 };
 
 /**
@@ -420,7 +441,7 @@ const _addClusters = async function ({
     }
 
     if (addToNew && pr.store.newWorkspaces.length > 0) {
-      _notifyAndSwitchToNew();
+      _switchToNewWorkspace();
     }
 
     if (existingClusters.length > 0) {
@@ -465,7 +486,7 @@ const _addKubeCluster = async function ({
 }) {
   pr.reset(true);
 
-  if (_clusterInLens(clusterId)) {
+  if (_getLensCluster(clusterId)) {
     // when adding just one cluster via kubeConfig, use the non-sticky OK
     //  notification since we'll also display a static message in the UI
     Notifications.ok(
@@ -504,9 +525,39 @@ const _addKubeCluster = async function ({
       );
 
       if (addToNew && pr.store.newWorkspaces.length > 0) {
-        _notifyAndSwitchToNew();
+        _switchToNewWorkspace();
       }
+
+      _switchToCluster(clusterId);
     }
+  }
+
+  pr.store.loading = false;
+  pr.store.loaded = true;
+
+  pr.notifyIfError();
+  pr.onChange();
+};
+
+/**
+ * [ASYNC] Activate the specified cluster in Lens if it already exists.
+ * @param {Object} options
+ * @param {string} options.namespace MCC namespace to which the cluster belongs.
+ * @param {string} options.clusterName Name of the cluster.
+ * @param {string} options.clusterId ID of the cluster.
+ */
+const _activateCluster = function ({ namespace, clusterName, clusterId }) {
+  pr.reset(true);
+
+  const lensCluster = _getLensCluster(clusterId);
+
+  if (lensCluster) {
+    Store.workspaceStore.setActive(lensCluster.workspace);
+    _switchToCluster(clusterId);
+  } else {
+    pr.store.error = strings.addClustersProvider.errors.clusterNotFound(
+      `${namespace}/${clusterName}`
+    );
   }
 
   pr.store.loading = false;
@@ -585,6 +636,19 @@ export const useAddClusters = function () {
         }
       },
 
+      /**
+       * [ASYNC] Activate the specified cluster in Lens if it already exists.
+       * @param {Object} options
+       * @param {string} options.namespace MCC namespace to which the cluster belongs.
+       * @param {string} options.clusterName Name of the cluster.
+       * @param {string} options.clusterId ID of the cluster.
+       */
+      activateCluster(options) {
+        if (!pr.store.loading) {
+          _activateCluster(options);
+        }
+      },
+
       /** Resets store state. Data will need to be reloaded. */
       reset() {
         if (!pr.store.loading) {
@@ -595,7 +659,10 @@ export const useAddClusters = function () {
   };
 };
 
-export const AddClustersProvider = function (props) {
+export const AddClustersProvider = function ({
+  extension: lensExtension,
+  ...props
+}) {
   // NOTE: since the state is passed directly (by reference) into the context
   //  returned by the provider, even the initial state should be a clone of the
   //  `store` so that we consistently return a `state` property (in the context)
@@ -603,7 +670,12 @@ export const AddClustersProvider = function (props) {
   const [state, setState] = useState(pr.clone());
   const value = useMemo(() => [state, setState], [state]);
 
+  extension = lensExtension;
   pr.setState = setState;
 
   return <AddClustersContext.Provider value={value} {...props} />;
+};
+
+AddClustersProvider.propTypes = {
+  extension: propTypes.object,
 };

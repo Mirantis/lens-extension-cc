@@ -59,7 +59,7 @@ export const AddClusters = function ({ onAdd, clusters, passwordRequired }) {
     <Section className="lecc-AddClusters">
       <h3>{strings.addClusters.title()}</h3>
 
-      {/* required when responding to an EXT_EVENT_CLUSTERS where we get tokens without a password */}
+      {/* required when responding to an EXT_EVENT_ADD_CLUSTERS where we get tokens without a password */}
       {passwordRequired && (
         <>
           <Component.Input
