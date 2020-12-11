@@ -6,7 +6,7 @@ This [Lens](https://k8slens.dev/) Extension adds a status bar item, and a menu i
 
 ![Extension UI](./docs/screen-shot.png)
 
-## Installation
+## Installing
 
 These instructions will help you install the extension for direct use with Lens. Follow the [development](#development) instructions below if you intend to work on the extension to improve it.
 
@@ -25,9 +25,9 @@ Start Lens and go to the Extensions View (`CMD+SHIFT+E` on macOS). Use the file 
 
 You should now be able to choose the new `File > Add Cloud Cluster` menu item, or click on the `Add Cloud Cluster` status bar icon (far right side of the status bar at the bottom of the app), to get started.
 
-## Upgrade
+## Upgrading
 
-To upgrade to a newer release, go to the Extensions View (`CMD+SHIFT+E` on macOS), uninstall the extension, and then [re-install](#installation) it again.
+To upgrade to a newer release, go to the Extensions View (`CMD+SHIFT+E` on macOS), uninstall the extension, and then [re-install](#installing) it again.
 
 ## Development
 
@@ -55,6 +55,12 @@ Now, as you make source changes, the build will run, and all you need to do is _
 You can also run a one-off development build with `npm run dev`.
 
 > Note these steps will get much easier once [this Lens issue](https://github.com/lensapp/lens/issues/1741) is fixed.
+
+## Uninstalling
+
+Go to the Lens Extensions View (`CMD+SHIFT+E` on macOS) and use the UI to uninstall it.
+
+If you followed the [development](#development) instructions, this will just remove the symlink you created in `~/.k8slens/extensions` and leave your linked directory intact.
 
 ## Publishing
 
