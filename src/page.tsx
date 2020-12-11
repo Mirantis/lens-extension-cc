@@ -5,7 +5,7 @@ import { ExtStateProvider } from './cc/store/ExtStateProvider';
 import { ConfigProvider } from './cc/store/ConfigProvider';
 import { AuthProvider } from './cc/store/AuthProvider';
 import { ClustersProvider } from './cc/store/ClustersProvider';
-import { AddClustersProvider } from './cc/store/AddClustersProvider';
+import { ClusterActionsProvider } from './cc/store/ClusterActionsProvider';
 import { lightThemeClassName, lightTheme, darkTheme } from './cc/theme';
 import ExtensionRenderer from './renderer';
 
@@ -76,9 +76,9 @@ export const AddClusterPage = function ({ extension }: Props) {
         <ConfigProvider>
           <AuthProvider>
             <ClustersProvider>
-              <AddClustersProvider extension={extension}>
+              <ClusterActionsProvider extension={extension}>
                 <View />
-              </AddClustersProvider>
+              </ClusterActionsProvider>
             </ClustersProvider>
           </AuthProvider>
         </ConfigProvider>

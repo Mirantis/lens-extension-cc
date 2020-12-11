@@ -2,7 +2,7 @@ import React from 'react';
 import propTypes from 'prop-types';
 import styled from '@emotion/styled';
 import { Component } from '@k8slens/extensions';
-import { useAddClusters } from './store/AddClustersProvider';
+import { useClusterActions } from './store/ClusterActionsProvider';
 import { Cluster } from './store/Cluster';
 import { Section } from './Section';
 import { layout, mixinFlexColumnGaps } from './styles';
@@ -37,7 +37,7 @@ export const ClusterList = function ({
 
   const {
     state: { loading: addingClusters },
-  } = useAddClusters();
+  } = useClusterActions();
 
   //
   // EVENTS

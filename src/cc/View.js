@@ -6,7 +6,7 @@ import { useExtState } from './store/ExtStateProvider';
 import { useConfig } from './store/ConfigProvider';
 import { useAuth } from './store/AuthProvider';
 import { useClusters } from './store/ClustersProvider';
-import { useAddClusters } from './store/AddClustersProvider';
+import { useClusterActions } from './store/ClusterActionsProvider';
 import { Login } from './Login';
 import { ClusterList } from './ClusterList';
 import { AddClusters } from './AddClusters';
@@ -150,8 +150,8 @@ export const View = function () {
       error: addClustersError,
       kubeClusterAdded,
     },
-    actions: addClustersActions,
-  } = useAddClusters();
+    actions: clusterActions,
+  } = useClusterActions();
 
   // @type {null|Array<Cluster>} null until clusters are loaded, then an array
   //  that represents the current selection, could be empty
@@ -229,7 +229,7 @@ export const View = function () {
   const handleClustersAdd = useCallback(
     function ({ password }) {
       if (!addClustersLoading) {
-        addClustersActions.addClusters({
+        clusterActions.addClusters({
           clusters: selectedClusters,
           savePath,
           cloudUrl,
@@ -250,7 +250,7 @@ export const View = function () {
       config,
       selectedClusters,
       addClustersLoading,
-      addClustersActions,
+      clusterActions,
     ]
   );
 
@@ -264,9 +264,9 @@ export const View = function () {
       authActions.reset();
       clustersActions.reset();
       setSelectedClusters([]);
-      addClustersActions.reset();
+      clusterActions.reset();
     },
-    [configActions, authActions, clustersActions, addClustersActions]
+    [configActions, authActions, clustersActions, clusterActions]
   );
 
   const handleActivateClusterEvent = useCallback(
@@ -284,10 +284,10 @@ export const View = function () {
           )
         );
         setEventClusterName(`${data.namespace}/${data.clusterName}`);
-        addClustersActions.activateCluster(data);
+        clusterActions.activateCluster(data);
       }
     },
-    [addClustersLoading, addClustersActions]
+    [addClustersLoading, clusterActions]
   );
 
   const handleAddClustersEvent = useCallback(
@@ -330,14 +330,14 @@ export const View = function () {
           )
         );
         setEventClusterName(`${data.namespace}/${data.clusterName}`);
-        addClustersActions.addKubeCluster({
+        clusterActions.addKubeCluster({
           savePath,
           addToNew,
           ...data,
         });
       }
     },
-    [savePath, addToNew, addClustersLoading, addClustersActions]
+    [savePath, addToNew, addClustersLoading, clusterActions]
   );
 
   //
