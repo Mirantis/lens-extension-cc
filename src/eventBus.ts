@@ -42,6 +42,7 @@ type EventQueue = Array<ExtensionEvent>;
  * Activates an existing cluster in Lens.
  *
  * `event.data` is an object with the following properties:
+ * - cloudUrl {string} MCC instance base URL.
  * - namespace {string} Name of the namespace that contains the cluster.
  * - clusterName (string) Name of the cluster being activated.
  * - clusterId {string} ID of the cluster being activated.
@@ -52,6 +53,7 @@ export const EXT_EVENT_ACTIVATE_CLUSTER = 'activateCluster';
 export const extEventActivateClusterTs = {
   type: [rtv.STRING, { exact: EXT_EVENT_ACTIVATE_CLUSTER }],
   data: {
+    cloudUrl: rtv.STRING,
     namespace: rtv.STRING,
     clusterName: rtv.STRING,
     clusterId: rtv.STRING,
@@ -62,8 +64,8 @@ export const extEventActivateClusterTs = {
  * List all clusters in MCC instance.
  *
  * `event.data` is an object with the following properties:
+ * - cloudUrl {string} MCC instance base URL.
  * - username {string}
- * - baseUrl {string} MCC instance base URL.
  * - tokens {{ id_token: string, expires_in: number, refresh_token: string, refresh_expires_in: number }} API tokens object.
  */
 export const EXT_EVENT_ADD_CLUSTERS = 'addClusters';
@@ -72,8 +74,8 @@ export const EXT_EVENT_ADD_CLUSTERS = 'addClusters';
 export const extEventAddClustersTs = {
   type: [rtv.STRING, { exact: EXT_EVENT_ADD_CLUSTERS }],
   data: {
+    cloudUrl: rtv.STRING,
     username: rtv.STRING,
-    baseUrl: rtv.STRING,
     tokens: AuthAccess.tokensTs,
   },
 };
@@ -82,6 +84,7 @@ export const extEventAddClustersTs = {
  * Add a single kubeConfig.
  *
  * `event.data` is an object with the following properties:
+ * - cloudUrl {string} URL of the MCC instance.
  * - namespace {string} Name of the namespace that contains the cluster.
  * - clusterName (string) Name of the cluster being added.
  * - clusterId {string} ID of the cluster being added.
@@ -93,6 +96,7 @@ export const EXT_EVENT_KUBECONFIG = 'kubeConfig';
 export const extEventKubeconfigTs = {
   type: [rtv.STRING, { exact: EXT_EVENT_ADD_CLUSTERS }],
   data: {
+    cloudUrl: rtv.STRING,
     namespace: rtv.STRING,
     clusterName: rtv.STRING,
     clusterId: rtv.STRING,

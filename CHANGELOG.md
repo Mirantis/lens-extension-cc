@@ -1,5 +1,16 @@
 # ChangeLog
 
+## UNRELEASED
+
+### Added
+
+- Current extension version is now displayed in the bottom/right corner of the Help panel.
+
+### Changed
+
+- Fixed bug where 'add clusters' protocol action would show loader when actually adding clusters, rather than just when loading clusters.
+- Removed test 'EVENT' status bar item.
+
 ## 2.0.0-alpha.2
 
 ### Added

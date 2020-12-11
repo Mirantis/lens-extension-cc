@@ -301,7 +301,7 @@ export const View = function () {
       authAccess.password = null;
       authAccess.updateTokens(data.tokens);
 
-      const url = normalizeUrl(data.baseUrl);
+      const url = normalizeUrl(data.cloudUrl);
       extActions.setBaseUrl(url);
       extActions.setAuthAccess(authAccess);
 
@@ -453,9 +453,11 @@ export const View = function () {
       } else if (clustersLoaded && !selectedClusters) {
         // set initial selection
         setSelectedClusters(clusters.concat()); // shallow clone the array to disassociate from source
+      } else if (clustersLoaded && activeEventType === EXT_EVENT_ADD_CLUSTERS) {
+        setLoaderMessage(null); // don't show the loader again when user actually adds the clusters
       }
     },
-    [clustersLoading, clustersLoaded, clusters, selectedClusters]
+    [clustersLoading, clustersLoaded, clusters, selectedClusters, activeEventType]
   );
 
   //
