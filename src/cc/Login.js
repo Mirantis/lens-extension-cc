@@ -34,7 +34,7 @@ export const Login = function ({ loading, disabled, onLogin, ...props }) {
   // STATE
   //
 
-  const [baseUrl, setBaseUrl] = useState(props.baseUrl || '');
+  const [cloudUrl, setBaseUrl] = useState(props.cloudUrl || '');
   const [username, setUsername] = useState(props.username || '');
   const [password, setPassword] = useState(props.password || '');
   const [valid, setValid] = useState(false);
@@ -56,7 +56,7 @@ export const Login = function ({ loading, disabled, onLogin, ...props }) {
   };
 
   const handleClustersClick = function () {
-    onLogin({ baseUrl, username, password });
+    onLogin({ cloudUrl, username, password });
   };
 
   //
@@ -65,9 +65,9 @@ export const Login = function ({ loading, disabled, onLogin, ...props }) {
 
   useEffect(
     function () {
-      setValid(!!(baseUrl && username && password));
+      setValid(!!(cloudUrl && username && password));
     },
-    [username, password, baseUrl]
+    [username, password, cloudUrl]
   );
 
   //
@@ -85,7 +85,7 @@ export const Login = function ({ loading, disabled, onLogin, ...props }) {
           theme="round-black" // borders on all sides, rounded corners
           id="lecc-login-url"
           disabled={loading}
-          value={baseUrl}
+          value={cloudUrl}
           onChange={handleUrlChange}
         />
       </Field>
@@ -132,7 +132,7 @@ Login.propTypes = {
   onLogin: propTypes.func.isRequired,
   loading: propTypes.bool, // if data fetch related to login is taking place
   disabled: propTypes.bool, // if login should be disabled entirely
-  baseUrl: propTypes.string,
+  cloudUrl: propTypes.string,
   username: propTypes.string,
   password: propTypes.string,
 };
