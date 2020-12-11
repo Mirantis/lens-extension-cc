@@ -35,34 +35,6 @@ export default class ExtensionRenderer extends LensRendererExtension {
 
   statusBarItems = [
     {
-      // DEBUG REMOVE once have protocol handler...
-      item: (
-        <Item
-          className="flex align-center gaps"
-          onClick={() => {
-            this.navigate(addRoute);
-
-            // DEBUG TODO test this again
-            dispatchExtEvent({
-              type: EXT_EVENT_ADD_CLUSTERS,
-              data: {
-                username: 'writer',
-                baseUrl: 'http://foo.com',
-                tokens: {
-                  id_token: 'asdf',
-                  expires_in: Date.now(),
-                  refresh_token: 'zxcv',
-                  refresh_expires_in: Date.now(),
-                },
-              },
-            });
-          }}
-        >
-          <span>EVENT</span>
-        </Item>
-      ),
-    },
-    {
       item: (
         <Item
           className="flex align-center gaps"
@@ -83,6 +55,7 @@ export default class ExtensionRenderer extends LensRendererExtension {
     dispatchExtEvent({
       type: EXT_EVENT_ACTIVATE_CLUSTER,
       data: {
+        cloudUrl: search.cloudUrl,
         namespace: search.namespace,
         clusterName: search.clusterName,
         clusterId: search.clusterId,
@@ -108,8 +81,8 @@ export default class ExtensionRenderer extends LensRendererExtension {
     dispatchExtEvent({
       type: EXT_EVENT_ADD_CLUSTERS,
       data: {
+        cloudUrl: search.cloudUrl,
         username: search.username,
-        baseUrl: search.baseUrl,
         tokens,
       },
     });
@@ -133,6 +106,7 @@ export default class ExtensionRenderer extends LensRendererExtension {
     dispatchExtEvent({
       type: EXT_EVENT_KUBECONFIG,
       data: {
+        cloudUrl: search.cloudUrl,
         namespace: search.namespace,
         clusterName: search.clusterName,
         clusterId: search.clusterId,
