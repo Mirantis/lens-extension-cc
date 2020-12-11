@@ -12,40 +12,30 @@ These instructions will help you install the extension for direct use with Lens.
 
 > NPM 6 or later is required to use the [npm pack](https://docs.npmjs.com/cli/v6/commands/npm-pack) command.
 
-First, quit Lens if it's currently running, then:
+Until [this Lens issue](https://github.com/lensapp/lens/issues/1708) is fixed, the extension's tarball (a compressed `.tgz` file) must first be downloaded to your local system:
 
 ```bash
 # download tar file without installing it
 $ npm pack @mirantis/lens-extension-cc
-
-# create the directory from which Lens will load the extension on start-up
-$ mkdir -p ~/.k8slens/extensions/lens-extension-cc
-
-# extract the contents of the NPM tarball directly into this directory (replace
-#  `VERSION` with the actual version in the name of the file previously downloaded)
-# NOTE: the '--strip-components=1' part is important to make sure files end-up
-#  where they're supposed to
-$ tar -xf mirantis-lens-extension-cc-VERSION.tgz \
-  -C ~/.k8slens/extensions/lens-extension-cc/ --strip-components=1
 ```
 
-Start Lens. You should now be able to choose the new `File > Add Cloud Cluster` menu item, or click on the `Add Cloud Cluster` status bar item (far right side of the status bar at the bottom of the app), to get started.
+This will download a file named like `mirantis-lens-extension-cc-X.Y.Z.tgz` to the current directory.
+
+Start Lens and go to the Extensions View (`CMD+SHIFT+E` on macOS). Use the file picker to find the tarball you just downloaded. This will install and enable the extension in Lens.
+
+You should now be able to choose the new `File > Add Cloud Cluster` menu item, or click on the `Add Cloud Cluster` status bar icon (far right side of the status bar at the bottom of the app), to get started.
 
 ## Upgrade
 
-To upgrade to a newer release, quit Lens, and delete the current extension:
-
-```bash
-$ rm -rf ~/.k8slens/extensions/lens-extension-cc
-```
-
-Then follow the [installation](#installation) instructions again.
+To upgrade to a newer release, go to the Extensions View (`CMD+SHIFT+E` on macOS), uninstall the extension, and then [re-install](#installation) it again.
 
 ## Development
 
-> NPM 7.x is __required__ since `package-lock.json` uses the v2 format. NPM <= 6 uses the older v1 format.
+> __NPM 7.x is required__ since `package-lock.json` uses the v2 format. NPM <= 6 uses the older v1 format.
 
-Rather than cloning the repository into `~/.k8slens/extensions/lens-extension-cc`, clone the repository wherever you prefer to have your code, and then link to it:
+First, quit Lens if it's currently running.
+
+Then, clone the repository wherever you prefer to have your code, and then link to it:
 
 ```bash
 $ git clone https://github.com/Mirantis/lens-extension-cc.git /your/src/path
@@ -58,9 +48,13 @@ $ npm start
 
 This will put the development build into watch mode.
 
-Restart Lens to load the extension for the first time. Now, as you make source changes, the build will run, and all you need to do is reload the Lens window (`CMD+R` on macOS) to see your changes.
+Restart Lens and go to the Extensions View (`CMD+SHIFT+E` on macOS) to enable it, which will cause it to load for the first time.
+
+Now, as you make source changes, the build will run, and all you need to do is __reload the Lens window__ (`CMD+R` on macOS) to see your changes.
 
 You can also run a one-off development build with `npm run dev`.
+
+> Note these steps will get much easier once [this Lens issue](https://github.com/lensapp/lens/issues/1741) is fixed.
 
 ## Publishing
 
