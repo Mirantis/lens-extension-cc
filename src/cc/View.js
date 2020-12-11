@@ -115,7 +115,7 @@ export const View = function () {
   //
 
   const {
-    state: { baseUrl, authAccess, addToNew, offline, savePath },
+    state: { cloudUrl, authAccess, addToNew, offline, savePath },
     actions: extActions,
   } = useExtState();
 
@@ -192,7 +192,7 @@ export const View = function () {
       authAccess.username = info.username;
       authAccess.password = info.password;
 
-      const url = normalizeUrl(info.baseUrl);
+      const url = normalizeUrl(info.cloudUrl);
 
       authAccess.clearTokens();
       extActions.setBaseUrl(url);
@@ -232,7 +232,7 @@ export const View = function () {
         addClustersActions.addClusters({
           clusters: selectedClusters,
           savePath,
-          baseUrl,
+          cloudUrl,
           config,
           username: authAccess.username,
           password: password || authAccess.password,
@@ -242,7 +242,7 @@ export const View = function () {
       }
     },
     [
-      baseUrl,
+      cloudUrl,
       authAccess,
       savePath,
       addToNew,
@@ -369,15 +369,15 @@ export const View = function () {
   useEffect(
     function () {
       if (
-        baseUrl &&
+        cloudUrl &&
         authAccess.hasCredentials() &&
         !configLoading &&
         !configLoaded
       ) {
-        configActions.load(baseUrl);
+        configActions.load(cloudUrl);
       }
     },
-    [baseUrl, authAccess, configLoading, configLoaded, configActions]
+    [cloudUrl, authAccess, configLoading, configLoaded, configActions]
   );
 
   // 2. authenticate
@@ -396,7 +396,7 @@ export const View = function () {
         } else if (authAccess.hasCredentials()) {
           authActions.authenticate({
             authAccess,
-            baseUrl,
+            cloudUrl,
             config,
           });
         }
@@ -410,7 +410,7 @@ export const View = function () {
       authLoaded,
       authActions,
       authAccess,
-      baseUrl,
+      cloudUrl,
       config,
       activeEventType,
     ]
@@ -422,18 +422,18 @@ export const View = function () {
       if (
         !clustersLoading &&
         !clustersLoaded &&
-        baseUrl &&
+        cloudUrl &&
         config &&
         authLoaded &&
         authAccess.isValid(!activeEventType)
       ) {
-        clustersActions.load(baseUrl, config, authAccess);
+        clustersActions.load(cloudUrl, config, authAccess);
       } else if (authAccess.changed) {
         extActions.setAuthAccess(authAccess); // capture any changes after loading clusters
       }
     },
     [
-      baseUrl,
+      cloudUrl,
       authAccess,
       extActions,
       config,
@@ -457,7 +457,13 @@ export const View = function () {
         setLoaderMessage(null); // don't show the loader again when user actually adds the clusters
       }
     },
-    [clustersLoading, clustersLoaded, clusters, selectedClusters, activeEventType]
+    [
+      clustersLoading,
+      clustersLoaded,
+      clusters,
+      selectedClusters,
+      activeEventType,
+    ]
   );
 
   //
@@ -493,7 +499,7 @@ export const View = function () {
           <Login
             loading={loading && !addClustersLoading}
             disabled={loading}
-            baseUrl={baseUrl || undefined}
+            cloudUrl={cloudUrl || undefined}
             username={authAccess ? authAccess.username : undefined}
             password={authAccess ? authAccess.password : undefined}
             onLogin={handleLogin}

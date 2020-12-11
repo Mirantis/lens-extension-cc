@@ -219,7 +219,9 @@ export const PreferencesPanel = function () {
       <small className="lecc-PreferencesPanel--offline-hint hint">
         {strings.preferencesPanel.offline.tip()}
       </small>
-      <Version><small>v{pkg.version}</small></Version>
+      <Version>
+        <small>v{pkg.version}</small>
+      </Version>
     </Section>
   );
 };

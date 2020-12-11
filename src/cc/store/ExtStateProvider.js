@@ -12,12 +12,12 @@ import pkg from '../../../package.json';
 const STORAGE_KEY = 'lens-mcc-ext';
 
 const extStateTs = {
-  baseUrl: [
+  cloudUrl: [
     rtv.EXPECTED,
     rtv.STRING,
     (v) => {
       if (v && v.match(/\/$/)) {
-        throw new Error('baseUrl must not end with a slash');
+        throw new Error('cloudUrl must not end with a slash');
       }
     },
   ], // MCC UI URL, does NOT end with a slash
@@ -39,7 +39,7 @@ class ExtStateProviderStore extends ProviderStore {
   makeNew() {
     const newStore = {
       ...super.makeNew(),
-      baseUrl: null,
+      cloudUrl: null,
       username: null,
       authAccess: new AuthAccess(),
       savePath: __dirname, // extension's `./dist` directory by default
@@ -193,7 +193,7 @@ export const useExtState = function () {
        * @param {string} newValue Must not end with a slash.
        */
       setBaseUrl(newValue) {
-        pr.store.baseUrl = newValue;
+        pr.store.cloudUrl = newValue;
         pr.onChange();
       },
 
