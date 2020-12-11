@@ -132,7 +132,11 @@ export default class ExtensionRenderer extends LensRendererExtension {
         `/${EXT_EVENT_KUBECONFIG}`,
         this.handleProtocolKubeConfig
       );
-      console.log(`[${pkg.name}/renderer/onActivate] == HANDLERS ADDED`); // DEBUG REMOVE
+    } else {
+      // eslint-disable-next-line no-console -- log the warning for users
+      console.warn(
+        `[${pkg.name}/renderer/onActivate] This version of Lens does not support 'lens://' protocol requests.`
+      );
     }
   }
 
@@ -142,7 +146,6 @@ export default class ExtensionRenderer extends LensRendererExtension {
     const that = this as any;
     if (typeof that.removeProtocolHandlers === 'function') {
       that.removeProtocolHandlers();
-      console.log(`[${pkg.name}/renderer/onDeactivate] == HANDLERS REMOVED`); // DEBUG REMOVE
     }
   }
 }
