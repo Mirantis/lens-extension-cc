@@ -1,5 +1,9 @@
 # ChangeLog
 
+## 2.0.0-beta.1
+
+- Previous release was built while Webpack DevServer was running, so the output of the published files in `./dist` is questionable. This release has no changes, but it was built the right way, just to be sure.
+
 ## 2.0.0-beta.0
 
 ### Added
