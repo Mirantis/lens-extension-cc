@@ -12,6 +12,11 @@ import { useAddClusters } from './store/AddClustersProvider';
 import { Section as BaseSection } from './Section';
 import { layout } from './styles';
 import * as strings from '../strings';
+import pkg from '../../package.json';
+
+//
+// INTERNAL STYLED COMPONENTS
+//
 
 const Section = styled(BaseSection)(function ({ offline }) {
   return {
@@ -60,6 +65,19 @@ const SavedIndicator = styled.div(function () {
     },
   };
 });
+
+const Version = styled.div(function () {
+  return {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    // fontSize: 'var(--font-size-small)',
+    // color: 'var(--textColorSecondary)',
+  };
+});
+
+//
+// MAIN COMPONENT
+//
 
 export const PreferencesPanel = function () {
   //
@@ -201,6 +219,7 @@ export const PreferencesPanel = function () {
       <small className="lecc-PreferencesPanel--offline-hint hint">
         {strings.preferencesPanel.offline.tip()}
       </small>
+      <Version><small>v{pkg.version}</small></Version>
     </Section>
   );
 };
