@@ -5,7 +5,8 @@ import { ContainerCloudIcon, AddClusterPage } from './page';
 import * as strings from './strings';
 import { addRoute } from './routes';
 import {
-  EXT_EVENT_CLUSTERS,
+  EXT_EVENT_ACTIVATE_CLUSTER,
+  EXT_EVENT_ADD_CLUSTERS,
   EXT_EVENT_KUBECONFIG,
   dispatchExtEvent,
 } from './eventBus';
@@ -43,7 +44,7 @@ export default class ExtensionRenderer extends LensRendererExtension {
 
             // DEBUG TODO test this again
             dispatchExtEvent({
-              type: EXT_EVENT_CLUSTERS,
+              type: EXT_EVENT_ADD_CLUSTERS,
               data: {
                 username: 'writer',
                 baseUrl: 'http://foo.com',
@@ -76,6 +77,19 @@ export default class ExtensionRenderer extends LensRendererExtension {
     },
   ];
 
+  protected handleProtocolActivateCluster = ({ search }) => {
+    this.navigate(addRoute);
+
+    dispatchExtEvent({
+      type: EXT_EVENT_ACTIVATE_CLUSTER,
+      data: {
+        namespace: search.namespace,
+        clusterName: search.clusterName,
+        clusterId: search.clusterId,
+      },
+    });
+  };
+
   protected handleProtocolClusters = ({ search }) => {
     let tokens;
     try {
@@ -92,7 +106,7 @@ export default class ExtensionRenderer extends LensRendererExtension {
     this.navigate(addRoute);
 
     dispatchExtEvent({
-      type: EXT_EVENT_CLUSTERS,
+      type: EXT_EVENT_ADD_CLUSTERS,
       data: {
         username: search.username,
         baseUrl: search.baseUrl,
@@ -133,7 +147,11 @@ export default class ExtensionRenderer extends LensRendererExtension {
     const that = this as any;
     if (typeof that.onProtocolRequest === 'function') {
       that.onProtocolRequest(
-        `/${EXT_EVENT_CLUSTERS}`,
+        `/${EXT_EVENT_ACTIVATE_CLUSTER}`,
+        this.handleProtocolActivateCluster
+      );
+      that.onProtocolRequest(
+        `/${EXT_EVENT_ADD_CLUSTERS}`,
         this.handleProtocolClusters
       );
       that.onProtocolRequest(

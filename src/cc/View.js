@@ -17,9 +17,11 @@ import { PreferencesPanel } from './PreferencesPanel';
 import * as strings from '../strings';
 import { layout, mixinFlexColumnGaps } from './styles';
 import {
-  EXT_EVENT_CLUSTERS,
+  EXT_EVENT_ACTIVATE_CLUSTER,
+  EXT_EVENT_ADD_CLUSTERS,
   EXT_EVENT_KUBECONFIG,
-  extEventClustersTs,
+  extEventActivateClusterTs,
+  extEventAddClustersTs,
   extEventKubeconfigTs,
   addExtEventHandler,
   removeExtEventHandler,
@@ -159,9 +161,12 @@ export const View = function () {
   //  is currently being handled; otherwise, the extension is in its 'normal' state
   const [activeEventType, setActiveEventType] = useState(null);
 
-  // name of the cluster added (or skipped) via single kubeConfig event; null if not
-  //  processing an EXT_EVENT_KUBECONFIG event
-  const [kubeEventClusterName, setKubeEventClusterName] = useState(null);
+  // name of the cluster being added/skipped/activated via an event; null if not
+  //  processing an EXT_EVENT_KUBECONFIG or EXT_EVENT_ACTIVATE_CLUSTER event
+  const [eventClusterName, setEventClusterName] = useState(null);
+
+  // @type {string} message to show in Loader; null if none
+  const [loaderMessage, setLoaderMessage] = useState(null);
 
   const loading =
     configLoading ||
@@ -253,7 +258,8 @@ export const View = function () {
     function () {
       // reset View back to login with current auth in case still valid
       setActiveEventType(null);
-      setKubeEventClusterName(null);
+      setLoaderMessage(null);
+      setEventClusterName(null);
       configActions.reset();
       authActions.reset();
       clustersActions.reset();
@@ -263,10 +269,31 @@ export const View = function () {
     [configActions, authActions, clustersActions, addClustersActions]
   );
 
-  const handleClustersEvent = useCallback(
+  const handleActivateClusterEvent = useCallback(
+    function (event) {
+      console.log('[View] received activateCluster event', event); // DEBUG
+      rtv.verify({ event }, { event: extEventActivateClusterTs });
+
+      const { data } = event;
+
+      if (!addClustersLoading) {
+        setActiveEventType(EXT_EVENT_ACTIVATE_CLUSTER);
+        setLoaderMessage(
+          strings.view.main.loaders.activateCluster(
+            `${data.namespace}/${data.clusterName}`
+          )
+        );
+        setEventClusterName(`${data.namespace}/${data.clusterName}`);
+        addClustersActions.activateCluster(data);
+      }
+    },
+    [addClustersLoading, addClustersActions]
+  );
+
+  const handleAddClustersEvent = useCallback(
     function (event) {
       console.log('[View] received clusters event', event); // DEBUG
-      rtv.verify({ event }, { event: extEventClustersTs });
+      rtv.verify({ event }, { event: extEventAddClustersTs });
 
       const { data } = event;
 
@@ -281,7 +308,8 @@ export const View = function () {
       authActions.reset();
       clustersActions.reset();
 
-      setActiveEventType(EXT_EVENT_CLUSTERS);
+      setActiveEventType(EXT_EVENT_ADD_CLUSTERS);
+      setLoaderMessage(strings.view.main.loaders.addClustersHtml(url));
       configActions.load(url); // implicit reset of current config
     },
     [authAccess, authActions, extActions, clustersActions, configActions]
@@ -296,7 +324,12 @@ export const View = function () {
 
       if (!addClustersLoading) {
         setActiveEventType(EXT_EVENT_KUBECONFIG);
-        setKubeEventClusterName(`${data.namespace}/${data.clusterName}`);
+        setLoaderMessage(
+          strings.view.main.loaders.addKubeCluster(
+            `${data.namespace}/${data.clusterName}`
+          )
+        );
+        setEventClusterName(`${data.namespace}/${data.clusterName}`);
         addClustersActions.addKubeCluster({
           savePath,
           addToNew,
@@ -313,15 +346,23 @@ export const View = function () {
 
   useEffect(
     function () {
-      addExtEventHandler(EXT_EVENT_CLUSTERS, handleClustersEvent);
+      addExtEventHandler(
+        EXT_EVENT_ACTIVATE_CLUSTER,
+        handleActivateClusterEvent
+      );
+      addExtEventHandler(EXT_EVENT_ADD_CLUSTERS, handleAddClustersEvent);
       addExtEventHandler(EXT_EVENT_KUBECONFIG, handleKubeconfigEvent);
 
       return function () {
-        removeExtEventHandler(EXT_EVENT_CLUSTERS, handleClustersEvent);
+        removeExtEventHandler(
+          EXT_EVENT_ACTIVATE_CLUSTER,
+          handleActivateClusterEvent
+        );
+        removeExtEventHandler(EXT_EVENT_ADD_CLUSTERS, handleAddClustersEvent);
         removeExtEventHandler(EXT_EVENT_KUBECONFIG, handleKubeconfigEvent);
       };
     },
-    [handleClustersEvent, handleKubeconfigEvent]
+    [handleActivateClusterEvent, handleAddClustersEvent, handleKubeconfigEvent]
   );
 
   // 1. load the config object
@@ -421,18 +462,12 @@ export const View = function () {
   // RENDER
   //
 
-  // DEBUG TODO: don't show Login if responding to a URL request...
-
   const title =
     activeEventType === EXT_EVENT_KUBECONFIG
       ? strings.view.main.titles.kubeConfig()
+      : activeEventType === EXT_EVENT_ACTIVATE_CLUSTER
+      ? strings.view.main.titles.activateCluster()
       : strings.view.main.titles.generic();
-
-  const loaderMessage = activeEventType
-    ? activeEventType === EXT_EVENT_CLUSTERS
-      ? strings.view.main.loaders.clustersHtml()
-      : strings.view.main.loaders.kubeConfig()
-    : undefined;
 
   return (
     <Container className="lecc-View">
@@ -445,14 +480,11 @@ export const View = function () {
               material="close"
               interactive
               big
-              title={strings.view.main.close}
+              title={strings.view.main.close()}
               onClick={handleCloseClick}
             />
           )}
         </Title>
-
-        {/* show loader only if we ARE handling an extension event */}
-        {loading && activeEventType && <Loader message={loaderMessage} />}
 
         {/* only show Login if we are NOT handling an extension event */}
         {!activeEventType && (
@@ -466,19 +498,23 @@ export const View = function () {
           />
         )}
 
+        {/* show loader only if we have a message to show, which is typically only when we're handling an EXT_EVENT_* event */}
+        {loading && loaderMessage && <Loader message={loaderMessage} />}
+
         {/* show error in UI on top of notification (since they disappear) when handling an event */}
         {activeEventType && !!errMessage && (
           <ErrorPanel>{errMessage}</ErrorPanel>
         )}
 
-        {/* when handling the kubeConfig event, show the result in the UI */}
+        {/*
+          when handling the EXT_EVENT_KUBECONFIG event, show the result in the UI even though
+           user won't see it since we activate the cluster; just in case, as a neutral state
+        */}
         {activeEventType === EXT_EVENT_KUBECONFIG &&
           !errMessage &&
           kubeClusterAdded && (
             <InfoPanel>
-              {strings.view.main.kubeConfigEvent.clusterAdded(
-                kubeEventClusterName
-              )}
+              {strings.view.main.kubeConfigEvent.clusterAdded(eventClusterName)}
             </InfoPanel>
           )}
         {activeEventType === EXT_EVENT_KUBECONFIG &&
@@ -486,10 +522,22 @@ export const View = function () {
           !kubeClusterAdded && (
             <InfoPanel>
               {strings.view.main.kubeConfigEvent.clusterSkipped(
-                kubeEventClusterName
+                eventClusterName
               )}
             </InfoPanel>
           )}
+
+        {/*
+          when handling the EXT_EVENT_ACTIVATE_CLUSTER event, show the result in the UI even though
+           user won't see it since we activate the cluster; just in case, as a neutral state
+        */}
+        {activeEventType === EXT_EVENT_ACTIVATE_CLUSTER && !errMessage && (
+          <InfoPanel>
+            {strings.view.main.activateClusterEvent.clusterActivated(
+              eventClusterName
+            )}
+          </InfoPanel>
+        )}
 
         {/* ClusterList and AddClusters apply only if NOT loading a kubeConfig */}
         {activeEventType !== EXT_EVENT_KUBECONFIG &&
@@ -506,7 +554,7 @@ export const View = function () {
             />
             <AddClusters
               clusters={selectedClusters}
-              passwordRequired={activeEventType === EXT_EVENT_CLUSTERS}
+              passwordRequired={activeEventType === EXT_EVENT_ADD_CLUSTERS}
               onAdd={handleClustersAdd}
             />
           </>

@@ -39,6 +39,26 @@ type EventQueue = Array<ExtensionEvent>;
 //
 
 /**
+ * Activates an existing cluster in Lens.
+ *
+ * `event.data` is an object with the following properties:
+ * - namespace {string} Name of the namespace that contains the cluster.
+ * - clusterName (string) Name of the cluster being activated.
+ * - clusterId {string} ID of the cluster being activated.
+ */
+export const EXT_EVENT_ACTIVATE_CLUSTER = 'activateCluster';
+
+/** RTV Typeset to validate the event object for an `EXT_EVENT_ACTIVATE_CLUSTER` event. */
+export const extEventActivateClusterTs = {
+  type: [rtv.STRING, { exact: EXT_EVENT_ACTIVATE_CLUSTER }],
+  data: {
+    namespace: rtv.STRING,
+    clusterName: rtv.STRING,
+    clusterId: rtv.STRING,
+  },
+};
+
+/**
  * List all clusters in MCC instance.
  *
  * `event.data` is an object with the following properties:
@@ -46,11 +66,11 @@ type EventQueue = Array<ExtensionEvent>;
  * - baseUrl {string} MCC instance base URL.
  * - tokens {{ id_token: string, expires_in: number, refresh_token: string, refresh_expires_in: number }} API tokens object.
  */
-export const EXT_EVENT_CLUSTERS = 'clusters';
+export const EXT_EVENT_ADD_CLUSTERS = 'addClusters';
 
-/** RTV Typeset to validate the event object for an `EXT_EVENT_CLUSTERS` event. */
-export const extEventClustersTs = {
-  type: [rtv.STRING, { exact: EXT_EVENT_CLUSTERS }],
+/** RTV Typeset to validate the event object for an `EXT_EVENT_ADD_CLUSTERS` event. */
+export const extEventAddClustersTs = {
+  type: [rtv.STRING, { exact: EXT_EVENT_ADD_CLUSTERS }],
   data: {
     username: rtv.STRING,
     baseUrl: rtv.STRING,
@@ -63,7 +83,7 @@ export const extEventClustersTs = {
  *
  * `event.data` is an object with the following properties:
  * - namespace {string} Name of the namespace that contains the cluster.
- * - clusterName (string) Name of the cluster being adeed.
+ * - clusterName (string) Name of the cluster being added.
  * - clusterId {string} ID of the cluster being added.
  * - kubeConfig {Object} JSON object representing the kubeConfig to add.
  */
@@ -71,7 +91,7 @@ export const EXT_EVENT_KUBECONFIG = 'kubeConfig';
 
 /** RTV Typeset to validate the event object for an `EXT_EVENT_KUBECONFIG` event. */
 export const extEventKubeconfigTs = {
-  type: [rtv.STRING, { exact: EXT_EVENT_CLUSTERS }],
+  type: [rtv.STRING, { exact: EXT_EVENT_ADD_CLUSTERS }],
   data: {
     namespace: rtv.STRING,
     clusterName: rtv.STRING,

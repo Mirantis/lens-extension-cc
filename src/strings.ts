@@ -33,15 +33,21 @@ export const view: Dict = {
     titles: {
       generic: () => 'Add Mirantis Container Cloud Clusters',
       kubeConfig: () => 'Adding Mirantis Container Cloud Cluster',
+      activateCluster: () => 'Activate Mirantis Container Cloud Cluster',
     },
     loaders: {
-      clustersHtml: (url) => `Retrieving clusters from <code>${url}</code>...`,
-      kubeConfig: () => 'Loading kubeConfig...',
+      activateCluster: (name) => `Activating ${name} cluster...`,
+      addClustersHtml: (url) =>
+        `Retrieving clusters from <code>${url}</code>...`,
+      addKubeCluster: (name) => `Adding ${name} cluster...`,
     },
     kubeConfigEvent: {
       clusterAdded: (name) =>
         `The ${name} cluster was successfully added to Lens.`,
       clusterSkipped: (name) => `The ${name} cluster was already in Lens.`,
+    },
+    activateClusterEvent: {
+      clusterActivated: (name) => `The ${name} cluster was activated.`,
     },
     close: () => 'Reset back to normal view',
   },
@@ -69,12 +75,19 @@ export const view: Dict = {
   be added to the <code>${workspacePrefix}demo</code> workspace (and the workspace will be
   created if it doesn't exist already).
 </p>
+<h3>MCC Links</h3>
+<p>
+  When activating this extension via links from an MCC instance (requires a version
+  of Lens that supports <code>lens://</code> protocol requests), the extension
+  UI will add an X (Close) button to the top/right corner of its main panel.
+  Click the Close button to return to the default view.
+</p>
 `,
   },
 };
 
 export const login: Dict = {
-  title: () => '1. Sign in',
+  title: () => 'Sign in',
   url: { label: () => 'MCC URL:' },
   username: { label: () => 'Username:' },
   password: { label: () => 'Password:' },
@@ -84,7 +97,7 @@ export const login: Dict = {
 };
 
 export const clusterList: Dict = {
-  title: () => '2. Select clusters',
+  title: () => 'Select clusters',
   action: {
     selectAll: {
       label: () => 'Select all',
@@ -96,7 +109,7 @@ export const clusterList: Dict = {
 };
 
 export const addClusters: Dict = {
-  title: () => '3. Add to Lens',
+  title: () => 'Add to Lens',
   password: {
     tip: (username) =>
       `Password for user "${username}" is required to generate kubeConfigs`,
@@ -150,6 +163,8 @@ export const addClustersProvider: Dict = {
       `Failed to create kubeConfig for cluster ${clusterId}`,
     kubeConfigSave: (clusterId = 'unknown') =>
       `Failed to save kubeConfig file to disk for cluster ${clusterId}`,
+    clusterNotFound: (name) =>
+      `The ${name} cluster was not found in Lens. Try adding it first.`,
   },
   workspaces: {
     description: () => 'MCC workspace',
