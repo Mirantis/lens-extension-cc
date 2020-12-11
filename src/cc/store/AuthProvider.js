@@ -25,13 +25,13 @@ const pr = new AuthProviderStore();
  * @param {Object} options
  * @param {AuthAccess} options.authAccess Current authentication information. This
  *  instance WILL be cleared and updated with new tokens.
- * @param {string} options.baseUrl MCC URL. Must NOT end with a slash.
+ * @param {string} options.cloudUrl MCC URL. Must NOT end with a slash.
  * @param {Object} options.config MCC Config object.
  */
-const _authenticate = async function ({ authAccess, config, baseUrl }) {
+const _authenticate = async function ({ authAccess, config, cloudUrl }) {
   pr.reset(true);
 
-  const authClient = new AuthClient(baseUrl, config);
+  const authClient = new AuthClient(cloudUrl, config);
   const { error, body } = await authClient.getToken(
     authAccess.username,
     authAccess.password
@@ -79,7 +79,7 @@ export const useAuth = function () {
        * @param {Object} options
        * @param {AuthAccess} options.authAccess Current authentication information.
        *  This instance WILL be cleared and updated with new tokens.
-       * @param {string} options.baseUrl MCC URL. Must NOT end with a slash.
+       * @param {string} options.cloudUrl MCC URL. Must NOT end with a slash.
        * @param {Object} options.config MCC Config object.
        */
       authenticate(options) {

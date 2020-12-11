@@ -86,7 +86,7 @@ const _filterClusters = function (clusters) {
 /**
  * [ASYNC] Gets access tokens for the specified cluster.
  * @param {Cluster} options.cluster
- * @param {string} options.baseUrl MCC URL. Must NOT end with a slash.
+ * @param {string} options.cloudUrl MCC URL. Must NOT end with a slash.
  * @param {Object} options.config MCC Config object.
  * @param {AuthAccess} options.username
  * @param {string} options.password
@@ -98,13 +98,13 @@ const _filterClusters = function (clusters) {
  */
 const _getClusterAccess = async function ({
   cluster,
-  baseUrl,
+  cloudUrl,
   config,
   username,
   password,
   offline = false,
 }) {
-  const authClient = new AuthClient(baseUrl, config);
+  const authClient = new AuthClient(cloudUrl, config);
 
   const { error, body } = await authClient.getToken(
     username,
@@ -130,7 +130,7 @@ const _getClusterAccess = async function ({
 /**
  * [ASYNC] Generates a kubeConfig for the given cluster.
  * @param {Cluster} options.cluster
- * @param {string} options.baseUrl MCC URL. Must NOT end with a slash.
+ * @param {string} options.cloudUrl MCC URL. Must NOT end with a slash.
  * @param {Object} options.config MCC Config object.
  * @param {AuthAccess} options.username
  * @param {string} options.password
@@ -143,7 +143,7 @@ const _getClusterAccess = async function ({
  */
 const _createKubeConfig = async function ({
   cluster,
-  baseUrl,
+  cloudUrl,
   config,
   username,
   password,
@@ -155,7 +155,7 @@ const _createKubeConfig = async function ({
 
   const { error: accessError, authAccess } = await _getClusterAccess({
     cluster,
-    baseUrl,
+    cloudUrl,
     config,
     username,
     password,
@@ -343,16 +343,8 @@ const _switchToNewWorkspace = function () {
  * @param {string} clusterId ID of the cluster in Lens.
  */
 const _switchToCluster = function (clusterId) {
-  // DEBUG TODO: need to activate the cluster... `Store.clusterStore.activeClusterId = clusterId` does NOT do anything and setActive(id) is missing
-  // activate the cluster
-  if (typeof Store.clusterStore.setActive === 'function') {
-    // API may not exist
-    Store.clusterStore.setActive(clusterId);
-  } else {
-    Store.clusterStore.activeClusterId = clusterId; // DEBUG TODO: currently does not work
-  }
-
-  extension.navigate(`/cluster/${clusterId}`); // DEBUG TODO still not enough... wrong path?
+  Store.clusterStore.activeClusterId = clusterId;
+  extension.navigate(`/cluster/${clusterId}`); // DEBUG TODO doesn't __always__ work; bug in Lens somewhere
 };
 
 /**
@@ -360,7 +352,7 @@ const _switchToCluster = function (clusterId) {
  * @param {Object} options
  * @param {Array<Cluster>} options.clusters Clusters to add.
  * @param {string} options.savePath Absolute path where kubeConfigs are to be saved.
- * @param {string} options.baseUrl MCC URL. Must NOT end with a slash.
+ * @param {string} options.cloudUrl MCC URL. Must NOT end with a slash.
  * @param {Object} options.config MCC Config object.
  * @param {AuthAccess} options.username Used to generate access tokens for MCC clusters.
  * @param {string} options.password User password.
@@ -375,7 +367,7 @@ const _switchToCluster = function (clusterId) {
 const _addClusters = async function ({
   clusters,
   savePath,
-  baseUrl,
+  cloudUrl,
   config,
   username,
   password,
@@ -391,7 +383,7 @@ const _addClusters = async function ({
     _createKubeConfig({
       cluster,
       savePath,
-      baseUrl,
+      cloudUrl,
       config,
       username,
       password,
@@ -599,7 +591,7 @@ export const useAddClusters = function () {
        * @param {Object} options
        * @param {Array<Cluster>} options.clusters Clusters to add.
        * @param {string} options.savePath Absolute path where kubeConfigs are to be saved.
-       * @param {string} options.baseUrl MCC URL. Must NOT end with a slash.
+       * @param {string} options.cloudUrl MCC URL. Must NOT end with a slash.
        * @param {Object} options.config MCC Config object.
        * @param {string} options.username Used to generate access tokens for MCC clusters.
        * @param {string} options.password User password.

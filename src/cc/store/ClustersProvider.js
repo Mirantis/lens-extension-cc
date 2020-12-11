@@ -70,16 +70,16 @@ const _deserializeNamespacesList = function (body) {
 
 /**
  * [ASYNC] Get all existing namespaces from the management cluster.
- * @param {string} baseUrl MCC URL. Must NOT end with a slash.
+ * @param {string} cloudUrl MCC URL. Must NOT end with a slash.
  * @param {Object} config MCC Configuration object.
  * @param {AuthAccess} authAccess An AuthAccess object. Tokens will be updated/cleared
  *  if necessary.
  * @returns {Promise<Object>} On success `{ namespaces: Array<Namespace< }`;
  *  on error `{error: string}`.
  */
-const _fetchNamespaces = async function (baseUrl, config, authAccess) {
+const _fetchNamespaces = async function (cloudUrl, config, authAccess) {
   const { error, body } = await authedRequest({
-    baseUrl,
+    baseUrl: cloudUrl,
     authAccess,
     config,
     method: 'list',
@@ -135,7 +135,7 @@ const _deserializeClustersList = function (body) {
 /**
  * [ASYNC] Get all existing clusters from the management cluster, for each namespace
  *  specified.
- * @param {string} baseUrl MCC URL. Must NOT end with a slash.
+ * @param {string} cloudUrl MCC URL. Must NOT end with a slash.
  * @param {Object} config MCC Configuration object.
  * @param {AuthAccess} authAccess An AuthAccess object. Tokens will be updated/cleared
  *  if necessary.
@@ -148,7 +148,7 @@ const _deserializeClustersList = function (body) {
  *  all namespaces on which cluster retrieval was attempted.
  */
 const _fetchClusters = async function (
-  baseUrl,
+  cloudUrl,
   config,
   authAccess,
   namespaces
@@ -156,7 +156,7 @@ const _fetchClusters = async function (
   const results = await Promise.all(
     namespaces.map((namespaceName) =>
       authedRequest({
-        baseUrl,
+        baseUrl: cloudUrl,
         authAccess,
         config,
         method: 'list',
@@ -190,15 +190,15 @@ const _fetchClusters = async function (
 
 /**
  * [ASYNC] Loads namespaces and clusters from the API.
- * @param {string} baseUrl MCC URL. Must NOT end with a slash.
+ * @param {string} cloudUrl MCC URL. Must NOT end with a slash.
  * @param {Object} config MCC Configuration object.
  * @param {AuthAccess} authAccess Current authentication information. This
  *  instance MAY be updated if a token refresh is required during the load.
  */
-const _loadData = async function (baseUrl, config, authAccess) {
+const _loadData = async function (cloudUrl, config, authAccess) {
   pr.reset(true);
 
-  const nsResults = await _fetchNamespaces(baseUrl, config, authAccess);
+  const nsResults = await _fetchNamespaces(cloudUrl, config, authAccess);
 
   if (nsResults.error) {
     pr.store.loading = false;
@@ -209,7 +209,7 @@ const _loadData = async function (baseUrl, config, authAccess) {
 
     const namespaces = pr.store.data.namespaces.map((ns) => ns.name);
     const clResults = await _fetchClusters(
-      baseUrl,
+      cloudUrl,
       config,
       authAccess,
       namespaces
@@ -256,14 +256,14 @@ export const useClusters = function () {
     actions: {
       /**
        * [ASYNC] Loads namespaces and clusters.
-       * @param {string} baseUrl MCC URL. Must NOT end with a slash.
+       * @param {string} cloudUrl MCC URL. Must NOT end with a slash.
        * @param {Object} config MCC Configuration object.
        * @param {AuthAccess} authAccess Current authentication information. This
        *  instance MAY be updated if a token refresh is required during the load.
        */
-      load(baseUrl, config, authAccess) {
+      load(cloudUrl, config, authAccess) {
         if (!pr.store.loading) {
-          _loadData(baseUrl, config, authAccess);
+          _loadData(cloudUrl, config, authAccess);
         }
       },
 
