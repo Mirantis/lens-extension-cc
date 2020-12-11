@@ -7,7 +7,7 @@ import propTypes from 'prop-types';
 import styled from '@emotion/styled';
 import { Component } from '@k8slens/extensions';
 import { Cluster } from './store/Cluster';
-import { useAddClusters } from './store/AddClustersProvider';
+import { useClusterActions } from './store/ClusterActionsProvider';
 import { useExtState } from './store/ExtStateProvider';
 import { Section as BaseSection } from './Section';
 import { layout } from './styles';
@@ -32,7 +32,7 @@ export const AddClusters = function ({ onAdd, clusters, passwordRequired }) {
 
   const {
     state: { loading: addingClusters },
-  } = useAddClusters();
+  } = useClusterActions();
 
   const [password, setPassword] = useState('');
 

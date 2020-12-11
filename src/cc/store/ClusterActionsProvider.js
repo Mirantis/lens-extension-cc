@@ -563,10 +563,10 @@ const _activateCluster = function ({ namespace, clusterName, clusterId }) {
 // Provider Definition
 //
 
-const AddClustersContext = createContext();
+const ClusterActionsContext = createContext();
 
-export const useAddClusters = function () {
-  const context = useContext(AddClustersContext);
+export const useClusterActions = function () {
+  const context = useContext(ClusterActionsContext);
   if (!context) {
     throw new Error(
       'useAddClusters must be used within an AddClustersProvider'
@@ -651,7 +651,7 @@ export const useAddClusters = function () {
   };
 };
 
-export const AddClustersProvider = function ({
+export const ClusterActionsProvider = function ({
   extension: lensExtension,
   ...props
 }) {
@@ -665,9 +665,9 @@ export const AddClustersProvider = function ({
   extension = lensExtension;
   pr.setState = setState;
 
-  return <AddClustersContext.Provider value={value} {...props} />;
+  return <ClusterActionsContext.Provider value={value} {...props} />;
 };
 
-AddClustersProvider.propTypes = {
+ClusterActionsProvider.propTypes = {
   extension: propTypes.object,
 };
