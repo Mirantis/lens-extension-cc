@@ -344,7 +344,7 @@ const _switchToNewWorkspace = function () {
  */
 const _switchToCluster = function (clusterId) {
   Store.clusterStore.activeClusterId = clusterId;
-  extension.navigate(`/cluster/${clusterId}`); // DEBUG TODO doesn't __always__ work; bug in Lens somewhere
+  extension.navigate(`/cluster/${clusterId}`); // TODO: doesn't __always__ work; bug in Lens somewhere, and feels like clusterStore should have setActive(clusterId) like workspaceStore.setActive() and have it do the navigation in a consistent way.
 };
 
 /**

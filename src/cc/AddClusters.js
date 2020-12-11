@@ -54,7 +54,6 @@ export const AddClusters = function ({ onAdd, clusters, passwordRequired }) {
   // RENDER
   //
 
-  // DEBUG TODO: May need to know, via config.js, if it's SSO or not to know what to do in either case...
   return (
     <Section className="lecc-AddClusters">
       <h3>{strings.addClusters.title()}</h3>

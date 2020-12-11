@@ -271,7 +271,6 @@ export const View = function () {
 
   const handleActivateClusterEvent = useCallback(
     function (event) {
-      console.log('[View] received activateCluster event', event); // DEBUG
       rtv.verify({ event }, { event: extEventActivateClusterTs });
 
       const { data } = event;
@@ -292,7 +291,6 @@ export const View = function () {
 
   const handleAddClustersEvent = useCallback(
     function (event) {
-      console.log('[View] received clusters event', event); // DEBUG
       rtv.verify({ event }, { event: extEventAddClustersTs });
 
       const { data } = event;
@@ -317,7 +315,6 @@ export const View = function () {
 
   const handleKubeconfigEvent = useCallback(
     function (event) {
-      console.log('[View] received kubeconfig event', event); // DEBUG
       rtv.verify({ event }, { event: extEventKubeconfigTs });
 
       const { data } = event;
