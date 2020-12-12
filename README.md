@@ -23,7 +23,7 @@ This will download a file named like `mirantis-lens-extension-cc-X.Y.Z.tgz` to t
 
 Start Lens and go to the Extensions View (`CMD+SHIFT+E` on macOS). Use the file picker to find the tarball you just downloaded. This will install and enable the extension in Lens.
 
-You should now be able to choose the new `File > Add Cloud Cluster` menu item, or click on the `Add Cloud Cluster` status bar icon (far right side of the status bar at the bottom of the app), to get started.
+You should now be able to choose the new `File > Add Cloud Clusters` menu item, or click on the `Mirantis Container Cloud` status bar icon (far right side of the status bar at the bottom of the app), to get started.
 
 ## Upgrading
 

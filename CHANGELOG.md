@@ -1,5 +1,27 @@
 # ChangeLog
 
+## 2.0.0
+
+Supports Lens `>= 4.0.2`.
+
+This is a rollup of all `2.0.0-alpha.X` and `2.0.0-beta.X` changes, however, the protocol request-related features are now behind a small feature gate awaiting official [support](https://github.com/lensapp/lens/issues/1288) in Lens.
+
+For now, the extension continues to operate as it did before, with the changes noted below.
+
+### Added
+
+- New Preferences Panel, which moves the preferences out of the main extension body and into the side panel.
+- Current extension version is now displayed in the bottom/right corner of the Help panel.
+
+### Changed
+
+- When adding clusters, kubeConfig files will not be generated for clusters which are already in Lens.
+- The "save location" field is now read-only. You must use the folder picker to choose an existing folder.
+- A notification is now posted listing all new clusters added to Lens.
+- Removed the '1-2-3' sequence on the main headings since not all steps are always visible depending on whether the extension is being used normally, or as a result of clicking on a `lens://` link.
+- The status bar item is now only the icon without the label. The label is now displayed as a tooltip on hover.
+- The `@k8slens/extensions` dependency has been updated to `4.0.2`.
+
 ## 2.0.0-beta.1
 
 - Previous release was built while Webpack DevServer was running, so the output of the published files in `./dist` is questionable. This release has no changes, but it was built the right way, just to be sure.

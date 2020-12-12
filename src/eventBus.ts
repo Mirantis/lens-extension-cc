@@ -1,7 +1,7 @@
 //
 // Cheap Event Bus
-// TODO: Remove this and move to page params once https://github.com/lensapp/lens/pull/1651
-//  is merge (targetted for Lens 4.1 as of 2020/12/08).
+// TODO: Remove this and move to page params;
+//  TRACKING: https://github.com/Mirantis/lens-extension-cc/issues/23
 //
 
 import rtv from 'rtvjs';

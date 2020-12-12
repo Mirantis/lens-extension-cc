@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import propTypes from 'prop-types';
 import styled from '@emotion/styled';
 import rtv from 'rtvjs';
 import { Component } from '@k8slens/extensions';
@@ -46,6 +47,7 @@ const Container = styled.div(function () {
     // style all <code> elements herein
     code: {
       // TODO: remove once https://github.com/lensapp/lens/issues/1683 is fixed
+      // TRACKING: https://github.com/Mirantis/lens-extension-cc/issues/27
       fontSize: 'calc(var(--font-size) * .9)',
     },
   };
@@ -109,7 +111,7 @@ const Title = styled.div(function () {
 // MAIN COMPONENT
 //
 
-export const View = function () {
+export const View = function ({ extension }) {
   //
   // STATE
   //
@@ -568,10 +570,19 @@ export const View = function () {
 
       <HelpColumn>
         <HelpContent
-          dangerouslySetInnerHTML={{ __html: strings.view.help.html() }}
+          // TRACKING: https://github.com/Mirantis/lens-extension-cc/issues/25
+          dangerouslySetInnerHTML={{
+            __html: strings.view.help.html(
+              typeof extension.onProtocolRequest === 'function'
+            ),
+          }}
         />
         <PreferencesPanel />
       </HelpColumn>
     </Container>
   );
+};
+
+View.propTypes = {
+  extension: propTypes.object.isRequired,
 };
