@@ -4,6 +4,7 @@
 
 import React, { createContext, useContext, useState, useMemo } from 'react';
 import propTypes from 'prop-types';
+import rtv from 'rtvjs';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { AuthClient } from '../auth/clients/AuthClient';
@@ -344,7 +345,57 @@ const _switchToNewWorkspace = function () {
  */
 const _switchToCluster = function (clusterId) {
   Store.clusterStore.activeClusterId = clusterId;
-  extension.navigate(`/cluster/${clusterId}`); // TODO: doesn't __always__ work; bug in Lens somewhere, and feels like clusterStore should have setActive(clusterId) like workspaceStore.setActive() and have it do the navigation in a consistent way.
+  // TODO: doesn't __always__ work; bug in Lens somewhere, and feels like clusterStore
+  //  should have setActive(clusterId) like workspaceStore.setActive() and have it do
+  //  the navigation in a consistent way.
+  // TRACKING: https://github.com/Mirantis/lens-extension-cc/issues/26
+  extension.navigate(`/cluster/${clusterId}`);
+};
+
+/**
+ * Adds one or more clusters to Lens.
+ * @param {string} cloudUrl MCC instance base URL that owns all the clusters.
+ * @param {Array<{namespace: string, id: string, name: string}>} clusterShims
+ *  Clusters being added.
+ * @param {Array<ClusterModel>} models List of models for clusters to add, one for each
+ *  item in `clusters`.
+ */
+const _storeClustersInLens = function (cloudUrl, clusterShims, models) {
+  rtv.verify(
+    {
+      _addClustersToLens: {
+        cloudUrl,
+        clusterShims,
+        models,
+      },
+    },
+    {
+      _addClustersToLens: {
+        cloudUrl: rtv.STRING,
+        clusterShims: [
+          [{ namespace: rtv.STRING, name: rtv.STRING, id: rtv.STRING }],
+        ],
+        models: [
+          [rtv.PLAIN_OBJECT],
+          (value, match, typeset, { parent }) =>
+            parent.clusterShims.length === value.length,
+        ],
+      },
+    }
+  );
+
+  clusterShims.forEach((shim, idx) => {
+    // officially add to Lens
+    const lensCluster = Store.clusterStore.addCluster(models[idx]);
+
+    // store custom metadata in the cluster object, which Lens will persist
+    lensCluster.metadata[pkg.name] = {
+      cloudUrl,
+      namespace: shim.namespace,
+      clusterId: shim.clusterId,
+      clusterName: shim.clusterName,
+    };
+  });
 };
 
 /**
@@ -424,9 +475,7 @@ const _addClusters = async function ({
       _assignClustersToWorkspaces(newClusters, models);
     }
 
-    models.forEach((model) => {
-      Store.clusterStore.addCluster(model); // officially add to Lens
-    });
+    _storeClustersInLens(cloudUrl, newClusters, models);
 
     if (newClusters.length > 0) {
       _notifyNewClusters(newClusters);
@@ -459,6 +508,7 @@ const _addClusters = async function ({
  * [ASYNC] Add the specified cluster via kubeConfig to Lens.
  * @param {Object} options
  * @param {string} options.savePath Absolute path where kubeConfigs are to be saved.
+ * @param {string} options.cloudUrl MCC URL. Must NOT end with a slash.
  * @param {Object} options.kubeConfig KubeConfig object for the cluster to add.
  * @param {string} options.namespace MCC namespace to which the cluster belongs.
  * @param {string} options.clusterName Name of the cluster.
@@ -470,6 +520,7 @@ const _addClusters = async function ({
  */
 const _addKubeCluster = async function ({
   savePath,
+  cloudUrl,
   kubeConfig,
   namespace,
   clusterName,
@@ -506,7 +557,11 @@ const _addKubeCluster = async function ({
         _assignWorkspace(model, namespace);
       }
 
-      Store.clusterStore.addCluster(model); // officially add to Lens
+      _storeClustersInLens(
+        cloudUrl,
+        [{ namespace, id: clusterId, name: clusterName }],
+        [model]
+      );
       pr.store.kubeClusterAdded = true;
 
       // don't use a sticky notification for the cluster since the UI will display
@@ -613,6 +668,7 @@ export const useClusterActions = function () {
        * [ASYNC] Add the specified cluster via kubeConfig to Lens.
        * @param {Object} options
        * @param {string} options.savePath Absolute path where kubeConfigs are to be saved.
+       * @param {string} options.cloudUrl MCC URL. Must NOT end with a slash.
        * @param {Object} options.kubeConfig Kubeconfig object for the cluster to add.
        * @param {string} options.namespace MCC namespace to which the cluster belongs.
        * @param {string} options.clusterName Name of the cluster.
@@ -669,5 +725,5 @@ export const ClusterActionsProvider = function ({
 };
 
 ClusterActionsProvider.propTypes = {
-  extension: propTypes.object,
+  extension: propTypes.object.isRequired,
 };

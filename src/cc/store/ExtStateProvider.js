@@ -124,8 +124,6 @@ class ExtStateProviderStore extends ProviderStore {
    * Saves the specified ExtState to storage.
    */
   save() {
-    // TODO: consider using https://atom.github.io/node-keytar/ to store all credentials
-    //  in the local keychain to restore after restarting Lens
     window.localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({

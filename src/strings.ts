@@ -24,7 +24,7 @@ export const extension: Dict = {
     label: () => 'Add Cloud Clusters',
   },
   statusBar: {
-    label: () => 'Add Cloud Clusters',
+    label: () => 'Mirantis Container Cloud',
   },
 };
 
@@ -52,8 +52,10 @@ export const view: Dict = {
     close: () => 'Reset back to normal view',
   },
   help: {
-    html: () =>
-      `
+    html: (showLinkInfo = false) => {
+      // TODO: remove parameter and always show info once links supported
+      // TRACKING: https://github.com/Mirantis/lens-extension-cc/issues/25
+      let text = `
 <h2>Adding Clusters</h2>
 <p>
   This extension makes it easy to add clusters from a Mirantis Container
@@ -75,6 +77,9 @@ export const view: Dict = {
   be added to the <code>${workspacePrefix}demo</code> workspace (and the workspace will be
   created if it doesn't exist already).
 </p>
+`;
+      text += showLinkInfo
+        ? `
 <h3>MCC Links</h3>
 <p>
   When activating this extension via links from an MCC instance (requires a version
@@ -82,7 +87,10 @@ export const view: Dict = {
   UI will add an X (Close) button to the top/right corner of its main panel.
   Click the Close button to return to the default view.
 </p>
-`,
+`
+        : '';
+      return text;
+    },
   },
 };
 

@@ -20,6 +20,10 @@ const Item = styled.div(function () {
     cursor: 'pointer',
     fontSize: 'var(--font-size-small)',
     padding: '2px 4px', // same as used for active workspace indicator on the left corner
+
+    a: {
+      borderBottom: 'none', // Lens app.css adds a bottom border to anchors without href attributes
+    },
   };
 });
 
@@ -40,10 +44,9 @@ export default class ExtensionRenderer extends LensRendererExtension {
           className="flex align-center gaps"
           onClick={() => this.navigate(addRoute)}
         >
-          <ContainerCloudIcon
-            fill={itemColor}
-            title={strings.extension.statusBar['label']()}
-          />
+          <a title={strings.extension.statusBar['label']()}>
+            <ContainerCloudIcon fill={itemColor} />
+          </a>
         </Item>
       ),
     },
@@ -118,6 +121,7 @@ export default class ExtensionRenderer extends LensRendererExtension {
   onActivate() {
     // TODO remove this HACK once updated type is published that includes the new method;
     //  for how, this just gets around the TSC complaining the method isn't defined on `this`
+    // TRACKING: https://github.com/Mirantis/lens-extension-cc/issues/25
     const that = this as any;
     if (typeof that.onProtocolRequest === 'function') {
       that.onProtocolRequest(
@@ -143,6 +147,7 @@ export default class ExtensionRenderer extends LensRendererExtension {
   onDeactivate() {
     // TODO remove this HACK once updated type is published that includes the new method;
     //  for how, this just gets around the TSC complaining the method isn't defined on `this`
+    // TRACKING: https://github.com/Mirantis/lens-extension-cc/issues/25
     const that = this as any;
     if (typeof that.removeProtocolHandlers === 'function') {
       that.removeProtocolHandlers();

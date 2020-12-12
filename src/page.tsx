@@ -34,6 +34,7 @@ export const AddClusterPage = function ({ extension }: Props) {
   //  is fixed and https://github.com/lensapp/lens/pull/1371 is shipped (beta.3)
   // Update (2020/11/27): Apparently, per the proposed fix for #1336, the right thing to
   //  do is use `mobx` to observe changes to `Theme.getActiveTheme().name`
+  // TRACKING: https://github.com/Mirantis/lens-extension-cc/issues/24
   useEffect(function () {
     const observer = new MutationObserver(function (
       mutations: MutationRecord[]
@@ -77,7 +78,7 @@ export const AddClusterPage = function ({ extension }: Props) {
           <AuthProvider>
             <ClustersProvider>
               <ClusterActionsProvider extension={extension}>
-                <View />
+                <View extension={extension} />
               </ClusterActionsProvider>
             </ClustersProvider>
           </AuthProvider>
