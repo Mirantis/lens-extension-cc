@@ -1,5 +1,11 @@
 # ChangeLog
 
+## 2.0.1
+
+### Changed
+
+- When adding multiple clusters from multiple namespaces into new Lens Workspaces, the extension now prefers activating the first-found Workspace that is _not_ associated with the `default` namespace since it typically only contains the MCC management cluster, which is of less interest than clusters in other namespaces. If selected, the management cluster is still added, however, and can be activated in Lens like any other cluster.
+
 ## 2.0.0
 
 Supports Lens `>= 4.0.2`.
