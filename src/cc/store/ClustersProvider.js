@@ -56,16 +56,22 @@ const _deserializeNamespacesList = function (body) {
     return { error: strings.clustersProvider.errors.invalidNamespacePayload() };
   }
 
-  try {
-    return { data: body.items.map((item) => new Namespace(item)) };
-  } catch (err) {
-    // eslint-disable-next-line no-console -- OK to show errors
-    console.error(
-      `[${pkg.name}/ClustersProvider._deserializeNamespacesList()] ERROR: ${err.message}`,
-      err
-    );
-    return { error: strings.clustersProvider.errors.invalidNamespace() };
-  }
+  return {
+    data: body.items
+      .map((item, idx) => {
+        try {
+          return new Namespace(item);
+        } catch (err) {
+          // eslint-disable-next-line no-console -- OK to show errors
+          console.error(
+            `[${pkg.name}/ClustersProvider._deserializeNamespacesList()] ERROR with namespace ${idx}: ${err.message}`,
+            err
+          );
+          return undefined;
+        }
+      })
+      .filter((cl) => !!cl), // eliminate invalid namespaces (`undefined` items)
+  };
 };
 
 /**
@@ -134,7 +140,7 @@ const _deserializeClustersList = function (body) {
           return undefined;
         }
       })
-      .filter((cl) => !!cl), // eliminate failed clusters (`undefined` items)
+      .filter((cl) => !!cl), // eliminate invalid clusters (`undefined` items)
   };
 };
 

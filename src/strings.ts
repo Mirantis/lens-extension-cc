@@ -156,8 +156,6 @@ export const clustersProvider: Dict = {
   errors: {
     invalidNamespacePayload: () =>
       'Failed to parse namespace payload: Unexpected data format.',
-    invalidNamespace: () =>
-      'Encountered at least one namespace with unexpected or missing metadata.',
     invalidClusterPayload: () =>
       'Failed to parse cluster payload: Unexpected data format.',
   },
