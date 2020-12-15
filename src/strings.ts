@@ -165,7 +165,7 @@ export const clustersProvider: Dict = {
   },
 };
 
-export const addClustersProvider: Dict = {
+export const clusterActionsProvider: Dict = {
   errors: {
     kubeConfigCreate: (clusterId = 'unknown') =>
       `Failed to create kubeConfig for cluster ${clusterId}`,
@@ -179,17 +179,17 @@ export const addClustersProvider: Dict = {
   },
   notifications: {
     newWorkspacesHtml: (names = []) =>
-      `The following new workspaces were created: ${names
+      `New workspaces created: ${names
         .map((name) => `<strong>${name}</strong>`)
         .join(', ')} <em>${noteOwner}</em>`,
     newClustersHtml: (names = []) =>
-      `The following new clusters were added: ${names
+      `New clusters added: ${names
         .map((name) => `<strong>${name}</strong>`)
         .join(', ')} <em>${noteOwner}</em>`,
     workspaceActivatedHtml: (name = '') =>
-      `The <strong>${name}</strong> workspace has been activated. <em>${noteOwner}</em>`,
+      `Activated the <strong>${name}</strong> workspace. <em>${noteOwner}</em>`,
     skippedClusters: (names = []) =>
-      `The following clusters were <strong>skipped</strong> because they were already in Lens: ${names
+      `Some clusters were <strong>skipped</strong> because they were already in Lens: ${names
         .map((name) => `<strong>${name}</strong>`)
         .join(', ')} <em>${noteOwner}</em>`,
   },

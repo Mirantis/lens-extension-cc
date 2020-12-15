@@ -5,6 +5,7 @@
 ### Changed
 
 - Management clusters are no longer selected by default after retrieving clusters from an MCC instance. They are typically of less interest. They can still be selected and added along with any other cluster, however.
+- Some notification messages have been shortened to make them quicker to read.
 
 ## 2.0.1
 

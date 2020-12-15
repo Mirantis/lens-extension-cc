@@ -150,7 +150,7 @@ const _createKubeConfig = async function ({
   password,
   offline = false,
 }) {
-  const errPrefix = strings.addClustersProvider.errors.kubeConfigCreate(
+  const errPrefix = strings.clusterActionsProvider.errors.kubeConfigCreate(
     cluster.id
   );
 
@@ -196,7 +196,7 @@ const _writeKubeConfig = async function ({
   kubeConfig,
   savePath,
 }) {
-  const errPrefix = strings.addClustersProvider.errors.kubeConfigSave(
+  const errPrefix = strings.clusterActionsProvider.errors.kubeConfigSave(
     clusterId
   );
 
@@ -256,7 +256,7 @@ const _assignWorkspace = function (model, namespace) {
     const ws = new Store.Workspace({
       id: wsId,
       name: wsId,
-      description: strings.addClustersProvider.workspaces.description(),
+      description: strings.clusterActionsProvider.workspaces.description(),
     });
 
     workspaceStore.addWorkspace(ws);
@@ -294,7 +294,7 @@ const _notifyNewClusters = function (clusterShims, sticky = true) {
   Notifications[sticky ? 'info' : 'ok'](
     <p
       dangerouslySetInnerHTML={{
-        __html: strings.addClustersProvider.notifications.newClustersHtml(
+        __html: strings.clusterActionsProvider.notifications.newClustersHtml(
           clusterShims.map((c) => `${c.namespace}/${c.name}`)
         ),
       }}
@@ -318,7 +318,7 @@ const _switchToNewWorkspace = function () {
   Notifications.info(
     <p
       dangerouslySetInnerHTML={{
-        __html: strings.addClustersProvider.notifications.newWorkspacesHtml(
+        __html: strings.clusterActionsProvider.notifications.newWorkspacesHtml(
           pr.store.newWorkspaces.map((ws) => ws.name)
         ),
       }}
@@ -340,7 +340,7 @@ const _switchToNewWorkspace = function () {
   Notifications.info(
     <p
       dangerouslySetInnerHTML={{
-        __html: strings.addClustersProvider.notifications.workspaceActivatedHtml(
+        __html: strings.clusterActionsProvider.notifications.workspaceActivatedHtml(
           firstWorkspace.name
         ),
       }}
@@ -498,7 +498,7 @@ const _addClusters = async function ({
       Notifications.info(
         <p
           dangerouslySetInnerHTML={{
-            __html: strings.addClustersProvider.notifications.skippedClusters(
+            __html: strings.clusterActionsProvider.notifications.skippedClusters(
               existingClusters.map(
                 (cluster) => `${cluster.namespace}/${cluster.name}`
               )
@@ -544,7 +544,7 @@ const _addKubeCluster = async function ({
     Notifications.ok(
       <p
         dangerouslySetInnerHTML={{
-          __html: strings.addClustersProvider.notifications.skippedClusters([
+          __html: strings.clusterActionsProvider.notifications.skippedClusters([
             `${namespace}/${clusterName}`,
           ]),
         }}
@@ -611,7 +611,7 @@ const _activateCluster = function ({ namespace, clusterName, clusterId }) {
     Store.workspaceStore.setActive(lensCluster.workspace);
     _switchToCluster(clusterId);
   } else {
-    pr.store.error = strings.addClustersProvider.errors.clusterNotFound(
+    pr.store.error = strings.clusterActionsProvider.errors.clusterNotFound(
       `${namespace}/${clusterName}`
     );
   }
