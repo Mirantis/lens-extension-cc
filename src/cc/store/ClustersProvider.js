@@ -120,16 +120,22 @@ const _deserializeClustersList = function (body) {
     return { error: strings.clusterProvider.error.invalidClusterPayload() };
   }
 
-  try {
-    return { data: body.items.map((item) => new Cluster(item)) };
-  } catch (err) {
-    // eslint-disable-next-line no-console -- OK to show errors
-    console.error(
-      `[${pkg.name}/ClustersProvider._deserializeClustersList()] ERROR: ${err.message}`,
-      err
-    );
-    return { error: strings.clustersProvider.errors.invalidCluster() };
-  }
+  return {
+    data: body.items
+      .map((item, idx) => {
+        try {
+          return new Cluster(item);
+        } catch (err) {
+          // eslint-disable-next-line no-console -- OK to show errors
+          console.error(
+            `[${pkg.name}/ClustersProvider._deserializeClustersList()] ERROR with cluster ${idx}: ${err.message}`,
+            err
+          );
+          return undefined;
+        }
+      })
+      .filter((cl) => !!cl), // eliminate failed clusters (`undefined` items)
+  };
 };
 
 /**

@@ -160,8 +160,6 @@ export const clustersProvider: Dict = {
       'Encountered at least one namespace with unexpected or missing metadata.',
     invalidClusterPayload: () =>
       'Failed to parse cluster payload: Unexpected data format.',
-    invalidCluster: () =>
-      'Encountered at least one cluster with unexpected or missing metadata.',
   },
 };
 
