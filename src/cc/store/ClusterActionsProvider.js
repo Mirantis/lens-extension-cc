@@ -20,7 +20,7 @@ import pkg from '../../../package.json';
 const { workspaceStore } = Store;
 const { Notifications } = Component;
 
-let extension; // reference to the LensRendererExtension instance
+let extension; // {LensRendererExtension} instance reference
 
 //
 // Store
@@ -720,6 +720,8 @@ export const ClusterActionsProvider = function ({
   extension: lensExtension,
   ...props
 }) {
+  extension = lensExtension;
+
   // NOTE: since the state is passed directly (by reference) into the context
   //  returned by the provider, even the initial state should be a clone of the
   //  `store` so that we consistently return a `state` property (in the context)
@@ -727,7 +729,6 @@ export const ClusterActionsProvider = function ({
   const [state, setState] = useState(pr.clone());
   const value = useMemo(() => [state, setState], [state]);
 
-  extension = lensExtension;
   pr.setState = setState;
 
   return <ClusterActionsContext.Provider value={value} {...props} />;
