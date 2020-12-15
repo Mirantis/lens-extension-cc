@@ -37,8 +37,8 @@ const _authenticate = async function ({ authAccess, config, cloudUrl }) {
     authAccess.password
   );
 
-  pr.store.loading = false;
-  pr.store.loaded = true;
+  pr.loading = false;
+  pr.loaded = true;
   pr.store.error = error || undefined;
 
   if (!error) {
@@ -83,7 +83,7 @@ export const useAuth = function () {
        * @param {Object} options.config MCC Config object.
        */
       authenticate(options) {
-        if (!pr.store.loading) {
+        if (!pr.loading) {
           _authenticate(options);
         }
       },
@@ -93,8 +93,8 @@ export const useAuth = function () {
        *  have a valid AuthAccess instance and don't need to authenticate.
        */
       setAuthenticated() {
-        if (!pr.store.loading) {
-          pr.store.loaded = true;
+        if (!pr.loading) {
+          pr.loaded = true;
           pr.store.error = undefined;
           pr.onChange();
         }
@@ -102,7 +102,7 @@ export const useAuth = function () {
 
       /** Resets store state. Data will need to be reloaded. */
       reset() {
-        if (!pr.store.loading) {
+        if (!pr.loading) {
           pr.reset();
         }
       },

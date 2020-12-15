@@ -39,8 +39,8 @@ const _loadConfig = async function getConfig(url) {
     { extractBodyMethod: 'text' }
   );
 
-  pr.store.loading = false;
-  pr.store.loaded = true;
+  pr.loading = false;
+  pr.loaded = true;
 
   if (res.error) {
     pr.store.error = res.error;

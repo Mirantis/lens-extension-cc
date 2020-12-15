@@ -27,10 +27,16 @@ export class ProviderStore {
   get loading() {
     return this.store.loading;
   }
+  set loading(newValue) {
+    this.store.loading = !!newValue;
+  }
 
   /** @property {boolean} If the loaded state is true. */
   get loaded() {
     return this.store.loaded;
+  }
+  set loaded(newValue) {
+    this.store.loaded = !!newValue;
   }
 
   /**
@@ -71,6 +77,12 @@ export class ProviderStore {
    * Forces an update to the provider's state.
    */
   triggerContextUpdate() {
+    if (typeof this.setState !== 'function') {
+      throw new Error(
+        '[ProviderStore.triggerContextUpdate()] setState() is not configured: Unable to trigger a context update'
+      );
+    }
+
     this.setState(this.clone());
   }
 

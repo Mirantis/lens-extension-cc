@@ -85,7 +85,9 @@ export const PreferencesPanel = function () {
   //
 
   const {
-    state: { savePath, offline, addToNew },
+    state: {
+      prefs: { savePath, offline, addToNew },
+    },
     actions: extActions,
   } = useExtState();
 

@@ -213,8 +213,8 @@ const _loadData = async function (cloudUrl, config, authAccess) {
   const nsResults = await _fetchNamespaces(cloudUrl, config, authAccess);
 
   if (nsResults.error) {
-    pr.store.loading = false;
-    pr.store.loaded = true;
+    pr.loading = false;
+    pr.loaded = true;
     pr.store.error = nsResults.error;
   } else {
     pr.store.data.namespaces = nsResults.namespaces;
@@ -227,8 +227,8 @@ const _loadData = async function (cloudUrl, config, authAccess) {
       namespaces
     );
 
-    pr.store.loading = false;
-    pr.store.loaded = true;
+    pr.loading = false;
+    pr.loaded = true;
 
     if (clResults.error) {
       pr.store.error = clResults.error;
@@ -274,14 +274,14 @@ export const useClusters = function () {
        *  instance MAY be updated if a token refresh is required during the load.
        */
       load(cloudUrl, config, authAccess) {
-        if (!pr.store.loading) {
+        if (!pr.loading) {
           _loadData(cloudUrl, config, authAccess);
         }
       },
 
       /** Resets store state. Data will need to be reloaded. */
       reset() {
-        if (!pr.store.loading) {
+        if (!pr.loading) {
           pr.reset();
         }
       },
