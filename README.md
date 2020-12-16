@@ -31,7 +31,7 @@ To upgrade to a newer release, go to the Extensions View (`CMD+SHIFT+E` on macOS
 
 ## Development
 
-> __NPM 7.x is required__ since `package-lock.json` uses the v2 format. NPM <= 6 uses the older v1 format.
+> __Yarn 1.x is required__
 
 First, quit Lens if it's currently running.
 
@@ -42,8 +42,8 @@ $ git clone https://github.com/Mirantis/lens-extension-cc.git /your/src/path
 $ mkdir -p ~/.k8slens/extensions
 $ ln -s /your/src/path ~/.k8slens/extensions/lens-extension-cc
 $ cd /your/src/path
-$ npm install
-$ npm start
+$ yarn       # install dependencies
+$ yarn start # start dev build in watch mode
 ```
 
 This will put the development build into watch mode.
@@ -52,7 +52,7 @@ Restart Lens and go to the Extensions View (`CMD+SHIFT+E` on macOS) to enable it
 
 Now, as you make source changes, the build will run, and all you need to do is __reload the Lens window__ (`CMD+R` on macOS) to see your changes.
 
-You can also run a one-off development build with `npm run dev`.
+You can also run a one-off development build with `yarn dev`.
 
 > Note these steps will get much easier once [this Lens issue](https://github.com/lensapp/lens/issues/1741) is fixed.
 
@@ -64,7 +64,7 @@ If you followed the [development](#development) instructions, this will just rem
 
 ## Publishing
 
-First, __update the CHANGELOG__, then:
+First, __update the CHANGELOG__, then __use NPM__:
 
 ```bash
 $ npm version <patch|minor|major>
