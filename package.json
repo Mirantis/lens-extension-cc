@@ -44,6 +44,11 @@
     "test": "yarn check && yarn test:unit",
     "prepublishOnly": "npm test && yarn build"
   },
+  "husky": {
+    "hooks": {
+      "post-merge": "node ./tools/scripts/postmerge-hook.js"
+    }
+  },
   "devDependencies": {
     "@babel/cli": "^7.12.10",
     "@babel/core": "^7.12.10",
@@ -71,6 +76,7 @@
     "eslint-config-prettier": "^7.0.0",
     "eslint-plugin-react": "^7.21.5",
     "eslint-plugin-react-hooks": "^4.2.0",
+    "husky": "^4.3.6",
     "mobx": "^6.0.4",
     "node-fetch": "^2.6.1",
     "prettier": "^2.2.1",
