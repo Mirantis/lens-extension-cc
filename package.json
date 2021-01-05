@@ -81,7 +81,7 @@
     "node-fetch": "^2.6.1",
     "prettier": "^2.2.1",
     "prop-types": "^15.7.2",
-    "query-string": "^6.13.7",
+    "query-string": "^6.13.8",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
     "rtvjs": "^2.4.0",
