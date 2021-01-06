@@ -4,11 +4,15 @@
 
 Supports Lens `>= 4.0.6`.
 
+### Changed
+
+- A few strings have been updated to meet branding requirements.
+
 ## 2.0.2
 
 ### Changed
 
-- Management clusters are no longer selected by default after retrieving clusters from an MCC instance. They are typically of less interest. They can still be selected and added along with any other cluster, however.
+- Management clusters are no longer selected by default after retrieving clusters from an Mirantis Container Cloud instance. They are typically of less interest. They can still be selected and added along with any other cluster, however.
 - Some notification messages have been shortened to make them quicker to read.
 - Made the cluster deserialization process more resilient (fixes [#35](https://github.com/Mirantis/lens-extension-cc/issues/35)).
 - Made the namespace deserialization process more resilient (similar to [#35](https://github.com/Mirantis/lens-extension-cc/issues/35)).
@@ -17,7 +21,7 @@ Supports Lens `>= 4.0.6`.
 
 ### Changed
 
-- When adding multiple clusters from multiple namespaces into new Lens Workspaces, the extension now prefers activating the first-found Workspace that is _not_ associated with the `default` namespace since it typically only contains the MCC management cluster, which is of less interest than clusters in other namespaces. If selected, the management cluster is still added, however, and can be activated in Lens like any other cluster.
+- When adding multiple clusters from multiple namespaces into new Lens Workspaces, the extension now prefers activating the first-found Workspace that is _not_ associated with the `default` namespace since it typically only contains the Mirantis Container Cloud management cluster, which is of less interest than clusters in other namespaces. If selected, the management cluster is still added, however, and can be activated in Lens like any other cluster.
 
 ## 2.0.0
 
@@ -60,7 +64,7 @@ For now, the extension continues to operate as it did before, with the changes n
 
 ### Added
 
-- Another protocol integration: Ability to open an already added MCC cluster in Lens.
+- Another protocol integration: Ability to open an already added Mirantis Container Cloud cluster in Lens.
 
 ### Changed
 
@@ -78,8 +82,8 @@ For now, the extension continues to operate as it did before, with the changes n
 
 - New Preferences Panel, which moves the preferences out of the main extension body and into the side panel.
 - New `lens://` protocol integrations (requires code on Lens [hackweek-protocol-handler](https://github.com/lensapp/lens/tree/hackweek-protocol-handler) branch to work with Lens):
-    - Add clusters directly from MCC in the browser as kubeConfigs.
-    - Add selected clusters from MCC in the browser. This requires providing your password prior to adding the clusters you select (because each cluster gets its own kubeConfig file, and each one needs its own cluster access-specific token), but no longer requires you to copy/paste the MCC instance URL into the extension and signing in that way.
+    - Add clusters directly from Mirantis Container Cloud in the browser as kubeConfigs.
+    - Add selected clusters from Mirantis Container Cloud in the browser. This requires providing your password prior to adding the clusters you select (because each cluster gets its own kubeConfig file, and each one needs its own cluster access-specific token), but no longer requires you to copy/paste the Mirantis Container Cloud instance URL into the extension and signing in that way.
 
 ### Changed
 

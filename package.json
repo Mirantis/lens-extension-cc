@@ -39,9 +39,8 @@
     "fmt": "prettier --write \"{*,src/**/*}.+(js|ts*|yml|json)\"",
     "fmt:check": "prettier --check \"{*,src/**/*}.+(js|ts*|yml|json)\"",
     "lint": "eslint \"{*,src/**/*}.+(js|ts*)\"",
-    "check": "yarn lint && yarn fmt:check",
     "test:unit": "echo 'Works for me! ¯\\_(ツ)_/¯'",
-    "test": "yarn check && yarn test:unit",
+    "test": "yarn lint && yarn fmt:check && yarn test:unit",
     "prepublishOnly": "npm test && yarn build"
   },
   "husky": {

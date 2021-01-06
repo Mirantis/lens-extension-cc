@@ -23,7 +23,7 @@ const Field = styled.div(function () {
     },
 
     '> label': {
-      minWidth: layout.grid * 17,
+      minWidth: layout.grid * 23,
       marginRight: `${layout.pad}px`,
     },
   };

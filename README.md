@@ -82,8 +82,8 @@ The `prepublishOnly` script will automatically produce a production build in the
 
 ### SSO not supported
 
-MCC instances that use third-party SSO authentication (e.g. Google OAuth) are __not supported__ at this time. We plan on adding support [soon](https://github.com/Mirantis/lens-extension-cc/issues/12).
+Mirantis Container Cloud instances that use third-party SSO authentication (e.g. Google OAuth) are __not supported__ at this time. We plan on adding support [soon](https://github.com/Mirantis/lens-extension-cc/issues/12).
 
 ### Management clusters not selected by default
 
-The extension purposely doesn't not add management clusters to the default/initial set of selected clusters after retrieving clusters from an MCC instance because they are typically of less interest than workload clusters.
+The extension purposely doesn't not add management clusters to the default/initial set of selected clusters after retrieving clusters from a Mirantis Container Cloud instance because they are typically of less interest than workload clusters.

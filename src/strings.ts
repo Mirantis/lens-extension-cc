@@ -18,22 +18,25 @@ export interface Dict {
 // owner info to add to all posted notifications; does NOT start/end with a space
 export const noteOwner = `(${pkg.name})`;
 
+export const mccShortName = 'Container Cloud';
+export const mccFullName = `Mirantis ${mccShortName}`;
+
 // strings for main, renderer, and page modules
 export const extension: Dict = {
   appMenu: {
     label: () => 'Add Cloud Clusters',
   },
   statusBar: {
-    label: () => 'Mirantis Container Cloud',
+    label: () => mccFullName,
   },
 };
 
 export const view: Dict = {
   main: {
     titles: {
-      generic: () => 'Add Mirantis Container Cloud Clusters',
-      kubeConfig: () => 'Adding Mirantis Container Cloud Cluster',
-      activateCluster: () => 'Activate Mirantis Container Cloud Cluster',
+      generic: () => `Add ${mccFullName} Clusters`,
+      kubeConfig: () => `Adding ${mccFullName} Cluster`,
+      activateCluster: () => `Activate ${mccFullName} Cluster`,
     },
     loaders: {
       activateCluster: (name) => `Activating ${name} cluster...`,
@@ -58,8 +61,7 @@ export const view: Dict = {
       let text = `
 <h2>Adding Clusters</h2>
 <p>
-  This extension makes it easy to add clusters from a Mirantis Container
-  Cloud instance.
+  This extension makes it easy to add clusters from a ${mccFullName} instance.
 </p>
 <p>
   When clusters are added, <code>kubeConfig</code> files are automatically generated
@@ -69,7 +71,7 @@ export const view: Dict = {
 </p>
 <h3>Workspaces</h3>
 <p>
-  By default, clusters are added to new workspaces that match their MCC namespace
+  By default, clusters are added to new workspaces that match their ${mccShortName} namespace
   names with an added <code>${workspacePrefix}</code> prefix.
 </p>
 <p>
@@ -80,12 +82,12 @@ export const view: Dict = {
 `;
       text += showLinkInfo
         ? `
-<h3>MCC Links</h3>
+<h2>Links</h2>
 <p>
-  When activating this extension via links from an MCC instance (requires a version
-  of Lens that supports <code>lens://</code> protocol requests), the extension
-  UI will add an X (Close) button to the top/right corner of its main panel.
-  Click the Close button to return to the default view.
+  When activating this extension via links from a ${mccFullName} instance (requires
+  a version of Lens that supports <code>lens://</code> protocol requests), the extension
+  UI will add an X (Close) button to the top/right corner of its main panel in
+  certain cases. Click the Close button to return to the default view.
 </p>
 `
         : '';
@@ -96,7 +98,7 @@ export const view: Dict = {
 
 export const login: Dict = {
   title: () => 'Sign in',
-  url: { label: () => 'MCC URL:' },
+  url: { label: () => 'Instance URL:' },
   username: { label: () => 'Username:' },
   password: { label: () => 'Password:' },
   action: {
@@ -139,9 +141,9 @@ export const preferencesPanel: Dict = {
     action: () => 'Use location',
   },
   addToNew: {
-    label: () => 'Add to MCC workspaces',
+    label: () => 'Add to new workspaces',
     tipOn: () =>
-      'Add clusters to new workspaces that correlate to their original MCC namespaces',
+      `Add clusters to new workspaces that correlate to their original ${mccShortName} namespaces`,
     tipOff: () => 'Add clusters to the active workspace',
   },
   offline: {
@@ -171,7 +173,7 @@ export const clusterActionsProvider: Dict = {
       `The ${name} cluster was not found in Lens. Try adding it first.`,
   },
   workspaces: {
-    description: () => 'MCC workspace',
+    description: () => `${mccFullName} workspace`,
   },
   notifications: {
     newWorkspacesHtml: (names = []) =>
