@@ -1,6 +1,6 @@
 # ChangeLog
 
-## UNRELEASED
+## 2.0.3
 
 Supports Lens `>= 4.0.6`.
 
