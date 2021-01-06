@@ -1,5 +1,9 @@
 # ChangeLog
 
+## UNRELEASED
+
+Supports Lens `>= 4.0.6`.
+
 ## 2.0.2
 
 ### Changed

@@ -4,6 +4,8 @@
 
 This [Lens](https://k8slens.dev/) Extension adds a status bar item, and a menu item, that makes it easy to connect Lens to a Mirantis Container Cloud instance and add its clusters to Lens.
 
+ℹ️ Requires Lens `>= 4.0.6`.
+
 ![Extension UI](./docs/screen-shot.png)
 
 ## Installing
