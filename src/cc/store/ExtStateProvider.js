@@ -228,26 +228,32 @@ export const useExtState = function () {
   };
 };
 
-export const ExtStateProvider = function ({ extension: lensExtension, ...props }) {
+export const ExtStateProvider = function ({
+  extension: lensExtension,
+  ...props
+}) {
   extension = lensExtension;
   if (!extFileFolder) {
-    extension.getExtensionFileFolder().then((folder) => {
-      extFileFolder = folder;
-      if (!pr.store.savePath) { // only use it if we didn't get a path on pr.load()
-        pr.store.savePath = extFileFolder;
-        pr.onChange();
-      }
-    })
-    .catch(() => {
-      if (!pr.store.savePath) {
-        // use the extension's installation directory as a fallback, though
-        //  this is not safe because if the extension is uninstalled, this
-        //  directory is removed by Lens, and would result in any Kubeconfig
-        //  files also being deleted, and therefore clusters lost in Lens
-        pr.store.savePath = __dirname;
-        pr.onChange();
-      }
-    });
+    extension
+      .getExtensionFileFolder()
+      .then((folder) => {
+        extFileFolder = folder;
+        if (!pr.store.savePath) {
+          // only use it if we didn't get a path on pr.load()
+          pr.store.savePath = extFileFolder;
+          pr.onChange();
+        }
+      })
+      .catch(() => {
+        if (!pr.store.savePath) {
+          // use the extension's installation directory as a fallback, though
+          //  this is not safe because if the extension is uninstalled, this
+          //  directory is removed by Lens, and would result in any Kubeconfig
+          //  files also being deleted, and therefore clusters lost in Lens
+          pr.store.savePath = __dirname;
+          pr.onChange();
+        }
+      });
   }
 
   // load state from storage only once
