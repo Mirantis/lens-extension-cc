@@ -3,6 +3,7 @@
 //
 
 import React, { createContext, useContext, useState, useMemo } from 'react';
+import propTypes from 'prop-types';
 import rtv from 'rtvjs';
 import { cloneDeep, cloneDeepWith } from 'lodash';
 import { AuthAccess } from '../auth/AuthAccess';
@@ -28,7 +29,9 @@ const extStateTs = {
   addToNew: [rtv.EXPECTED, rtv.BOOLEAN], // if workspaces should be created to match cluster namespaces
 };
 
+let extension; // {LensErendererExtension} instance reference
 let storeLoaded = false; // {boolean} true if the store has been loaded from storage
+let extFileFolder = null; // {string|undefined} Undefined until the folder path is loaded async from Lens
 
 //
 // Store
@@ -42,7 +45,7 @@ class ExtStateProviderStore extends ProviderStore {
       cloudUrl: null,
       username: null,
       authAccess: new AuthAccess(),
-      savePath: __dirname, // extension's `./dist` directory by default
+      savePath: extFileFolder || null,
       offline: true,
       addToNew: true,
     };
@@ -106,7 +109,7 @@ class ExtStateProviderStore extends ProviderStore {
       } catch (err) {
         // eslint-disable-next-line no-console -- OK to show errors
         console.error(
-          `[${pkg.name}/ExtStateProviderStore.load()] ERROR: ${err.message}`,
+          `[${pkg.name}/ExtStateProviderStore.load()] ERROR: Invalid state, reverting to defaults: ${err.message}`,
           err
         );
         useInitialState = true;
@@ -225,8 +228,36 @@ export const useExtState = function () {
   };
 };
 
-export const ExtStateProvider = function (props) {
+export const ExtStateProvider = function ({
+  extension: lensExtension,
+  ...props
+}) {
+  extension = lensExtension;
+  if (!extFileFolder) {
+    extension
+      .getExtensionFileFolder()
+      .then((folder) => {
+        extFileFolder = folder;
+        if (!pr.store.savePath) {
+          // only use it if we didn't get a path on pr.load()
+          pr.store.savePath = extFileFolder;
+          pr.onChange();
+        }
+      })
+      .catch(() => {
+        if (!pr.store.savePath) {
+          // use the extension's installation directory as a fallback, though
+          //  this is not safe because if the extension is uninstalled, this
+          //  directory is removed by Lens, and would result in any Kubeconfig
+          //  files also being deleted, and therefore clusters lost in Lens
+          pr.store.savePath = __dirname;
+          pr.onChange();
+        }
+      });
+  }
+
   // load state from storage only once
+  // NOTE: this is sync while `extension.getExtensionFileFolder()` is async
   if (!storeLoaded) {
     pr.load();
     storeLoaded = true;
@@ -242,4 +273,8 @@ export const ExtStateProvider = function (props) {
   pr.setState = setState;
 
   return <ExtStateContext.Provider value={value} {...props} />;
+};
+
+ExtStateProvider.propTypes = {
+  extension: propTypes.object.isRequired,
 };

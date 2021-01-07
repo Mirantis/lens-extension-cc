@@ -1,5 +1,12 @@
 # ChangeLog
 
+## UNRELEASED
+
+### Changed
+
+- The default save path for kubeConfig files is now a Lens-generated, extension-specific data directory that will survive even if the extension is uninstalled. This means any kubeConfig files saved to the default directory will not also be deleted, effectively/unintentionally removing those clusters from Lens.
+    - __NOTE about previous versions:__ If you are using the default directory from a previous version, we highly recommend you relocate any kubeConfig files it contains to a new directory of your choice, and update the directory in the extension's preferences to also be a directory of your choice, other than the current setting. Note that relocating the kubeConfig files will mean that the associated clusters will need to be re-added manually in Lens. (Another option would be to remove the clusters in Lens, update the directory, and then re-add them to Lens using the extension.)
+
 ## 2.0.3
 
 Supports Lens `>= 4.0.6`.

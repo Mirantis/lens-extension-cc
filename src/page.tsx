@@ -73,7 +73,7 @@ export const AddClusterPage = function ({ extension }: Props) {
 
   return (
     <ThemeProvider theme={theme}>
-      <ExtStateProvider>
+      <ExtStateProvider extension={extension}>
         <ConfigProvider>
           <AuthProvider>
             <ClustersProvider>
