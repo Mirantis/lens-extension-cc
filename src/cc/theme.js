@@ -1,4 +1,4 @@
-import rtv from 'rtvjs';
+import * as rtv from 'rtvjs';
 
 // name of the light theme class name added by Lens to the <body> element;
 //  if the class name isn't listed, assume DARK mode is active

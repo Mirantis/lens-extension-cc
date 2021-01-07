@@ -4,7 +4,7 @@
 
 import React, { createContext, useContext, useState, useMemo } from 'react';
 import propTypes from 'prop-types';
-import rtv from 'rtvjs';
+import * as rtv from 'rtvjs';
 import { cloneDeep, cloneDeepWith } from 'lodash';
 import { AuthAccess } from '../auth/AuthAccess';
 import { ProviderStore } from './ProviderStore';

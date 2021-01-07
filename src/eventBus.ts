@@ -4,7 +4,7 @@
 //  TRACKING: https://github.com/Mirantis/lens-extension-cc/issues/23
 //
 
-import rtv from 'rtvjs';
+import * as rtv from 'rtvjs';
 import { AuthAccess } from './cc/auth/AuthAccess';
 
 //
