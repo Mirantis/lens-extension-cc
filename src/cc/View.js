@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import propTypes from 'prop-types';
 import styled from '@emotion/styled';
-import rtv from 'rtvjs';
+import * as rtv from 'rtvjs';
 import { Component } from '@k8slens/extensions';
 import { useExtState } from './store/ExtStateProvider';
 import { useConfig } from './store/ConfigProvider';

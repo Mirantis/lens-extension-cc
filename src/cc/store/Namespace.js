@@ -1,4 +1,4 @@
-import rtv from 'rtvjs';
+import * as rtv from 'rtvjs';
 
 /**
  * MCC project/namespace.
