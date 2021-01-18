@@ -15,17 +15,18 @@ const rules = {
     },
   ],
   'no-console': 'error',
+  'no-unsafe-optional-chaining': 'error',
 };
 
 const parserOptions = {
-  ecmaVersion: 2018,
+  ecmaVersion: 2020, // ES11
   sourceType: 'module',
 };
 
 const env = {
   node: true,
   browser: true,
-  es2017: true, // NOTE: 'es2018' (to match parser) is not valid; next is 'es2020'
+  es2020: true, // enable new ES6-ES11 globals
 };
 
 const globals = {
