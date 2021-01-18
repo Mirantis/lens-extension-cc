@@ -10,6 +10,7 @@ import {
   EXT_EVENT_KUBECONFIG,
   dispatchExtEvent,
 } from './eventBus';
+import { prefStore } from './cc/store/PreferencesStore.js';
 import pkg from '../package.json';
 
 const itemColor = 'white'; // CSS color; Lens hard-codes the color of the workspace indicator item to 'white' also
@@ -118,7 +119,7 @@ export default class ExtensionRenderer extends LensRendererExtension {
     });
   };
 
-  onActivate() {
+  async onActivate() {
     // TODO remove this HACK once updated type is published that includes the new method;
     //  for how, this just gets around the TSC complaining the method isn't defined on `this`
     // TRACKING: https://github.com/Mirantis/lens-extension-cc/issues/25
@@ -142,6 +143,8 @@ export default class ExtensionRenderer extends LensRendererExtension {
         `[${pkg.name}/renderer/onActivate] This version of Lens does not support 'lens://' protocol requests.`
       );
     }
+
+    await prefStore.loadExtension(this);
   }
 
   onDeactivate() {

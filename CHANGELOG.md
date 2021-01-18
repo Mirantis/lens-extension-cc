@@ -6,6 +6,8 @@
 
 - The default save path for kubeConfig files is now a Lens-generated, extension-specific data directory that will survive even if the extension is uninstalled. This means any kubeConfig files saved to the default directory will not also be deleted, effectively/unintentionally removing those clusters from Lens.
     - __NOTE about previous versions:__ If you are using the default directory from a previous version, we highly recommend you relocate any kubeConfig files it contains to a new directory of your choice, and update the directory in the extension's preferences to also be a directory of your choice, other than the current setting. Note that relocating the kubeConfig files will mean that the associated clusters will need to be re-added manually in Lens. (Another option would be to remove the clusters in Lens, update the directory, and then re-add them to Lens using the extension.)
+- Preferences are now stored on disk rather than in `localStorage` inside the browser instance that runs the extension inside Lens. This is great, because it means preferences truly persist to disk and will no longer get reset whenever you upgrade Lens (you may never even have noticed, which makes this bug fix even more significant)!
+    - Trivia: `localStorage` was from a long ago port from the very first implementation of this extension which had its beginnings as a `create-react-app` running the browser before the Lens Extension API was even published (just to get a head start on all the UI views without any real functionality behind them).
 
 ## 2.0.3
 

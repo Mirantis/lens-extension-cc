@@ -117,7 +117,10 @@ export const View = function ({ extension }) {
   //
 
   const {
-    state: { cloudUrl, authAccess, addToNew, offline, savePath },
+    state: {
+      authAccess,
+      prefs: { cloudUrl, addToNew, offline, savePath },
+    },
     actions: extActions,
   } = useExtState();
 
@@ -197,7 +200,7 @@ export const View = function ({ extension }) {
       const url = normalizeUrl(info.cloudUrl);
 
       authAccess.clearTokens();
-      extActions.setBaseUrl(url);
+      extActions.setCloudUrl(url);
       extActions.setAuthAccess(authAccess);
       authActions.reset();
       clustersActions.reset();
@@ -302,7 +305,7 @@ export const View = function ({ extension }) {
       authAccess.updateTokens(data.tokens);
 
       const url = normalizeUrl(data.cloudUrl);
-      extActions.setBaseUrl(url);
+      extActions.setCloudUrl(url);
       extActions.setAuthAccess(authAccess);
 
       authActions.reset();

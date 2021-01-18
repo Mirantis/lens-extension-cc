@@ -6,32 +6,17 @@ import React, { createContext, useContext, useState, useMemo } from 'react';
 import propTypes from 'prop-types';
 import * as rtv from 'rtvjs';
 import { cloneDeep, cloneDeepWith } from 'lodash';
+import { PreferencesStore } from './PreferencesStore';
 import { AuthAccess } from '../auth/AuthAccess';
 import { ProviderStore } from './ProviderStore';
-import pkg from '../../../package.json';
-
-const STORAGE_KEY = 'lens-mcc-ext';
 
 const extStateTs = {
-  cloudUrl: [
-    rtv.EXPECTED,
-    rtv.STRING,
-    (v) => {
-      if (v && v.match(/\/$/)) {
-        throw new Error('cloudUrl must not end with a slash');
-      }
-    },
-  ], // MCC UI URL, does NOT end with a slash
-  username: [rtv.EXPECTED, rtv.STRING], // INTERNAL only for storage purposes (not exposed via hook API)
+  prefs: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: PreferencesStore }],
   authAccess: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: AuthAccess }],
-  savePath: [rtv.EXPECTED, rtv.STRING], // absolute path on local system where to save kubeConfig files
-  offline: [rtv.EXPECTED, rtv.BOOLEAN], // if kubeConfigs should use offline tokens
-  addToNew: [rtv.EXPECTED, rtv.BOOLEAN], // if workspaces should be created to match cluster namespaces
 };
 
 let extension; // {LensErendererExtension} instance reference
-let storeLoaded = false; // {boolean} true if the store has been loaded from storage
-let extFileFolder = null; // {string|undefined} Undefined until the folder path is loaded async from Lens
+let extFileFolderLoading = false; // true if we're waiting for the file folder to load async
 
 //
 // Store
@@ -42,20 +27,19 @@ class ExtStateProviderStore extends ProviderStore {
   makeNew() {
     const newStore = {
       ...super.makeNew(),
-      cloudUrl: null,
-      username: null,
+      prefs: PreferencesStore.getInstance(), // singleton instance
       authAccess: new AuthAccess(),
-      savePath: extFileFolder || null,
-      offline: true,
-      addToNew: true,
     };
 
-    // remove super properties that aren't applicable
-    delete newStore.loading;
-    delete newStore.loaded;
-    delete newStore.error;
+    newStore.loaded = true; // always
 
     return newStore;
+  }
+
+  // @override
+  reset() {
+    super.reset();
+    this.store.prefs.reset();
   }
 
   // @override
@@ -64,6 +48,8 @@ class ExtStateProviderStore extends ProviderStore {
       if (key === 'authAccess') {
         // instead of letting Lodash dig deep into this object, clone it manually
         return new AuthAccess(cloneDeep(value.toJSON()));
+      } else if (key === 'prefs') {
+        return value; // it's a singleton instance so just return the instance
       }
       // else, let Lodash do the cloning
     });
@@ -78,62 +64,6 @@ class ExtStateProviderStore extends ProviderStore {
         `[ExtStateProvider] Invalid extension state, error="${result.message}"`
       );
     }
-  }
-
-  // @override
-  onChange() {
-    super.onChange(); // will validate
-    this.save();
-  }
-
-  /**
-   * Initializes the store from local storage, if it exists.
-   */
-  load() {
-    const jsonStr = window.localStorage.getItem(STORAGE_KEY);
-
-    let useInitialState = false;
-
-    if (jsonStr) {
-      try {
-        const json = JSON.parse(jsonStr);
-        const fromStorage = {
-          ...json,
-          authAccess: new AuthAccess(),
-        };
-
-        Object.assign(this.store, fromStorage); // put it into the store
-        this.validate();
-
-        this.store.authAccess.username = this.store.username;
-      } catch (err) {
-        // eslint-disable-next-line no-console -- OK to show errors
-        console.error(
-          `[${pkg.name}/ExtStateProviderStore.load()] ERROR: Invalid state, reverting to defaults: ${err.message}`,
-          err
-        );
-        useInitialState = true;
-      }
-    } else {
-      useInitialState = true;
-    }
-
-    if (useInitialState) {
-      this.validate(); // validate we're starting with something good
-    }
-  }
-
-  /**
-   * Saves the specified ExtState to storage.
-   */
-  save() {
-    window.localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        ...this.store,
-        authAccess: undefined, // don't store any credentials (except for `store.username`)
-      })
-    );
   }
 }
 
@@ -179,7 +109,7 @@ export const useExtState = function () {
        */
       setAuthAccess(newValue) {
         pr.store.authAccess = newValue;
-        pr.store.username = newValue ? newValue.username : null;
+        pr.store.prefs.username = newValue ? newValue.username : null;
 
         if (pr.store.authAccess) {
           // mark it as no longer being changed if it was
@@ -193,8 +123,8 @@ export const useExtState = function () {
        * Updates the MCC base URL.
        * @param {string} newValue Must not end with a slash.
        */
-      setBaseUrl(newValue) {
-        pr.store.cloudUrl = newValue;
+      setCloudUrl(newValue) {
+        pr.store.prefs.cloudUrl = newValue;
         pr.onChange();
       },
 
@@ -203,7 +133,7 @@ export const useExtState = function () {
        * @param {string} newValue Must not end with a slash.
        */
       setSavePath(newValue) {
-        pr.store.savePath = newValue;
+        pr.store.prefs.savePath = newValue;
         pr.onChange();
       },
 
@@ -212,7 +142,7 @@ export const useExtState = function () {
        * @param {boolean} newValue
        */
       setOffline(newValue) {
-        pr.store.offline = newValue;
+        pr.store.prefs.offline = newValue;
         pr.onChange();
       },
 
@@ -221,7 +151,7 @@ export const useExtState = function () {
        * @param {boolean} newValue
        */
       setAddToNew(newValue) {
-        pr.store.addToNew = newValue;
+        pr.store.prefs.addToNew = newValue;
         pr.onChange();
       },
     },
@@ -233,34 +163,33 @@ export const ExtStateProvider = function ({
   ...props
 }) {
   extension = lensExtension;
-  if (!extFileFolder) {
+
+  // attempt to load the special data directory path that Lens consistently assigns
+  //  to this extension on every load (should always be the same one as long as the
+  //  extension remains installed)
+  if (!PreferencesStore.defaultSavePath && !extFileFolderLoading) {
+    extFileFolderLoading = true;
     extension
       .getExtensionFileFolder()
       .then((folder) => {
-        extFileFolder = folder;
-        if (!pr.store.savePath) {
-          // only use it if we didn't get a path on pr.load()
-          pr.store.savePath = extFileFolder;
-          pr.onChange();
-        }
+        PreferencesStore.defaultSavePath = folder;
       })
       .catch(() => {
-        if (!pr.store.savePath) {
-          // use the extension's installation directory as a fallback, though
-          //  this is not safe because if the extension is uninstalled, this
-          //  directory is removed by Lens, and would result in any Kubeconfig
-          //  files also being deleted, and therefore clusters lost in Lens
-          pr.store.savePath = __dirname;
+        // use the extension's installation directory as a fallback, though
+        //  this is not safe because if the extension is uninstalled, this
+        //  directory is removed by Lens, and would result in any Kubeconfig
+        //  files also being deleted, and therefore clusters lost in Lens
+        PreferencesStore.defaultSavePath = __dirname;
+      })
+      .finally(() => {
+        extFileFolderLoading = false;
+
+        // only use default if we didn't get a path when we loaded the pref store
+        if (!pr.store.prefs.savePath) {
+          pr.store.prefs.savePath = PreferencesStore.defaultSavePath;
           pr.onChange();
         }
       });
-  }
-
-  // load state from storage only once
-  // NOTE: this is sync while `extension.getExtensionFileFolder()` is async
-  if (!storeLoaded) {
-    pr.load();
-    storeLoaded = true;
   }
 
   // NOTE: since the state is passed directly (by reference) into the context

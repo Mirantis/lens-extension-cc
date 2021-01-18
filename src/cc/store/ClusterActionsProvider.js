@@ -472,8 +472,8 @@ const _addClusters = async function ({
     failure = results.find((res) => !!res.error); // look for any errors, use first-found
   }
 
-  pr.store.loading = false;
-  pr.store.loaded = true;
+  pr.loading = false;
+  pr.loaded = true;
 
   if (failure) {
     pr.store.error = failure.error;
@@ -588,8 +588,8 @@ const _addKubeCluster = async function ({
     }
   }
 
-  pr.store.loading = false;
-  pr.store.loaded = true;
+  pr.loading = false;
+  pr.loaded = true;
 
   pr.notifyIfError();
   pr.onChange();
@@ -616,8 +616,8 @@ const _activateCluster = function ({ namespace, clusterName, clusterId }) {
     );
   }
 
-  pr.store.loading = false;
-  pr.store.loaded = true;
+  pr.loading = false;
+  pr.loaded = true;
 
   pr.notifyIfError();
   pr.onChange();
@@ -668,7 +668,7 @@ export const useClusterActions = function () {
        *  be added to the active workspace.
        */
       addClusters(options) {
-        if (!pr.store.loading && options.clusters.length > 0) {
+        if (!pr.loading && options.clusters.length > 0) {
           _addClusters(options);
         }
       },
@@ -688,7 +688,7 @@ export const useClusterActions = function () {
        *  be added to the active workspace.
        */
       addKubeCluster(options) {
-        if (!pr.store.loading) {
+        if (!pr.loading) {
           _addKubeCluster(options);
         }
       },
@@ -701,14 +701,14 @@ export const useClusterActions = function () {
        * @param {string} options.clusterId ID of the cluster.
        */
       activateCluster(options) {
-        if (!pr.store.loading) {
+        if (!pr.loading) {
           _activateCluster(options);
         }
       },
 
       /** Resets store state. Data will need to be reloaded. */
       reset() {
-        if (!pr.store.loading) {
+        if (!pr.loading) {
           pr.reset();
         }
       },

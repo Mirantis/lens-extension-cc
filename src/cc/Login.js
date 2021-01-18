@@ -34,7 +34,7 @@ export const Login = function ({ loading, disabled, onLogin, ...props }) {
   // STATE
   //
 
-  const [cloudUrl, setBaseUrl] = useState(props.cloudUrl || '');
+  const [cloudUrl, setCloudUrl] = useState(props.cloudUrl || '');
   const [username, setUsername] = useState(props.username || '');
   const [password, setPassword] = useState(props.password || '');
   const [valid, setValid] = useState(false);
@@ -44,7 +44,7 @@ export const Login = function ({ loading, disabled, onLogin, ...props }) {
   //
 
   const handleUrlChange = function (value) {
-    setBaseUrl(value);
+    setCloudUrl(value);
   };
 
   const handleUsernameChange = function (value) {
