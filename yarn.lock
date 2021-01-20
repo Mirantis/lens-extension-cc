@@ -1066,10 +1066,10 @@
     minimatch "^3.0.4"
     strip-json-comments "^3.1.1"
 
-"@k8slens/extensions@^4.0.6":
-  version "4.0.6"
-  resolved "https://registry.yarnpkg.com/@k8slens/extensions/-/extensions-4.0.6.tgz#5734b3e7dcfb82aea9ba48bfc65fcd8d8795134a"
-  integrity sha512-/cnOSN2MHiI7BtGN/wK0rElKDBz4N4B9xlEiB9DjrI0Zo06mS4HFMia+viMMa37fvKGhY28bbB1TQKd9bfFj8A==
+"@k8slens/extensions@^4.0.7":
+  version "4.0.7"
+  resolved "https://registry.yarnpkg.com/@k8slens/extensions/-/extensions-4.0.7.tgz#68549084910112e6441431b02527b6b6ec7fefee"
+  integrity sha512-eFTaOdE3zR3e+wH8LWQHf9csfFihR1mRrRCHKjZjCQloVnDWkHMclFj/u1FtzaVBqjDzNpRvbpvCKGzvc8aROg==
   dependencies:
     "@material-ui/core" "*"
     "@types/node" "*"
@@ -5065,10 +5065,10 @@ webpack-sources@^2.1.1:
     source-list-map "^2.0.1"
     source-map "^0.6.1"
 
-webpack@^5.15.0:
-  version "5.15.0"
-  resolved "https://registry.yarnpkg.com/webpack/-/webpack-5.15.0.tgz#63d7b6228a4e15ee8c89899c2cfdd993e809bdd2"
-  integrity sha512-y/xG+ONDz78yn3VvP6gAvGr1/gkxOgitvHSXBmquyN8KDtrGEyE3K9WkXOPB7QmfcOBCpO4ELXwNcCYQnEmexA==
+webpack@^5.16.0:
+  version "5.16.0"
+  resolved "https://registry.yarnpkg.com/webpack/-/webpack-5.16.0.tgz#796e093c2d92c229f013aefefde82b50c0572570"
+  integrity sha512-QOkctcjYfEGxcYg4AzPJafyAQ7ANc266/URkX881uFA7b2k31E0Dmpy1ExfppHOTp1kHDTsRh9sXojVUvgPF0g==
   dependencies:
     "@types/eslint-scope" "^3.7.0"
     "@types/estree" "^0.0.45"
