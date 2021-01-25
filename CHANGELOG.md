@@ -1,5 +1,12 @@
 # ChangeLog
 
+## UNRELEASED
+
+### Changed
+
+- Updated protocol handler configuration based on API changes on [Lens#1949](https://github.com/lensapp/lens/pull/1949).
+- Fixed a potential exception when the extension attempts to add its item to the stats bar.
+
 ## v2.1.0
 
 Supports Lens `>= 4.0.8`.

@@ -1,6 +1,6 @@
 import { LensMainExtension } from '@k8slens/extensions';
 import { addRoute } from './routes';
-import { prefStore } from './cc/store/PreferencesStore.js';
+import { prefStore } from './cc/store/PreferencesStore';
 import * as strings from './strings';
 
 // NOTE: This code runs in a separate process from the one that the renderer.tsx

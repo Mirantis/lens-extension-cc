@@ -1,5 +1,4 @@
 import React from 'react';
-import styled from '@emotion/styled';
 import { LensRendererExtension } from '@k8slens/extensions';
 import { ContainerCloudIcon, AddClusterPage } from './page';
 import * as strings from './strings';
@@ -10,23 +9,10 @@ import {
   EXT_EVENT_KUBECONFIG,
   dispatchExtEvent,
 } from './eventBus';
-import { prefStore } from './cc/store/PreferencesStore.js';
+import { prefStore } from './cc/store/PreferencesStore';
 import pkg from '../package.json';
 
 const itemColor = 'white'; // CSS color; Lens hard-codes the color of the workspace indicator item to 'white' also
-
-const Item = styled.div(function () {
-  return {
-    color: itemColor,
-    cursor: 'pointer',
-    fontSize: 'var(--font-size-small)',
-    padding: '2px 4px', // same as used for active workspace indicator on the left corner
-
-    a: {
-      borderBottom: 'none', // Lens app.css adds a bottom border to anchors without href attributes
-    },
-  };
-});
 
 export default class ExtensionRenderer extends LensRendererExtension {
   globalPages = [
@@ -38,17 +24,34 @@ export default class ExtensionRenderer extends LensRendererExtension {
     },
   ];
 
+  // NOTE: mobx and Emotion components apparently don't mix well, and neither do
+  //  mobx and plain React components with inline `style` props. Components given
+  //  to `statusBarItems` are deeply observed by mobx. If an Emotion component is
+  //  present in the hierarchy (or just a regular component with the `style` prop),
+  //  mobx goes berserk throws the following exception (or similar):
+  // ============
+  // Uncaught (in promise) RangeError: Maximum call stack size exceeded
+  //     at initializeInstance (mobx.module.js:332)
+  //     at isObservableObject (mobx.module.js:4411)
+  //     at _isObservable (mobx.module.js:2550)
+  //     at isObservable (mobx.module.js:2560)
+  //     at deepEnhancer (mobx.module.js:401)
+  //     at new ObservableValue (mobx.module.js:1031)
+  //     at ObservableObjectAdministration../node_modules/mobx/lib/mobx.module.js.ObservableObjectAdministration.addObservableProp (mobx.module.js:4209)
+  //     at mobx.module.js:453
+  //     at decorate (mobx.module.js:363)
+  //     at decoratorFactory (mobx.module.js:384)
+  // ============
   statusBarItems = [
     {
       item: (
-        <Item
+        <div
           className="flex align-center gaps"
+          title={strings.extension.statusBar['label']()}
           onClick={() => this.navigate(addRoute)}
         >
-          <a title={strings.extension.statusBar['label']()}>
-            <ContainerCloudIcon fill={itemColor} />
-          </a>
-        </Item>
+          <ContainerCloudIcon fill={itemColor} />
+        </div>
       ),
     },
   ];
@@ -124,19 +127,21 @@ export default class ExtensionRenderer extends LensRendererExtension {
     //  for how, this just gets around the TSC complaining the method isn't defined on `this`
     // TRACKING: https://github.com/Mirantis/lens-extension-cc/issues/25
     const that = this as any;
-    if (typeof that.onProtocolRequest === 'function') {
-      that.onProtocolRequest(
-        `/${EXT_EVENT_ACTIVATE_CLUSTER}`,
-        this.handleProtocolActivateCluster
-      );
-      that.onProtocolRequest(
-        `/${EXT_EVENT_ADD_CLUSTERS}`,
-        this.handleProtocolClusters
-      );
-      that.onProtocolRequest(
-        `/${EXT_EVENT_KUBECONFIG}`,
-        this.handleProtocolKubeConfig
-      );
+    if (Array.isArray(that.protocolHandlers)) {
+      that.protocolHandlers = [
+        {
+          pathSchema: `/${EXT_EVENT_ACTIVATE_CLUSTER}`,
+          handler: this.handleProtocolActivateCluster,
+        },
+        {
+          pathSchema: `/${EXT_EVENT_ADD_CLUSTERS}`,
+          handler: this.handleProtocolClusters,
+        },
+        {
+          pathSchema: `/${EXT_EVENT_KUBECONFIG}`,
+          handler: this.handleProtocolKubeConfig,
+        },
+      ];
     } else {
       // eslint-disable-next-line no-console -- log the warning for users
       console.warn(
@@ -152,8 +157,8 @@ export default class ExtensionRenderer extends LensRendererExtension {
     //  for how, this just gets around the TSC complaining the method isn't defined on `this`
     // TRACKING: https://github.com/Mirantis/lens-extension-cc/issues/25
     const that = this as any;
-    if (typeof that.removeProtocolHandlers === 'function') {
-      that.removeProtocolHandlers();
+    if (Array.isArray(that.protocolHandlers)) {
+      that.protocolHandlers = [];
     }
   }
 }
