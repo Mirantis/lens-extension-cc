@@ -2,7 +2,7 @@
 // Provider for adding clusters to Lens
 //
 
-import React, { createContext, useContext, useState, useMemo } from 'react';
+import { createContext, useContext, useState, useMemo } from 'react';
 import propTypes from 'prop-types';
 import * as rtv from 'rtvjs';
 import { promises as fs } from 'fs';

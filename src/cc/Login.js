@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import propTypes from 'prop-types';
 import styled from '@emotion/styled';
 import { Component } from '@k8slens/extensions';

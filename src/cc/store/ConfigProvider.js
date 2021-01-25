@@ -2,7 +2,7 @@
 // Provides the MCC server's Configuration object
 //
 
-import React, { createContext, useContext, useState, useMemo } from 'react';
+import { createContext, useContext, useState, useMemo } from 'react';
 import { request } from '../netUtil';
 import { ProviderStore } from './ProviderStore';
 

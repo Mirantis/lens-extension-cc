@@ -1,4 +1,3 @@
-import React from 'react';
 import propTypes from 'prop-types';
 
 // this is the current Mirantis Container Cloud icon

@@ -16,6 +16,12 @@ const rules = {
   ],
   'no-console': 'error',
   'no-unsafe-optional-chaining': 'error',
+
+  //// react plugin
+
+  // we're using the new JSX transform that doesn't require 'react' import
+  'react/jsx-uses-react': 'off',
+  'react/react-in-jsx-scope': 'off',
 };
 
 const parserOptions = {
