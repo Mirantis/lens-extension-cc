@@ -1,6 +1,6 @@
 # ChangeLog
 
-## UNRELEASED
+## v2.1.0
 
 Supports Lens `>= 4.0.8`.
 
@@ -11,7 +11,7 @@ Supports Lens `>= 4.0.8`.
 - Preferences are now stored on disk rather than in `localStorage` inside the browser instance that runs the extension inside Lens. This is great, because it means preferences truly persist to disk and will no longer get reset whenever you upgrade Lens (you may never even have noticed, which makes this bug fix even more significant)!
     - Trivia: `localStorage` was from a long ago port from the very first implementation of this extension which had its beginnings as a `create-react-app` running the browser before the Lens Extension API was even published (just to get a head start on all the UI views without any real functionality behind them).
 
-## 2.0.3
+## v2.0.3
 
 Supports Lens `>= 4.0.6`.
 
@@ -19,7 +19,7 @@ Supports Lens `>= 4.0.6`.
 
 - A few strings have been updated to meet branding requirements.
 
-## 2.0.2
+## v2.0.2
 
 ### Changed
 
@@ -28,13 +28,13 @@ Supports Lens `>= 4.0.6`.
 - Made the cluster deserialization process more resilient (fixes [#35](https://github.com/Mirantis/lens-extension-cc/issues/35)).
 - Made the namespace deserialization process more resilient (similar to [#35](https://github.com/Mirantis/lens-extension-cc/issues/35)).
 
-## 2.0.1
+## v2.0.1
 
 ### Changed
 
 - When adding multiple clusters from multiple namespaces into new Lens Workspaces, the extension now prefers activating the first-found Workspace that is _not_ associated with the `default` namespace since it typically only contains the Mirantis Container Cloud management cluster, which is of less interest than clusters in other namespaces. If selected, the management cluster is still added, however, and can be activated in Lens like any other cluster.
 
-## 2.0.0
+## v2.0.0
 
 Supports Lens `>= 4.0.2`.
 
@@ -56,11 +56,11 @@ For now, the extension continues to operate as it did before, with the changes n
 - The status bar item is now only the icon without the label. The label is now displayed as a tooltip on hover.
 - The `@k8slens/extensions` dependency has been updated to `4.0.2`.
 
-## 2.0.0-beta.1
+## v2.0.0-beta.1
 
 - Previous release was built while Webpack DevServer was running, so the output of the published files in `./dist` is questionable. This release has no changes, but it was built the right way, just to be sure.
 
-## 2.0.0-beta.0
+## v2.0.0-beta.0
 
 ### Added
 
@@ -71,7 +71,7 @@ For now, the extension continues to operate as it did before, with the changes n
 - Fixed bug where 'add clusters' protocol action would show loader when actually adding clusters, rather than just when loading clusters.
 - Removed test 'EVENT' status bar item.
 
-## 2.0.0-alpha.2
+## v2.0.0-alpha.2
 
 ### Added
 
@@ -81,13 +81,13 @@ For now, the extension continues to operate as it did before, with the changes n
 
 - Removed the '1-2-3' sequence on the main headings since not all steps are always visible depending on whether the extension is being used normally, or as a result of clicking on a `lens://` link.
 
-## 2.0.0-alpha.1
+## v2.0.0-alpha.1
 
 ### Changed
 
 - Fixed: Protocol request handlers are now removed when the extension is deactivated.
 
-## 2.0.0-alpha.0
+## v2.0.0-alpha.0
 
 ### Added
 
@@ -102,11 +102,11 @@ For now, the extension continues to operate as it did before, with the changes n
 - The "save location" field is now read-only. You must use the folder picker to choose an existing folder.
 - A notification is now posted listing all new clusters added to Lens.
 
-## 1.0.5
+## v1.0.5
 
 Update for Lens `4.0.0` official release.
 
-## 1.0.4
+## v1.0.4
 
 ### Changed
 
@@ -114,7 +114,7 @@ Update for Lens `4.0.0` official release.
 - Adjusted the color of the status bar item to always be white regardless of the theme (which fixes an issue where it was a dark color when switching to the LIGHT theme).
 - Now relying on Lens to provide styling for custom scrollbars (see [lens#1484](https://github.com/lensapp/lens/pull/1484)).
 
-## 1.0.3
+## v1.0.3
 
 Update for Lens `4.0.0-rc.1`.
 
@@ -122,7 +122,7 @@ Update for Lens `4.0.0-rc.1`.
 
 - Removed deprecated (and now removed) global page `addRoute` property.
 
-## 1.0.2
+## v1.0.2
 
 This release contains no code changes.
 
@@ -131,7 +131,7 @@ This release contains no code changes.
 - Missing standard package.json metadata
 - Screen shot to README
 
-## 1.0.1
+## v1.0.1
 
 This release contains no code changes.
 
@@ -139,7 +139,7 @@ This release contains no code changes.
 
 - NPM-based installation instructions to the README
 
-## 1.0.0
+## v1.0.0
 
 ### Added
 
