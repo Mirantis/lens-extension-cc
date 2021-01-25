@@ -2,7 +2,7 @@
 // Preferences Panel
 //
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import os from 'os';
 import styled from '@emotion/styled';
 import { remote } from 'electron';

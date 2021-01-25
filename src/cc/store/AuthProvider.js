@@ -2,7 +2,7 @@
 // Authentication Provider
 //
 
-import React, { createContext, useContext, useState, useMemo } from 'react';
+import { createContext, useContext, useState, useMemo } from 'react';
 import { AuthClient } from '../auth/clients/AuthClient';
 import { ProviderStore } from './ProviderStore';
 

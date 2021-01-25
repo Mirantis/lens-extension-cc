@@ -2,7 +2,7 @@
 // Provider (Store) for Namespace and Cluster API data
 //
 
-import React, { createContext, useContext, useState, useMemo } from 'react';
+import { createContext, useContext, useState, useMemo } from 'react';
 import { cloneDeepWith, filter, find } from 'lodash';
 import { Namespace } from './Namespace';
 import { Cluster } from './Cluster';

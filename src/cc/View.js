@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import propTypes from 'prop-types';
 import styled from '@emotion/styled';
 import * as rtv from 'rtvjs';

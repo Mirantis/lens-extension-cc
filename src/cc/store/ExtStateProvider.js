@@ -2,7 +2,7 @@
 // Extension State Management (stores in Local Storage)
 //
 
-import React, { createContext, useContext, useState, useMemo } from 'react';
+import { createContext, useContext, useState, useMemo } from 'react';
 import propTypes from 'prop-types';
 import * as rtv from 'rtvjs';
 import { cloneDeep, cloneDeepWith } from 'lodash';
