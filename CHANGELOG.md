@@ -6,6 +6,7 @@
 
 - Updated protocol handler configuration based on API changes on [Lens#1949](https://github.com/lensapp/lens/pull/1949).
 - Fixed a potential exception when the extension attempts to add its item to the stats bar.
+- Fixed a bug where the Mirantis Container Cloud username was not being restored from stored preferences after restarting Lens.
 
 ## v2.1.0
 

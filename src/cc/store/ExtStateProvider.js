@@ -6,7 +6,7 @@ import { createContext, useContext, useState, useMemo } from 'react';
 import propTypes from 'prop-types';
 import * as rtv from 'rtvjs';
 import { cloneDeep, cloneDeepWith } from 'lodash';
-import { PreferencesStore } from './PreferencesStore';
+import { PreferencesStore, prefStore } from './PreferencesStore';
 import { AuthAccess } from '../auth/AuthAccess';
 import { ProviderStore } from './ProviderStore';
 
@@ -23,14 +23,20 @@ let extFileFolderLoading = false; // true if we're waiting for the file folder t
 //
 
 class ExtStateProviderStore extends ProviderStore {
+  constructor() {
+    super();
+    prefStore.addUpdateHandler(this.onStoreUpdate.bind(this));
+  }
+
   // @override
   makeNew() {
     const newStore = {
       ...super.makeNew(),
-      prefs: PreferencesStore.getInstance(), // singleton instance
+      prefs: prefStore, // singleton instance
       authAccess: new AuthAccess(),
     };
 
+    newStore.authAccess.username = prefStore.username || null;
     newStore.loaded = true; // always
 
     return newStore;
@@ -38,8 +44,8 @@ class ExtStateProviderStore extends ProviderStore {
 
   // @override
   reset() {
-    super.reset();
     this.store.prefs.reset();
+    super.reset();
   }
 
   // @override
@@ -64,6 +70,11 @@ class ExtStateProviderStore extends ProviderStore {
         `[ExtStateProvider] Invalid extension state, error="${result.message}"`
       );
     }
+  }
+
+  // called whenever the pref store is updated from disk
+  onStoreUpdate() {
+    this.store.authAccess.username = this.store.prefs.username;
   }
 }
 
