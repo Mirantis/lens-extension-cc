@@ -151,14 +151,4 @@ export default class ExtensionRenderer extends LensRendererExtension {
 
     await prefStore.loadExtension(this);
   }
-
-  onDeactivate() {
-    // TODO remove this HACK once updated type is published that includes the new method;
-    //  for how, this just gets around the TSC complaining the method isn't defined on `this`
-    // TRACKING: https://github.com/Mirantis/lens-extension-cc/issues/25
-    const that = this as any;
-    if (Array.isArray(that.protocolHandlers)) {
-      that.protocolHandlers = [];
-    }
-  }
 }
