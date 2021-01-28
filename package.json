@@ -76,7 +76,7 @@
     "eslint-plugin-react": "^7.22.0",
     "eslint-plugin-react-hooks": "^4.2.0",
     "husky": "^4.3.8",
-    "mobx": "^6.0.5",
+    "mobx": "^6.1.0",
     "node-fetch": "^2.6.1",
     "prettier": "^2.2.1",
     "prop-types": "^15.7.2",
