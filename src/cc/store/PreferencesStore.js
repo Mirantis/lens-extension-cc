@@ -5,6 +5,8 @@
 import { observable, toJS } from 'mobx';
 import { Store } from '@k8slens/extensions';
 import * as rtv from 'rtvjs';
+import { logger } from '../../util';
+import pkg from '../../../package.json';
 
 /** RTV.js typeset for preferences model. */
 export const preferencesTs = {
@@ -117,11 +119,10 @@ export class PreferencesStore extends Store.ExtensionStore {
     const result = rtv.check({ store }, { store: preferencesTs });
 
     if (!result.valid) {
-      // eslint-disable-next-line no-console -- log error
-      console.error(
-        `[PreferencesStore] Invalid preferences found, error="${result.message}"`
+      logger.error(
+        'PreferencesStore.fromStore()',
+        `Invalid preferences found, error="${result.message}"`
       );
-
       return;
     }
 

@@ -2,14 +2,16 @@ import React from 'react';
 import { LensRendererExtension } from '@k8slens/extensions';
 import { ContainerCloudIcon, AddClusterPage } from './page';
 import * as strings from './strings';
-import { addRoute } from './routes';
+import { mainRoute } from './routes';
 import {
   EXT_EVENT_ACTIVATE_CLUSTER,
   EXT_EVENT_ADD_CLUSTERS,
   EXT_EVENT_KUBECONFIG,
+  EXT_EVENT_OAUTH_CODE,
   dispatchExtEvent,
 } from './eventBus';
 import { prefStore } from './cc/store/PreferencesStore';
+import { logger } from './util';
 import pkg from '../package.json';
 
 const itemColor = 'white'; // CSS color; Lens hard-codes the color of the workspace indicator item to 'white' also
@@ -17,7 +19,7 @@ const itemColor = 'white'; // CSS color; Lens hard-codes the color of the worksp
 export default class ExtensionRenderer extends LensRendererExtension {
   globalPages = [
     {
-      id: addRoute,
+      id: mainRoute,
       components: {
         Page: () => <AddClusterPage extension={this} />,
       },
@@ -48,7 +50,7 @@ export default class ExtensionRenderer extends LensRendererExtension {
         <div
           className="flex align-center gaps"
           title={strings.extension.statusBar['label']()}
-          onClick={() => this.navigate(addRoute)}
+          onClick={() => this.navigate(mainRoute)}
         >
           <ContainerCloudIcon fill={itemColor} />
         </div>
@@ -57,7 +59,7 @@ export default class ExtensionRenderer extends LensRendererExtension {
   ];
 
   protected handleProtocolActivateCluster = ({ search }) => {
-    this.navigate(addRoute);
+    this.navigate(mainRoute);
 
     dispatchExtEvent({
       type: EXT_EVENT_ACTIVATE_CLUSTER,
@@ -70,25 +72,29 @@ export default class ExtensionRenderer extends LensRendererExtension {
     });
   };
 
-  protected handleProtocolClusters = ({ search }) => {
+  protected handleProtocolAddClusters = ({ search }) => {
     let tokens;
     try {
       tokens = JSON.parse(atob(search.tokens));
     } catch (err) {
-      // eslint-disable-next-line no-console -- log error
-      console.error(
-        `[${pkg.name}/renderer/onProtocolClusters] ERROR: Failed to decode tokens, error="${err.message}"`,
+      logger.error(
+        'renderer/handleProtocolAddClusters',
+        `Failed to decode tokens parameter, error="${err.message}"`,
         err
       );
       return;
     }
 
-    this.navigate(addRoute);
+    const onlyNamespaces = search.namespaces?.split(',');
+
+    this.navigate(mainRoute);
 
     dispatchExtEvent({
       type: EXT_EVENT_ADD_CLUSTERS,
       data: {
         cloudUrl: search.cloudUrl,
+        keycloakLogin: search.keycloakLogin === 'true',
+        onlyNamespaces,
         username: search.username,
         tokens,
       },
@@ -100,15 +106,15 @@ export default class ExtensionRenderer extends LensRendererExtension {
     try {
       kubeConfig = JSON.parse(atob(search.kubeConfig));
     } catch (err) {
-      // eslint-disable-next-line no-console -- log error
-      console.error(
-        `[${pkg.name}/renderer/onProtocolKubeConfig] ERROR: Failed to decode kubeConfig, error="${err.message}"`,
+      logger.error(
+        'renderer/handleProtocolKubeConfig',
+        `Failed to decode kubeConfig parameter, error="${err.message}"`,
         err
       );
       return;
     }
 
-    this.navigate(addRoute);
+    this.navigate(mainRoute);
 
     dispatchExtEvent({
       type: EXT_EVENT_KUBECONFIG,
@@ -119,6 +125,15 @@ export default class ExtensionRenderer extends LensRendererExtension {
         clusterId: search.clusterId,
         kubeConfig,
       },
+    });
+  };
+
+  protected handleProtocolOauthCode = ({ search }) => {
+    this.navigate(mainRoute);
+
+    dispatchExtEvent({
+      type: EXT_EVENT_OAUTH_CODE,
+      data: search,
     });
   };
 
@@ -135,17 +150,21 @@ export default class ExtensionRenderer extends LensRendererExtension {
         },
         {
           pathSchema: `/${EXT_EVENT_ADD_CLUSTERS}`,
-          handler: this.handleProtocolClusters,
+          handler: this.handleProtocolAddClusters,
         },
         {
           pathSchema: `/${EXT_EVENT_KUBECONFIG}`,
           handler: this.handleProtocolKubeConfig,
         },
+        {
+          pathSchema: `/${EXT_EVENT_OAUTH_CODE}`,
+          handler: this.handleProtocolOauthCode,
+        },
       ];
     } else {
-      // eslint-disable-next-line no-console -- log the warning for users
-      console.warn(
-        `[${pkg.name}/renderer/onActivate] This version of Lens does not support 'lens://' protocol requests.`
+      logger.warn(
+        'renderer/onActivate',
+        'This version of Lens does not support "lens://" protocol requests.'
       );
     }
 

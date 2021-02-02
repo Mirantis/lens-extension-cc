@@ -61,7 +61,7 @@ export class KubernetesEntityClient {
 
   get(entity, { namespaceName, name, entityDescriptionName } = {}) {
     return this.request(`${namespacePrefix(namespaceName)}${entity}s/${name}`, {
-      errorMessage: strings.apiClient.errors.failedToGet(
+      errorMessage: strings.apiClient.error.failedToGet(
         entityDescriptionName || entity
       ),
     });
@@ -69,7 +69,7 @@ export class KubernetesEntityClient {
 
   list(entity, { namespaceName, entityDescriptionName } = {}) {
     return this.request(`${namespacePrefix(namespaceName)}${entity}s`, {
-      errorMessage: strings.apiClient.errors.failedToGetList(
+      errorMessage: strings.apiClient.error.failedToGetList(
         entityDescriptionName || entity
       ),
     });
@@ -77,7 +77,7 @@ export class KubernetesEntityClient {
 
   listAll(entity, { entityDescriptionName } = {}) {
     return this.request(`${entity}s`, {
-      errorMessage: strings.apiClient.errors.failedToGetList(
+      errorMessage: strings.apiClient.error.failedToGetList(
         entityDescriptionName || entity
       ),
     });
@@ -87,7 +87,7 @@ export class KubernetesEntityClient {
     return this.request(`${namespacePrefix(namespaceName)}${entity}s/create`, {
       options: { method: 'POST', body: JSON.stringify(config) },
       expectedStatuses: [201],
-      errorMessage: strings.apiClient.errors.failedToCreate(
+      errorMessage: strings.apiClient.error.failedToCreate(
         entityDescriptionName || entity
       ),
     });
@@ -96,7 +96,7 @@ export class KubernetesEntityClient {
   delete(entity, { namespaceName, name, entityDescriptionName } = {}) {
     return this.request(`${namespacePrefix(namespaceName)}${entity}s/${name}`, {
       options: { method: 'DELETE' },
-      errorMessage: strings.apiClient.errors.failedToDelete(
+      errorMessage: strings.apiClient.error.failedToDelete(
         `${entityDescriptionName || entity} "${name}"`
       ),
     });
@@ -109,7 +109,7 @@ export class KubernetesEntityClient {
         body: JSON.stringify(patch),
         headers: { 'Content-Type': 'application/merge-patch+json' },
       },
-      errorMessage: strings.apiClient.errors.failedToUpdate(
+      errorMessage: strings.apiClient.error.failedToUpdate(
         `${entityDescriptionName || entity} "${name}"`
       ),
     });

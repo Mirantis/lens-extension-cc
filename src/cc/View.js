@@ -5,9 +5,15 @@ import * as rtv from 'rtvjs';
 import { Component } from '@k8slens/extensions';
 import { useExtState } from './store/ExtStateProvider';
 import { useConfig } from './store/ConfigProvider';
-import { useAuth } from './store/AuthProvider';
-import { useClusters } from './store/ClustersProvider';
-import { useClusterActions } from './store/ClusterActionsProvider';
+import { useBasicAuth } from './store/BasicAuthProvider';
+import { useSsoAuth } from './store/SsoAuthProvider';
+import { useClusterData } from './store/ClusterDataProvider';
+import {
+  useClusterActions,
+  SSO_STATE_ADD_CLUSTERS,
+} from './store/ClusterActionsProvider';
+import { useClusterLoader } from './hooks/useClusterLoader';
+import { useClusterLoadingState } from './hooks/useClusterLoadingState';
 import { Login } from './Login';
 import { ClusterList } from './ClusterList';
 import { AddClusters } from './AddClusters';
@@ -21,9 +27,11 @@ import {
   EXT_EVENT_ACTIVATE_CLUSTER,
   EXT_EVENT_ADD_CLUSTERS,
   EXT_EVENT_KUBECONFIG,
+  EXT_EVENT_OAUTH_CODE,
   extEventActivateClusterTs,
   extEventAddClustersTs,
   extEventKubeconfigTs,
+  extEventOauthCodeTs,
   addExtEventHandler,
   removeExtEventHandler,
 } from '../eventBus';
@@ -125,34 +133,34 @@ export const View = function ({ extension }) {
   } = useExtState();
 
   const {
-    state: {
-      loading: configLoading,
-      loaded: configLoaded,
-      error: configError,
-      config,
-    },
+    state: { error: configError, config },
     actions: configActions,
   } = useConfig();
 
   const {
-    state: { loading: authLoading, loaded: authLoaded, error: authError },
-    actions: authActions,
-  } = useAuth();
+    state: { error: basicAuthError },
+    actions: basicAuthActions,
+  } = useBasicAuth();
+
+  const {
+    state: { loading: ssoAuthLoading, error: ssoAuthError },
+    actions: ssoAuthActions,
+  } = useSsoAuth();
 
   const {
     state: {
-      loading: clustersLoading,
-      loaded: clustersLoaded,
-      error: clustersError,
+      loading: clusterDataLoading,
+      loaded: clusterDataLoaded,
+      error: clusterDataError,
       data: { clusters },
     },
-    actions: clustersActions,
-  } = useClusters();
+    actions: clusterDataActions,
+  } = useClusterData();
 
   const {
     state: {
-      loading: addClustersLoading,
-      error: addClustersError,
+      loading: clusterActionsLoading,
+      error: clusterActionsError,
       kubeClusterAdded,
     },
     actions: clusterActions,
@@ -173,68 +181,66 @@ export const View = function ({ extension }) {
   // @type {string} message to show in Loader; null if none
   const [loaderMessage, setLoaderMessage] = useState(null);
 
-  const loading =
-    configLoading ||
-    (configLoaded &&
-      !configError &&
-      !authLoaded &&
-      authAccess.hasCredentials()) ||
-    authLoading ||
-    (authLoaded && !authError && !clustersLoaded) ||
-    clustersLoading ||
-    addClustersLoading;
+  // @type {string} error message if something basic goes wrong with an extension event
+  const [extEventError, setExtEventError] = useState(null);
+
+  // @type {Array<string>} if set, array of namespace IDs to which the cluster list
+  //  should be restricted; otherwise, all clusters in all namespaces are considered
+  const [onlyNamespaces, setOnlyNamespaces] = useState(null);
+
+  const loading = useClusterLoadingState();
+
+  // when using SSO, for now, we need to limit selection to add a single cluster
+  //  because the UX, when generating multiple kubeConfigs (one per cluster being added),
+  //  is very bad (and the code would be a mess)
+  const singleClusterOnly = !!config?.keycloakLogin;
 
   // @type {string|null} in order of execution/precedence
+  // NOTE: currently not displayed (providers post notifications instead), but
+  //  still used as a flag to know if we're in an error state or not
   const errMessage =
-    configError || authError || clustersError || addClustersError || null;
+    configError ||
+    basicAuthError ||
+    ssoAuthError ||
+    clusterDataError ||
+    clusterActionsError ||
+    extEventError ||
+    null;
 
   //
   // EVENTS
   //
 
-  const handleLogin = useCallback(
-    function (info) {
-      authAccess.username = info.username;
-      authAccess.password = info.password;
-
-      const url = normalizeUrl(info.cloudUrl);
-
-      authAccess.clearTokens();
-      extActions.setCloudUrl(url);
-      extActions.setAuthAccess(authAccess);
-      authActions.reset();
-      clustersActions.reset();
-
-      configActions.load(url); // implicit reset of current config
-    },
-    [authAccess, extActions, authActions, clustersActions, configActions]
-  );
-
   const handleClusterSelection = useCallback(
     function ({ cluster, selected }) {
       const idx = selectedClusters.indexOf(cluster);
       if (selected && idx < 0) {
-        setSelectedClusters(selectedClusters.concat(cluster));
-      } else if (!selected && idx >= 0) {
+        setSelectedClusters(
+          singleClusterOnly ? [cluster] : selectedClusters.concat(cluster)
+        );
+      } else if (!selected && !singleClusterOnly && idx >= 0) {
         const newSelection = selectedClusters.concat();
         newSelection.splice(idx, 1);
         setSelectedClusters(newSelection);
       }
+      // else, don't allow de-selection when a single selection is required
     },
-    [selectedClusters]
+    [selectedClusters, singleClusterOnly]
   );
 
   const handleClusterSelectAll = useCallback(
     function ({ selected }) {
-      // shallow-clone by filtering for ready clusters
-      setSelectedClusters(selected ? clusters.filter((cl) => cl.ready) : []);
+      if (!singleClusterOnly) {
+        // shallow-clone by filtering for ready clusters
+        setSelectedClusters(selected ? clusters.filter((cl) => cl.ready) : []);
+      }
     },
-    [clusters]
+    [clusters, singleClusterOnly]
   );
 
   const handleClustersAdd = useCallback(
     function ({ password }) {
-      if (!addClustersLoading) {
+      if (!clusterActionsLoading) {
         clusterActions.addClusters({
           clusters: selectedClusters,
           savePath,
@@ -255,33 +261,63 @@ export const View = function ({ extension }) {
       offline,
       config,
       selectedClusters,
-      addClustersLoading,
+      clusterActionsLoading,
       clusterActions,
     ]
   );
 
   const handleCloseClick = useCallback(
     function () {
-      // reset View back to login with current auth in case still valid
+      if (activeEventType !== EXT_EVENT_ACTIVATE_CLUSTER) {
+        // adding a new cluster or adding 'all' clusters requires new tokens
+        //  in `authAccess` and a new `cloudUrl`, so we assume whatever cluster
+        //  data we may have already loaded is now invalid because the credentials
+        //  could be for a different user even if the `cloudUrl` is the same,
+        //  so reset everything, bringing the View back to the login step
+        configActions.reset();
+        basicAuthActions.reset();
+        ssoAuthActions.reset();
+        clusterDataActions.reset();
+        setSelectedClusters([]);
+      }
+      // else, just activating a cluster doesn't require changes to `authAccess`
+      //  or to the `config`, so reset View back to clusters if we have any
+
+      clusterActions.reset();
       setActiveEventType(null);
+      setExtEventError(null);
       setLoaderMessage(null);
       setEventClusterName(null);
-      configActions.reset();
-      authActions.reset();
-      clustersActions.reset();
-      setSelectedClusters([]);
-      clusterActions.reset();
+      setOnlyNamespaces(null);
     },
-    [configActions, authActions, clustersActions, clusterActions]
+    [
+      activeEventType,
+      configActions,
+      basicAuthActions,
+      ssoAuthActions,
+      clusterDataActions,
+      clusterActions,
+    ]
   );
 
+  // activate a single (pre-added/existing) cluster in Lens in any workspace
   const handleActivateClusterEvent = useCallback(
     function (event) {
-      rtv.verify({ event }, { event: extEventActivateClusterTs });
+      const results = rtv.check(
+        { event },
+        { event: extEventActivateClusterTs }
+      );
+      if (!results.valid) {
+        setActiveEventType(EXT_EVENT_ACTIVATE_CLUSTER);
+        setExtEventError(
+          strings.view.main.activateClusterEvent.error.invalidEventData()
+        );
+        return;
+      }
 
       const { data } = event;
 
-      if (!addClustersLoading) {
+      if (!clusterActionsLoading) {
         setActiveEventType(EXT_EVENT_ACTIVATE_CLUSTER);
         setLoaderMessage(
           strings.view.main.loaders.activateCluster(
@@ -292,40 +328,83 @@ export const View = function ({ extension }) {
         clusterActions.activateCluster(data);
       }
     },
-    [addClustersLoading, clusterActions]
+    [clusterActionsLoading, clusterActions]
   );
 
+  // find all clusters in one or all namespaces from a given MCC instance and
+  //  list them so that the user can add some or all of them to Lens, but without
+  //  having to first authenticate with the instance since they're already
+  //  authenticated when coming from MCC
   const handleAddClustersEvent = useCallback(
     function (event) {
-      rtv.verify({ event }, { event: extEventAddClustersTs });
+      const results = rtv.check({ event }, { event: extEventAddClustersTs });
+      if (!results.valid) {
+        setActiveEventType(EXT_EVENT_ADD_CLUSTERS);
+        setExtEventError(
+          strings.view.main.addClustersEvent.error.invalidEventData()
+        );
+        return;
+      }
 
       const { data } = event;
-
-      authAccess.username = data.username;
-      authAccess.password = null;
-      authAccess.updateTokens(data.tokens);
-
       const url = normalizeUrl(data.cloudUrl);
-      extActions.setCloudUrl(url);
-      extActions.setAuthAccess(authAccess);
 
-      authActions.reset();
-      clustersActions.reset();
-
+      // NOTE: it's critical these local state variables be set BEFORE resetting
+      //  the providers and updating the `authAccess` via `extActions.setAuthAccess()`
+      //  to make sure that `onlyNamespaces` is set before the cluster data load
+      //  takes place; otherwise, because of the way state updates are performed
+      //  async in React, we'll have a race condition and the cluster data may
+      //  load before `onlyNamespaces` gets set, and we'll end-up with the wrong
+      //  list of clusters to show the user
       setActiveEventType(EXT_EVENT_ADD_CLUSTERS);
       setLoaderMessage(strings.view.main.loaders.addClustersHtml(url));
+      setOnlyNamespaces(data.onlyNamespaces || null);
+
+      extActions.setCloudUrl(url);
       configActions.load(url); // implicit reset of current config
+      basicAuthActions.reset();
+      ssoAuthActions.reset();
+      clusterDataActions.reset();
+
+      // NOTE: whether basic or SSO auth, since we're getting the user's tokens,
+      //  we don't need to make an initial auth request; we can just go straight
+      //  for the clusters; but we'll need to re-auth when we want to generate
+      //  kubeConfigs for the clusters the user wants to add
+      authAccess.reset();
+      authAccess.username = data.username;
+      authAccess.password = null;
+      authAccess.usesSso = !!data.keycloakLogin;
+      authAccess.updateTokens(data.tokens);
+      extActions.setAuthAccess(authAccess); // authAccess should be valid (no password, but we have tokens)
     },
-    [authAccess, authActions, extActions, clustersActions, configActions]
+    [
+      authAccess,
+      basicAuthActions,
+      ssoAuthActions,
+      extActions,
+      clusterDataActions,
+      configActions,
+    ]
   );
 
+  // add a single cluster given its kubeConfig
   const handleKubeconfigEvent = useCallback(
     function (event) {
-      rtv.verify({ event }, { event: extEventKubeconfigTs });
+      const results = rtv.check({ event }, { event: extEventKubeconfigTs });
+      if (!results.valid) {
+        setActiveEventType(EXT_EVENT_KUBECONFIG);
+        setExtEventError(
+          strings.view.main.kubeConfigEvent.error.invalidEventData()
+        );
+        return;
+      }
 
       const { data } = event;
 
-      if (!addClustersLoading) {
+      // NOTE: we don't have to do any authentication in case since we're just
+      //  receiving the already-generated kubeConfig and we just need to
+      //  write it to disk and load it up in Lens
+      if (!clusterActionsLoading) {
         setActiveEventType(EXT_EVENT_KUBECONFIG);
         setLoaderMessage(
           strings.view.main.loaders.addKubeCluster(
@@ -340,12 +419,54 @@ export const View = function ({ extension }) {
         });
       }
     },
-    [savePath, addToNew, addClustersLoading, clusterActions]
+    [savePath, addToNew, clusterActionsLoading, clusterActions]
+  );
+
+  // SSO authorization redirect/callback
+  const handleOauthCodeEvent = useCallback(
+    function (event) {
+      rtv.verify({ event }, { event: extEventOauthCodeTs });
+      const { data: oAuth } = event;
+
+      if (!oAuth.state && ssoAuthLoading) {
+        ssoAuthActions.finishAuthorization({ oAuth, config, authAccess });
+      } else if (
+        oAuth.state === SSO_STATE_ADD_CLUSTERS &&
+        clusterActionsLoading
+      ) {
+        clusterActions.ssoFinishAddClusters({
+          clusters: selectedClusters,
+          oAuth,
+          savePath,
+          cloudUrl,
+          config,
+          addToNew,
+          offline,
+        });
+      }
+      // else, ignore as this is unsolicited/unexpected
+    },
+    [
+      ssoAuthLoading,
+      ssoAuthActions,
+      clusterActionsLoading,
+      clusterActions,
+      config,
+      authAccess,
+      addToNew,
+      offline,
+      savePath,
+      cloudUrl,
+      selectedClusters,
+    ]
   );
 
   //
   // EFFECTS
   //
+
+  // get the config > authenticate > load clusters
+  useClusterLoader(activeEventType, onlyNamespaces);
 
   useEffect(
     function () {
@@ -355,6 +476,7 @@ export const View = function ({ extension }) {
       );
       addExtEventHandler(EXT_EVENT_ADD_CLUSTERS, handleAddClustersEvent);
       addExtEventHandler(EXT_EVENT_KUBECONFIG, handleKubeconfigEvent);
+      addExtEventHandler(EXT_EVENT_OAUTH_CODE, handleOauthCodeEvent);
 
       return function () {
         removeExtEventHandler(
@@ -363,113 +485,51 @@ export const View = function ({ extension }) {
         );
         removeExtEventHandler(EXT_EVENT_ADD_CLUSTERS, handleAddClustersEvent);
         removeExtEventHandler(EXT_EVENT_KUBECONFIG, handleKubeconfigEvent);
+        removeExtEventHandler(EXT_EVENT_OAUTH_CODE, handleOauthCodeEvent);
       };
     },
-    [handleActivateClusterEvent, handleAddClustersEvent, handleKubeconfigEvent]
-  );
-
-  // 1. load the config object
-  useEffect(
-    function () {
-      if (
-        cloudUrl &&
-        authAccess.hasCredentials() &&
-        !configLoading &&
-        !configLoaded
-      ) {
-        configActions.load(cloudUrl);
-      }
-    },
-    [cloudUrl, authAccess, configLoading, configLoaded, configActions]
-  );
-
-  // 2. authenticate
-  useEffect(
-    function () {
-      if (
-        !configLoading &&
-        configLoaded &&
-        !configError &&
-        !authLoading &&
-        !authLoaded
-      ) {
-        if (authAccess.isValid(!activeEventType)) {
-          // skip authentication, go straight for the clusters
-          authActions.setAuthenticated();
-        } else if (authAccess.hasCredentials()) {
-          authActions.authenticate({
-            authAccess,
-            cloudUrl,
-            config,
-          });
-        }
-      }
-    },
     [
-      configLoading,
-      configLoaded,
-      configError,
-      authLoading,
-      authLoaded,
-      authActions,
-      authAccess,
-      cloudUrl,
-      config,
-      activeEventType,
+      handleActivateClusterEvent,
+      handleAddClustersEvent,
+      handleKubeconfigEvent,
+      handleOauthCodeEvent,
     ]
   );
 
-  // 3. get clusters
+  // set initial selection after cluster load
   useEffect(
     function () {
-      if (
-        !clustersLoading &&
-        !clustersLoaded &&
-        cloudUrl &&
-        config &&
-        authLoaded &&
-        authAccess.isValid(!activeEventType)
-      ) {
-        clustersActions.load(cloudUrl, config, authAccess);
-      } else if (authAccess.changed) {
-        extActions.setAuthAccess(authAccess); // capture any changes after loading clusters
-      }
-    },
-    [
-      cloudUrl,
-      authAccess,
-      extActions,
-      config,
-      authLoaded,
-      clustersLoading,
-      clustersLoaded,
-      clustersActions,
-      activeEventType,
-    ]
-  );
-
-  // 4. set initial selection after cluster load
-  useEffect(
-    function () {
-      if (clustersLoading && selectedClusters) {
-        setSelectedClusters(null); // clear selection because we (re-)loading clusters
-      } else if (clustersLoaded && !selectedClusters) {
+      if (clusterDataLoading && selectedClusters) {
+        // NOTE: we need to use null to fill a timing gap between `clusterDataLoaded`
+        //  (when no longer loading) and setting the initial selection: using null
+        //  tells us not to render the ClusterList and AddClusters panel
+        setSelectedClusters(null); // clear selection because we're (re-)loading clusters
+      } else if (clusterDataLoaded && !selectedClusters) {
         // set initial selection, skipping management clusters since they typically
         //  are of less importance, as well as clusters that aren't ready yet
-        // also, shallow clone the array to disassociate from source
-        setSelectedClusters(
-          clusters.filter((cl) => cl.ready && !cl.isManagementCluster)
+        const candidateClusters = clusters.filter(
+          (cl) => cl.ready && !cl.isManagementCluster
         );
-      } else if (clustersLoaded && activeEventType === EXT_EVENT_ADD_CLUSTERS) {
+        setSelectedClusters(
+          singleClusterOnly
+            ? // initialize the selection to first candidate only
+              candidateClusters.slice(0, 1)
+            : candidateClusters
+        );
+      } else if (
+        clusterDataLoaded &&
+        activeEventType === EXT_EVENT_ADD_CLUSTERS
+      ) {
         setLoaderMessage(null); // don't show the loader again when user actually adds the clusters
       }
     },
     [
-      clustersLoading,
-      clustersLoaded,
+      clusterDataLoading,
+      clusterDataLoaded,
       clusters,
       selectedClusters,
       activeEventType,
+      singleClusterOnly,
     ]
   );
 
@@ -502,16 +562,7 @@ export const View = function ({ extension }) {
         </Title>
 
         {/* only show Login if we are NOT handling an extension event */}
-        {!activeEventType && (
-          <Login
-            loading={loading && !addClustersLoading}
-            disabled={loading}
-            cloudUrl={cloudUrl || undefined}
-            username={authAccess ? authAccess.username : undefined}
-            password={authAccess ? authAccess.password : undefined}
-            onLogin={handleLogin}
-          />
-        )}
+        {!activeEventType && <Login />}
 
         {/* show loader only if we have a message to show, which is typically only when we're handling an EXT_EVENT_* event */}
         {loading && loaderMessage && <Loader message={loaderMessage} />}
@@ -526,6 +577,7 @@ export const View = function ({ extension }) {
            user won't see it since we activate the cluster; just in case, as a neutral state
         */}
         {activeEventType === EXT_EVENT_KUBECONFIG &&
+          !loading &&
           !errMessage &&
           kubeClusterAdded && (
             <InfoPanel>
@@ -533,6 +585,7 @@ export const View = function ({ extension }) {
             </InfoPanel>
           )}
         {activeEventType === EXT_EVENT_KUBECONFIG &&
+          !loading &&
           !errMessage &&
           !kubeClusterAdded && (
             <InfoPanel>
@@ -546,30 +599,40 @@ export const View = function ({ extension }) {
           when handling the EXT_EVENT_ACTIVATE_CLUSTER event, show the result in the UI even though
            user won't see it since we activate the cluster; just in case, as a neutral state
         */}
-        {activeEventType === EXT_EVENT_ACTIVATE_CLUSTER && !errMessage && (
-          <InfoPanel>
-            {strings.view.main.activateClusterEvent.clusterActivated(
-              eventClusterName
-            )}
-          </InfoPanel>
-        )}
+        {activeEventType === EXT_EVENT_ACTIVATE_CLUSTER &&
+          !loading &&
+          !errMessage && (
+            <InfoPanel>
+              {strings.view.main.activateClusterEvent.clusterActivated(
+                eventClusterName
+              )}
+            </InfoPanel>
+          )}
 
         {/* ClusterList and AddClusters apply only if NOT loading a kubeConfig */}
-        {activeEventType !== EXT_EVENT_KUBECONFIG &&
-        !errMessage &&
+        {(!activeEventType || activeEventType === EXT_EVENT_ADD_CLUSTERS) &&
         authAccess.isValid(!activeEventType) &&
-        clustersLoaded &&
+        clusterDataLoaded &&
         selectedClusters ? (
           <>
             <ClusterList
               clusters={clusters}
+              onlyNamespaces={onlyNamespaces}
               selectedClusters={selectedClusters}
+              singleSelectOnly={singleClusterOnly}
               onSelection={handleClusterSelection}
               onSelectAll={handleClusterSelectAll}
             />
             <AddClusters
               clusters={selectedClusters}
-              passwordRequired={activeEventType === EXT_EVENT_ADD_CLUSTERS}
+              // password is only required when we're responding to a URL event to
+              //  add "all" clusters to Lens and the MCC instance is NOT using SSO
+              //  (if we're just normally adding clusters, and not using SSO,
+              //  we'll already have the password from the login step)
+              passwordRequired={
+                activeEventType === EXT_EVENT_ADD_CLUSTERS &&
+                !config.keycloakLogin
+              }
               onAdd={handleClustersAdd}
             />
           </>
@@ -581,7 +644,7 @@ export const View = function ({ extension }) {
           // TRACKING: https://github.com/Mirantis/lens-extension-cc/issues/25
           dangerouslySetInnerHTML={{
             __html: strings.view.help.html(
-              typeof extension.onProtocolRequest === 'function'
+              Array.isArray(extension.protocolHandlers)
             ),
           }}
         />

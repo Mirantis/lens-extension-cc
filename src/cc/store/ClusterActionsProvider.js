@@ -7,14 +7,16 @@ import propTypes from 'prop-types';
 import * as rtv from 'rtvjs';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { Store, Component, Util } from '@k8slens/extensions';
 import { AuthClient } from '../auth/clients/AuthClient';
-import { Store, Component } from '@k8slens/extensions';
 import { kubeConfigTemplate } from '../templates';
 import { AuthAccess } from '../auth/AuthAccess';
 import * as strings from '../../strings';
 import { workspacePrefix } from '../../constants';
 import { ProviderStore } from './ProviderStore';
 import { Cluster } from './Cluster';
+import { logger } from '../../util';
+import { extractJwtPayload } from '../auth/authUtil';
 import pkg from '../../../package.json';
 
 const { workspaceStore } = Store;
@@ -22,22 +24,26 @@ const { Notifications } = Component;
 
 let extension; // {LensRendererExtension} instance reference
 
+// OAuth2 'state' parameter value to use when requesting tokens for one cluster out of many
+export const SSO_STATE_ADD_CLUSTERS = 'add-clusters';
+
 //
 // Store
 //
 
-class AddClustersProviderStore extends ProviderStore {
+class ClusterActionsProviderStore extends ProviderStore {
   // @override
   makeNew() {
     return {
       ...super.makeNew(),
       newWorkspaces: [], // {Array<Workspace>} list of new workspaces created, if any; shape: https://github.com/lensapp/lens/blob/00be4aa184089c1a6c7247bdbfd408665f325665/src/common/workspace-pr.store.ts#L27
       kubeClusterAdded: false, // true if the cluster added via single kubeConfig was added; false if it was skipped because it was already in Lens
+      ssoAddClustersInProgress: false, // true (along with `loading`) if an 'add clusters' operation is in progress
     };
   }
 }
 
-const pr = new AddClustersProviderStore();
+const pr = new ClusterActionsProviderStore();
 
 //
 // Internal Methods
@@ -85,8 +91,75 @@ const _filterClusters = function (clusters) {
 };
 
 /**
- * [ASYNC] Gets access tokens for the specified cluster.
- * @param {Cluster} options.cluster
+ * [ASYNC] Gets access tokens for the specified cluster using SSO AUTH.
+ * @param {Object} options
+ * @param {Cluster} options.cluster The cluster to access.
+ * @param {Object} options.oAuth The OAuth response request parameters as JSON.
+ *  `code` is the authorization code needed to obtain access tokens for the cluster.
+ * @param {Object} options.config MCC Config object.
+ * @param {boolean} [options.offline] If true, the refresh token generated for the
+ *  clusters will be enabled for offline access. WARNING: This is less secure
+ *  than a normal refresh token as it will never expire.
+ * @returns {Promise<Object>} On success, `{authAccess: AuthAccess}`, a new AuthAccess
+ *  object that contains the token information; on error, `{error: string}`.
+ * @throws {Error} If `config` is not using SSO.
+ */
+const _ssoGetClusterAccess = async function ({
+  cluster,
+  oAuth,
+  config,
+  offline = false,
+}) {
+  if (!config.keycloakLogin) {
+    throw new Error('_ssoGetClusterAccess() does not support basic auth');
+  }
+
+  const authClient = new AuthClient({ config });
+  let body;
+  let error;
+
+  if (oAuth.code) {
+    ({ body, error } = await authClient.getToken({
+      authCode: oAuth.code,
+      clientId: cluster.idpClientId, // tokens unique to the cluster
+      offline,
+    }));
+  } else {
+    // no code, something went wrong
+    error = oAuth.error || oAuth.error_description || 'unknown';
+  }
+
+  let authAccess;
+  if (error) {
+    logger.error(
+      'ClusterActionsProvider._ssoGetClusterAccess()',
+      `Failed to get tokens from authorization code, error="${error}"`
+    );
+    error = strings.clusterActionsProvider.error.sso.authCode(cluster.id);
+  } else {
+    const jwt = extractJwtPayload(body.id_token);
+    if (jwt.preferred_username) {
+      authAccess = new AuthAccess({
+        username: jwt.preferred_username,
+        password: null,
+        usesSso: true,
+        ...body,
+      });
+    } else {
+      logger.error(
+        'ClusterActionsProvider._ssoGetClusterAccess()',
+        'Failed to get username from token JWT'
+      );
+      error = strings.clusterActionsProvider.error.sso.authCode(cluster.id);
+    }
+  }
+
+  return { authAccess, error };
+};
+
+/**
+ * [ASYNC] Gets access tokens for the specified cluster using BASIC AUTH.
+ * @param {Cluster} options.cluster The cluster to access.
  * @param {string} options.cloudUrl MCC URL. Must NOT end with a slash.
  * @param {Object} options.config MCC Config object.
  * @param {AuthAccess} options.username
@@ -96,6 +169,7 @@ const _filterClusters = function (clusters) {
  *  than a normal refresh token as it will never expire.
  * @returns {Promise<Object>} On success, `{authAccess: AuthAccess}`, a new AuthAccess
  *  object that contains the token information; on error, `{error: string}`.
+ * @throws {Error} If `config` is using SSO.
  */
 const _getClusterAccess = async function ({
   cluster,
@@ -105,14 +179,18 @@ const _getClusterAccess = async function ({
   password,
   offline = false,
 }) {
-  const authClient = new AuthClient(cloudUrl, config);
+  if (config.keycloakLogin) {
+    throw new Error('_getClusterAccess() does not support SSO');
+  }
 
-  const { error, body } = await authClient.getToken(
+  const authClient = new AuthClient({ baseUrl: cloudUrl, config });
+
+  const { error, body } = await authClient.getToken({
     username,
     password,
     offline,
-    cluster.idpClientId
-  );
+    clientId: cluster.idpClientId,
+  });
 
   if (error) {
     return { error };
@@ -150,7 +228,7 @@ const _createKubeConfig = async function ({
   password,
   offline = false,
 }) {
-  const errPrefix = strings.clusterActionsProvider.errors.kubeConfigCreate(
+  const errPrefix = strings.clusterActionsProvider.error.kubeConfigCreate(
     cluster.id
   );
 
@@ -196,7 +274,7 @@ const _writeKubeConfig = async function ({
   kubeConfig,
   savePath,
 }) {
-  const errPrefix = strings.clusterActionsProvider.errors.kubeConfigSave(
+  const errPrefix = strings.clusterActionsProvider.error.kubeConfigSave(
     clusterId
   );
 
@@ -225,6 +303,8 @@ const _writeKubeConfig = async function ({
       id: clusterId, // can be anything provided it's unique
       contextName: kubeConfig.contexts[0].name, // must be same context name used in the kubeConfig file
       workspace: workspaceStore.currentWorkspaceId,
+
+      // metadata: {[key: string]: string | number | boolean | object} any extra data to be stored with the cluster
 
       // ownerRef: unique ref/id (up to extension to decide what it is), if unset
       //  then Lens allows the user to remove the cluster; otherwise, only the
@@ -310,7 +390,7 @@ const _notifyNewClusters = function (clusterShims, sticky = true) {
 const _switchToNewWorkspace = function () {
   if (pr.store.newWorkspaces.length <= 0) {
     throw new Error(
-      `[${pkg.name}/AddClustersProvider._notifyAndSwitchToNew] There must be at least one new workspace to switch to!`
+      `[${pkg.name}/ClusterActionsProvider._notifyAndSwitchToNew] There must be at least one new workspace to switch to!`
     );
   }
 
@@ -354,8 +434,15 @@ const _switchToNewWorkspace = function () {
 /**
  * Switch to the specified cluster.
  * @param {string} clusterId ID of the cluster in Lens.
+ * @param {string} [workspaceId] Optional ID of the workspace that contains the
+ *  cluster. If specified, this workspace will be activated before the cluster
+ *  is activated.
  */
-const _switchToCluster = function (clusterId) {
+const _switchToCluster = function (clusterId, workspaceId) {
+  if (workspaceId) {
+    Store.workspaceStore.setActive(workspaceId);
+  }
+
   Store.clusterStore.activeClusterId = clusterId;
   // TODO: doesn't __always__ work; bug in Lens somewhere, and feels like clusterStore
   //  should have setActive(clusterId) like workspaceStore.setActive() and have it do
@@ -411,49 +498,29 @@ const _storeClustersInLens = function (cloudUrl, clusterShims, models) {
 };
 
 /**
- * [ASYNC] Add the specified clusters to Lens.
+ * [ASYNC] Add the specified cluster kubeConfigs to Lens.
  * @param {Object} options
- * @param {Array<Cluster>} options.clusters Clusters to add.
- * @param {string} options.savePath Absolute path where kubeConfigs are to be saved.
  * @param {string} options.cloudUrl MCC URL. Must NOT end with a slash.
- * @param {Object} options.config MCC Config object.
- * @param {AuthAccess} options.username Used to generate access tokens for MCC clusters.
- * @param {string} options.password User password.
- * @param {boolean} [options.offline] If true, the refresh token generated for the
- *  clusters will be enabled for offline access. WARNING: This is less secure
- *  than a normal refresh token as it will never expire.
+ * @param {Array<Cluster>} options.newClusters New clusters to add that are not already in Lens.
+ * @param {Array<Cluster>} options.existingClusters Clusters that were requested to
+ *  be added, but were found to already be in Lens.
+ * @param {Array<Promise<{cluster: Cluster, kubeConfig: Object}>>} options.promises Promises that
+ *  are designed NOT to fail, and which will yield objects containing `cluster` and
+ *  associated `kubeConfig`.
+ * @param {string} options.savePath Absolute path where kubeConfigs are to be saved.
  * @param {boolean} [options.addToNew] If true, the clusters will be added
  *  to new (or existing if the workspaces already exist) workspaces that
  *  correlate to their original MCC namespaces; otherwise, they will all
  *  be added to the active workspace.
  */
-const _addClusters = async function ({
-  clusters,
-  savePath,
+const _addClusterKubeConfigs = async function ({
   cloudUrl,
-  config,
-  username,
-  password,
-  offline = false,
+  newClusters,
+  existingClusters,
+  promises,
+  savePath,
   addToNew = false,
 }) {
-  pr.reset(true);
-
-  const { newClusters, existingClusters } = _filterClusters(clusters);
-
-  // start by creating the kubeConfigs for each cluster
-  let promises = newClusters.map((cluster) =>
-    _createKubeConfig({
-      cluster,
-      savePath,
-      cloudUrl,
-      config,
-      username,
-      password,
-      offline,
-    })
-  );
-
   // these promises are designed NOT to reject
   let results = await Promise.all(promises); // {Array<{cluster: Cluster, kubeConfig: Object}>} on success
   let failure = results.find((res) => !!res.error); // look for any errors, use first-found
@@ -479,7 +546,7 @@ const _addClusters = async function ({
   pr.loaded = true;
 
   if (failure) {
-    pr.store.error = failure.error;
+    pr.error = failure.error;
   } else {
     const models = results.map(({ model }) => model);
 
@@ -511,7 +578,149 @@ const _addClusters = async function ({
       );
     }
   }
+};
 
+/**
+ * [ASYNC] Add the specified clusters to Lens.
+ * @param {Object} options
+ * @param {Array<Cluster>} options.clusters Clusters to add.
+ * @param {string} options.savePath Absolute path where kubeConfigs are to be saved.
+ * @param {string} options.cloudUrl MCC URL. Must NOT end with a slash.
+ * @param {Object} options.config MCC Config object.
+ * @param {AuthAccess} options.username Used to generate access tokens for MCC clusters.
+ * @param {string} options.password User password.
+ * @param {boolean} [options.offline] If true, the refresh token generated for the
+ *  clusters will be enabled for offline access. WARNING: This is less secure
+ *  than a normal refresh token as it will never expire.
+ * @param {boolean} [options.addToNew] If true, the clusters will be added
+ *  to new (or existing if the workspaces already exist) workspaces that
+ *  correlate to their original MCC namespaces; otherwise, they will all
+ *  be added to the active workspace.
+ */
+const _addClusters = async function ({
+  clusters,
+  savePath,
+  cloudUrl,
+  config,
+  username,
+  password,
+  offline = false,
+  addToNew = false,
+}) {
+  pr.reset(true);
+
+  const { newClusters, existingClusters } = _filterClusters(clusters);
+
+  if (config.keycloakLogin && newClusters.length === 1) {
+    pr.store.ssoAddClustersInProgress = true;
+
+    const authClient = new AuthClient({ config });
+    const url = authClient.getSsoAuthUrl({
+      offline,
+      clientId: newClusters[0].idpClientId, // tokens unique to the cluster
+      state: SSO_STATE_ADD_CLUSTERS,
+    });
+    Util.openExternal(url); // open in default browser
+
+    // at this point, the event loop slice ends and we wait for the user to respond in the browser
+    return;
+  }
+
+  // start by creating the kubeConfigs for each cluster
+  const promises = newClusters.map((cluster) =>
+    _createKubeConfig({
+      cluster,
+      cloudUrl,
+      config,
+      username,
+      password,
+      offline,
+    })
+  );
+
+  await _addClusterKubeConfigs({
+    cloudUrl,
+    newClusters,
+    existingClusters,
+    promises,
+    savePath,
+    addToNew,
+  });
+
+  pr.notifyIfError();
+  pr.onChange();
+};
+
+/**
+ * [ASYNC] Finish the SSO process to add the specified cluster (ONE) to Lens.
+ * @param {Object} options
+ * @param {Object} options.oAuth The OAuth response request parameters as JSON.
+ *  `code` is the authorization code needed to obtain access tokens for the cluster.
+ * @param {Array<Cluster>} options.clusters Clusters to add. Must only be one, and it's
+ *  assumed NOT to already be in Lens.
+ * @param {string} options.savePath Absolute path where kubeConfigs are to be saved.
+ * @param {string} options.cloudUrl MCC URL. Must NOT end with a slash.
+ * @param {Object} options.config MCC Config object.
+ * @param {boolean} [options.offline] If true, the refresh token generated for the
+ *  clusters will be enabled for offline access. WARNING: This is less secure
+ *  than a normal refresh token as it will never expire.
+ * @param {boolean} [options.addToNew] If true, the clusters will be added
+ *  to new (or existing if the workspaces already exist) workspaces that
+ *  correlate to their original MCC namespaces; otherwise, they will all
+ *  be added to the active workspace.
+ * @throws {Error} If the store is not aware of a pending 'add clusters' operation.
+ */
+const _ssoFinishAddClusters = async function ({
+  oAuth,
+  clusters,
+  savePath,
+  cloudUrl,
+  config,
+  addToNew = false,
+  offline = false,
+}) {
+  if (!pr.store.ssoAddClustersInProgress) {
+    throw new Error('A pending "add clusters" operation must be in progress');
+  }
+
+  if (clusters.length !== 1) {
+    throw new Error('Expecting exactly one cluster to add');
+  }
+
+  const cluster = clusters[0];
+  const { error: accessError, authAccess } = await _ssoGetClusterAccess({
+    cluster,
+    oAuth,
+    config,
+    offline,
+  });
+
+  if (accessError) {
+    pr.error = accessError;
+  } else {
+    _addClusterKubeConfigs({
+      cloudUrl,
+      newClusters: [cluster],
+      existingClusters: [],
+      promises: [
+        Promise.resolve({
+          cluster,
+          kubeConfig: kubeConfigTemplate({
+            username: authAccess.username,
+            token: authAccess.token,
+            refreshToken: authAccess.refreshToken,
+            cluster,
+          }),
+        }),
+      ],
+      savePath,
+      addToNew,
+    });
+  }
+
+  pr.store.ssoAddClustersInProgress = false;
+  pr.loading = false;
+  pr.loaded = true;
   pr.notifyIfError();
   pr.onChange();
 };
@@ -563,7 +772,7 @@ const _addKubeCluster = async function ({
     });
 
     if (error) {
-      pr.store.error = error;
+      pr.error = error;
     } else {
       if (addToNew) {
         _assignWorkspace(model, namespace);
@@ -611,10 +820,9 @@ const _activateCluster = function ({ namespace, clusterName, clusterId }) {
   const lensCluster = _getLensCluster(clusterId);
 
   if (lensCluster) {
-    Store.workspaceStore.setActive(lensCluster.workspace);
-    _switchToCluster(clusterId);
+    _switchToCluster(clusterId, lensCluster.workspace);
   } else {
-    pr.store.error = strings.clusterActionsProvider.errors.clusterNotFound(
+    pr.error = strings.clusterActionsProvider.error.clusterNotFound(
       `${namespace}/${clusterName}`
     );
   }
@@ -636,12 +844,12 @@ export const useClusterActions = function () {
   const context = useContext(ClusterActionsContext);
   if (!context) {
     throw new Error(
-      'useAddClusters must be used within an AddClustersProvider'
+      'useAddClusters must be used within an ClusterActionsProvider'
     );
   }
 
   // NOTE: `context` is the value of the `value` prop we set on the
-  //  <AddClustersContext.Provider value={...}/> we return as the <AddClustersProvider/>
+  //  <AddClustersContext.Provider value={...}/> we return as the <ClusterActionsProvider/>
   //  component to wrap all children that should have access to the state (i.e.
   //  all the children that will be able to `useAddClusters()` to access the state)
   const [state] = context;
@@ -655,6 +863,12 @@ export const useClusterActions = function () {
     actions: {
       /**
        * [ASYNC] Add the specified clusters to Lens.
+       *
+       * NOTE: If `config` is using SSO, this method will __start__ the process to add
+       *  the cluster (must only be one). `ssoFinishAddClusters()` must be called once
+       *  the OAuth authorization code has been obtained in order to finish adding it.
+       *  Otherwise, `config` uses basic auth, and the clusters will be added.
+       *
        * @param {Object} options
        * @param {Array<Cluster>} options.clusters Clusters to add.
        * @param {string} options.savePath Absolute path where kubeConfigs are to be saved.
@@ -669,10 +883,79 @@ export const useClusterActions = function () {
        *  to new (or existing if the workspaces already exist) workspaces that
        *  correlate to their original MCC namespaces; otherwise, they will all
        *  be added to the active workspace.
+       * @throws {Error} If using SSO and `options.clusters` contains more than 1 cluster.
        */
       addClusters(options) {
         if (!pr.loading && options.clusters.length > 0) {
+          if (options.config.keycloakLogin && options.clusters.length > 1) {
+            throw new Error(
+              'Cannot add more than one cluster at a time under SSO'
+            );
+          }
+
           _addClusters(options);
+        }
+      },
+
+      /**
+       * [ASYNC] Finish the SSO process to add the specified cluster (ONE) to Lens.
+       * @param {Object} options
+       * @param {Object} options.oAuth The OAuth response request parameters as JSON.
+       *  `code` is the authorization code needed to obtain access tokens for the cluster.
+       * @param {Array<Cluster>} options.clusters Clusters to add. Must only be one, and it's
+       *  assumed NOT to already be in Lens.
+       * @param {string} options.savePath Absolute path where kubeConfigs are to be saved.
+       * @param {string} options.cloudUrl MCC URL. Must NOT end with a slash.
+       * @param {Object} options.config MCC Config object.
+       * @param {boolean} [options.offline] If true, the refresh token generated for the
+       *  clusters will be enabled for offline access. WARNING: This is less secure
+       *  than a normal refresh token as it will never expire.
+       * @param {boolean} [options.addToNew] If true, the clusters will be added
+       *  to new (or existing if the workspaces already exist) workspaces that
+       *  correlate to their original MCC namespaces; otherwise, they will all
+       *  be added to the active workspace.
+       * @throws {Error} If `options.config` is not using SSO.
+       * @throws {Error} If `options.clusters` contains more than 1 cluster.
+       */
+      ssoFinishAddClusters(options) {
+        if (pr.store.ssoAddClustersInProgress) {
+          if (!options.config.keycloakLogin) {
+            throw new Error('Config is not using SSO');
+          }
+
+          if (options.clusters.length !== 1) {
+            throw new Error(
+              'Exactly one cluster must be specified for adding to Lens'
+            );
+          }
+
+          _ssoFinishAddClusters(options);
+        }
+      },
+
+      /**
+       * Cancels an outstanding SSO-based request to add clusters, putting the provider
+       *  into an error state.
+       * @params {Object} options
+       * @param {string} [options.reason] Reason for cancelation (becomes error message).
+       *  Defaults to "user canceled" message.
+       * @param {boolean} [options.notify] If true, error notification will be displayed;
+       *  otherwise, error is silent.
+       */
+      ssoCancelAddClusters({
+        reason = strings.clusterActionsProvider.error.sso.addClustersUserCanceled(),
+        notify = false,
+      }) {
+        if (pr.store.ssoAddClustersInProgress) {
+          pr.store.ssoAddClustersInProgress = false;
+          pr.loading = false;
+          pr.loaded = true;
+          pr.error = reason;
+
+          if (notify) {
+            pr.notifyIfError();
+          }
+          pr.onChange();
         }
       },
 

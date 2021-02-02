@@ -44,7 +44,7 @@ export class KubernetesClient {
       event: `namespaces/${namespaceName}/events`,
     };
     return this.request(url[entity], {
-      errorMessage: strings.apiClient.errors.failedToGet(
+      errorMessage: strings.apiClient.error.failedToGet(
         entityDescriptionName || entity
       ),
     });
@@ -58,7 +58,7 @@ export class KubernetesClient {
     return this.request(url[entity], {
       options: { method: 'POST', body: JSON.stringify(config) },
       expectedStatuses: [201],
-      errorMessage: strings.apiClient.errors.failedToCreate(
+      errorMessage: strings.apiClient.error.failedToCreate(
         `${entityDescriptionName || entity} "${config.metadata.name}"`
       ),
     });
@@ -71,7 +71,7 @@ export class KubernetesClient {
     };
     return this.request(url[entity], {
       options: { method: 'DELETE' },
-      errorMessage: strings.apiClient.errors.failedToDelete(
+      errorMessage: strings.apiClient.error.failedToDelete(
         `${entityDescriptionName || entity} "${name}"`
       ),
     });

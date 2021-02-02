@@ -48,7 +48,7 @@ export class KubernetesAuthorizationClient {
         }),
       },
       expectedStatuses: [201],
-      errorMessage: strings.apiClient.errors.failedUserPerms(namespaceName),
+      errorMessage: strings.apiClient.error.failedUserPerms(namespaceName),
     });
   }
 
@@ -65,7 +65,7 @@ export class KubernetesAuthorizationClient {
         }),
       },
       expectedStatuses: [201],
-      errorMessage: strings.apiClient.errors.failedProjectPerms(),
+      errorMessage: strings.apiClient.error.failedProjectPerms(),
     });
   }
 }

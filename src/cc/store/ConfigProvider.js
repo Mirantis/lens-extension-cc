@@ -43,7 +43,7 @@ const _loadConfig = async function getConfig(url) {
   pr.loaded = true;
 
   if (res.error) {
-    pr.store.error = res.error;
+    pr.error = res.error;
   } else {
     const content = res.body
       .replace(/^window\.CONFIG\s*=\s*{/, '{')
@@ -52,7 +52,7 @@ const _loadConfig = async function getConfig(url) {
     try {
       pr.store.config = JSON.parse(content);
     } catch (err) {
-      pr.store.error = err.message;
+      pr.error = err.message;
     }
   }
 

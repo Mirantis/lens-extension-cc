@@ -65,6 +65,8 @@ export const extEventActivateClusterTs = {
  *
  * `event.data` is an object with the following properties:
  * - cloudUrl {string} MCC instance base URL.
+ * - keycloakLogin {boolean} True if the MCC instance uses SSO; false if basic auth.
+ * - [namespaces] {Array<string>} If specified, only clusters from these namespaces will be considered.
  * - username {string}
  * - tokens {{ id_token: string, expires_in: number, refresh_token: string, refresh_expires_in: number }} API tokens object.
  */
@@ -75,6 +77,8 @@ export const extEventAddClustersTs = {
   type: [rtv.STRING, { exact: EXT_EVENT_ADD_CLUSTERS }],
   data: {
     cloudUrl: rtv.STRING,
+    keycloakLogin: [rtv.OPTIONAL, rtv.BOOLEAN],
+    onlyNamespaces: [rtv.OPTIONAL, [rtv.STRING]],
     username: rtv.STRING,
     tokens: AuthAccess.tokensTs,
   },
@@ -94,13 +98,35 @@ export const EXT_EVENT_KUBECONFIG = 'kubeConfig';
 
 /** RTV Typeset to validate the event object for an `EXT_EVENT_KUBECONFIG` event. */
 export const extEventKubeconfigTs = {
-  type: [rtv.STRING, { exact: EXT_EVENT_ADD_CLUSTERS }],
+  type: [rtv.STRING, { exact: EXT_EVENT_KUBECONFIG }],
   data: {
     cloudUrl: rtv.STRING,
     namespace: rtv.STRING,
     clusterName: rtv.STRING,
     clusterId: rtv.STRING,
     kubeConfig: rtv.PLAIN_OBJECT,
+  },
+};
+
+/**
+ * OAuth (SSO) redirect route after user gives Lens access permission.
+ *
+ * `event.data` is an object with the following properties:
+ * - code {string} Temporary access code to use to obtain tokens.
+ * - [state] {string} Optional app state from code request.
+ * - [error] (string} Optional error message.
+ * - [error_description] {string} Optional error description.
+ */
+export const EXT_EVENT_OAUTH_CODE = 'oauth/code';
+
+/** RTV Typeset to validate the event object for an `EXT_EVENT_OAUTH_CODE` event. */
+export const extEventOauthCodeTs = {
+  type: [rtv.STRING, { exact: EXT_EVENT_OAUTH_CODE }],
+  data: {
+    code: rtv.STRING,
+    state: [rtv.OPTIONAL, rtv.STRING],
+    error: [rtv.OPTIONAL, rtv.STRING],
+    error_description: [rtv.OPTIONAL, rtv.STRING],
   },
 };
 
@@ -126,7 +152,13 @@ const scheduleDispatch = function (): void {
     if (Object.keys(eventHandlers).length > 0 && eventQueue.length > 0) {
       eventQueue.forEach((event: ExtensionEvent) => {
         const handlers = eventHandlers[event.type] || [];
-        handlers.forEach((handler) => handler(event));
+        handlers.forEach((handler) => {
+          try {
+            handler(event);
+          } catch {
+            // ignore
+          }
+        });
       });
 
       eventQueue.length = 0; // remove all events

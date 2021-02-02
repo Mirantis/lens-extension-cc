@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { ThemeProvider, CacheProvider } from '@emotion/react';
+import createCache from '@emotion/cache';
 import { View } from './cc/View';
 import { ExtStateProvider } from './cc/store/ExtStateProvider';
 import { ConfigProvider } from './cc/store/ConfigProvider';
-import { AuthProvider } from './cc/store/AuthProvider';
-import { ClustersProvider } from './cc/store/ClustersProvider';
+import { BasicAuthProvider } from './cc/store/BasicAuthProvider';
+import { SsoAuthProvider } from './cc/store/SsoAuthProvider';
+import { ClusterDataProvider } from './cc/store/ClusterDataProvider';
 import { ClusterActionsProvider } from './cc/store/ClusterActionsProvider';
 import { lightThemeClassName, lightTheme, darkTheme } from './cc/theme';
 import ExtensionRenderer from './renderer';
-import createCache from '@emotion/cache';
 
 export { ContainerCloudIcon } from './cc/ContainerCloudIcon';
 
@@ -77,13 +78,15 @@ export const AddClusterPage = function ({ extension }: Props) {
       <ThemeProvider theme={theme}>
         <ExtStateProvider extension={extension}>
           <ConfigProvider>
-            <AuthProvider>
-              <ClustersProvider>
-                <ClusterActionsProvider extension={extension}>
-                  <View extension={extension} />
-                </ClusterActionsProvider>
-              </ClustersProvider>
-            </AuthProvider>
+            <SsoAuthProvider>
+              <BasicAuthProvider>
+                <ClusterDataProvider>
+                  <ClusterActionsProvider extension={extension}>
+                    <View extension={extension} />
+                  </ClusterActionsProvider>
+                </ClusterDataProvider>
+              </BasicAuthProvider>
+            </SsoAuthProvider>
           </ConfigProvider>
         </ExtStateProvider>
       </ThemeProvider>

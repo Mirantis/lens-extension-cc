@@ -1,20 +1,21 @@
 //
-// Authentication Provider
+// Basic Authentication Provider (username/password)
 //
 
 import { createContext, useContext, useState, useMemo } from 'react';
 import { AuthClient } from '../auth/clients/AuthClient';
 import { ProviderStore } from './ProviderStore';
+import * as strings from '../../strings';
 
 //
 // Store
 //
 
-class AuthProviderStore extends ProviderStore {
+class BasicAuthProviderStore extends ProviderStore {
   // basic store is all that is needed for now
 }
 
-const pr = new AuthProviderStore();
+const pr = new BasicAuthProviderStore();
 
 //
 // Internal Methods
@@ -31,18 +32,25 @@ const pr = new AuthProviderStore();
 const _authenticate = async function ({ authAccess, config, cloudUrl }) {
   pr.reset(true);
 
-  const authClient = new AuthClient(cloudUrl, config);
-  const { error, body } = await authClient.getToken(
-    authAccess.username,
-    authAccess.password
-  );
+  if (config.keycloakLogin) {
+    pr.loading = false;
+    pr.loaded = true;
+    pr.error = strings.basicAuthProvider.error.ssoOnly();
+  } else {
+    const authClient = new AuthClient({ baseUrl: cloudUrl, config });
+    const { error, body } = await authClient.getToken({
+      username: authAccess.username,
+      password: authAccess.password,
+    });
 
-  pr.loading = false;
-  pr.loaded = true;
-  pr.store.error = error || undefined;
+    pr.loading = false;
+    pr.loaded = true;
+    pr.error = error || undefined;
 
-  if (!error) {
-    authAccess.updateTokens(body);
+    if (!error) {
+      authAccess.updateTokens(body);
+      authAccess.usesSso = false;
+    }
   }
 
   pr.notifyIfError();
@@ -53,21 +61,21 @@ const _authenticate = async function ({ authAccess, config, cloudUrl }) {
 // Provider Definition
 //
 
-const AuthContext = createContext();
+const BasicAuthContext = createContext();
 
-export const useAuth = function () {
-  const context = useContext(AuthContext);
+export const useBasicAuth = function () {
+  const context = useContext(BasicAuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useBasicAuth must be used within an BasicAuthProvider');
   }
 
   // NOTE: `context` is the value of the `value` prop we set on the
-  //  <AuthContext.Provider value={...}/> we return as the <AuthProvider/>
+  //  <BasicAuthContext.Provider value={...}/> we return as the <BasicAuthProvider/>
   //  component to wrap all children that should have access to the state (i.e.
-  //  all the children that will be able to `useAuth()` to access the state)
+  //  all the children that will be able to `useBasicAuth()` to access the state)
   const [state] = context;
 
-  // this is what you actually get from `useAuth()` when you consume it
+  // this is what you actually get from `useBasicAuth()` when you consume it
   return {
     state,
 
@@ -95,7 +103,7 @@ export const useAuth = function () {
       setAuthenticated() {
         if (!pr.loading) {
           pr.loaded = true;
-          pr.store.error = undefined;
+          pr.error = undefined;
           pr.onChange();
         }
       },
@@ -110,7 +118,7 @@ export const useAuth = function () {
   };
 };
 
-export const AuthProvider = function (props) {
+export const BasicAuthProvider = function (props) {
   // NOTE: since the state is passed directly (by reference) into the context
   //  returned by the provider, even the initial state should be a clone of the
   //  `store` so that we consistently return a `state` property (in the context)
@@ -120,5 +128,5 @@ export const AuthProvider = function (props) {
 
   pr.setState = setState;
 
-  return <AuthContext.Provider value={value} {...props} />;
+  return <BasicAuthContext.Provider value={value} {...props} />;
 };

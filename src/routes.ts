@@ -1,1 +1,1 @@
-export const addRoute = '/add-cloud-cluster';
+export const mainRoute = '/add-cloud-cluster';

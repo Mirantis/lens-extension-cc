@@ -10,6 +10,7 @@ import { Component } from '@k8slens/extensions';
 import { useExtState } from './store/ExtStateProvider';
 import { useClusterActions } from './store/ClusterActionsProvider';
 import { Section as BaseSection } from './Section';
+import { InlineNotice, types as noticeTypes, iconSizes } from './InlineNotice';
 import { layout } from './styles';
 import * as strings from '../strings';
 import pkg from '../../package.json';
@@ -18,14 +19,10 @@ import pkg from '../../package.json';
 // INTERNAL STYLED COMPONENTS
 //
 
-const Section = styled(BaseSection)(function ({ offline }) {
+const Section = styled(BaseSection)(function () {
   return {
-    small: {
+    'small.hint': {
       marginTop: -(layout.gap - layout.grid),
-    },
-
-    '.lecc-PreferencesPanel--offline-hint': {
-      opacity: offline ? 1.0 : 0.5,
     },
   };
 });
@@ -54,15 +51,9 @@ const SavePath = styled.div(function () {
   };
 });
 
-const SavedIndicator = styled.div(function () {
+const SavedIndicator = styled(InlineNotice)(function () {
   return {
-    display: 'flex',
-    alignItems: 'center',
     color: 'var(--colorSuccess)',
-
-    p: {
-      marginLeft: layout.grid,
-    },
   };
 });
 
@@ -70,8 +61,6 @@ const Version = styled.div(function () {
   return {
     display: 'flex',
     justifyContent: 'flex-end',
-    // fontSize: 'var(--font-size-small)',
-    // color: 'var(--textColorSecondary)',
   };
 });
 
@@ -173,8 +162,7 @@ export const PreferencesPanel = function () {
       <Title>
         <h2>{strings.preferencesPanel.title()}</h2>
         {showSaved && (
-          <SavedIndicator>
-            <Component.Icon material="check_circle" />
+          <SavedIndicator type={noticeTypes.SUCCESS}>
             <p>{strings.preferencesPanel.saved()}</p>
           </SavedIndicator>
         )}
@@ -206,7 +194,7 @@ export const PreferencesPanel = function () {
         value={addToNew}
         onChange={handleAddToNewChange}
       />
-      <small className="lecc-PreferencesPanel--addToNew-hint hint">
+      <small className="hint">
         {addToNew
           ? strings.preferencesPanel.addToNew.tipOn()
           : strings.preferencesPanel.addToNew.tipOff()}
@@ -218,9 +206,15 @@ export const PreferencesPanel = function () {
         value={offline}
         onChange={handleOfflineChange}
       />
-      <small className="lecc-PreferencesPanel--offline-hint hint">
-        {strings.preferencesPanel.offline.tip()}
-      </small>
+      {offline && (
+        <InlineNotice
+          css={{ marginTop: -12 }}
+          type={noticeTypes.WARNING}
+          iconSize={iconSizes.SMALL}
+        >
+          <small>{strings.preferencesPanel.offline.tip()}</small>
+        </InlineNotice>
+      )}
       <Version>
         <small>v{pkg.version}</small>
       </Version>

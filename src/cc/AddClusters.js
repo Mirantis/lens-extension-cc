@@ -11,6 +11,7 @@ import { useClusterActions } from './store/ClusterActionsProvider';
 import { useExtState } from './store/ExtStateProvider';
 import { Section as BaseSection } from './Section';
 import { layout } from './styles';
+import { InlineNotice } from './InlineNotice';
 import * as strings from '../strings';
 
 const Section = styled(BaseSection)(function () {
@@ -31,7 +32,8 @@ export const AddClusters = function ({ onAdd, clusters, passwordRequired }) {
   } = useExtState();
 
   const {
-    state: { loading: addingClusters },
+    state: { loading: addClustersLoading },
+    actions: clusterActions,
   } = useClusterActions();
 
   const [password, setPassword] = useState('');
@@ -50,6 +52,10 @@ export const AddClusters = function ({ onAdd, clusters, passwordRequired }) {
     }
   };
 
+  const handleSsoCancelClick = function () {
+    clusterActions.ssoCancelAddClusters();
+  };
+
   //
   // RENDER
   //
@@ -65,7 +71,7 @@ export const AddClusters = function ({ onAdd, clusters, passwordRequired }) {
             style={{ width: 200 }}
             type="password"
             theme="round-black" // borders on all sides, rounded corners
-            disabled={addingClusters}
+            disabled={addClustersLoading}
             value={password}
             onChange={handlePasswordChange}
           />
@@ -80,11 +86,11 @@ export const AddClusters = function ({ onAdd, clusters, passwordRequired }) {
           primary
           disabled={
             clusters.length <= 0 ||
-            addingClusters ||
+            addClustersLoading ||
             (passwordRequired && !password)
           }
           label={strings.addClusters.action.label()}
-          waiting={addingClusters}
+          waiting={addClustersLoading}
           tooltip={
             clusters.length <= 0
               ? strings.addClusters.action.disabledTip()
@@ -93,6 +99,25 @@ export const AddClusters = function ({ onAdd, clusters, passwordRequired }) {
           onClick={handleAddClick}
         />
       </div>
+
+      {addClustersLoading && (
+        <>
+          <InlineNotice>
+            <p
+              dangerouslySetInnerHTML={{
+                __html: strings.addClusters.sso.messageHtml(),
+              }}
+            />
+          </InlineNotice>
+          <div>
+            <Component.Button
+              primary
+              label={strings.addClusters.action.ssoCancel()}
+              onClick={handleSsoCancelClick}
+            />
+          </div>
+        </>
+      )}
     </Section>
   );
 };

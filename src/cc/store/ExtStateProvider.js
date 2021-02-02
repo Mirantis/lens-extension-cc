@@ -115,7 +115,8 @@ export const useExtState = function () {
       },
 
       /**
-       * Sets a new AuthAccess object into the store.
+       * Sets a new AuthAccess object into the store, which implicitely updates
+       *  the `username` in the store based on `newValue.username`.
        * @param {AuthAccess|null} newValue
        */
       setAuthAccess(newValue) {

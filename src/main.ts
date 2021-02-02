@@ -1,5 +1,5 @@
 import { LensMainExtension } from '@k8slens/extensions';
-import { addRoute } from './routes';
+import { mainRoute } from './routes';
 import { prefStore } from './cc/store/PreferencesStore';
 import * as strings from './strings';
 
@@ -17,7 +17,7 @@ export default class ExtensionMain extends LensMainExtension {
       parentId: 'file',
       label: strings.extension.appMenu['label'](),
       click: () => {
-        this.navigate(addRoute);
+        this.navigate(mainRoute);
       },
     },
   ];

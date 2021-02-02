@@ -66,16 +66,18 @@ export function normalizeUrl(url) {
 export async function request(
   url,
   requestOptions,
-  { expectedStatuses, extractBodyMethod = 'json', errorMessage }
+  { expectedStatuses, extractBodyMethod = 'json', errorMessage } = {}
 ) {
   let response = {};
 
   try {
-    response = await nodeFetch(url, requestOptions);
+    response = await nodeFetch(url, {
+      ...requestOptions,
+    });
   } catch (e) {
     return {
       expectedStatuses,
-      error: `${errorMessage || strings.netUtil.errors.requestFailed(url)}: ${
+      error: `${errorMessage || strings.netUtil.error.requestFailed(url)}: ${
         e.message
       }`,
     };
@@ -109,8 +111,8 @@ export async function request(
           response,
           expectedStatuses,
           error:
-            `${errorMessage || strings.netUtil.errors.requestFailed(url)}. ` +
-            strings.netUtil.errors.reason(message),
+            `${errorMessage || strings.netUtil.error.requestFailed(url)}. ` +
+            strings.netUtil.error.reason(message),
         };
       }
     }
@@ -119,10 +121,10 @@ export async function request(
       response,
       expectedStatuses,
       error:
-        `${errorMessage || strings.netUtil.errors.requestFailed(url)}. ` +
+        `${errorMessage || strings.netUtil.error.requestFailed(url)}. ` +
         (response.statusText
-          ? strings.netUtil.errors.serverResponse(response.statusText)
-          : strings.netUtil.errors.responseCode(response.status)),
+          ? strings.netUtil.error.serverResponse(response.statusText)
+          : strings.netUtil.error.responseCode(response.status)),
     };
   }
 
@@ -133,7 +135,7 @@ export async function request(
       return {
         response,
         expectedStatuses,
-        error: strings.netUtil.errors.invalidResponseData(url),
+        error: strings.netUtil.error.invalidResponseData(url),
       };
     }
     body = extracted.body;

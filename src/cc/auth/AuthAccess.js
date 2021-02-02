@@ -51,7 +51,13 @@ export class AuthAccess {
 
     username: [rtv.EXPECTED, rtv.STRING],
     password: [rtv.EXPECTED, rtv.STRING],
+
+    // IDP client associated with current tokens; undefined if unknown; null if not specified
     idpClientId: [rtv.OPTIONAL, rtv.STRING],
+
+    // true if access is via SSO; false if it's via basic username/password; null
+    //  if it's undetermined
+    usesSso: [rtv.OPTIONAL, rtv.BOOLEAN],
   };
 
   /**
@@ -73,7 +79,8 @@ export class AuthAccess {
     let _refreshTokenValidTill = null;
     let _username = null;
     let _password = null;
-    let _idpClientId = undefined;
+    let _idpClientId = null;
+    let _usesSso = null;
 
     /** @member {boolean} changed */
     Object.defineProperty(this, 'changed', {
@@ -223,7 +230,7 @@ export class AuthAccess {
     });
 
     /**
-     * @member {sting|null|undefined} idpClientId Client ID of the IDP associated
+     * @member {sting|null} idpClientId Client ID of the IDP associated
      *  with the tokens. `undefined` means not specified; `null` means the tokens
      *  are related to the default IDP, which is Keycloak; otherwise, it's a
      *  string that identifies a custom IDP.
@@ -234,13 +241,35 @@ export class AuthAccess {
         return _idpClientId;
       },
       set(newValue) {
+        const normalizedNewValue = newValue || null; // '' or undefined -> null
         DEV_ENV &&
           rtv.verify(
-            { idpClientId: newValue },
+            { idpClientId: normalizedNewValue },
             { idpClientId: AuthAccess.specTs.idpClientId }
           );
-        _changed = _changed || _idpClientId !== newValue;
-        _idpClientId = newValue;
+        _changed = _changed || _idpClientId !== normalizedNewValue;
+        _idpClientId = normalizedNewValue;
+      },
+    });
+
+    /**
+     * @member {boolean|null} usesSso True if access is via SSO; false if it's via
+     *  basic username/password credentials; null if unknown
+     */
+    Object.defineProperty(this, 'usesSso', {
+      enumerable: true,
+      get() {
+        return _usesSso;
+      },
+      set(newValue) {
+        const normalizedNewValue = newValue ?? null; // undefined -> null
+        DEV_ENV &&
+          rtv.verify(
+            { usesSso: normalizedNewValue },
+            { usesSso: AuthAccess.specTs.usesSso }
+          );
+        _changed = _changed || _usesSso !== normalizedNewValue;
+        _usesSso = normalizedNewValue;
       },
     });
 
@@ -253,26 +282,39 @@ export class AuthAccess {
 
     this.username = spec ? spec.username : null;
     this.password = spec ? spec.password : null;
-    this.idpClientId = spec ? spec.idpClientId || null : undefined;
+    this.idpClientId = spec ? spec.idpClientId : null;
+    this.usesSso = spec ? spec.usesSso : null;
 
     _changed = false; // make sure unchanged after initialization
   }
 
-  /** @returns {boolean} True if the username and password are defined. */
+  /**
+   * @returns {boolean} True if the username is defined, and, if `usesSso=false`,
+   *  the password is defined. `usesSso` must also be known, that is, be a
+   *  boolean, not just a truthy/falsy value.
+   */
   hasCredentials() {
-    return !!(this.username && this.password);
+    return !!(
+      this.username &&
+      typeof this.usesSso === 'boolean' &&
+      (this.usesSso || this.password)
+    );
   }
 
   /**
    * @param {boolean} [passwordRequired] if true, requires a valid password;
    *  otherwise, requires only a username (useful in the case where having
    *  valid tokens and a username is enough to list clusters, for example).
+   *
+   *  NOTE: This parameter is ignored if `usesSso=true` because we never have the
+   *   user's password in that case.
+   *
    * @returns {boolean} True if there are credentials, a token, and a valid way
    *  to refresh it if it expires; false otherwise.
    */
   isValid(passwordRequired = true) {
     const credsValid = passwordRequired
-      ? this.hasCredentials()
+      ? this.hasCredentials() // this handles the SSO case and ignores the password if so
       : !!this.username;
     return credsValid && !!this.token && !this.isRefreshTokenExpired();
   }
@@ -290,19 +332,35 @@ export class AuthAccess {
   }
 
   /**
+   * Clears all properties that are credential-related. Use this when the URL
+   *  for the MCC instance has changed, for example.
+   */
+  resetCredentials() {
+    this.username = null;
+    this.password = null;
+    this.usesSso = null; // related to credentials to clear this too
+  }
+
+  /**
    * Clears all properties that are token-related. Use this if all tokens have expired,
    *  for example.
    */
-  clearTokens() {
+  resetTokens() {
     this.token = null;
     this.expiresIn = null;
-    this.expiresAt = null;
     this.tokenValidTill = null;
 
     this.refreshToken = null;
     this.refreshExpiresIn = null;
-    this.refreshExpiresAt = null;
     this.refreshTokenValidTill = null;
+
+    this.idpClientId = null; // tokens are tied to the IDP so clear this too
+  }
+
+  /** Clears all data. */
+  reset() {
+    this.resetCredentials();
+    this.resetTokens();
   }
 
   /**
@@ -350,9 +408,11 @@ export class AuthAccess {
       refreshExpiresAt: this.refreshTokenValidTill
         ? Math.floor(this.refreshTokenValidTill.getTime() / 1000)
         : null,
+      idpClientId: this.idpClientId,
+
       username: this.username,
       password: this.password,
-      idpClientId: this.idpClientId,
+      usesSso: this.usesSso,
     };
   }
 }

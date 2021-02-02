@@ -7,15 +7,15 @@ import { cloneDeepWith, filter, find } from 'lodash';
 import { Namespace } from './Namespace';
 import { Cluster } from './Cluster';
 import { authedRequest, extractJwtPayload } from '../auth/authUtil';
-import * as strings from '../../strings';
 import { ProviderStore } from './ProviderStore';
-import pkg from '../../../package.json';
+import * as strings from '../../strings';
+import { logger } from '../../util';
 
 //
 // Store
 //
 
-class ClustersProviderStore extends ProviderStore {
+class ClusterDataProviderStore extends ProviderStore {
   // @override
   makeNew() {
     return {
@@ -44,7 +44,7 @@ class ClustersProviderStore extends ProviderStore {
   }
 }
 
-const pr = new ClustersProviderStore();
+const pr = new ClusterDataProviderStore();
 
 //
 // Internal Methods
@@ -57,7 +57,9 @@ const pr = new ClustersProviderStore();
  */
 const _deserializeNamespacesList = function (body) {
   if (!body || !Array.isArray(body.items)) {
-    return { error: strings.clustersProvider.errors.invalidNamespacePayload() };
+    return {
+      error: strings.clusterDataProvider.error.invalidNamespacePayload(),
+    };
   }
 
   return {
@@ -66,9 +68,9 @@ const _deserializeNamespacesList = function (body) {
         try {
           return new Namespace(item);
         } catch (err) {
-          // eslint-disable-next-line no-console -- OK to show errors
-          console.error(
-            `[${pkg.name}/ClustersProvider._deserializeNamespacesList()] ERROR with namespace ${idx}: ${err.message}`,
+          logger.error(
+            'store/ClusterDataProvider._deserializeNamespacesList()',
+            `Failed to deserialize namespace ${idx}: ${err.message}`,
             err
           );
           return undefined;
@@ -84,10 +86,18 @@ const _deserializeNamespacesList = function (body) {
  * @param {Object} config MCC Configuration object.
  * @param {AuthAccess} authAccess An AuthAccess object. Tokens will be updated/cleared
  *  if necessary.
+ * @param {Array<string>} [onlyNamespaces] If specified, only clusters from these
+ *  namespaces will be loaded; otherwise, all clusters in all namespaces will
+ *  be loaded.
  * @returns {Promise<Object>} On success `{ namespaces: Array<Namespace< }`;
  *  on error `{error: string}`.
  */
-const _fetchNamespaces = async function (cloudUrl, config, authAccess) {
+const _fetchNamespaces = async function (
+  cloudUrl,
+  config,
+  authAccess,
+  onlyNamespaces
+) {
   const { error, body } = await authedRequest({
     baseUrl: cloudUrl,
     authAccess,
@@ -114,7 +124,10 @@ const _fetchNamespaces = async function (cloudUrl, config, authAccess) {
   const ignoredNamespaces = config.ignoredNamespaces || [];
   const namespaces = filter(
     data,
-    (ns) => !ignoredNamespaces.includes(ns.name) && hasReadPermissions(ns.name)
+    (ns) =>
+      !ignoredNamespaces.includes(ns.name) &&
+      hasReadPermissions(ns.name) &&
+      (!onlyNamespaces || onlyNamespaces.includes(ns.name))
   );
 
   return { namespaces };
@@ -127,7 +140,7 @@ const _fetchNamespaces = async function (cloudUrl, config, authAccess) {
  */
 const _deserializeClustersList = function (body) {
   if (!body || !Array.isArray(body.items)) {
-    return { error: strings.clusterProvider.error.invalidClusterPayload() };
+    return { error: strings.clusterDataProvider.error.invalidClusterPayload() };
   }
 
   return {
@@ -136,11 +149,9 @@ const _deserializeClustersList = function (body) {
         try {
           return new Cluster(item);
         } catch (err) {
-          // eslint-disable-next-line no-console -- OK to show errors
-          console.error(
-            `[${
-              pkg.name
-            }/ClustersProvider._deserializeClustersList()] ERROR with cluster ${idx} (namespace/name="${
+          logger.error(
+            'ClusterDataProvider._deserializeClustersList()',
+            `Failed to deserialize cluster ${idx} (namespace/name="${
               item?.metadata?.namespace ?? '<unknown>'
             }/${item?.metadata?.name ?? '<unknown>'}"): ${err.message}`,
             err
@@ -210,20 +221,34 @@ const _fetchClusters = async function (
 
 /**
  * [ASYNC] Loads namespaces and clusters from the API.
- * @param {string} cloudUrl MCC URL. Must NOT end with a slash.
- * @param {Object} config MCC Configuration object.
- * @param {AuthAccess} authAccess Current authentication information. This
+ * @param {Object} options
+ * @param {string} options.cloudUrl MCC URL. Must NOT end with a slash.
+ * @param {Object} options.config MCC Configuration object.
+ * @param {AuthAccess} options.authAccess Current authentication information. This
  *  instance MAY be updated if a token refresh is required during the load.
+ * @param {Array<string>} [options.onlyNamespaces] If specified, only clusters from these
+ *  namespaces will be loaded; otherwise, all clusters in all namespaces will
+ *  be loaded.
  */
-const _loadData = async function (cloudUrl, config, authAccess) {
+const _loadData = async function ({
+  cloudUrl,
+  config,
+  authAccess,
+  onlyNamespaces,
+}) {
   pr.reset(true);
 
-  const nsResults = await _fetchNamespaces(cloudUrl, config, authAccess);
+  const nsResults = await _fetchNamespaces(
+    cloudUrl,
+    config,
+    authAccess,
+    onlyNamespaces
+  );
 
   if (nsResults.error) {
     pr.loading = false;
     pr.loaded = true;
-    pr.store.error = nsResults.error;
+    pr.error = nsResults.error;
   } else {
     pr.store.data.namespaces = nsResults.namespaces;
 
@@ -239,7 +264,7 @@ const _loadData = async function (cloudUrl, config, authAccess) {
     pr.loaded = true;
 
     if (clResults.error) {
-      pr.store.error = clResults.error;
+      pr.error = clResults.error;
     } else {
       pr.store.data.clusters = clResults.clusters.filter(
         (cluster) => !cluster.deleteInProgress
@@ -257,19 +282,21 @@ const _loadData = async function (cloudUrl, config, authAccess) {
 
 const ClustersContext = createContext();
 
-export const useClusters = function () {
+export const useClusterData = function () {
   const context = useContext(ClustersContext);
   if (!context) {
-    throw new Error('useClusters must be used within an ClustersProvider');
+    throw new Error(
+      'useClusterData must be used within an ClusterDataProvider'
+    );
   }
 
   // NOTE: `context` is the value of the `value` prop we set on the
-  //  <ClustersContext.Provider value={...}/> we return as the <ClustersProvider/>
+  //  <ClustersContext.Provider value={...}/> we return as the <ClusterDataProvider/>
   //  component to wrap all children that should have access to the state (i.e.
-  //  all the children that will be able to `useClusters()` to access the state)
+  //  all the children that will be able to `useClusterData()` to access the state)
   const [state] = context;
 
-  // this is what you actually get from `useClusters()` when you consume it
+  // this is what you actually get from `useClusterData()` when you consume it
   return {
     state,
 
@@ -278,14 +305,18 @@ export const useClusters = function () {
     actions: {
       /**
        * [ASYNC] Loads namespaces and clusters.
-       * @param {string} cloudUrl MCC URL. Must NOT end with a slash.
-       * @param {Object} config MCC Configuration object.
-       * @param {AuthAccess} authAccess Current authentication information. This
+       * @param {Object} options
+       * @param {string} options.cloudUrl MCC URL. Must NOT end with a slash.
+       * @param {Object} options.config MCC Configuration object.
+       * @param {AuthAccess} options.authAccess Current authentication information. This
        *  instance MAY be updated if a token refresh is required during the load.
+       * @param {Array<string>} [options.onlyNamespaces] If specified, only clusters from these
+       *  namespaces will be loaded; otherwise, all clusters in all namespaces will
+       *  be loaded.
        */
-      load(cloudUrl, config, authAccess) {
+      load(options) {
         if (!pr.loading) {
-          _loadData(cloudUrl, config, authAccess);
+          _loadData(options);
         }
       },
 
@@ -299,7 +330,7 @@ export const useClusters = function () {
   };
 };
 
-export const ClustersProvider = function (props) {
+export const ClusterDataProvider = function (props) {
   // NOTE: since the state is passed directly (by reference) into the context
   //  returned by the provider, even the initial state should be a clone of the
   //  `store` so that we consistently return a `state` property (in the context)

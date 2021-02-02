@@ -23,7 +23,8 @@ export class ProviderStore {
     this.store = this.makeNew(); // initialize
   }
 
-  /** @property {boolean} If the loading state is true. */
+  // convenience accessor for basic store property
+  /** @property {boolean} loading If the loading state is true. */
   get loading() {
     return this.store.loading;
   }
@@ -31,12 +32,25 @@ export class ProviderStore {
     this.store.loading = !!newValue;
   }
 
-  /** @property {boolean} If the loaded state is true. */
+  // convenience accessor for basic store property
+  /** @property {boolean} loaded If the loaded state is true. */
   get loaded() {
     return this.store.loaded;
   }
   set loaded(newValue) {
     this.store.loaded = !!newValue;
+  }
+
+  // convenience accessor for basic store property
+  /**
+   * @property {string|undefined} error The error encountered, if any.
+   *  Empty string is considered NOT an error.
+   */
+  get error() {
+    return this.store.error;
+  }
+  set error(newValue) {
+    this.store.error = newValue || undefined; // empty string is NOT an error
   }
 
   /**
