@@ -1,5 +1,11 @@
 # ChangeLog
 
+## UNRELEASED
+
+### Changed
+
+- Fixed: When adding only one cluster, that being the Management Cluster, and this resulting in the creation of a new `mcc_default` workspace, the extension would crash because it failed to find the ID of the new workspace to activate.
+
 ## v2.1.1
 
 ### Changed

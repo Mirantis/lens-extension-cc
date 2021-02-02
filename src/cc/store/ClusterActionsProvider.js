@@ -329,23 +329,26 @@ const _switchToNewWorkspace = function () {
   //  related to the 'default' namespace, which typically contains only the
   //  MCC management cluster and isn't usually of any interest
   const filteredWorkspaces =
-    pr.store.newWorkspaces.length > 0
+    pr.store.newWorkspaces.length > 1
       ? pr.store.newWorkspaces.filter(
           (ws) => ws.name !== `${workspacePrefix}default`
         )
       : pr.store.newWorkspaces;
-  const firstWorkspace = filteredWorkspaces[0];
-  Store.workspaceStore.setActive(firstWorkspace.id);
 
-  Notifications.info(
-    <p
-      dangerouslySetInnerHTML={{
-        __html: strings.clusterActionsProvider.notifications.workspaceActivatedHtml(
-          firstWorkspace.name
-        ),
-      }}
-    />
-  );
+  if (filteredWorkspaces.length > 0) {
+    const firstWorkspace = filteredWorkspaces[0];
+    Store.workspaceStore.setActive(firstWorkspace.id);
+
+    Notifications.info(
+      <p
+        dangerouslySetInnerHTML={{
+          __html: strings.clusterActionsProvider.notifications.workspaceActivatedHtml(
+            firstWorkspace.name
+          ),
+        }}
+      />
+    );
+  }
 };
 
 /**
