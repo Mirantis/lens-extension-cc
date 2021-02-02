@@ -5,6 +5,7 @@
 ### Changed
 
 - Fixed: When adding only one cluster, that being the Management Cluster, and this resulting in the creation of a new `mcc_default` workspace, the extension would crash because it failed to find the ID of the new workspace to activate.
+- Added namespace/name detail of cluster in console error if we fail to parse data for any discovered cluster(s) to make it easier to identify which cluster the extension can't load.
 
 ## v2.1.1
 

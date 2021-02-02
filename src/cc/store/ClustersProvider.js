@@ -134,7 +134,11 @@ const _deserializeClustersList = function (body) {
         } catch (err) {
           // eslint-disable-next-line no-console -- OK to show errors
           console.error(
-            `[${pkg.name}/ClustersProvider._deserializeClustersList()] ERROR with cluster ${idx}: ${err.message}`,
+            `[${
+              pkg.name
+            }/ClustersProvider._deserializeClustersList()] ERROR with cluster ${idx} (namespace/name="${
+              item?.metadata?.namespace ?? '<unknown>'
+            }/${item?.metadata?.name ?? '<unknown>'}"): ${err.message}`,
             err
           );
           return undefined;
