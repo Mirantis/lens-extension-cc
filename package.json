@@ -41,7 +41,7 @@
     "lint": "eslint \"{*,src/**/*}.+(js|ts*)\"",
     "test:unit": "echo 'Works for me! ¯\\_(ツ)_/¯'",
     "test": "yarn lint && yarn fmt:check && yarn test:unit",
-    "prepublishOnly": "npm test && yarn build"
+    "prepublishOnly": "yarn test && yarn build"
   },
   "husky": {
     "hooks": {
