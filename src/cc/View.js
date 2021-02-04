@@ -226,7 +226,8 @@ export const View = function ({ extension }) {
 
   const handleClusterSelectAll = useCallback(
     function ({ selected }) {
-      setSelectedClusters(selected ? clusters.concat() : []);
+      // shallow-clone by filtering for ready clusters
+      setSelectedClusters(selected ? clusters.filter((cl) => cl.ready) : []);
     },
     [clusters]
   );
@@ -454,9 +455,11 @@ export const View = function ({ extension }) {
         setSelectedClusters(null); // clear selection because we (re-)loading clusters
       } else if (clustersLoaded && !selectedClusters) {
         // set initial selection, skipping management clusters since they typically
-        //  are of less importance
+        //  are of less importance, as well as clusters that aren't ready yet
         // also, shallow clone the array to disassociate from source
-        setSelectedClusters(clusters.filter((cl) => !cl.isManagementCluster));
+        setSelectedClusters(
+          clusters.filter((cl) => cl.ready && !cl.isManagementCluster)
+        );
       } else if (clustersLoaded && activeEventType === EXT_EVENT_ADD_CLUSTERS) {
         setLoaderMessage(null); // don't show the loader again when user actually adds the clusters
       }

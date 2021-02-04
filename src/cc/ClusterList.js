@@ -38,6 +38,9 @@ export const ClusterList = function ({
     state: { loading: addingClusters },
   } = useClusterActions();
 
+  // only ready clusters can actually be selected
+  const selectableClusters = clusters.filter((cl) => cl.ready);
+
   //
   // EVENTS
   //
@@ -50,7 +53,9 @@ export const ClusterList = function ({
 
   const handleSelectAllNone = function () {
     if (typeof onSelectAll === 'function') {
-      onSelectAll({ selected: selectedClusters.length < clusters.length });
+      onSelectAll({
+        selected: selectedClusters.length < selectableClusters.length,
+      });
     }
   };
 
@@ -62,6 +67,7 @@ export const ClusterList = function ({
     return !!selectedClusters.find((c) => c.id === cluster.id);
   };
 
+  // first by namespace, then by name
   const compareClusters = function (left, right) {
     const nsCompare = left.namespace.localeCompare(right.namespace);
     if (nsCompare !== 0) {
@@ -75,11 +81,15 @@ export const ClusterList = function ({
     <Section className="lecc-ClusterList">
       <h3>{strings.clusterList.title()}</h3>
       <CheckList>
-        {clusters.sort(compareClusters).map((cluster) => (
+        {clusters.sort(compareClusters).map((
+          cluster // list ALL clusters
+        ) => (
           <Component.Checkbox
             key={cluster.id}
-            label={`${cluster.namespace} / ${cluster.name}`}
-            disabled={addingClusters}
+            label={`${cluster.namespace} / ${cluster.name}${
+              cluster.ready ? '' : ` ${strings.clusterList.notReady()}`
+            }`}
+            disabled={!cluster.ready || addingClusters}
             value={isClusterSelected(cluster)}
             onChange={(checked) => handleClusterSelect(checked, cluster)}
           />
@@ -88,9 +98,9 @@ export const ClusterList = function ({
       <div>
         <Component.Button
           primary
-          disabled={clusters.length <= 0 || addingClusters}
+          disabled={selectableClusters.length <= 0 || addingClusters}
           label={
-            selectedClusters.length < clusters.length
+            selectedClusters.length < selectableClusters.length
               ? strings.clusterList.action.selectAll.label()
               : strings.clusterList.action.selectNone.label()
           }
@@ -102,7 +112,7 @@ export const ClusterList = function ({
 };
 
 ClusterList.propTypes = {
-  clusters: propTypes.arrayOf(propTypes.instanceOf(Cluster)),
+  clusters: propTypes.arrayOf(propTypes.instanceOf(Cluster)), // ALL clusters, even non-ready ones
   selectedClusters: propTypes.arrayOf(propTypes.instanceOf(Cluster)),
   onSelection: propTypes.func, // ({ cluster: Cluster, selected: boolean }) => void
   onSelectAll: propTypes.func, // ({ selected: boolean }) => void

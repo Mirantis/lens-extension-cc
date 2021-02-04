@@ -6,6 +6,8 @@
 
 - Fixed: When adding only one cluster, that being the Management Cluster, and this resulting in the creation of a new `mcc_default` workspace, the extension would crash because it failed to find the ID of the new workspace to activate.
 - Added namespace/name detail of cluster in console error if we fail to parse data for any discovered cluster(s) to make it easier to identify which cluster the extension can't load.
+- Fixed: Clusters that aren't ready (i.e. still being provisioned), which means a kubeConfig can't be generated for them yet, are now gracefully handled instead of resulting in a handled exception output to the console. They will still show-up in the list of clusters to add, but will now be disabled/un-selectable and will have a "(not ready)" label associated with them.
+- Fixed: Clusters being deleted will no longer show-up in the list of clusters to add.
 
 ## v2.1.1
 
