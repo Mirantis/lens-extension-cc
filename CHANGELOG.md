@@ -1,6 +1,6 @@
 # ChangeLog
 
-## UNRELEASED
+## v2.1.2
 
 ### Changed
 
