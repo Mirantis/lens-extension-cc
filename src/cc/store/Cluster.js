@@ -8,7 +8,7 @@ const isManagementCluster = function (data) {
 
 const getServerUrl = function (data) {
   const ip = data.status.providerStatus.loadBalancerHost;
-  return ip ? `https://${ip}:443` : null;
+  return `https://${ip}:443`;
 };
 
 /**
@@ -74,6 +74,8 @@ export class Cluster {
         }
       );
 
+    // NOTE: regardless of `ready`, we assume `data.metadata` is always available
+
     /** @member {string} */
     this.id = data.metadata.uid;
 
@@ -86,43 +88,72 @@ export class Cluster {
     /** @member {Date} */
     this.created = new Date(data.metadata.creationTimestamp);
 
+    /** @member {boolean|null} */
+    this.deleteInProgress = !!data.metadata.deletionTimestamp;
+
     /** @member {boolean} */
     this.isManagementCluster = isManagementCluster(data);
 
-    /** @member {string|null} */
-    this.serverUrl = getServerUrl(data);
-
-    /** @member {string} */
-    this.idpIssuerUrl = data.status.providerStatus.oidc.issuerUrl; // IDP Certificate Authority Data (OIDC)
-
-    /** @member {string} */ this.idpCertificate =
-      data.status.providerStatus.oidc.certificate;
-
-    /** @member {string} */
-    this.idpClientId = data.status.providerStatus.oidc.clientId;
-
-    /** @member {} */
-    this.apiCertificate = data.status.providerStatus.apiServerCertificate;
-
-    /** @member {boolean} */
-    this.deleteInProgress = !!data.metadata.deletionTimestamp;
+    // NOTE: cluster is ready/provisioned (and we can generate a kubeConfig for it) if
+    //  these fields are all available and defined, and cluster isn't being deleted
+    this.ready = !!(
+      !this.deleteInProgress &&
+      data.status?.providerStatus?.loadBalancerHost &&
+      data.status?.providerStatus?.apiServerCertificate &&
+      data.status?.providerStatus?.oidc?.certificate &&
+      data.status?.providerStatus?.oidc?.clientId &&
+      data.status?.providerStatus?.oidc?.ready
+    );
 
     /** @member {string|null} */
-    this.ucpUrl = data.status.providerStatus.ucpDashboard || null; // e.g. 'aws'
+    this.serverUrl = this.ready ? getServerUrl(data) : null;
 
-    /** @member {string|null} */ this.provider = get(
-      data.metadata,
-      'labels["kaas.mirantis.com/provider"]',
-      null
-    ); // e.g. 'region-one'
+    /**
+     * IDP Certificate Authority Data (OIDC)
+     * @member {string|null}
+     */
+    this.idpIssuerUrl = this.ready
+      ? data.status.providerStatus.oidc.issuerUrl
+      : null;
 
-    /** @member {string|null} */ this.region = get(
-      data.metadata,
-      'labels["kaas.mirantis.com/region"]',
-      null
-    ); // e.g. 'us-west-2'
+    /** @member {string|null} */
+    this.idpCertificate = this.ready
+      ? data.status.providerStatus.oidc.certificate
+      : null;
 
-    /** @member {sting|null} */ this.awsRegion =
-      data.spec.providerSpec.region || null;
+    /** @member {string|null} */
+    this.idpClientId = this.ready
+      ? data.status.providerStatus.oidc.clientId
+      : null;
+
+    /** @member {string|null} */
+    this.apiCertificate = this.ready
+      ? data.status.providerStatus.apiServerCertificate
+      : null;
+
+    /**
+     * e.g. 'aws'
+     * @member {string|null}
+     */
+    this.ucpUrl = this.ready ? data.status.providerStatus.ucpDashboard : null;
+
+    /**
+     * e.g. 'region-one'
+     * @member {string|null}
+     */
+    this.provider = this.ready
+      ? get(data.metadata, 'labels["kaas.mirantis.com/provider"]', null)
+      : null;
+
+    /**
+     * e.g. 'us-west-2'
+     * @member {string|null}
+     */
+    this.region = this.ready
+      ? get(data.metadata, 'labels["kaas.mirantis.com/region"]', null)
+      : null;
+
+    /** @member {sting|null} */
+    this.awsRegion = this.ready ? data.spec.providerSpec.region : null;
   }
 }

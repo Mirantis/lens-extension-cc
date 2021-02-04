@@ -21,8 +21,12 @@ class ClustersProviderStore extends ProviderStore {
     return {
       ...super.makeNew(),
       data: {
-        namespaces: [], // {Array<Namespace>}
-        clusters: [], // {Array<Cluster>} use `Cluster.namespace` to find groups
+        namespaces: [], // @type {Array<Namespace>}
+
+        // All clusters except any that are in progress of being deleted; use
+        //  `Cluster.namespace` to find groups
+        // @type {Array<Cluster>}
+        clusters: [],
       },
     };
   }
@@ -237,7 +241,9 @@ const _loadData = async function (cloudUrl, config, authAccess) {
     if (clResults.error) {
       pr.store.error = clResults.error;
     } else {
-      pr.store.data.clusters = clResults.clusters;
+      pr.store.data.clusters = clResults.clusters.filter(
+        (cluster) => !cluster.deleteInProgress
+      );
     }
   }
 

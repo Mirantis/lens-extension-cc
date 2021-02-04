@@ -108,6 +108,7 @@ export const login: Dict = {
 
 export const clusterList: Dict = {
   title: () => 'Select clusters',
+  notReady: () => '(not ready)',
   action: {
     selectAll: {
       label: () => 'Select all',
