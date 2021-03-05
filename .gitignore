@@ -8,6 +8,7 @@
 
 # production
 /dist
+/dist_babel
 
 # misc
 .DS_Store
