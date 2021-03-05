@@ -1,3 +1,4 @@
 dist/
+dist_babel/
 coverage/
 node_modules/
