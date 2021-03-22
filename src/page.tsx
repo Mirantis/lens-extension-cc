@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ThemeProvider } from '@emotion/react';
+import { ThemeProvider, CacheProvider } from '@emotion/react';
 import { View } from './cc/View';
 import { ExtStateProvider } from './cc/store/ExtStateProvider';
 import { ConfigProvider } from './cc/store/ConfigProvider';
@@ -8,6 +8,7 @@ import { ClustersProvider } from './cc/store/ClustersProvider';
 import { ClusterActionsProvider } from './cc/store/ClusterActionsProvider';
 import { lightThemeClassName, lightTheme, darkTheme } from './cc/theme';
 import ExtensionRenderer from './renderer';
+import createCache from '@emotion/cache';
 
 export { ContainerCloudIcon } from './cc/ContainerCloudIcon';
 
@@ -72,18 +73,20 @@ export const AddClusterPage = function ({ extension }: Props) {
   //
 
   return (
-    <ThemeProvider theme={theme}>
-      <ExtStateProvider extension={extension}>
-        <ConfigProvider>
-          <AuthProvider>
-            <ClustersProvider>
-              <ClusterActionsProvider extension={extension}>
-                <View extension={extension} />
-              </ClusterActionsProvider>
-            </ClustersProvider>
-          </AuthProvider>
-        </ConfigProvider>
-      </ExtStateProvider>
-    </ThemeProvider>
+    <CacheProvider value={createCache({ key: 'lens-extension-cc' })}>
+      <ThemeProvider theme={theme}>
+        <ExtStateProvider extension={extension}>
+          <ConfigProvider>
+            <AuthProvider>
+              <ClustersProvider>
+                <ClusterActionsProvider extension={extension}>
+                  <View extension={extension} />
+                </ClusterActionsProvider>
+              </ClustersProvider>
+            </AuthProvider>
+          </ConfigProvider>
+        </ExtStateProvider>
+      </ThemeProvider>
+    </CacheProvider>
   );
 };
