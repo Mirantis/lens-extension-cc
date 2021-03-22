@@ -8,7 +8,7 @@ import { ClustersProvider } from './cc/store/ClustersProvider';
 import { ClusterActionsProvider } from './cc/store/ClusterActionsProvider';
 import { lightThemeClassName, lightTheme, darkTheme } from './cc/theme';
 import ExtensionRenderer from './renderer';
-import createCache from "@emotion/cache";
+import createCache from '@emotion/cache';
 
 export { ContainerCloudIcon } from './cc/ContainerCloudIcon';
 
@@ -73,7 +73,7 @@ export const AddClusterPage = function ({ extension }: Props) {
   //
 
   return (
-    <CacheProvider value={createCache({ key: "lens-extension-cc" })}>
+    <CacheProvider value={createCache({ key: 'lens-extension-cc' })}>
       <ThemeProvider theme={theme}>
         <ExtStateProvider extension={extension}>
           <ConfigProvider>
