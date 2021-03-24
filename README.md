@@ -16,6 +16,8 @@ These instructions will help you install the extension for direct use with Lens.
 
 Until [this Lens issue](https://github.com/lensapp/lens/issues/1708) is fixed, the extension's tarball (a compressed `.tgz` file) must first be downloaded to your local system:
 
+> ✋ ⚠️ If you do not have `Node.js` (which includes `npm`) installed on your computer, [download](https://nodejs.org) and install Node.js before attempting to run the command below. Use the __LTS__ (ie. stable) version if you're wondering which version to download.
+
 ```bash
 # download tar file without installing it
 $ npm pack @mirantis/lens-extension-cc
@@ -23,7 +25,9 @@ $ npm pack @mirantis/lens-extension-cc
 
 This will download a file named like `mirantis-lens-extension-cc-X.Y.Z.tgz` to the current directory.
 
-Start Lens and go to the Extensions View (`CMD+SHIFT+E` on macOS). Use the file picker to find the tarball you just downloaded. This will install and enable the extension in Lens.
+Start Lens and go to the Extensions View (`CMD+SHIFT+E` on macOS). Use the __file picker__ to find the tarball you just downloaded. This will install and enable the extension in Lens:
+
+![Extension UI](./docs/ext-install-file-picker.png)
 
 You should now be able to choose the new `File > Add Cloud Clusters` menu item, or click on the `Mirantis Container Cloud` status bar icon (far right side of the status bar at the bottom of the app), to get started.
 
