@@ -54,7 +54,7 @@ export class PreferencesStore extends Store.ExtensionStore {
       cloudUrl: null,
       username: null,
       savePath: PreferencesStore.defaultSavePath,
-      offline: true,
+      offline: false,
       addToNew: true,
     };
   }
