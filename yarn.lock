@@ -4461,10 +4461,10 @@ roarr@^2.15.3:
     semver-compare "^1.0.0"
     sprintf-js "^1.1.2"
 
-rtvjs@^3.1.3:
-  version "3.1.3"
-  resolved "https://registry.yarnpkg.com/rtvjs/-/rtvjs-3.1.3.tgz#d1eeaab9e616005419ec9b5745996c63a6986e41"
-  integrity sha512-6l7KPx50Hr1OHlRJ7EsgQx+rJoweOEXiJPAZPHJctXowMgPRAyCqgCM18DRYRmAtALgdNMoU10U8fW6cw4Zx+g==
+rtvjs@^3.1.4:
+  version "3.1.4"
+  resolved "https://registry.yarnpkg.com/rtvjs/-/rtvjs-3.1.4.tgz#6ee8ce45ccd1f91bbe21eef92e23428e25a78cff"
+  integrity sha512-pc1NwnNneAlmXEDwwfSXXirP+cxW/6U5OXo7+aebhCTOGZLO9xwz5tYXQHBGGhJud5E97U+PkLUNF5aaqron7g==
 
 run-parallel@^1.1.9:
   version "1.1.10"
