@@ -72,7 +72,7 @@
     "eslint-config-prettier": "^8.1.0",
     "eslint-plugin-react": "^7.23.2",
     "eslint-plugin-react-hooks": "^4.2.0",
-    "mobx": "^6.1.8",
+    "mobx": "^6.2.0",
     "node-fetch": "^2.6.1",
     "prettier": "^2.2.1",
     "prop-types": "^15.7.2",
