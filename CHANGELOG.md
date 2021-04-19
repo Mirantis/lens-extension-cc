@@ -2,7 +2,7 @@
 
 ## UNRELEASED
 
-Supports Lens `>= 4.2.1`.
+Supports Lens `>= 4.2.2`.
 
 ### Changed
 
