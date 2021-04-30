@@ -641,11 +641,8 @@ export const View = function ({ extension }) {
 
       <HelpColumn>
         <HelpContent
-          // TRACKING: https://github.com/Mirantis/lens-extension-cc/issues/25
           dangerouslySetInnerHTML={{
-            __html: strings.view.help.html(
-              Array.isArray(extension.protocolHandlers)
-            ),
+            __html: strings.view.help.html(),
           }}
         />
         <PreferencesPanel />

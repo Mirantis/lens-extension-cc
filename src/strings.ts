@@ -69,10 +69,8 @@ export const view: Dict = {
     close: () => 'Reset back to normal view',
   },
   help: {
-    html: (showLinkInfo = false) => {
-      // TODO: remove parameter and always show info once links supported
-      // TRACKING: https://github.com/Mirantis/lens-extension-cc/issues/25
-      let text = `
+    html: () =>
+      `
 <h2>Adding Clusters</h2>
 <p>
   This extension makes it easy to add clusters from a ${mccFullName} instance.
@@ -93,20 +91,13 @@ export const view: Dict = {
   be added to the <code>${workspacePrefix}demo</code> workspace (and the workspace will be
   created if it doesn't exist already).
 </p>
-`;
-
-      text += showLinkInfo
-        ? `
 <h2>Links</h2>
 <p>
   When activating this extension via links from a ${mccFullName} instance (requires Lens
-  4.1 or later), the extension UI will add an X (Close) button to the top/right corner
+  4.2 or later), the extension UI will add an X (Close) button to the top/right corner
   of its main panel in certain cases. Click the Close button to return to the default view.
 </p>
-`
-        : '';
-      return text;
-    },
+`,
   },
 };
 

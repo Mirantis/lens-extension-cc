@@ -138,35 +138,24 @@ export default class ExtensionRenderer extends LensRendererExtension {
   };
 
   async onActivate() {
-    // TODO remove this HACK once updated type is published that includes the new method;
-    //  for how, this just gets around the TSC complaining the method isn't defined on `this`
-    // TRACKING: https://github.com/Mirantis/lens-extension-cc/issues/25
-    const that = this as any;
-    if (Array.isArray(that.protocolHandlers)) {
-      that.protocolHandlers = [
-        {
-          pathSchema: `/${EXT_EVENT_ACTIVATE_CLUSTER}`,
-          handler: this.handleProtocolActivateCluster,
-        },
-        {
-          pathSchema: `/${EXT_EVENT_ADD_CLUSTERS}`,
-          handler: this.handleProtocolAddClusters,
-        },
-        {
-          pathSchema: `/${EXT_EVENT_KUBECONFIG}`,
-          handler: this.handleProtocolKubeConfig,
-        },
-        {
-          pathSchema: `/${EXT_EVENT_OAUTH_CODE}`,
-          handler: this.handleProtocolOauthCode,
-        },
-      ];
-    } else {
-      logger.warn(
-        'renderer/onActivate',
-        'This version of Lens does not support "lens://" protocol requests.'
-      );
-    }
+    this.protocolHandlers = [
+      {
+        pathSchema: `/${EXT_EVENT_ACTIVATE_CLUSTER}`,
+        handler: this.handleProtocolActivateCluster,
+      },
+      {
+        pathSchema: `/${EXT_EVENT_ADD_CLUSTERS}`,
+        handler: this.handleProtocolAddClusters,
+      },
+      {
+        pathSchema: `/${EXT_EVENT_KUBECONFIG}`,
+        handler: this.handleProtocolKubeConfig,
+      },
+      {
+        pathSchema: `/${EXT_EVENT_OAUTH_CODE}`,
+        handler: this.handleProtocolOauthCode,
+      },
+    ];
 
     await prefStore.loadExtension(this);
   }
