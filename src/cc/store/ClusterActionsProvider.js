@@ -432,23 +432,12 @@ const _switchToNewWorkspace = function () {
 };
 
 /**
- * Switch to the specified cluster.
- * @param {string} clusterId ID of the cluster in Lens.
- * @param {string} [workspaceId] Optional ID of the workspace that contains the
- *  cluster. If specified, this workspace will be activated before the cluster
- *  is activated.
+ * [ASYNC] Switch to the specified cluster (and associated workspace).
+ * @param {string} clusterId ID of the cluster in Lens. Can be in any workspace,
+ *  even if it's not the active one.
  */
-const _switchToCluster = function (clusterId, workspaceId) {
-  if (workspaceId) {
-    Store.workspaceStore.setActive(workspaceId);
-  }
-
-  Store.clusterStore.activeClusterId = clusterId;
-  // TODO: doesn't __always__ work; bug in Lens somewhere, and feels like clusterStore
-  //  should have setActive(clusterId) like workspaceStore.setActive() and have it do
-  //  the navigation in a consistent way.
-  // TRACKING: https://github.com/Mirantis/lens-extension-cc/issues/26
-  extension.navigate(`/cluster/${clusterId}`);
+const _switchToCluster = async function (clusterId) {
+  await Store.workspaceStore.setActiveCluster(clusterId);
 };
 
 /**
@@ -796,6 +785,7 @@ const _addKubeCluster = async function ({
         _switchToNewWorkspace();
       }
 
+      // NOTE: this is async but we don't need to wait on it
       _switchToCluster(clusterId);
     }
   }
@@ -820,6 +810,7 @@ const _activateCluster = function ({ namespace, clusterName, clusterId }) {
   const lensCluster = _getLensCluster(clusterId);
 
   if (lensCluster) {
+    // NOTE: this is async but we don't need to wait on it
     _switchToCluster(clusterId, lensCluster.workspace);
   } else {
     pr.error = strings.clusterActionsProvider.error.clusterNotFound(
@@ -1003,10 +994,8 @@ export const useClusterActions = function () {
 };
 
 export const ClusterActionsProvider = function ({
-  extension: lensExtension,
   ...props
 }) {
-  extension = lensExtension;
 
   // NOTE: since the state is passed directly (by reference) into the context
   //  returned by the provider, even the initial state should be a clone of the
