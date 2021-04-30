@@ -81,8 +81,8 @@ export const AddClusterPage = function ({ extension }: Props) {
             <SsoAuthProvider>
               <BasicAuthProvider>
                 <ClusterDataProvider>
-                  <ClusterActionsProvider extension={extension}>
-                    <View extension={extension} />
+                  <ClusterActionsProvider>
+                    <View />
                   </ClusterActionsProvider>
                 </ClusterDataProvider>
               </BasicAuthProvider>

@@ -22,8 +22,6 @@ import pkg from '../../../package.json';
 const { workspaceStore } = Store;
 const { Notifications } = Component;
 
-let extension; // {LensRendererExtension} instance reference
-
 // OAuth2 'state' parameter value to use when requesting tokens for one cluster out of many
 export const SSO_STATE_ADD_CLUSTERS = 'add-clusters';
 
@@ -1004,8 +1002,4 @@ export const ClusterActionsProvider = function ({ ...props }) {
   pr.setState = setState;
 
   return <ClusterActionsContext.Provider value={value} {...props} />;
-};
-
-ClusterActionsProvider.propTypes = {
-  extension: propTypes.object.isRequired,
 };

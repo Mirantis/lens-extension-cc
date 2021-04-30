@@ -119,7 +119,7 @@ const Title = styled.div(function () {
 // MAIN COMPONENT
 //
 
-export const View = function ({ extension }) {
+export const View = function () {
   //
   // STATE
   //
@@ -649,8 +649,4 @@ export const View = function ({ extension }) {
       </HelpColumn>
     </Container>
   );
-};
-
-View.propTypes = {
-  extension: propTypes.object.isRequired,
 };
