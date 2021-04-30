@@ -993,10 +993,7 @@ export const useClusterActions = function () {
   };
 };
 
-export const ClusterActionsProvider = function ({
-  ...props
-}) {
-
+export const ClusterActionsProvider = function ({ ...props }) {
   // NOTE: since the state is passed directly (by reference) into the context
   //  returned by the provider, even the initial state should be a clone of the
   //  `store` so that we consistently return a `state` property (in the context)
