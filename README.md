@@ -43,52 +43,9 @@ You should now be able to choose the new `File > Add Cloud Clusters` menu item, 
 
 To upgrade to a newer release, go to the Extensions View (`CMD+SHIFT+E` on macOS), uninstall the extension, and then [re-install](#installing) it again.
 
-## Development
-
-> __Yarn 1.x is required__
-
-First, quit Lens if it's currently running.
-
-Then, clone the repository wherever you prefer to have your code, and then link to it:
-
-```bash
-$ git clone https://github.com/Mirantis/lens-extension-cc.git /your/src/path
-$ mkdir -p ~/.k8slens/extensions
-$ ln -s /your/src/path ~/.k8slens/extensions/lens-extension-cc
-$ cd /your/src/path
-$ yarn       # install dependencies
-$ yarn start # start dev build in watch mode
-```
-
-This will put the development build into watch mode.
-
-Restart Lens and go to the Extensions View (`CMD+SHIFT+E` on macOS) to enable it, which will cause it to load for the first time.
-
-Now, as you make source changes, the build will run, and all you need to do is __reload the Lens window__ (`CMD+R` on macOS) to see your changes.
-
-You can also run a one-off development build with `yarn dev`.
-
-> Note these steps will get much easier once [this Lens issue](https://github.com/lensapp/lens/issues/1741) is fixed.
-
 ## Uninstalling
 
 Go to the Lens Extensions View (`CMD+SHIFT+E` on macOS) and use the UI to uninstall it.
-
-If you followed the [development](#development) instructions, this will just remove the symlink you created in `~/.k8slens/extensions` and leave your linked directory intact.
-
-## Publishing
-
-First, __update the CHANGELOG__, then __use NPM__:
-
-```bash
-$ npm version <patch|minor|major>
-$ npm publish --access public        # <- NOTE the '--access public' part!
-$ git push && git push --tags
-```
-
-> By default, packages published to an NPM scope/org are __private__. Use the `--access public` option to publish it as a public package instead. You can also [configure NPM](https://docs.npmjs.com/configuring-your-npm-client-with-your-organization-settings#setting-package-visibility-to-public-for-a-single-package) to always publish that single package publicly by running `npm config set access public` within the repository root directory (i.e. package root).
-
-The `prepublishOnly` script will automatically produce a production build in the `./dist` directory, which will be published.
 
 ## SSO support
 
@@ -223,3 +180,50 @@ GET /oauth/code
     - See [Single cluster limitation](#single-cluster-limitation) when using SSO.
 - I was able to add my cluster to Lens, but Lens fails to show it because of an authentication error.
     - Check if the cluster is only accessible over a private network (i.e. VPN) connection, and try opening it in Lens once connected to the network. Even though you can see the cluster in Container Cloud, as well as in the extension, accessing the cluster's details may still require a VPN connection in this case.
+
+## Development
+
+> __Yarn 1.x is required__
+
+First, quit Lens if it's currently running.
+
+Then, clone the repository wherever you prefer to have your code, and then link to it:
+
+```bash
+$ git clone https://github.com/Mirantis/lens-extension-cc.git /your/src/path
+$ mkdir -p ~/.k8slens/extensions
+$ ln -s /your/src/path ~/.k8slens/extensions/lens-extension-cc
+$ cd /your/src/path
+$ yarn       # install dependencies
+$ yarn start # start dev build in watch mode
+```
+
+This will put the development build into watch mode.
+
+Restart Lens and go to the Extensions View (`CMD+SHIFT+E` on macOS) to enable it, which will cause it to load for the first time.
+
+Now, as you make source changes, the build will run, and all you need to do is __reload the Lens window__ (`CMD+R` on macOS) to see your changes.
+
+You can also run a one-off development build with `yarn dev`.
+
+> Note these steps will get much easier once [this Lens issue](https://github.com/lensapp/lens/issues/1741) is fixed.
+
+### Dev - Uninstalling
+
+Go to the Lens Extensions View (`CMD+SHIFT+E` on macOS) and use the UI to uninstall it.
+
+This will simply remove the symlink [you created](#development) in `~/.k8slens/extensions` and leave your linked directory intact.
+
+### Dev - Publishing
+
+First, __update the CHANGELOG__, then __use NPM__:
+
+```bash
+$ npm version <patch|minor|major>
+$ npm publish --access public        # <- NOTE the '--access public' part!
+$ git push && git push --tags
+```
+
+> By default, packages published to an NPM scope/org are __private__. Use the `--access public` option to publish it as a public package instead. You can also [configure NPM](https://docs.npmjs.com/configuring-your-npm-client-with-your-organization-settings#setting-package-visibility-to-public-for-a-single-package) to always publish that single package publicly by running `npm config set access public` within the repository root directory (i.e. package root).
+
+The `prepublishOnly` script will automatically produce a production build in the `./dist` directory, which will be published.
