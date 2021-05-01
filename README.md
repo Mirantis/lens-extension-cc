@@ -216,7 +216,12 @@ This will simply remove the symlink [you created](#development) in `~/.k8slens/e
 
 ### Dev - Publishing
 
-First, __update the CHANGELOG__, then __use NPM__:
+First, __update the CHANGELOG__:
+
+- Make sure everything in __UNRELEASED__ is accurate
+- Change `UNRELEASED -> vX.Y.Z` (version that will be published)
+
+Then __use NPM__:
 
 ```bash
 $ npm version <patch|minor|major>
