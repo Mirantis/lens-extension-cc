@@ -1,6 +1,6 @@
 # ChangeLog
 
-## UNRELEASED
+## v2.2.0
 
 Supports Lens `>= 4.2`.
 
