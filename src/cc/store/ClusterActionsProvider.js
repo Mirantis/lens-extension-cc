@@ -3,7 +3,6 @@
 //
 
 import { createContext, useContext, useState, useMemo } from 'react';
-import propTypes from 'prop-types';
 import * as rtv from 'rtvjs';
 import { promises as fs } from 'fs';
 import path from 'path';
