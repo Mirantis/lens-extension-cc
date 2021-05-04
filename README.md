@@ -18,34 +18,27 @@ As there are major changes coming in Lens 5.0 as well, when we update this exten
 
 ## Installing
 
-These instructions will help you install the extension for direct use with Lens. Follow the [development](#development) instructions below if you intend to work on the extension to improve it.
+Installation is very easy! Just make sure Lens 4.2.4 or later is running, and [click here](lens://app/extensions/install/@mirantis/lens-extension-cc) to trigger Lens to install this extension.
 
-> NPM 6 or later is required to use the [npm pack](https://docs.npmjs.com/cli/v6/commands/npm-pack) command.
+Otherwise, you can follow these manual steps:
 
-Until [this Lens issue](https://github.com/lensapp/lens/issues/1708) is fixed, the extension's tarball (a compressed `.tgz` file) must first be downloaded to your local system:
+1. Switch to the Extensions view (`CMD+SHIFT+E` on macOS).
+2. Enter the name of this extension, `@mirantis/lens-extension-cc`, into the Install Extension box.
+3. Click on the Install button.
 
-> ✋ ⚠️ If you do not have `Node.js` (which includes `npm`) installed on your computer, [download](https://nodejs.org) and install Node.js before attempting to run the command below. Use the __LTS__ (ie. stable) version if you're wondering which version to download.
-
-```bash
-# download tar file without installing it
-$ npm pack @mirantis/lens-extension-cc
-```
-
-This will download a file named like `mirantis-lens-extension-cc-X.Y.Z.tgz` to the current directory.
-
-Start Lens and go to the Extensions View (`CMD+SHIFT+E` on macOS). Use the __file picker__ to find the tarball you just downloaded. This will install and enable the extension in Lens:
-
-![Extension UI](./docs/ext-install-file-picker.png)
+![Extension UI](./docs/ext-install-by-name.png)
 
 You should now be able to choose the new `File > Add Cloud Clusters` menu item, or click on the `Mirantis Container Cloud` status bar icon (far right side of the status bar at the bottom of the app), to get started.
 
+> 💬 These instructions will help you install the extension for direct use with Lens. Follow the [development](#development) instructions below if you intend to work on the extension to improve it.
+
 ## Upgrading
 
-To upgrade to a newer release, go to the Extensions View (`CMD+SHIFT+E` on macOS), uninstall the extension, and then [re-install](#installing) it again.
+To upgrade to a newer release, go to the Extensions view (`CMD+SHIFT+E` on macOS), [uninstall](#uninstalling) the extension, and then [re-install](#installing) it again.
 
 ## Uninstalling
 
-Go to the Lens Extensions View (`CMD+SHIFT+E` on macOS) and use the UI to uninstall it.
+Go to the Lens Extensions view (`CMD+SHIFT+E` on macOS) and click the Uninstall button next to this extension.
 
 ## SSO support
 

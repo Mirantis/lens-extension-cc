@@ -1,5 +1,13 @@
 # ChangeLog
 
+## UNRELEASED
+
+Supports Lens `>= 4.2.4`.
+
+### Changed
+
+- Updated installation instructions now that Lens 4.2.4 has fixed issues with extension installation for extensions hosted on NPM, as well as for installations triggered via the `lens:` protocol ([#239](https://github.com/Mirantis/lens-extension-cc/issues/239))
+
 ## v2.2.0
 
 Supports Lens `>= 4.2`.
