@@ -18,9 +18,7 @@ As there are major changes coming in Lens 5.0 as well, when we update this exten
 
 ## Installing
 
-Installation is very easy! Just make sure Lens 4.2.4 or later is running, and go to this URL in your browser to trigger Lens to install this extension: `lens://app/extensions/install/@mirantis/lens-extension-cc` (unfortunately, GitHub doesn't create a link for this since it's not `http:` or `https:`)
-
-Otherwise, you can follow these manual steps:
+Installation is very easy! Just make sure Lens 4.2.4 or later is running, and follow these simple steps:
 
 1. Switch to the Extensions view (`CMD+SHIFT+E` on macOS).
 2. Enter the name of this extension, `@mirantis/lens-extension-cc`, into the Install Extension box.
