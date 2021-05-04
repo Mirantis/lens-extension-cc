@@ -8,7 +8,7 @@ This [Lens](https://k8slens.dev/) Extension adds a status bar item, and a menu i
 
 ![Extension UI](./docs/screen-shot.png)
 
-## 🚨 Version 2.2.0 of this extension will be the last one to support basic authentication
+## 🚨 Version 2.x of this extension will be the last one to support basic authentication
 
 As of the next major release of this extension (v3.0.0), basic auth (entering the username and password in the extension itself) will no longer be supported. Your instance will need to be configured to use Container Cloud's built-in Keycloak service for authentication and authorization.
 
