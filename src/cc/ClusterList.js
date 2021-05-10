@@ -94,19 +94,21 @@ export const ClusterList = function ({
         </InlineNotice>
       )}
       <CheckList>
-        {clusters.sort(compareClusters).map((
-          cluster // list ALL clusters
-        ) => (
-          <Component.Checkbox
-            key={cluster.id}
-            label={`${cluster.namespace} / ${cluster.name}${
-              cluster.ready ? '' : ` ${strings.clusterList.notReady()}`
-            }`}
-            disabled={!cluster.ready || loading}
-            value={isClusterSelected(cluster)}
-            onChange={(checked) => handleClusterSelect(checked, cluster)}
-          />
-        ))}
+        {clusters.sort(compareClusters).map(
+          (
+            cluster // list ALL clusters
+          ) => (
+            <Component.Checkbox
+              key={cluster.id}
+              label={`${cluster.namespace} / ${cluster.name}${
+                cluster.ready ? '' : ` ${strings.clusterList.notReady()}`
+              }`}
+              disabled={!cluster.ready || loading}
+              value={isClusterSelected(cluster)}
+              onChange={(checked) => handleClusterSelect(checked, cluster)}
+            />
+          )
+        )}
       </CheckList>
       {!singleSelectOnly && (
         <div>

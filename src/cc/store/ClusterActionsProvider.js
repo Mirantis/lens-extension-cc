@@ -271,9 +271,8 @@ const _writeKubeConfig = async function ({
   kubeConfig,
   savePath,
 }) {
-  const errPrefix = strings.clusterActionsProvider.error.kubeConfigSave(
-    clusterId
-  );
+  const errPrefix =
+    strings.clusterActionsProvider.error.kubeConfigSave(clusterId);
 
   const kubeConfigPath = path.resolve(
     savePath,
@@ -419,9 +418,10 @@ const _switchToNewWorkspace = function () {
     Notifications.info(
       <p
         dangerouslySetInnerHTML={{
-          __html: strings.clusterActionsProvider.notifications.workspaceActivatedHtml(
-            firstWorkspace.name
-          ),
+          __html:
+            strings.clusterActionsProvider.notifications.workspaceActivatedHtml(
+              firstWorkspace.name
+            ),
         }}
       />
     );
@@ -554,11 +554,12 @@ const _addClusterKubeConfigs = async function ({
       Notifications.info(
         <p
           dangerouslySetInnerHTML={{
-            __html: strings.clusterActionsProvider.notifications.skippedClusters(
-              existingClusters.map(
-                (cluster) => `${cluster.namespace}/${cluster.name}`
-              )
-            ),
+            __html:
+              strings.clusterActionsProvider.notifications.skippedClusters(
+                existingClusters.map(
+                  (cluster) => `${cluster.namespace}/${cluster.name}`
+                )
+              ),
           }}
         />
       );
