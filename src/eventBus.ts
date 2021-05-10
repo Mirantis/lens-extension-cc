@@ -65,7 +65,6 @@ export const extEventActivateClusterTs = {
  *
  * `event.data` is an object with the following properties:
  * - cloudUrl {string} MCC instance base URL.
- * - keycloakLogin {boolean} True if the MCC instance uses SSO; false if basic auth.
  * - [namespaces] {Array<string>} If specified, only clusters from these namespaces will be considered.
  * - username {string}
  * - tokens {{ id_token: string, expires_in: number, refresh_token: string, refresh_expires_in: number }} API tokens object.
@@ -77,7 +76,6 @@ export const extEventAddClustersTs = {
   type: [rtv.STRING, { exact: EXT_EVENT_ADD_CLUSTERS }],
   data: {
     cloudUrl: rtv.STRING,
-    keycloakLogin: [rtv.OPTIONAL, rtv.BOOLEAN],
     onlyNamespaces: [rtv.OPTIONAL, [rtv.STRING]],
     username: rtv.STRING,
     tokens: AuthAccess.tokensTs,

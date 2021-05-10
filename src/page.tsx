@@ -4,7 +4,6 @@ import createCache from '@emotion/cache';
 import { View } from './cc/View';
 import { ExtStateProvider } from './cc/store/ExtStateProvider';
 import { ConfigProvider } from './cc/store/ConfigProvider';
-import { BasicAuthProvider } from './cc/store/BasicAuthProvider';
 import { SsoAuthProvider } from './cc/store/SsoAuthProvider';
 import { ClusterDataProvider } from './cc/store/ClusterDataProvider';
 import { ClusterActionsProvider } from './cc/store/ClusterActionsProvider';
@@ -79,13 +78,11 @@ export const AddClusterPage = function ({ extension }: Props) {
         <ExtStateProvider extension={extension}>
           <ConfigProvider>
             <SsoAuthProvider>
-              <BasicAuthProvider>
-                <ClusterDataProvider>
-                  <ClusterActionsProvider>
-                    <View />
-                  </ClusterActionsProvider>
-                </ClusterDataProvider>
-              </BasicAuthProvider>
+              <ClusterDataProvider>
+                <ClusterActionsProvider>
+                  <View />
+                </ClusterActionsProvider>
+              </ClusterDataProvider>
             </SsoAuthProvider>
           </ConfigProvider>
         </ExtStateProvider>

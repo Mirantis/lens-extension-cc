@@ -8,14 +8,6 @@ This [Lens](https://k8slens.dev/) Extension adds a status bar item, and a menu i
 
 ![Extension UI](./docs/screen-shot.png)
 
-## 🚨 Version 2.x of this extension will be the last one to support basic authentication
-
-As of the next major release of this extension (v3.0.0), basic auth (entering the username and password in the extension itself) will no longer be supported. Your instance will need to be configured to use Container Cloud's built-in Keycloak service for authentication and authorization.
-
-> Keycloak-based authentication/authorization is much more secure than basic username/password authentication. Consider migrating your Container Cloud instance to it if you haven't already.
-
-As there are major changes coming in Lens 5.0 as well, when we update this extension to drop basic auth, it will coincide with the Lens 5.0 release, and any prior versions of this extension will no longer work with Lens 5.0. You will need to install an older version of Lens in order to use an older version of this extension.
-
 ## Installing
 
 Installation is very easy! Just make sure Lens 4.2.4 or later is running, and follow these simple steps:
@@ -40,7 +32,7 @@ Go to the Lens Extensions view (`CMD+SHIFT+E` on macOS) and click the Uninstall 
 
 ## SSO support
 
-Mirantis Container Cloud instances that use third-party SSO authentication via __Keycloak__ are supported.
+📣 Mirantis Container Cloud instances that use third-party SSO authentication via __Keycloak__ are __required__ in order to use this extension.
 
 ### Keycloak Configuration
 
@@ -54,9 +46,7 @@ Since the integration leverages the `lens://` URL protocol handling feature for 
 
 ### Authentication flow
 
-The extension will automatically detect when an instance uses SSO (upon clicking the __Access__ button).
-
-If that's the case, Lens will open the instance's SSO authorization page in the system's default browser.
+When connecting to an instance that uses SSO, Lens will open the instance's SSO authorization page in the system's default browser.
 
 Once authorized, Keycloak will redirect to the `lens://...` URL, triggering the browser to ask permission to open the Lens app to process the request (unless permission was granted previously with the _always allow_ check box for your SSO ID Provider, e.g. `accounts.google.com`):
 
@@ -64,7 +54,7 @@ Once authorized, Keycloak will redirect to the `lens://...` URL, triggering the 
 
 > ⚠️ Even if you check the "Always allow" box, your browser may still continue to show a popup message waiting for you to click on an "Open Lens.app" button. This is a built-in security feature. Please be on the look out for this popup in your browser whenever accessing your Container Cloud instance, or adding clusters to Lens.
 
-Whether the permission was already given, or upon clicking __Open Lens.app__, Lens will receive focus again, and the extension will then read the list of namespaces and clusters as it normally would when using basic (username/password) authentication.
+Whether the permission was already given, or upon clicking __Open Lens.app__, Lens will receive focus again, and the extension will then read the list of namespaces and clusters and present them for selection.
 
 The temporary browser window used for SSO authorization will likely still be open, and should now be closed manually.
 
@@ -135,14 +125,12 @@ GET /addClusters
   ?cloudUrl={string}
   &username={string}
   &tokens={string}
-  [ &keycloakLogin={boolean} ]
   [ &namespaces={string} ]
 ```
 
 - `cloudUrl`: URL to the instance, e.g. `https://container-cloud.my-company.com`
 - `username`: Username associated with the `tokens`.
 - `tokens`: JSON-stringified, Base64-encoded OAuth2 tokens for the user.
-- `keycloakLogin` (Optional): `false` (default) if the instance in `cloudUrl` uses basic (username/password) authentication; `true` if the instance in `cloudUrl` uses SSO authorization.
 - `namespaces` (Optional): Comma-delimited list of namespace IDs to restrict the list of clusters presented by the extension (i.e. a filter on namespaces). Only clusters in these namespaces will be listed.
 
 ### Protocol - SSO OAuth Code
