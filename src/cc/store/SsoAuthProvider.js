@@ -94,7 +94,6 @@ const _finishAuthorization = async function ({ oAuth, config, authAccess }) {
     if (jwt.preferred_username) {
       authAccess.updateTokens(body);
       authAccess.username = jwt.preferred_username;
-      authAccess.password = null;
       authAccess.usesSso = true;
     } else {
       logger.error(

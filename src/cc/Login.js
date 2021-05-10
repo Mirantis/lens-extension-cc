@@ -5,13 +5,14 @@ import { layout } from './styles';
 import { Section } from './Section';
 import { useExtState } from './store/ExtStateProvider';
 import { useConfig } from './store/ConfigProvider';
-import { useBasicAuth } from './store/BasicAuthProvider';
 import { useSsoAuth } from './store/SsoAuthProvider';
 import { useClusterData } from './store/ClusterDataProvider';
 import { useClusterLoadingState } from './hooks/useClusterLoadingState';
 import { InlineNotice } from './InlineNotice';
 import { normalizeUrl } from './netUtil';
 import * as strings from '../strings';
+
+const { Notifications } = Component;
 
 const urlClassName = 'lecc-Login--url';
 
@@ -60,11 +61,6 @@ export const Login = function () {
   } = useConfig();
 
   const {
-    state: { loading: basicAuthLoading },
-    actions: basicAuthActions,
-  } = useBasicAuth();
-
-  const {
     state: { loading: ssoAuthLoading },
     actions: ssoAuthActions,
   } = useSsoAuth();
@@ -84,13 +80,10 @@ export const Login = function () {
   const loading = useClusterLoadingState();
 
   const [url, setUrl] = useState(cloudUrl || '');
-  const [username, setUsername] = useState(authAccess.username || '');
-  const [password, setPassword] = useState(authAccess.password || '');
-  const [basicValid, setBasicValid] = useState(false); // if basic auth fields are valid
   const [refreshing, setRefreshing] = useState(false); // if we're just reloading clusters
 
   // {boolean} true if user has clicked the Access button; false otherwise
-  const [accessClicked, setAccessClicked] = useState(false);
+  const [connectClicked, setConnectClicked] = useState(false);
 
   const usesSso = !!config?.keycloakLogin;
 
@@ -104,17 +97,12 @@ export const Login = function () {
       authAccess.resetTokens();
       authAccess.usesSso = usesSso;
 
-      if (!usesSso) {
-        authAccess.username = username;
-        authAccess.password = password;
-      }
-
-      // capture changes to auth details so far, and trigger basic or SSO login in
+      // capture changes to auth details so far, and trigger SSO login in
       //  useClusterLoader() effect (because this will result in an updated authAccess
       //  object that has the right configuration per updates above)
       extActions.setAuthAccess(authAccess);
     },
-    [authAccess, extActions, usesSso, username, password]
+    [authAccess, extActions, usesSso]
   );
 
   // returns true if refresh is possible and has started; false otherwise
@@ -124,8 +112,7 @@ export const Login = function () {
       !clusterDataError &&
       url === cloudUrl &&
       authAccess.isValid() &&
-      (authAccess.usesSso ||
-        (username === authAccess.username && password === authAccess.password))
+      authAccess.usesSso
     ) {
       // just do a cluster data refresh instead of going through auth again
       setRefreshing(true);
@@ -140,28 +127,17 @@ export const Login = function () {
     setUrl(value);
   };
 
-  const handleUsernameChange = function (value) {
-    setUsername(value);
-  };
-
-  const handlePasswordChange = function (value) {
-    setPassword(value);
-  };
-
-  const handleAccessClick = function () {
+  const handleConnectClick = function () {
     if (!tryRefresh()) {
       const normUrl = normalizeUrl(url);
       setUrl(normUrl); // update to actual URL we'll use
-      setAccessClicked(true);
+      setConnectClicked(true);
 
-      basicAuthActions.reset();
       ssoAuthActions.reset();
       clusterDataActions.reset();
 
       // we're accessing a different instance, so nothing we may have already will
       //  work there
-      setUsername('');
-      setPassword('');
       authAccess.resetCredentials();
       authAccess.resetTokens();
       extActions.setAuthAccess(authAccess);
@@ -176,20 +152,9 @@ export const Login = function () {
     }
   };
 
-  const handleLoginClick = function () {
-    if (!tryRefresh()) {
-      // no cluster data, or something auth-related has changed: do a full
-      //  re-auth and cluster reload
-      basicAuthActions.reset();
-      ssoAuthActions.reset();
-      clusterDataActions.reset();
-      startLogin();
-    }
-  };
-
   const handleSsoCancelClick = function () {
     ssoAuthActions.cancel();
-    setAccessClicked(false);
+    setConnectClicked(false);
   };
 
   //
@@ -205,16 +170,9 @@ export const Login = function () {
     [refreshing, clusterDataLoading, clusterDataLoaded]
   );
 
-  useEffect(
-    function () {
-      setBasicValid(!!(url && username && password));
-    },
-    [username, password, url]
-  );
-
   // on load, if we already have an instance URL but haven't yet loaded the config,
-  //  load it immediately so we can show the username/password fields right away
-  //  and save the user a 'click & wait' if the instance uses basic auth
+  //  load it immediately so we can know right away if it supports SSO or not, and
+  //  save some time when the user clicks Connect
   useEffect(
     function () {
       if (cloudUrl && !configLoading && !configLoaded) {
@@ -226,13 +184,17 @@ export const Login = function () {
 
   useEffect(
     function () {
-      if (configLoaded && !configError && accessClicked) {
-        setAccessClicked(false);
+      if (configLoaded && !configError && connectClicked) {
+        setConnectClicked(false);
 
         // start the SSO login process if the instance uses SSO since the user has
-        //  clicked on the Access button indicating intent to take action
+        //  clicked on the Connect button indicating intent to take action
         if (usesSso) {
           startLogin();
+        } else {
+          Notifications.error(
+            `${strings.login.error.basicAuth()} ${strings.noteOwner}`
+          );
         }
       }
     },
@@ -243,7 +205,7 @@ export const Login = function () {
       url,
       extActions,
       startLogin,
-      accessClicked,
+      connectClicked,
       usesSso,
     ]
   );
@@ -267,76 +229,20 @@ export const Login = function () {
           onChange={handleUrlChange}
         />
       </Field>
-      {(!configLoaded || configError || url !== cloudUrl || usesSso) && (
-        <div>
-          <Component.Button
-            primary
-            disabled={loading}
-            label={
-              usesSso &&
-              (refreshing ||
-                (url === cloudUrl && clusterDataLoaded && !clusterDataError))
-                ? strings.login.action.refresh()
-                : strings.login.action.access()
-            }
-            waiting={
-              configLoading || basicAuthLoading || ssoAuthLoading || refreshing
-            }
-            onClick={handleAccessClick}
-          />
-        </div>
-      )}
-      {configLoaded && !configError && url === cloudUrl && !usesSso && (
-        // BASIC AUTH user/pwd form
-        <>
-          <InlineNotice>
-            <p
-              dangerouslySetInnerHTML={{
-                __html: strings.login.basic.messageHtml(),
-              }}
-            />
-          </InlineNotice>
-          <Field>
-            <label htmlFor="lecc-login-username">
-              {strings.login.username.label()}
-            </label>
-            <Component.Input
-              type="text"
-              theme="round-black" // borders on all sides, rounded corners
-              id="lecc-login-username"
-              disabled={loading}
-              value={username}
-              onChange={handleUsernameChange}
-            />
-          </Field>
-          <Field>
-            <label htmlFor="lecc-login-password">
-              {strings.login.password.label()}
-            </label>
-            <Component.Input
-              type="password"
-              theme="round-black" // borders on all sides, rounded corners
-              id="lecc-login-password"
-              disabled={loading}
-              value={password}
-              onChange={handlePasswordChange}
-            />
-          </Field>
-          <div>
-            <Component.Button
-              primary
-              disabled={loading || !basicValid}
-              label={
-                refreshing || (clusterDataLoaded && !clusterDataError)
-                  ? strings.login.action.refresh()
-                  : strings.login.action.login()
-              }
-              waiting={basicAuthLoading || refreshing}
-              onClick={handleLoginClick}
-            />
-          </div>
-        </>
-      )}
+      <div>
+        <Component.Button
+          primary
+          disabled={loading}
+          label={
+            refreshing ||
+            (url === cloudUrl && clusterDataLoaded && !clusterDataError)
+              ? strings.login.action.refresh()
+              : strings.login.action.connect()
+          }
+          waiting={configLoading || ssoAuthLoading || refreshing}
+          onClick={handleConnectClick}
+        />
+      </div>
       {ssoAuthLoading && (
         <>
           <InlineNotice>

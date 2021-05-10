@@ -101,14 +101,14 @@ const _filterClusters = function (clusters) {
  *  object that contains the token information; on error, `{error: string}`.
  * @throws {Error} If `config` is not using SSO.
  */
-const _ssoGetClusterAccess = async function ({
+const _getClusterAccess = async function ({
   cluster,
   oAuth,
   config,
   offline = false,
 }) {
   if (!config.keycloakLogin) {
-    throw new Error('_ssoGetClusterAccess() does not support basic auth');
+    throw new Error('_getClusterAccess() does not support basic auth');
   }
 
   const authClient = new AuthClient({ config });
@@ -138,7 +138,6 @@ const _ssoGetClusterAccess = async function ({
     if (jwt.preferred_username) {
       authAccess = new AuthAccess({
         username: jwt.preferred_username,
-        password: null,
         usesSso: true,
         ...body,
       });
@@ -152,105 +151,6 @@ const _ssoGetClusterAccess = async function ({
   }
 
   return { authAccess, error };
-};
-
-/**
- * [ASYNC] Gets access tokens for the specified cluster using BASIC AUTH.
- * @param {Cluster} options.cluster The cluster to access.
- * @param {string} options.cloudUrl MCC URL. Must NOT end with a slash.
- * @param {Object} options.config MCC Config object.
- * @param {AuthAccess} options.username
- * @param {string} options.password
- * @param {boolean} [options.offline] If true, the refresh token generated for the
- *  clusters will be enabled for offline access. WARNING: This is less secure
- *  than a normal refresh token as it will never expire.
- * @returns {Promise<Object>} On success, `{authAccess: AuthAccess}`, a new AuthAccess
- *  object that contains the token information; on error, `{error: string}`.
- * @throws {Error} If `config` is using SSO.
- */
-const _getClusterAccess = async function ({
-  cluster,
-  cloudUrl,
-  config,
-  username,
-  password,
-  offline = false,
-}) {
-  if (config.keycloakLogin) {
-    throw new Error('_getClusterAccess() does not support SSO');
-  }
-
-  const authClient = new AuthClient({ baseUrl: cloudUrl, config });
-
-  const { error, body } = await authClient.getToken({
-    username,
-    password,
-    offline,
-    clientId: cluster.idpClientId,
-  });
-
-  if (error) {
-    return { error };
-  }
-
-  return {
-    authAccess: new AuthAccess({
-      ...body,
-      username,
-      password,
-      idpClientId: cluster.idpClientId,
-    }),
-  };
-};
-
-/**
- * [ASYNC] Generates a kubeConfig for the given cluster.
- * @param {Cluster} options.cluster
- * @param {string} options.cloudUrl MCC URL. Must NOT end with a slash.
- * @param {Object} options.config MCC Config object.
- * @param {AuthAccess} options.username
- * @param {string} options.password
- * @param {boolean} [options.offline] If true, the refresh token generated for the
- *  clusters will be enabled for offline access. WARNING: This is less secure
- *  than a normal refresh token as it will never expire.
- * @returns {Promise<Object>} On success, `{cluster: Cluster, kubeConfig: Object}`,
- *  the provided `cluster`, and its kubeConfig JSON object to save to disk and add
- *  to Lens; on error, `{error: string}`.
- */
-const _createKubeConfig = async function ({
-  cluster,
-  cloudUrl,
-  config,
-  username,
-  password,
-  offline = false,
-}) {
-  const errPrefix = strings.clusterActionsProvider.error.kubeConfigCreate(
-    cluster.id
-  );
-
-  const { error: accessError, authAccess } = await _getClusterAccess({
-    cluster,
-    cloudUrl,
-    config,
-    username,
-    password,
-    offline,
-  });
-
-  if (accessError) {
-    return { error: `${errPrefix}: ${accessError}` };
-  }
-
-  return {
-    cluster,
-    kubeConfig: kubeConfigTemplate({
-      username: authAccess.username,
-      token: authAccess.token,
-      refreshToken: authAccess.refreshToken,
-      cluster,
-    }),
-  };
 };
 
 /**
@@ -488,11 +388,9 @@ const _storeClustersInLens = function (cloudUrl, clusterShims, models) {
  * @param {Object} options
  * @param {string} options.cloudUrl MCC URL. Must NOT end with a slash.
  * @param {Array<Cluster>} options.newClusters New clusters to add that are not already in Lens.
- * @param {Array<Cluster>} options.existingClusters Clusters that were requested to
- *  be added, but were found to already be in Lens.
  * @param {Array<Promise<{cluster: Cluster, kubeConfig: Object}>>} options.promises Promises that
  *  are designed NOT to fail, and which will yield objects containing `cluster` and
- *  associated `kubeConfig`.
+ *  associated `kubeConfig` for each cluster in `newClusters`.
  * @param {string} options.savePath Absolute path where kubeConfigs are to be saved.
  * @param {boolean} [options.addToNew] If true, the clusters will be added
  *  to new (or existing if the workspaces already exist) workspaces that
@@ -502,7 +400,6 @@ const _storeClustersInLens = function (cloudUrl, clusterShims, models) {
 const _addClusterKubeConfigs = async function ({
   cloudUrl,
   newClusters,
-  existingClusters,
   promises,
   savePath,
   addToNew = false,
@@ -549,21 +446,6 @@ const _addClusterKubeConfigs = async function ({
     if (addToNew && pr.store.newWorkspaces.length > 0) {
       _switchToNewWorkspace();
     }
-
-    if (existingClusters.length > 0) {
-      Notifications.info(
-        <p
-          dangerouslySetInnerHTML={{
-            __html:
-              strings.clusterActionsProvider.notifications.skippedClusters(
-                existingClusters.map(
-                  (cluster) => `${cluster.namespace}/${cluster.name}`
-                )
-              ),
-          }}
-        />
-      );
-    }
   }
 };
 
@@ -571,34 +453,17 @@ const _addClusterKubeConfigs = async function ({
  * [ASYNC] Add the specified clusters to Lens.
  * @param {Object} options
  * @param {Array<Cluster>} options.clusters Clusters to add.
- * @param {string} options.savePath Absolute path where kubeConfigs are to be saved.
- * @param {string} options.cloudUrl MCC URL. Must NOT end with a slash.
  * @param {Object} options.config MCC Config object.
- * @param {AuthAccess} options.username Used to generate access tokens for MCC clusters.
- * @param {string} options.password User password.
  * @param {boolean} [options.offline] If true, the refresh token generated for the
  *  clusters will be enabled for offline access. WARNING: This is less secure
  *  than a normal refresh token as it will never expire.
- * @param {boolean} [options.addToNew] If true, the clusters will be added
- *  to new (or existing if the workspaces already exist) workspaces that
- *  correlate to their original MCC namespaces; otherwise, they will all
- *  be added to the active workspace.
  */
-const _addClusters = async function ({
-  clusters,
-  savePath,
-  cloudUrl,
-  config,
-  username,
-  password,
-  offline = false,
-  addToNew = false,
-}) {
+const _addClusters = async function ({ clusters, config, offline = false }) {
   pr.reset(true);
 
   const { newClusters, existingClusters } = _filterClusters(clusters);
 
-  if (config.keycloakLogin && newClusters.length === 1) {
+  if (newClusters.length > 0) {
     pr.store.ssoAddClustersInProgress = true;
 
     const authClient = new AuthClient({ config });
@@ -607,35 +472,28 @@ const _addClusters = async function ({
       clientId: newClusters[0].idpClientId, // tokens unique to the cluster
       state: SSO_STATE_ADD_CLUSTERS,
     });
+
+    // NOTE: at this point, the event loop slice ends and we wait for the user to
+    //  respond in the browser
     Util.openExternal(url); // open in default browser
+  } else if (existingClusters.length > 0) {
+    Notifications.info(
+      <p
+        dangerouslySetInnerHTML={{
+          __html: strings.clusterActionsProvider.notifications.skippedClusters(
+            existingClusters.map(
+              (cluster) => `${cluster.namespace}/${cluster.name}`
+            )
+          ),
+        }}
+      />
+    );
 
-    // at this point, the event loop slice ends and we wait for the user to respond in the browser
-    return;
+    pr.loading = false;
+    pr.loaded = true;
+    pr.notifyIfError();
+    pr.onChange();
   }
-
-  // start by creating the kubeConfigs for each cluster
-  const promises = newClusters.map((cluster) =>
-    _createKubeConfig({
-      cluster,
-      cloudUrl,
-      config,
-      username,
-      password,
-      offline,
-    })
-  );
-
-  await _addClusterKubeConfigs({
-    cloudUrl,
-    newClusters,
-    existingClusters,
-    promises,
-    savePath,
-    addToNew,
-  });
-
-  pr.notifyIfError();
-  pr.onChange();
 };
 
 /**
@@ -675,7 +533,7 @@ const _ssoFinishAddClusters = async function ({
   }
 
   const cluster = clusters[0];
-  const { error: accessError, authAccess } = await _ssoGetClusterAccess({
+  const { error: accessError, authAccess } = await _getClusterAccess({
     cluster,
     oAuth,
     config,
@@ -853,30 +711,21 @@ export const useClusterActions = function () {
       /**
        * [ASYNC] Add the specified clusters to Lens.
        *
-       * NOTE: If `config` is using SSO, this method will __start__ the process to add
-       *  the cluster (must only be one). `ssoFinishAddClusters()` must be called once
-       *  the OAuth authorization code has been obtained in order to finish adding it.
-       *  Otherwise, `config` uses basic auth, and the clusters will be added.
+       * This method will __start__ the SSO process to add the cluster (must only be one).
+       *  `ssoFinishAddClusters()` must be called once the OAuth authorization code has been
+       *  obtained in order to finish adding it.
        *
        * @param {Object} options
        * @param {Array<Cluster>} options.clusters Clusters to add.
-       * @param {string} options.savePath Absolute path where kubeConfigs are to be saved.
-       * @param {string} options.cloudUrl MCC URL. Must NOT end with a slash.
        * @param {Object} options.config MCC Config object.
-       * @param {string} options.username Used to generate access tokens for MCC clusters.
-       * @param {string} options.password User password.
        * @param {boolean} [options.offline] If true, the refresh token generated for the
        *  clusters will be enabled for offline access. WARNING: This is less secure
        *  than a normal refresh token as it will never expire.
-       * @param {boolean} [options.addToNew] If true, the clusters will be added
-       *  to new (or existing if the workspaces already exist) workspaces that
-       *  correlate to their original MCC namespaces; otherwise, they will all
-       *  be added to the active workspace.
        * @throws {Error} If using SSO and `options.clusters` contains more than 1 cluster.
        */
       addClusters(options) {
         if (!pr.loading && options.clusters.length > 0) {
-          if (options.config.keycloakLogin && options.clusters.length > 1) {
+          if (options.clusters.length > 1) {
             throw new Error(
               'Cannot add more than one cluster at a time under SSO'
             );
@@ -934,7 +783,7 @@ export const useClusterActions = function () {
       ssoCancelAddClusters({
         reason = strings.clusterActionsProvider.error.sso.addClustersUserCanceled(),
         notify = false,
-      }) {
+      } = {}) {
         if (pr.store.ssoAddClustersInProgress) {
           pr.store.ssoAddClustersInProgress = false;
           pr.loading = false;

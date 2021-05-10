@@ -8,37 +8,26 @@ const redirectUri = `lens://extension/${pkg.name}/${EXT_EVENT_OAUTH_CODE}`;
 const authRoute = 'protocol/openid-connect'; // NEVER begins/ends with a slash
 
 /**
- * Basic Authentication Client able to get OAuth tokens from username/password,
+ * Authentication Client able to get OAuth tokens from Keycloak/SSO,
  *  and refresh those tokens if they expire.
  * @class AuthClient
  * @param {Object} options
  * @param {Object} options.config The MCC Configuration object.
- * @param {string} [options.baseUrl] The MCC base URL (i.e. the URL to the MCC UI). Expected to
- *  be "http[s]://<host>" and to NOT end with a slash. Required only when the configuration
- *  is NOT using SSO. Otherwise, it's ignored and built based on the configuration itself.
  */
 export class AuthClient {
-  constructor({ baseUrl, config }) {
-    if (!config || (!baseUrl && !config.keycloakLogin)) {
+  constructor({ config }) {
+    if (!config || !config.keycloakLogin) {
       throw new Error(
-        'config is always required, and baseUrl is required when config is for basic auth'
+        'config is always required and must be for an instance that uses Keycloak/SSO'
       );
     }
-
-    this.usesSso = !!config.keycloakLogin;
 
     const keycloakConfig = config.keycloak || {};
     const issuerUrl = keycloakConfig['idp-issuer-url'] || ''; // relative, like '/auth/realms/iam'
 
-    let authUrl;
-    if (this.usesSso) {
-      // auth URL is different from `baseUrl` in this case
-      const keyUrl = keycloakConfig.url || ''; // absolute; will be auth base + `issuerUrl`, need to split
-      authUrl = keyUrl.replace(issuerUrl, '');
-    } else {
-      // using basic auth, `baseUrl` is the base URL for auth requests
-      authUrl = baseUrl;
-    }
+    // auth URL is different from `baseUrl` under SSO
+    const keyUrl = keycloakConfig.url || ''; // absolute; will be auth base + `issuerUrl`, need to split
+    const authUrl = keyUrl.replace(issuerUrl, '');
 
     this.baseUrl = authUrl.replace(/\/$/, ''); // remove end slash if any
 
@@ -108,8 +97,6 @@ export class AuthClient {
    * Get access tokens for the MCC instance at the configured base URL.
    * @param {Object} options Some properties are BASIC- or SSO-specific depending
    *  on the type of authentication mechanism the MCC instance uses.
-   * @param {string} options.username [BASIC] Credential username.
-   * @param {string} options.password [BASIC] Credential password.
    * @param {string} options.authCode [SSO] Authorization code to obtain tokens.
    * @param {boolean} [options.offline] If true, the refresh token generated for the
    *  clusters will be enabled for offline access. WARNING: This is less secure
@@ -125,20 +112,7 @@ export class AuthClient {
    *  - refresh_token: string
    *  - refresh_expires_in: number, SECONDS valid from now
    */
-  getToken({ offline = false, clientId, ...creds }) {
-    let grantType;
-    let username;
-    let password;
-    let authCode;
-
-    if (this.usesSso) {
-      grantType = 'authorization_code';
-      ({ authCode } = creds);
-    } else {
-      grantType = 'password';
-      ({ username, password } = creds);
-    }
-
+  getToken({ offline = false, clientId, authCode }) {
     return this.request('token', {
       options: {
         method: 'POST',
@@ -146,17 +120,13 @@ export class AuthClient {
           response_type: 'id_token',
           scope: offline ? 'offline_access openid' : 'openid',
           client_id: clientId || this.clientId,
-          grant_type: grantType,
+          grant_type: 'authorization_code',
 
           // SSO auth (only if vars are defined)
           code: authCode,
           // NOTE: redirect is ignored by the request, but required for SSO authorization,
           //  and must be the same used to obtain the temporary access code
           redirect_uri: redirectUri,
-
-          // basic auth (only if vars are defined)
-          username,
-          password,
         }),
       },
       errorMessage: strings.apiClient.error.failedToGetToken(),
