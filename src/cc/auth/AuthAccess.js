@@ -50,13 +50,12 @@ export class AuthAccess {
     }, {}),
 
     username: [rtv.EXPECTED, rtv.STRING],
-    password: [rtv.EXPECTED, rtv.STRING],
 
     // IDP client associated with current tokens; undefined if unknown; null if not specified
     idpClientId: [rtv.OPTIONAL, rtv.STRING],
 
-    // true if access is via SSO; false if it's via basic username/password; null
-    //  if it's undetermined
+    // true if access is via SSO; false if it's via basic auth (which would require a
+    //  password, and which we no longer support); null if it's undetermined
     usesSso: [rtv.OPTIONAL, rtv.BOOLEAN],
   };
 
@@ -78,7 +77,6 @@ export class AuthAccess {
     let _refreshExpiresIn = null;
     let _refreshTokenValidTill = null;
     let _username = null;
-    let _password = null;
     let _idpClientId = null;
     let _usesSso = null;
 
@@ -212,23 +210,6 @@ export class AuthAccess {
       },
     });
 
-    /** @member {sting|null} password */
-    Object.defineProperty(this, 'password', {
-      enumerable: true,
-      get() {
-        return _password;
-      },
-      set(newValue) {
-        DEV_ENV &&
-          rtv.verify(
-            { password: newValue },
-            { password: AuthAccess.specTs.password }
-          );
-        _changed = _changed || _password !== newValue;
-        _password = newValue || null; // normalize empty to null
-      },
-    });
-
     /**
      * @member {sting|null} idpClientId Client ID of the IDP associated
      *  with the tokens. `undefined` means not specified; `null` means the tokens
@@ -254,7 +235,7 @@ export class AuthAccess {
 
     /**
      * @member {boolean|null} usesSso True if access is via SSO; false if it's via
-     *  basic username/password credentials; null if unknown
+     *  basic auth; null if unknown
      */
     Object.defineProperty(this, 'usesSso', {
       enumerable: true,
@@ -281,7 +262,6 @@ export class AuthAccess {
     }
 
     this.username = spec ? spec.username : null;
-    this.password = spec ? spec.password : null;
     this.idpClientId = spec ? spec.idpClientId : null;
     this.usesSso = spec ? spec.usesSso : null;
 
@@ -289,34 +269,21 @@ export class AuthAccess {
   }
 
   /**
-   * @returns {boolean} True if the username is defined, and, if `usesSso=false`,
-   *  the password is defined. `usesSso` must also be known, that is, be a
-   *  boolean, not just a truthy/falsy value.
+   * @returns {boolean} True if the username is defined and `usesSso=true` (that is,
+   *  it's boolean and it's known to be SSO, not just a truthy/falsy value).
    */
   hasCredentials() {
-    return !!(
-      this.username &&
-      typeof this.usesSso === 'boolean' &&
-      (this.usesSso || this.password)
-    );
+    return !!(this.username && this.usesSso === true);
   }
 
   /**
-   * @param {boolean} [passwordRequired] if true, requires a valid password;
-   *  otherwise, requires only a username (useful in the case where having
-   *  valid tokens and a username is enough to list clusters, for example).
-   *
-   *  NOTE: This parameter is ignored if `usesSso=true` because we never have the
-   *   user's password in that case.
-   *
    * @returns {boolean} True if there are credentials, a token, and a valid way
    *  to refresh it if it expires; false otherwise.
    */
-  isValid(passwordRequired = true) {
-    const credsValid = passwordRequired
-      ? this.hasCredentials() // this handles the SSO case and ignores the password if so
-      : !!this.username;
-    return credsValid && !!this.token && !this.isRefreshTokenExpired();
+  isValid() {
+    return (
+      this.hasCredentials() && !!this.token && !this.isRefreshTokenExpired()
+    );
   }
 
   /** @returns {boolean} True if the `token` has expired; false otherwise. */
@@ -337,7 +304,6 @@ export class AuthAccess {
    */
   resetCredentials() {
     this.username = null;
-    this.password = null;
     this.usesSso = null; // related to credentials to clear this too
   }
 
@@ -411,7 +377,6 @@ export class AuthAccess {
       idpClientId: this.idpClientId,
 
       username: this.username,
-      password: this.password,
       usesSso: this.usesSso,
     };
   }

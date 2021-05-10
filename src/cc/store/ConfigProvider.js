@@ -5,6 +5,8 @@
 import { createContext, useContext, useState, useMemo } from 'react';
 import { request } from '../netUtil';
 import { ProviderStore } from './ProviderStore';
+import { logger } from '../../util';
+import * as strings from '../../strings';
 
 //
 // Store
@@ -52,7 +54,15 @@ const _loadConfig = async function getConfig(url) {
     try {
       pr.store.config = JSON.parse(content);
     } catch (err) {
-      pr.error = err.message;
+      logger.error(
+        'ConfigProvider._loadConfig()',
+        `Failed to parse config, error="${err.message}"`
+      );
+      if (err.message.match(/^unexpected token/i)) {
+        pr.error = strings.configProvider.error.unexpectedToken();
+      } else {
+        pr.error = err.message;
+      }
     }
   }
 

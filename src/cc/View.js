@@ -4,7 +4,6 @@ import * as rtv from 'rtvjs';
 import { Component } from '@k8slens/extensions';
 import { useExtState } from './store/ExtStateProvider';
 import { useConfig } from './store/ConfigProvider';
-import { useBasicAuth } from './store/BasicAuthProvider';
 import { useSsoAuth } from './store/SsoAuthProvider';
 import { useClusterData } from './store/ClusterDataProvider';
 import {
@@ -137,11 +136,6 @@ export const View = function () {
   } = useConfig();
 
   const {
-    state: { error: basicAuthError },
-    actions: basicAuthActions,
-  } = useBasicAuth();
-
-  const {
     state: { loading: ssoAuthLoading, error: ssoAuthError },
     actions: ssoAuthActions,
   } = useSsoAuth();
@@ -199,7 +193,6 @@ export const View = function () {
   //  still used as a flag to know if we're in an error state or not
   const errMessage =
     configError ||
-    basicAuthError ||
     ssoAuthError ||
     clusterDataError ||
     clusterActionsError ||
@@ -238,31 +231,16 @@ export const View = function () {
   );
 
   const handleClustersAdd = useCallback(
-    function ({ password }) {
+    function () {
       if (!clusterActionsLoading) {
         clusterActions.addClusters({
           clusters: selectedClusters,
-          savePath,
-          cloudUrl,
           config,
-          username: authAccess.username,
-          password: password || authAccess.password,
           offline,
-          addToNew,
         });
       }
     },
-    [
-      cloudUrl,
-      authAccess,
-      savePath,
-      addToNew,
-      offline,
-      config,
-      selectedClusters,
-      clusterActionsLoading,
-      clusterActions,
-    ]
+    [offline, config, selectedClusters, clusterActionsLoading, clusterActions]
   );
 
   const handleCloseClick = useCallback(
@@ -274,7 +252,6 @@ export const View = function () {
         //  could be for a different user even if the `cloudUrl` is the same,
         //  so reset everything, bringing the View back to the login step
         configActions.reset();
-        basicAuthActions.reset();
         ssoAuthActions.reset();
         clusterDataActions.reset();
         setSelectedClusters([]);
@@ -292,7 +269,6 @@ export const View = function () {
     [
       activeEventType,
       configActions,
-      basicAuthActions,
       ssoAuthActions,
       clusterDataActions,
       clusterActions,
@@ -361,29 +337,20 @@ export const View = function () {
 
       extActions.setCloudUrl(url);
       configActions.load(url); // implicit reset of current config
-      basicAuthActions.reset();
       ssoAuthActions.reset();
       clusterDataActions.reset();
 
-      // NOTE: whether basic or SSO auth, since we're getting the user's tokens,
+      // NOTE: even under SSO auth, since we're getting the user's tokens,
       //  we don't need to make an initial auth request; we can just go straight
       //  for the clusters; but we'll need to re-auth when we want to generate
       //  kubeConfigs for the clusters the user wants to add
       authAccess.reset();
       authAccess.username = data.username;
-      authAccess.password = null;
-      authAccess.usesSso = !!data.keycloakLogin;
+      authAccess.usesSso = true; // assumed/expected
       authAccess.updateTokens(data.tokens);
-      extActions.setAuthAccess(authAccess); // authAccess should be valid (no password, but we have tokens)
+      extActions.setAuthAccess(authAccess); // authAccess should be valid since we have tokens
     },
-    [
-      authAccess,
-      basicAuthActions,
-      ssoAuthActions,
-      extActions,
-      clusterDataActions,
-      configActions,
-    ]
+    [authAccess, ssoAuthActions, extActions, clusterDataActions, configActions]
   );
 
   // add a single cluster given its kubeConfig
@@ -610,7 +577,7 @@ export const View = function () {
 
         {/* ClusterList and AddClusters apply only if NOT loading a kubeConfig */}
         {(!activeEventType || activeEventType === EXT_EVENT_ADD_CLUSTERS) &&
-        authAccess.isValid(!activeEventType) &&
+        authAccess.isValid() &&
         clusterDataLoaded &&
         selectedClusters ? (
           <>
@@ -624,14 +591,6 @@ export const View = function () {
             />
             <AddClusters
               clusters={selectedClusters}
-              // password is only required when we're responding to a URL event to
-              //  add "all" clusters to Lens and the MCC instance is NOT using SSO
-              //  (if we're just normally adding clusters, and not using SSO,
-              //  we'll already have the password from the login step)
-              passwordRequired={
-                activeEventType === EXT_EVENT_ADD_CLUSTERS &&
-                !config.keycloakLogin
-              }
               onAdd={handleClustersAdd}
             />
           </>

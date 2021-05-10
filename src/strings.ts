@@ -104,39 +104,32 @@ export const view: Dict = {
 export const login: Dict = {
   title: () => 'Get clusters',
   url: { label: () => 'Instance URL:' },
-  username: { label: () => 'Username:' },
-  password: { label: () => 'Password:' },
   sso: {
     messageHtml: () =>
-      `<strong>This instance uses SSO:</strong> Your default browser should open to the ${mccShortName} sign in page, if you aren't already signed in. Once you have signed-in, your browser will prompt you to open Lens. Be sure to accept in order to complete the process. Once you have opted to open Lens, the browser window can be closed.`,
-  },
-  basic: {
-    messageHtml: () =>
-      'This instance requires a username and password for access:',
+      `<strong>SSO Authentication:</strong> Your default browser should open to the ${mccShortName} sign in page, if you aren't already signed in. Once you have signed-in, your browser will prompt you to open Lens. Be sure to accept in order to complete the process. Once you have opted to open Lens, the browser window can be closed.`,
   },
   action: {
-    access: () => 'Access',
-    login: () => 'Sign in',
+    connect: () => 'Connect',
     refresh: () => 'Refresh',
     ssoCancel: () => 'Cancel',
   },
+  error: {
+    basicAuth: () =>
+      'This instance uses basic authentication (username and password for access), which is not supported by this extension. Please connect to an instance that uses Keycloak SSO authentication.',
+  },
 };
 
-export const basicAuthProvider: Dict = {
+export const configProvider: Dict = {
   error: {
-    ssoOnly: () =>
-      `The specified ${mccShortName} instance only supports SSO logins. Try again with the "${login.sso[
-        'label'
-      ]()}" option selected.`,
+    unexpectedToken: () =>
+      "A problem occurred while retrieving the instance's configuration details. Make sure the instance URL is correct.",
   },
 };
 
 export const ssoAuthProvider: Dict = {
   error: {
     basicOnly: () =>
-      `The specified ${mccShortName} instance only supports basic logins. Try again without the "${login.sso[
-        'label'
-      ]()}" option selected.`,
+      `The specified ${mccShortName} instance requires basic authentication, which is not supported by this extension. Only instances that use SSO (Keycloak-based) authentication are supported.`,
     authCode: () =>
       `Authorization with the ${mccShortName} instance failed. Try again, and be sure to use the correct SSO account.`,
     userCanceled: () => 'User canceled SSO authorization process.',
@@ -162,10 +155,6 @@ export const clusterList: Dict = {
 
 export const addClusters: Dict = {
   title: () => 'Add to Lens',
-  password: {
-    tip: (username) =>
-      `Password for user "${username}" is required to generate kubeConfigs`,
-  },
   sso: {
     messageHtml: () =>
       `<strong>This instance uses SSO:</strong> Your default browser should open to the ${mccShortName} sign in page, if you aren't already signed in. Once you have signed-in, your browser will prompt you to open Lens. Be sure to accept in order to complete the process. Once you have opted to open Lens, the browser window can be closed.`,

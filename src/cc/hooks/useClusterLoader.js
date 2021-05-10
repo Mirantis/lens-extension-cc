@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { useExtState } from '../store/ExtStateProvider';
 import { useConfig } from '../store/ConfigProvider';
-import { useBasicAuth } from '../store/BasicAuthProvider';
 import { useSsoAuth } from '../store/SsoAuthProvider';
 import { useClusterData } from '../store/ClusterDataProvider';
 import { logger } from '../../util';
@@ -43,15 +42,6 @@ export const useClusterLoader = function (
 
   const {
     state: {
-      loading: basicAuthLoading,
-      loaded: basicAuthLoaded,
-      error: basicAuthError,
-    },
-    actions: basicAuthActions,
-  } = useBasicAuth();
-
-  const {
-    state: {
       loading: ssoAuthLoading,
       loaded: ssoAuthLoaded,
       error: ssoAuthError,
@@ -89,61 +79,29 @@ export const useClusterLoader = function (
           'hooks/useClusterLoader',
           `=== CONFIG configLoading=${configLoading}, configLoaded=${configLoaded}, configError=${
             configError ? `"${configError}"` : '<none>'
-          }`
+          }`,
+          { config }
         );
       }
     },
-    [configLoading, configLoaded, configError]
+    [config, configLoading, configLoaded, configError]
   );
 
-  // 1a. Authenticate with BASIC auth IIF config says MCC instance NOT SSO
+  // 1. Authenticate with SSO auth IIF config says MCC instance IS SSO
   useEffect(
     function () {
-      if (
-        cloudUrl && // MCC instance is known
-        config && // config loaded
-        !config.keycloakLogin && // NOT SSO gates this effect
-        !authAccess.usesSso && // auth access is for basic auth
-        !basicAuthLoading &&
-        !basicAuthLoaded
-      ) {
-        if (authAccess.isValid(!activeEventType)) {
-          // skip authentication, go straight for the clusters
-          basicAuthActions.setAuthenticated();
-        } else if (authAccess.hasCredentials()) {
-          basicAuthActions.authenticate({
-            authAccess,
-            cloudUrl,
-            config,
-          });
-        }
-        // else, STOP and let the Login view get the username and password needed
-      } else if (DEV_ENV) {
+      if (DEV_ENV) {
         logger.log(
-          'hooks/useClusterLoader',
-          `=== NOT doing BASIC auth, basicAuthLoading=${basicAuthLoading}, basicAuthLoaded=${basicAuthLoaded}, basicAuthError=${
-            basicAuthError ? `"${basicAuthError}"` : '<none>'
-          }, activeEventType=${activeEventType}, authAccess.isValid()=${authAccess.isValid(
-            !activeEventType
-          )}`
+          'hooks/useClusterLoader#ssoAuth',
+          `=== config=${
+            config ? '<set>' : '<none>'
+          }, ssoAuthLoading=${ssoAuthLoading}, ssoAuthLoaded=${ssoAuthLoaded}, ssoAuthError=${
+            ssoAuthError ? `"${ssoAuthError}"` : '<none>'
+          }, activeEventType=${activeEventType}, authAccess.isValid()=${authAccess.isValid()}`,
+          { cloudUrl, config, authAccess, ssoAuthLoading, ssoAuthLoaded }
         );
       }
-    },
-    [
-      basicAuthLoading,
-      basicAuthLoaded,
-      basicAuthError,
-      basicAuthActions,
-      authAccess,
-      cloudUrl,
-      config,
-      activeEventType,
-    ]
-  );
 
-  // 1b. Authenticate with SSO auth IIF config says MCC instance IS SSO
-  useEffect(
-    function () {
       if (
         cloudUrl && // MCC instance is known
         config && // config loaded
@@ -152,20 +110,26 @@ export const useClusterLoader = function (
         !ssoAuthLoading &&
         !ssoAuthLoaded
       ) {
-        if (authAccess.isValid(!activeEventType)) {
+        if (authAccess.isValid()) {
           // skip authentication, go straight for the clusters
+          DEV_ENV &&
+            logger.log(
+              'hooks/useClusterLoader#ssoAuth',
+              '====== SSO skipped: authorized'
+            );
           ssoAuthActions.setAuthorized();
         } else {
+          DEV_ENV &&
+            logger.log(
+              'hooks/useClusterLoader#ssoAuth',
+              '====== starting authentication...'
+            );
           ssoAuthActions.startAuthorization({ config });
         }
       } else if (DEV_ENV) {
         logger.log(
-          'hooks/useClusterLoader',
-          `=== NOT doing SSO auth, ssoAuthLoading=${ssoAuthLoading}, ssoAuthLoaded=${ssoAuthLoaded}, ssoAuthError=${
-            ssoAuthError ? `"${ssoAuthError}"` : '<none>'
-          }, activeEventType=${activeEventType}, authAccess.isValid()=${authAccess.isValid(
-            !activeEventType
-          )}`
+          'hooks/useClusterLoader#ssoAuth',
+          '====== not authenticating'
         );
       }
     },
@@ -184,14 +148,38 @@ export const useClusterLoader = function (
   // 2. get cluster data (ie. the list of clusters available to the user)
   useEffect(
     function () {
+      if (DEV_ENV) {
+        logger.log(
+          'hooks/useClusterLoader#getClusterData',
+          `=== config=${
+            config ? '<set>' : '<none>'
+          }, authAccess.isValid()=${authAccess.isValid()}, clusterDataLoading=${clusterDataLoading}, clusterDataLoaded=${clusterDataLoaded}, clusterDataError=${
+            clusterDataError ? `"${clusterDataError}"` : '<none>'
+          }, onlyNamespaces=${onlyNamespaces?.join(',')}`,
+          {
+            cloudUrl,
+            config,
+            ssoAuthLoaded,
+            authAccess,
+            clusterDataLoading,
+            clusterDataLoaded,
+          }
+        );
+      }
+
       if (
         cloudUrl && // MCC instance is known
         config && // config loaded
-        (basicAuthLoaded || ssoAuthLoaded) && // must be authenticated at this point
-        authAccess.isValid(!activeEventType) && // must have valid tokens (they may have expired)
+        ssoAuthLoaded && // must be authenticated at this point
+        authAccess.isValid() && // must have valid tokens (they may have expired)
         !clusterDataLoading &&
         !clusterDataLoaded
       ) {
+        DEV_ENV &&
+          logger.log(
+            'hooks/useClusterLoader#getClusterData',
+            '====== fetching...'
+          );
         clusterDataActions.load({
           cloudUrl,
           config,
@@ -199,19 +187,13 @@ export const useClusterLoader = function (
           onlyNamespaces,
         });
       } else if (DEV_ENV) {
-        logger.log(
-          'hooks/useClusterLoader',
-          `=== NOT loading cluster data, clusterDataLoading=${clusterDataLoading}, clusterDataLoaded=${clusterDataLoaded}, clusterDataError=${
-            clusterDataError ? `"${clusterDataError}"` : '<none>'
-          }, onlyNamespaces=${onlyNamespaces?.join(',')}`
-        );
+        logger.log('hooks/useClusterLoader#getClusterData', '====== no fetch');
       }
     },
     [
       cloudUrl,
       authAccess,
       config,
-      basicAuthLoaded,
       ssoAuthLoaded,
       clusterDataLoading,
       clusterDataLoaded,

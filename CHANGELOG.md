@@ -2,6 +2,14 @@
 
 ## UNRELEASED
 
+Supports Lens `>= 5.0.0`.
+
+### Changed
+
+- 🚨 __BREAKING:__ Lens `5.0.0` or later is required to run this extension. It is not backward-compatible with a previous version of Lens. To use this extension with a version of Lens prior to `5.0.0`, install an older version of this extension in Lens.
+- 🚨 __BREAKING:__ Mirantis Container Cloud instances using basic authentication are no longer supported. Your instance must now use Keycloak SSO authentication in order to use this extension.
+    - Keycloak-based authentication/authorization is much more secure than basic username/password authentication. Consider migrating your Container Cloud instance to it if you haven't already.
+- The [/addClusters](#protocol---add-multiple-clusters) protocol API no longer supports the `keycloakLogin` option. SSO is now assumed/expected.
 - Docs: Removed an unnecessary [Keycloak configuration](README.md#keycloak-configuration) requirement for permitting requests from `"*"` origin. That is not needed, and can remain as the default `"+"` setting (which means "allow requests from any configured `redirect_uri` origins).
 
 ## v2.2.1
