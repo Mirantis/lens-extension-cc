@@ -47,6 +47,26 @@ const pr = new ClusterActionsProviderStore();
 //
 
 /**
+ * Posts an info-style notification that auto-dismissed after X seconds unless the
+ *  user interacts with it or mouses over it.
+ * @param {Component} Message Message to post.
+ * @param {Object} [options] Additional notification options. See
+ *  https://docs.k8slens.dev/v4.2.4/extensions/api/interfaces/_renderer_api_components_.notification/
+ *  for options (all except for `message`). The actual code is probably more helpful than
+ *  those API docs...
+ *  https://github.com/lensapp/lens/blob/70a8982c9f6396107f92aeced465620761d90726/src/renderer/components/notifications/notifications.tsx#L32
+ */
+const _postInfo = function (Message, options) {
+  Notifications.info(Message, {
+    // default is 0 (which means user must manually dismiss), and Notifications.ok()
+    //  is similar to info() but dismissed in 2500ms which feels a bit short
+    timeout: 3500,
+
+    ...options,
+  });
+};
+
+/**
  * Determines if a cluster is already in Lens and returns its Lens Cluster object.
  * @param {string|Cluster} cluster Cluster ID, or cluster object, to check.
  * @returns {LensCluster|undefined} Lens Cluster if the cluster is already in Lens;
@@ -266,8 +286,8 @@ const _assignClustersToWorkspaces = function (clusters, models) {
  * @param {boolean} [sticky] True if the notification should be sticky; false
  *  if it should be quickly dismissed.
  */
-const _notifyNewClusters = function (clusterShims, sticky = true) {
-  Notifications[sticky ? 'info' : 'ok'](
+const _notifyNewClusters = function (clusterShims) {
+  _postInfo(
     <p
       dangerouslySetInnerHTML={{
         __html: strings.clusterActionsProvider.notifications.newClustersHtml(
@@ -291,7 +311,7 @@ const _switchToNewWorkspace = function () {
   }
 
   // notify all new workspace names
-  Notifications.info(
+  _postInfo(
     <p
       dangerouslySetInnerHTML={{
         __html: strings.clusterActionsProvider.notifications.newWorkspacesHtml(
@@ -315,7 +335,7 @@ const _switchToNewWorkspace = function () {
     const firstWorkspace = filteredWorkspaces[0];
     Store.workspaceStore.setActive(firstWorkspace.id);
 
-    Notifications.info(
+    _postInfo(
       <p
         dangerouslySetInnerHTML={{
           __html:
@@ -477,7 +497,7 @@ const _addClusters = async function ({ clusters, config, offline = false }) {
     //  respond in the browser
     Util.openExternal(url); // open in default browser
   } else if (existingClusters.length > 0) {
-    Notifications.info(
+    _postInfo(
       <p
         dangerouslySetInnerHTML={{
           __html: strings.clusterActionsProvider.notifications.skippedClusters(
@@ -596,9 +616,7 @@ const _addKubeCluster = async function ({
   pr.reset(true);
 
   if (_getLensCluster(clusterId)) {
-    // when adding just one cluster via kubeConfig, use the non-sticky OK
-    //  notification since we'll also display a static message in the UI
-    Notifications.ok(
+    _postInfo(
       <p
         dangerouslySetInnerHTML={{
           __html: strings.clusterActionsProvider.notifications.skippedClusters([
@@ -630,12 +648,7 @@ const _addKubeCluster = async function ({
       );
       pr.store.kubeClusterAdded = true;
 
-      // don't use a sticky notification for the cluster since the UI will display
-      //  a related message about the new cluster.
-      _notifyNewClusters(
-        [{ namespace, id: clusterId, name: clusterName }],
-        false
-      );
+      _notifyNewClusters([{ namespace, id: clusterId, name: clusterName }]);
 
       if (addToNew && pr.store.newWorkspaces.length > 0) {
         _switchToNewWorkspace();
