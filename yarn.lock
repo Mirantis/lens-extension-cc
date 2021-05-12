@@ -1138,10 +1138,10 @@
     minimatch "^3.0.4"
     strip-json-comments "^3.1.1"
 
-"@k8slens/extensions@^4.2.5":
-  version "4.2.5"
-  resolved "https://registry.yarnpkg.com/@k8slens/extensions/-/extensions-4.2.5.tgz#ccf30a16c960e3bf649e455c94b0d91e626e516d"
-  integrity sha512-/Rt8Si5z8YB49cNsD/Bw7B2UQP87EfCm0Cl6KDmB7llYz7lvEh+BUmLajLb4WCgYKNDW/oVlzeW8Xdwk/4VHxg==
+"@k8slens/extensions@^5.0.0-beta.4":
+  version "5.0.0-beta.4"
+  resolved "https://registry.yarnpkg.com/@k8slens/extensions/-/extensions-5.0.0-beta.4.tgz#9d32c72a593c0c60e1b08f12e97b5e32cb207573"
+  integrity sha512-wZYJyoXsKkm3NeM2SWKxgW8PzzE9Dtm6Oh6Fj0pyys3IVvSl1mdUt+iEeTAjPXT35SipB3c9I/tiex1aqDCX2Q==
   dependencies:
     "@material-ui/core" "*"
     "@types/node" "*"
@@ -2316,10 +2316,10 @@ electron-to-chromium@^1.3.723:
   resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.3.738.tgz#aec24b091c82acbfabbdcce08076a703941d17ca"
   integrity sha512-vCMf4gDOpEylPSLPLSwAEsz+R3ShP02Y3cAKMZvTqule3XcPp7tgc/0ESI7IS6ZeyBlGClE50N53fIOkcIVnpw==
 
-electron@^9.4.0:
-  version "9.4.1"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-9.4.1.tgz#62a2aae4cd93f1b56d794a47541505a71654177a"
-  integrity sha512-r4CxoVG9Ja7tBtkilWMnBsBGup8G8Z+v7icZmwysHa8/OSr0OrLjrcOF/30BAP7yPE5fz/XTxygnltzW4OTZdw==
+electron@^9.4.4:
+  version "9.4.4"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-9.4.4.tgz#2a74a0655a74bd326216672c5ae6ed3a44451446"
+  integrity sha512-dcPlTrMWQu5xuSm6sYV42KK/BRIqh3erM8v/WtZqaDmG7pkCeJpvw26Dgbqhdt78XmqqGiN96giEe6A3S9vpAQ==
   dependencies:
     "@electron/get" "^1.0.1"
     "@types/node" "^12.0.12"
