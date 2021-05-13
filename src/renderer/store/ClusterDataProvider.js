@@ -9,7 +9,7 @@ import { Cluster } from './Cluster';
 import { authedRequest, extractJwtPayload } from '../auth/authUtil';
 import { ProviderStore } from './ProviderStore';
 import * as strings from '../../strings';
-import { logger } from '../../util';
+import { logger } from '../../util/logger';
 
 //
 // Store

@@ -2,16 +2,16 @@ import { useState, useEffect, useCallback } from 'react';
 import styled from '@emotion/styled';
 import * as rtv from 'rtvjs';
 import { Component } from '@k8slens/extensions';
-import { useExtState } from './store/ExtStateProvider';
-import { useConfig } from './store/ConfigProvider';
-import { useSsoAuth } from './store/SsoAuthProvider';
-import { useClusterData } from './store/ClusterDataProvider';
+import { useExtState } from '../store/ExtStateProvider';
+import { useConfig } from '../store/ConfigProvider';
+import { useSsoAuth } from '../store/SsoAuthProvider';
+import { useClusterData } from '../store/ClusterDataProvider';
 import {
   useClusterActions,
   SSO_STATE_ADD_CLUSTERS,
-} from './store/ClusterActionsProvider';
-import { useClusterLoader } from './hooks/useClusterLoader';
-import { useClusterLoadingState } from './hooks/useClusterLoadingState';
+} from '../store/ClusterActionsProvider';
+import { useClusterLoader } from '../hooks/useClusterLoader';
+import { useClusterLoadingState } from '../hooks/useClusterLoadingState';
 import { Login } from './Login';
 import { ClusterList } from './ClusterList';
 import { AddClusters } from './AddClusters';
@@ -19,7 +19,7 @@ import { Loader } from './Loader';
 import { ErrorPanel } from './ErrorPanel';
 import { InfoPanel } from './InfoPanel';
 import { PreferencesPanel } from './PreferencesPanel';
-import * as strings from '../strings';
+import * as strings from '../../strings';
 import { layout, mixinFlexColumnGaps } from './styles';
 import {
   EXT_EVENT_ACTIVATE_CLUSTER,
@@ -33,7 +33,7 @@ import {
   addExtEventHandler,
   removeExtEventHandler,
 } from '../eventBus';
-import { normalizeUrl } from './netUtil';
+import { normalizeUrl } from '../../util/netUtil';
 
 //
 // INTERNAL STYLED COMPONENTS
@@ -391,7 +391,7 @@ export const View = function () {
   // SSO authorization redirect/callback
   const handleOauthCodeEvent = useCallback(
     function (event) {
-      rtv.verify({ event }, { event: extEventOauthCodeTs });
+      DEV_ENV && rtv.verify({ event }, { event: extEventOauthCodeTs });
       const { data: oAuth } = event;
 
       if (!oAuth.state && ssoAuthLoading) {

@@ -6,23 +6,46 @@ import { createContext, useContext, useState, useMemo } from 'react';
 import * as rtv from 'rtvjs';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { Store, Component, Util } from '@k8slens/extensions';
+import { Store, Component, Util, Catalog } from '@k8slens/extensions';
 import { AuthClient } from '../auth/clients/AuthClient';
-import { kubeConfigTemplate } from '../templates';
+import { kubeConfigTemplate } from '../../util/templates';
 import { AuthAccess } from '../auth/AuthAccess';
 import * as strings from '../../strings';
-import { workspacePrefix } from '../../constants';
 import { ProviderStore } from './ProviderStore';
 import { Cluster } from './Cluster';
-import { logger } from '../../util';
+import { logger } from '../../util/logger';
 import { extractJwtPayload } from '../auth/authUtil';
+import { source as catalogSource } from './CatalogSource';
 import pkg from '../../../package.json';
 
-const { workspaceStore } = Store;
 const { Notifications } = Component;
 
 // OAuth2 'state' parameter value to use when requesting tokens for one cluster out of many
 export const SSO_STATE_ADD_CLUSTERS = 'add-clusters';
+
+//
+// RTV Typesets used for validations
+//
+
+const clusterModelTs = DEV_ENV
+  ? {
+      metadata: {
+        uid: rtv.STRING,
+        name: rtv.STRING,
+        source: [rtv.OPTIONAL, rtv.STRING],
+        labels: [rtv.OPTIONAL, rtv.HASH_MAP, {
+          $values: rtv.STRING,
+        }]
+      },
+      spec: {
+        kubeconfigPath: rtv.STRING,
+        kubeconfigContext: rtv.STRING,
+      },
+      status: {
+        phase: [rtv.STRING, { oneOf: ['connected', 'disconnected'] } ],
+      }
+    }
+  : undefined;
 
 //
 // Store
@@ -73,7 +96,9 @@ const _postInfo = function (Message, options) {
  *  `undefined` otherwise.
  */
 const _getLensCluster = function (cluster) {
-  const existingLensClusters = Store.clusterStore.clustersList;
+  // TODO[catalog]: how to search all existing clusters? look in the source?
+
+  const existingLensClusters = [];
   const clusterId = cluster instanceof Cluster ? cluster.id : cluster;
 
   return existingLensClusters.find(
@@ -181,8 +206,9 @@ const _getClusterAccess = async function ({
  * @param {Object} options.kubeConfig Kubeconfig JSON object for the cluster.
  * @param {string} options.savePath Absolute path where kubeConfigs are to be saved.
  * @returns {Promise<Object>} On success, `{model: ClusterModel}`, a cluster model
- *  to use to add the cluster to Lens; on error, `{error: string}`. All clusters
- *  are configured to be added to the active workspace by default.
+ *  to use to add the cluster to Lens (see `clusterModelTs` typeset for interface.);
+ *  on error, `{error: string}`. All clusters are configured to be added to the active
+ *  workspace by default.
  */
 const _writeKubeConfig = async function ({
   namespace,
@@ -194,7 +220,7 @@ const _writeKubeConfig = async function ({
   const errPrefix =
     strings.clusterActionsProvider.error.kubeConfigSave(clusterId);
 
-  const kubeConfigPath = path.resolve(
+  const kubeconfigPath = path.resolve(
     savePath,
     `${namespace}-${clusterName}-${clusterId}.json`
   );
@@ -202,81 +228,34 @@ const _writeKubeConfig = async function ({
   try {
     // overwrite if already exists for some reason (failed to delete last time?)
     await fs.writeFile(
-      kubeConfigPath,
+      kubeconfigPath,
       JSON.stringify(kubeConfig, undefined, 2)
     );
   } catch (err) {
     return { error: `${errPrefix}: ${err.message}` };
   }
 
-  // id - unique id (up to extension to decide what it is)
-  // contextName - used contextName in given kubeConfig
-  // workspace: workspace id, all clusters need to belong to a workspace (there is “default” workspace always available)
-
   return {
     model: {
-      kubeConfigPath,
-      id: clusterId, // can be anything provided it's unique
-      contextName: kubeConfig.contexts[0].name, // must be same context name used in the kubeConfig file
-      workspace: workspaceStore.currentWorkspaceId,
+      // NOTE: This is a partial KubernetesCluster model to be used when adding
+      //  a cluster to a Catalog source with `new Catalog.KubernetesCluster(model)`.
+      // See the following references for a complete notion of what propties are supported:
+      //  @see node_modules/@k8slens/extensions/dist/src/common/catalog-entities/kubernetes-cluster.d.ts
+      //  @see node_modules/@k8slens/extensions/dist/src/common/catalog/catalog-entity.d.ts
 
-      // metadata: {[key: string]: string | number | boolean | object} any extra data to be stored with the cluster
-
-      // ownerRef: unique ref/id (up to extension to decide what it is), if unset
-      //  then Lens allows the user to remove the cluster; otherwise, only the
-      //  extension itself can remove it
+      metadata: {
+        uid: clusterId,
+        name: clusterName,
+      },
+      spec: {
+        kubeconfigPath,
+        kubeconfigContext: kubeConfig.contexts[0].name, // must be same context name used in the kubeConfig file
+      },
+      status: {
+        phase: 'disconnected',
+      }
     },
   };
-};
-
-/**
- * Assigns a cluster model to an existing or new workspace that correlates to its
- *  original MCC namespace. New workspaces are created if necessary and added
- *  to this Provider's `pr.store.newWorkspaces` list.
- * @param {ClusterModel} model Model for the cluster being added. This model is
- *  modified in-place. NOTE: `model.id` is expected to be the ID of the cluster.
- * @param {string} namespace MCC namespace of the cluster the model represents.
- */
-const _assignWorkspace = function (model, namespace) {
-  const findWorkspace = (id) =>
-    workspaceStore.workspacesList.find((ws) => ws.id === id);
-
-  const wsId = `${workspacePrefix}${namespace}`;
-  const workspace = findWorkspace(wsId);
-
-  model.workspace = wsId; // re-assign cluster to custom workspace
-
-  if (!workspace) {
-    // create new workspace
-    // @see https://github.com/lensapp/lens/blob/00be4aa184089c1a6c7247bdbfd408665f325665/src/common/workspace-pr.store.ts#L27
-    const ws = new Store.Workspace({
-      id: wsId,
-      name: wsId,
-      description: strings.clusterActionsProvider.workspaces.description(),
-    });
-
-    workspaceStore.addWorkspace(ws);
-    pr.store.newWorkspaces.push(ws);
-  }
-};
-
-/**
- * Assigns each cluster to an existing or new workspace that correlates to its
- *  original MCC namespace. New workspaces are created if necessary and added
- *  to this Provider's `pr.store.newWorkspaces` list.
- * @param {Array<Cluster>} clusters Clusters being added. Can be greater than
- *  `models`, but must at least contain a cluster for each model.
- * @param {Array<ClusterModel>} models Cluster models to add to Lens, one for
- *  each item in `clusters`. These are modified in-place. NOTE: `model.id` is
- *  expected to be the ID of the related cluster.
- */
-const _assignClustersToWorkspaces = function (clusters, models) {
-  const findCluster = (id) => clusters.find((cluster) => cluster.id === id);
-
-  models.forEach((model) => {
-    const cluster = findCluster(model.id);
-    _assignWorkspace(model, cluster.namespace);
-  });
 };
 
 /**
@@ -299,56 +278,6 @@ const _notifyNewClusters = function (clusterShims) {
 };
 
 /**
- * Posts a notification about new workspaces created, and switches to the first
- *  new workspace in `pr.store.newWorkspaces` in Lens.
- * @throws {Error} If `pr.store.newWorkspaces` is empty.
- */
-const _switchToNewWorkspace = function () {
-  if (pr.store.newWorkspaces.length <= 0) {
-    throw new Error(
-      `[${pkg.name}/ClusterActionsProvider._notifyAndSwitchToNew] There must be at least one new workspace to switch to!`
-    );
-  }
-
-  // notify all new workspace names
-  _postInfo(
-    <p
-      dangerouslySetInnerHTML={{
-        __html: strings.clusterActionsProvider.notifications.newWorkspacesHtml(
-          pr.store.newWorkspaces.map((ws) => ws.name)
-        ),
-      }}
-    />
-  );
-
-  // activate the first new workspace, preferring NOT to activate the workspace
-  //  related to the 'default' namespace, which typically contains only the
-  //  MCC management cluster and isn't usually of any interest
-  const filteredWorkspaces =
-    pr.store.newWorkspaces.length > 1
-      ? pr.store.newWorkspaces.filter(
-          (ws) => ws.name !== `${workspacePrefix}default`
-        )
-      : pr.store.newWorkspaces;
-
-  if (filteredWorkspaces.length > 0) {
-    const firstWorkspace = filteredWorkspaces[0];
-    Store.workspaceStore.setActive(firstWorkspace.id);
-
-    _postInfo(
-      <p
-        dangerouslySetInnerHTML={{
-          __html:
-            strings.clusterActionsProvider.notifications.workspaceActivatedHtml(
-              firstWorkspace.name
-            ),
-        }}
-      />
-    );
-  }
-};
-
-/**
  * [ASYNC] Switch to the specified cluster (and associated workspace).
  * @param {string} clusterId ID of the cluster in Lens. Can be in any workspace,
  *  even if it's not the active one.
@@ -358,48 +287,66 @@ const _switchToCluster = async function (clusterId) {
 };
 
 /**
- * Adds one or more clusters to Lens.
+ * Adds metadata to cluster models to prepare them to be added to the Lens Catalog.
  * @param {string} cloudUrl MCC instance base URL that owns all the clusters.
- * @param {Array<{namespace: string, id: string, name: string}>} clusterShims
- *  Clusters being added.
+ * @param {Array<{namespace: string, id: string, name: string}>} clusterPartials
+ *  Clusters being added. Subset of full `./Cluster.js` class properties.
  * @param {Array<ClusterModel>} models List of models for clusters to add, one for each
- *  item in `clusters`.
+ *  item in `clusters`. See `clusterModelTs` typeset for interface.
  */
-const _storeClustersInLens = function (cloudUrl, clusterShims, models) {
-  rtv.verify(
+const _addMetadata = function (cloudUrl, clusterPartials, models) {
+  DEV_ENV && rtv.verify(
     {
-      _addClustersToLens: {
-        cloudUrl,
-        clusterShims,
-        models,
-      },
+      cloudUrl,
+      clusterPartials,
+      models,
     },
     {
-      _addClustersToLens: {
-        cloudUrl: rtv.STRING,
-        clusterShims: [
-          [{ namespace: rtv.STRING, name: rtv.STRING, id: rtv.STRING }],
-        ],
-        models: [
-          [rtv.PLAIN_OBJECT],
-          (value, match, typeset, { parent }) =>
-            parent.clusterShims.length === value.length,
-        ],
-      },
+      cloudUrl: rtv.STRING,
+      clusterPartials: [
+        [{ namespace: rtv.STRING, name: rtv.STRING, id: rtv.STRING }],
+      ],
+      models: [
+        [clusterModelTs],
+        (value, match, typeset, { parent }) =>
+          parent.clusterPartials.length === value.length,
+      ],
     }
   );
 
-  clusterShims.forEach((shim, idx) => {
-    // officially add to Lens
-    const lensCluster = Store.clusterStore.addCluster(models[idx]);
+  clusterPartials.forEach((partial, idx) => {
+    const model = models[idx];
 
-    // store custom metadata in the cluster object, which Lens will persist
-    lensCluster.metadata[pkg.name] = {
-      cloudUrl,
-      namespace: shim.namespace,
-      clusterId: shim.clusterId,
-      clusterName: shim.clusterName,
+    // NOTE: @see `CatalogEntityMetadata` in
+    //  `node_modules/@k8slens/extensions/dist/src/common/catalog/catalog-entity.d.ts`
+    //  for required/supported/optional metadata properties; note that arbitrary
+    //  metadata properties are also supporeted
+
+    // Lens-specific optional metadata
+    model.metadata.source = pkg.name;
+    model.metadata.labels = {
+      namespace: partial.namespace, // TODO[catalog] add custom prefix to this?
     };
+
+    // custom metdata
+    // NOTE: `metadata.uid` and `metadata.name` will already be set to the cluster
+    //  ID and name from `_writeKubeConfig()`
+    model.metadata.cloudUrl = cloudUrl;
+  });
+};
+
+/**
+ * Adds one or more clusters to the Lens Catalog.
+ * @param {Array<ClusterModel>} models List of models for clusters to add, one for each
+ *  item in `clusters`. See `clusterModelTs` typeset for interface.
+ */
+const _addToCatalog = function (models) {
+  DEV_ENV && rtv.verify({ models }, { models: [[clusterModelTs]] });
+
+  models.forEach((model) => {
+    // officially add to Lens
+    // TODO[catalog]: need to save the model to a Store so we can restore it on load...
+    catalogSource.push(new Catalog.KubernetesCluster(model));
   });
 };
 
@@ -453,18 +400,11 @@ const _addClusterKubeConfigs = async function ({
   } else {
     const models = results.map(({ model }) => model);
 
-    if (addToNew) {
-      _assignClustersToWorkspaces(newClusters, models);
-    }
-
-    _storeClustersInLens(cloudUrl, newClusters, models);
+    _addMetadata(cloudUrl, newClusters, models);
+    _addToCatalog(models);
 
     if (newClusters.length > 0) {
       _notifyNewClusters(newClusters);
-    }
-
-    if (addToNew && pr.store.newWorkspaces.length > 0) {
-      _switchToNewWorkspace();
     }
   }
 };
@@ -637,22 +577,12 @@ const _addKubeCluster = async function ({
     if (error) {
       pr.error = error;
     } else {
-      if (addToNew) {
-        _assignWorkspace(model, namespace);
-      }
-
-      _storeClustersInLens(
-        cloudUrl,
-        [{ namespace, id: clusterId, name: clusterName }],
-        [model]
-      );
+      const partial = { namespace, id: clusterId, name: clusterName };
+      _addMetadata(cloudUrl, [partial], [model]);
+      _addToCatalog([model]);
       pr.store.kubeClusterAdded = true;
 
       _notifyNewClusters([{ namespace, id: clusterId, name: clusterName }]);
-
-      if (addToNew && pr.store.newWorkspaces.length > 0) {
-        _switchToNewWorkspace();
-      }
 
       // NOTE: this is async but we don't need to wait on it
       _switchToCluster(clusterId);
