@@ -2,7 +2,7 @@
 // Basic utilities
 //
 
-import pkg from '../package.json';
+import pkg from '../../package.json';
 
 /**
  * Logs a message to the JS Console. Has a method for each JS Console method,

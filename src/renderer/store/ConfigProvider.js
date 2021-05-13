@@ -3,9 +3,9 @@
 //
 
 import { createContext, useContext, useState, useMemo } from 'react';
-import { request } from '../netUtil';
+import { request } from '../../util/netUtil';
 import { ProviderStore } from './ProviderStore';
-import { logger } from '../../util';
+import { logger } from '../../util/logger';
 import * as strings from '../../strings';
 
 //

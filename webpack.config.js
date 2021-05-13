@@ -36,7 +36,7 @@ const plugins = [
 
 module.exports = [
   {
-    entry: './src/main.ts',
+    entry: './src/main/main.ts',
     context: __dirname,
     target: 'electron-main',
     mode: buildTarget,
@@ -63,7 +63,7 @@ module.exports = [
     },
   },
   {
-    entry: './src/renderer.tsx',
+    entry: './src/renderer/renderer.tsx',
     context: __dirname,
     target: 'electron-renderer',
     mode: buildTarget,

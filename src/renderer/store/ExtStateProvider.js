@@ -6,7 +6,7 @@ import { createContext, useContext, useState, useMemo } from 'react';
 import propTypes from 'prop-types';
 import * as rtv from 'rtvjs';
 import { cloneDeep, cloneDeepWith } from 'lodash';
-import { PreferencesStore, prefStore } from './PreferencesStore';
+import { PreferencesStore, prefStore } from '../../store/PreferencesStore';
 import { AuthAccess } from '../auth/AuthAccess';
 import { ProviderStore } from './ProviderStore';
 

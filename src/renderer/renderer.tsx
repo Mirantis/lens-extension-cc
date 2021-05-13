@@ -1,8 +1,9 @@
 import React from 'react';
 import { LensRendererExtension } from '@k8slens/extensions';
-import { ContainerCloudIcon, AddClusterPage } from './page';
-import * as strings from './strings';
-import { mainRoute } from './routes';
+import { AddClusterPage } from './components/AddClusterPage';
+import { ContainerCloudIcon } from './components/ContainerCloudIcon';
+import * as strings from '../strings';
+import { mainRoute } from '../routes';
 import {
   EXT_EVENT_ACTIVATE_CLUSTER,
   EXT_EVENT_ADD_CLUSTERS,
@@ -10,10 +11,10 @@ import {
   EXT_EVENT_OAUTH_CODE,
   dispatchExtEvent,
 } from './eventBus';
-import { prefStore } from './cc/store/PreferencesStore';
-import { logger } from './util';
-import pkg from '../package.json';
+import { prefStore } from '../store/PreferencesStore';
+import { logger as loggerUtil } from '../util/logger';
 
+const logger: any = loggerUtil; // get around TS compiler's complaining
 const itemColor = 'white'; // CSS color; Lens hard-codes the color of the workspace indicator item to 'white' also
 
 export default class ExtensionRenderer extends LensRendererExtension {
@@ -138,6 +139,8 @@ export default class ExtensionRenderer extends LensRendererExtension {
   };
 
   async onActivate() {
+    logger.log('renderer', 'extension activated');
+
     this.protocolHandlers = [
       {
         pathSchema: `/${EXT_EVENT_ACTIVATE_CLUSTER}`,
@@ -159,4 +162,9 @@ export default class ExtensionRenderer extends LensRendererExtension {
 
     await prefStore.loadExtension(this);
   }
+
+  onDeactivate() {
+    logger.log('renderer', 'extension deactivated');
+  }
+
 }

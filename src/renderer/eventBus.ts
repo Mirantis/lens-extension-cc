@@ -5,7 +5,7 @@
 //
 
 import * as rtv from 'rtvjs';
-import { AuthAccess } from './cc/auth/AuthAccess';
+import { AuthAccess } from './auth/AuthAccess';
 
 //
 // TYPES
