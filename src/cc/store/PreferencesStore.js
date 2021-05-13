@@ -167,5 +167,6 @@ export class PreferencesStore extends Store.ExtensionStore {
   }
 }
 
-// singleton instance, for convenience
-export const prefStore = PreferencesStore.getInstance();
+// create singleton instance, and export it for convenience (otherwise, one can also
+//  import the exported PreferencesStore class and call PreferencesStore.getInstance())
+export const prefStore = PreferencesStore.createInstance();
