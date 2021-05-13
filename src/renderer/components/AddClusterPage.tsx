@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { ThemeProvider, CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
-import { View } from './cc/View';
-import { ExtStateProvider } from './cc/store/ExtStateProvider';
-import { ConfigProvider } from './cc/store/ConfigProvider';
-import { SsoAuthProvider } from './cc/store/SsoAuthProvider';
-import { ClusterDataProvider } from './cc/store/ClusterDataProvider';
-import { ClusterActionsProvider } from './cc/store/ClusterActionsProvider';
-import { lightThemeClassName, lightTheme, darkTheme } from './cc/theme';
-import ExtensionRenderer from './renderer';
+import { View } from './View';
+import { ExtStateProvider } from '../store/ExtStateProvider';
+import { ConfigProvider } from '../store/ConfigProvider';
+import { SsoAuthProvider } from '../store/SsoAuthProvider';
+import { ClusterDataProvider } from '../store/ClusterDataProvider';
+import { ClusterActionsProvider } from '../store/ClusterActionsProvider';
+import { lightThemeClassName, lightTheme, darkTheme } from './theme';
+import ExtensionRenderer from '../renderer';
 
-export { ContainerCloudIcon } from './cc/ContainerCloudIcon';
+export { ContainerCloudIcon } from './ContainerCloudIcon';
 
 interface Props {
   extension: ExtensionRenderer;

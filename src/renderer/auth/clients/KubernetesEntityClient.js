@@ -1,4 +1,4 @@
-import { request } from '../../netUtil';
+import { request } from '../../../util/netUtil';
 import * as strings from '../../../strings';
 
 // no start nor end slashes

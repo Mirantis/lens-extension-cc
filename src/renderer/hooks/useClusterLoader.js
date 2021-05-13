@@ -3,7 +3,7 @@ import { useExtState } from '../store/ExtStateProvider';
 import { useConfig } from '../store/ConfigProvider';
 import { useSsoAuth } from '../store/SsoAuthProvider';
 import { useClusterData } from '../store/ClusterDataProvider';
-import { logger } from '../../util';
+import { logger } from '../../util/logger';
 
 /**
  * Custom hook that loads the MCC config, authenticates with the instance, and

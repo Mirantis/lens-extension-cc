@@ -1,12 +1,12 @@
 import propTypes from 'prop-types';
 import styled from '@emotion/styled';
 import { Component } from '@k8slens/extensions';
-import { useClusterLoadingState } from './hooks/useClusterLoadingState';
-import { Cluster } from './store/Cluster';
+import { useClusterLoadingState } from '../hooks/useClusterLoadingState';
+import { Cluster } from '../store/Cluster';
 import { Section } from './Section';
 import { InlineNotice, types as noticeTypes, iconSizes } from './InlineNotice';
 import { layout, mixinFlexColumnGaps } from './styles';
-import * as strings from '../strings';
+import * as strings from '../../strings';
 
 const CheckList = styled.div(function () {
   return {

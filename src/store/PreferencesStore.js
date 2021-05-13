@@ -5,7 +5,7 @@
 import { observable, toJS } from 'mobx';
 import { Store } from '@k8slens/extensions';
 import * as rtv from 'rtvjs';
-import { logger } from '../../util';
+import { logger } from '../util/logger';
 
 /** RTV.js typeset for preferences model. */
 export const preferencesTs = {
