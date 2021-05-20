@@ -46,10 +46,9 @@ Mirantis Container Cloud instances that use third-party SSO authentication via _
 
 Since the integration leverages the `lens://` URL protocol handling feature for extensions, __Lens 4.2__ (or later) is required, and the __Keycloak Client__ of the instance must be configured as follows:
 
--   Allow requests from the `"*"` origin. This is because the internal Electron browser used by the Lens App uses a random port. Therefore, the originating URL cannot be predicted.
 -   Allow the following redirect URI: `lens://extensions/@mirantis/lens-extension-cc/oauth/code`
 
-> 💡 Be sure to make these configuration adjustments __on every Keycloak Client__ (`kaas` for the management cluster, and `k8s` for child clusters by default) that manages clusters you will want to add. The extension does not know ahead of time whether you have given it the appropriate access, and adding clusters without this configuration will result in an error.
+> 💡 Be sure to make these configuration adjustments __on every Keycloak Client__ (`kaas` for the management cluster, and `k8s` for child clusters, by default) that manages clusters you will want to add. The extension does not know ahead of time whether you have given it the appropriate access, and adding clusters without this configuration will result in an error.
 
 ### Authentication flow
 
