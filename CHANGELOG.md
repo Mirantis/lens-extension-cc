@@ -1,5 +1,9 @@
 # ChangeLog
 
+## UNRELEASED
+
+- Docs: Removed an unnecessary [Keycloak configuration](README.md#keycloak-configuration) requirement for permitting requests from `"*"` origin. That is not needed, and can remain as the default `"+"` setting (which means "allow requests from any configured `redirect_uri` origins).
+
 ## v2.2.1
 
 Supports Lens `>= 4.2.4`.
