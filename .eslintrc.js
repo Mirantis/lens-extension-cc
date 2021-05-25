@@ -37,6 +37,7 @@ const env = {
 
 const globals = {
   DEV_ENV: 'readonly',
+  DEV_UNSAFE_NO_CERT: 'readonly',
 };
 
 module.exports = {
