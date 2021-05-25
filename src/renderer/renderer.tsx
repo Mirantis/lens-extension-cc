@@ -1,5 +1,5 @@
 import React from 'react';
-import { LensRendererExtension } from '@k8slens/extensions';
+import { Renderer } from '@k8slens/extensions';
 import { AddClusterPage } from './components/AddClusterPage';
 import { ContainerCloudIcon } from './components/ContainerCloudIcon';
 import * as strings from '../strings';
@@ -13,11 +13,12 @@ import {
 } from './eventBus';
 import { prefStore } from '../store/PreferencesStore';
 import { logger as loggerUtil } from '../util/logger';
+import { IpcRenderer } from './IpcRenderer';
 
 const logger: any = loggerUtil; // get around TS compiler's complaining
 const itemColor = 'white'; // CSS color; Lens hard-codes the color of the workspace indicator item to 'white' also
 
-export default class ExtensionRenderer extends LensRendererExtension {
+export default class ExtensionRenderer extends Renderer.LensExtension {
   globalPages = [
     {
       id: mainRoute,
@@ -138,8 +139,9 @@ export default class ExtensionRenderer extends LensRendererExtension {
     });
   };
 
-  async onActivate() {
+  onActivate() {
     logger.log('renderer', 'extension activated');
+    IpcRenderer.createInstance(this);
 
     this.protocolHandlers = [
       {
@@ -160,11 +162,10 @@ export default class ExtensionRenderer extends LensRendererExtension {
       },
     ];
 
-    await prefStore.loadExtension(this);
+    prefStore.loadExtension(this);
   }
 
   onDeactivate() {
     logger.log('renderer', 'extension deactivated');
   }
-
 }

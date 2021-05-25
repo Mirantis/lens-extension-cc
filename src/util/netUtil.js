@@ -1,6 +1,14 @@
 import { get } from 'lodash';
 import nodeFetch from 'node-fetch';
+import https from 'https';
 import * as strings from '../strings';
+
+// SECURITY: get around any MCC instance certificate issues
+const httpsAgent = DEV_UNSAFE_NO_CERT
+  ? new https.Agent({
+      rejectUnauthorized: false,
+    })
+  : undefined;
 
 async function tryExtractBody(response, extractMethod) {
   let body = null;
@@ -73,6 +81,12 @@ export async function request(
   try {
     response = await nodeFetch(url, {
       ...requestOptions,
+
+      // SECURITY: If DEV_UNSAFE_NO_CERT is `true`, `httpsAgent` will be defined
+      //  and it will ignore any certificate issues on the remote server; otherwise,
+      //  `httpsAgent1` will be `undefined`, the default agent will be used, and
+      //  if there are any certificate issues, the request will blocked
+      agent: url.startsWith('https:') ? httpsAgent : undefined,
     });
   } catch (e) {
     return {

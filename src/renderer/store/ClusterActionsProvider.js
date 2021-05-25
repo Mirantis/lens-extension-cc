@@ -6,7 +6,7 @@ import { createContext, useContext, useState, useMemo } from 'react';
 import * as rtv from 'rtvjs';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { Store, Component, Util, Catalog } from '@k8slens/extensions';
+import { Common, Renderer } from '@k8slens/extensions';
 import { AuthClient } from '../auth/clients/AuthClient';
 import { kubeConfigTemplate } from '../../util/templates';
 import { AuthAccess } from '../auth/AuthAccess';
@@ -14,38 +14,18 @@ import * as strings from '../../strings';
 import { ProviderStore } from './ProviderStore';
 import { Cluster } from './Cluster';
 import { logger } from '../../util/logger';
+import { clusterModelTs } from '../../util/typesets';
 import { extractJwtPayload } from '../auth/authUtil';
-import { source as catalogSource } from './CatalogSource';
+import { IpcRenderer } from '../IpcRenderer';
 import pkg from '../../../package.json';
 
-const { Notifications } = Component;
+const { Store, Util } = Common;
+const {
+  Component: { Notifications },
+} = Renderer;
 
 // OAuth2 'state' parameter value to use when requesting tokens for one cluster out of many
 export const SSO_STATE_ADD_CLUSTERS = 'add-clusters';
-
-//
-// RTV Typesets used for validations
-//
-
-const clusterModelTs = DEV_ENV
-  ? {
-      metadata: {
-        uid: rtv.STRING,
-        name: rtv.STRING,
-        source: [rtv.OPTIONAL, rtv.STRING],
-        labels: [rtv.OPTIONAL, rtv.HASH_MAP, {
-          $values: rtv.STRING,
-        }]
-      },
-      spec: {
-        kubeconfigPath: rtv.STRING,
-        kubeconfigContext: rtv.STRING,
-      },
-      status: {
-        phase: [rtv.STRING, { oneOf: ['connected', 'disconnected'] } ],
-      }
-    }
-  : undefined;
 
 //
 // Store
@@ -253,7 +233,7 @@ const _writeKubeConfig = async function ({
       },
       status: {
         phase: 'disconnected',
-      }
+      },
     },
   };
 };
@@ -295,24 +275,25 @@ const _switchToCluster = async function (clusterId) {
  *  item in `clusters`. See `clusterModelTs` typeset for interface.
  */
 const _addMetadata = function (cloudUrl, clusterPartials, models) {
-  DEV_ENV && rtv.verify(
-    {
-      cloudUrl,
-      clusterPartials,
-      models,
-    },
-    {
-      cloudUrl: rtv.STRING,
-      clusterPartials: [
-        [{ namespace: rtv.STRING, name: rtv.STRING, id: rtv.STRING }],
-      ],
-      models: [
-        [clusterModelTs],
-        (value, match, typeset, { parent }) =>
-          parent.clusterPartials.length === value.length,
-      ],
-    }
-  );
+  DEV_ENV &&
+    rtv.verify(
+      {
+        cloudUrl,
+        clusterPartials,
+        models,
+      },
+      {
+        cloudUrl: rtv.STRING,
+        clusterPartials: [
+          [{ namespace: rtv.STRING, name: rtv.STRING, id: rtv.STRING }],
+        ],
+        models: [
+          [clusterModelTs],
+          (value, match, typeset, { parent }) =>
+            parent.clusterPartials.length === value.length,
+        ],
+      }
+    );
 
   clusterPartials.forEach((partial, idx) => {
     const model = models[idx];
@@ -325,28 +306,13 @@ const _addMetadata = function (cloudUrl, clusterPartials, models) {
     // Lens-specific optional metadata
     model.metadata.source = pkg.name;
     model.metadata.labels = {
-      namespace: partial.namespace, // TODO[catalog] add custom prefix to this?
+      namespace: partial.namespace, // TODO[catalog]: add custom prefix to this?
     };
 
     // custom metdata
     // NOTE: `metadata.uid` and `metadata.name` will already be set to the cluster
     //  ID and name from `_writeKubeConfig()`
     model.metadata.cloudUrl = cloudUrl;
-  });
-};
-
-/**
- * Adds one or more clusters to the Lens Catalog.
- * @param {Array<ClusterModel>} models List of models for clusters to add, one for each
- *  item in `clusters`. See `clusterModelTs` typeset for interface.
- */
-const _addToCatalog = function (models) {
-  DEV_ENV && rtv.verify({ models }, { models: [[clusterModelTs]] });
-
-  models.forEach((model) => {
-    // officially add to Lens
-    // TODO[catalog]: need to save the model to a Store so we can restore it on load...
-    catalogSource.push(new Catalog.KubernetesCluster(model));
   });
 };
 
@@ -363,13 +329,15 @@ const _addToCatalog = function (models) {
  *  to new (or existing if the workspaces already exist) workspaces that
  *  correlate to their original MCC namespaces; otherwise, they will all
  *  be added to the active workspace.
+ * @returns {Promise.<Object>} Does not fail. Resolves to an empty object on success;
+ *  resolves to an object with `error: string` property on failure.
  */
 const _addClusterKubeConfigs = async function ({
   cloudUrl,
   newClusters,
   promises,
   savePath,
-  addToNew = false,
+  addToNew = false, // TODO[catalog]: no longer needed?
 }) {
   // these promises are designed NOT to reject
   let results = await Promise.all(promises); // {Array<{cluster: Cluster, kubeConfig: Object}>} on success
@@ -392,21 +360,24 @@ const _addClusterKubeConfigs = async function ({
     failure = results.find((res) => !!res.error); // look for any errors, use first-found
   }
 
-  pr.loading = false;
-  pr.loaded = true;
-
   if (failure) {
-    pr.error = failure.error;
+    return { error: failure.error };
   } else {
     const models = results.map(({ model }) => model);
-
     _addMetadata(cloudUrl, newClusters, models);
-    _addToCatalog(models);
+
+    try {
+      await IpcRenderer.getInstance().invoke('addClusters', models);
+    } catch (err) {
+      return { error: err.message };
+    }
 
     if (newClusters.length > 0) {
       _notifyNewClusters(newClusters);
     }
   }
+
+  return {};
 };
 
 /**
@@ -503,7 +474,7 @@ const _ssoFinishAddClusters = async function ({
   if (accessError) {
     pr.error = accessError;
   } else {
-    _addClusterKubeConfigs({
+    const addResult = await _addClusterKubeConfigs({
       cloudUrl,
       newClusters: [cluster],
       existingClusters: [],
@@ -521,6 +492,10 @@ const _ssoFinishAddClusters = async function ({
       savePath,
       addToNew,
     });
+
+    if (addResult.error) {
+      pr.error = addResult.error;
+    }
   }
 
   pr.store.ssoAddClustersInProgress = false;

@@ -3,12 +3,14 @@
 //
 
 import { createContext, useContext, useState, useMemo } from 'react';
-import { Util } from '@k8slens/extensions';
+import { Common } from '@k8slens/extensions';
 import { ProviderStore } from './ProviderStore';
 import * as strings from '../../strings';
 import { logger } from '../../util/logger';
 import { extractJwtPayload } from '../auth/authUtil';
 import { AuthClient } from '../auth/clients/AuthClient';
+
+const { Util } = Common;
 
 //
 // Store

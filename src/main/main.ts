@@ -1,10 +1,9 @@
-import { LensMainExtension } from '@k8slens/extensions';
+import { Main } from '@k8slens/extensions';
 import { mainRoute } from '../routes';
 import { prefStore } from '../store/PreferencesStore';
-import { source } from '../renderer/store/CatalogSource';
+import { IpcMain } from './IpcMain';
 import { logger as loggerUtil } from '../util/logger';
 import * as strings from '../strings';
-import pkg from '../../package.json';
 
 const logger: any = loggerUtil; // get around TS compiler's complaining
 
@@ -16,7 +15,7 @@ const logger: any = loggerUtil; // get around TS compiler's complaining
 // Once started, you'll see console statements appear __in the Terminal__.
 // For instance, you may want to hook into onActivate() or onDeactivate().
 
-export default class ExtensionMain extends LensMainExtension {
+export default class ExtensionMain extends Main.LensExtension {
   appMenus = [
     {
       parentId: 'file',
@@ -27,15 +26,10 @@ export default class ExtensionMain extends LensMainExtension {
     },
   ];
 
-  async onActivate() {
+  onActivate() {
     logger.log('main', 'extension activated');
-
-    // TODO[catalog]: this is pointless because we'd also need to add clusters
-    //  in this MAIN process, and EVERYTHING related to clusters in this
-    //  extension needs to happen in the RENDERER process...
-    this.addCatalogSource(pkg.name, source);
-
-    await prefStore.loadExtension(this);
+    IpcMain.createInstance(this);
+    prefStore.loadExtension(this);
   }
 
   onDeactivate() {

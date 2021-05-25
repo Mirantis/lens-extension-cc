@@ -2,8 +2,8 @@
 // Preferences management that uses a Lens Store for persistence
 //
 
-import { observable, toJS } from 'mobx';
-import { Store } from '@k8slens/extensions';
+import { observable, toJS, makeObservable } from 'mobx';
+import { Common } from '@k8slens/extensions';
 import * as rtv from 'rtvjs';
 import { logger } from '../util/logger';
 
@@ -42,7 +42,7 @@ export const preferencesTs = {
 };
 
 /** Preferences auto-persisted by Lens. Singleton. Use `getInstance()` static method. */
-export class PreferencesStore extends Store.ExtensionStore {
+export class PreferencesStore extends Common.Store.ExtensionStore {
   // NOTE: See renderer.tsx#onActivate() where this.loadExtension() is called on
   //  the store instance in order to get Lens to load it from storage.
 
@@ -106,6 +106,7 @@ export class PreferencesStore extends Store.ExtensionStore {
       configName: 'preferences-store',
       defaults: PreferencesStore.getDefaults(),
     });
+    makeObservable(this);
   }
 
   /** Reset all preferences to their default values. */
@@ -141,7 +142,7 @@ export class PreferencesStore extends Store.ExtensionStore {
     }, {});
 
     // return a deep-clone that is no longer observable
-    return toJS(observableThis, { recurseEverything: true });
+    return toJS(observableThis);
   }
 
   /**
