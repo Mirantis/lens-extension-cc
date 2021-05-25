@@ -1,7 +1,9 @@
-import { Component } from '@k8slens/extensions';
+import { Renderer } from '@k8slens/extensions';
 import { noteOwner } from '../../strings';
 
-const { Notifications } = Component;
+const {
+  Component: { Notifications },
+} = Renderer;
 
 /**
  * Defines common functionality for use when implementing a React context provider

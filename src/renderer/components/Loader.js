@@ -4,8 +4,10 @@
 
 import propTypes from 'prop-types';
 import styled from '@emotion/styled';
-import { Component } from '@k8slens/extensions';
+import { Renderer } from '@k8slens/extensions';
 import { layout } from './styles';
+
+const { Component } = Renderer;
 
 const Wrapper = styled.div(function () {
   return {

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import styled from '@emotion/styled';
-import { Component } from '@k8slens/extensions';
+import { Renderer } from '@k8slens/extensions';
 import { layout } from './styles';
 import { Section } from './Section';
 import { useExtState } from '../store/ExtStateProvider';
@@ -12,7 +12,9 @@ import { InlineNotice } from './InlineNotice';
 import { normalizeUrl } from '../../util/netUtil';
 import * as strings from '../../strings';
 
-const { Notifications } = Component;
+const {
+  Component: { Notifications, Input, Button },
+} = Renderer;
 
 const urlClassName = 'lecc-Login--url';
 
@@ -219,7 +221,7 @@ export const Login = function () {
       <h3>{strings.login.title()}</h3>
       <Field>
         <label htmlFor="lecc-login-url">{strings.login.url.label()}</label>
-        <Component.Input
+        <Input
           type="text"
           className={urlClassName}
           theme="round-black" // borders on all sides, rounded corners
@@ -230,7 +232,7 @@ export const Login = function () {
         />
       </Field>
       <div>
-        <Component.Button
+        <Button
           primary
           disabled={loading}
           label={
@@ -253,7 +255,7 @@ export const Login = function () {
             />
           </InlineNotice>
           <div>
-            <Component.Button
+            <Button
               primary
               label={strings.login.action.ssoCancel()}
               onClick={handleSsoCancelClick}

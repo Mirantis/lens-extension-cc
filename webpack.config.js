@@ -3,6 +3,7 @@
 //
 // Environment Variables:
 // - TARGET: Either 'development' or 'production' (default).
+// - DEV_UNSAFE_NO_CERT: Set to 'thisisunsafe' to disable TLS certificate verification on MCC instances
 //
 
 const path = require('path');
@@ -30,6 +31,10 @@ const loaders = [
 const plugins = [
   new DefinePlugin({
     DEV_ENV: JSON.stringify(buildTarget !== 'production'),
+    DEV_UNSAFE_NO_CERT: JSON.stringify(
+      buildTarget !== 'production' &&
+        process.env.DEV_UNSAFE_NO_CERT === 'thisisunsafe'
+    ),
     'process.env.TARGET': JSON.stringify(buildTarget),
   }),
 ];

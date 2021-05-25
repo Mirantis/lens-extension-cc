@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import styled from '@emotion/styled';
 import * as rtv from 'rtvjs';
-import { Component } from '@k8slens/extensions';
+import { Renderer } from '@k8slens/extensions';
 import { useExtState } from '../store/ExtStateProvider';
 import { useConfig } from '../store/ConfigProvider';
 import { useSsoAuth } from '../store/SsoAuthProvider';
@@ -34,6 +34,8 @@ import {
   removeExtEventHandler,
 } from '../eventBus';
 import { normalizeUrl } from '../../util/netUtil';
+
+const { Component } = Renderer;
 
 //
 // INTERNAL STYLED COMPONENTS
