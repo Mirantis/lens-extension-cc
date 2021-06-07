@@ -6,13 +6,15 @@
 //  can optionally accept tokens as arguments to use in the generated string.
 //
 
-import { workspacePrefix } from './constants';
 import pkg from '../package.json';
 
 export type Prop = (...tokens: any[]) => string;
 
 export interface Dict {
-  [index: string]: Dict | Prop;
+  // NOTE: not fighting this any more, `Dict | Prop` seems like it should work as a recursive
+  //  structure, but somehow it's only good down to the 3rd depth, then TypeScript starts to
+  //  think some property doesn't exist, and that's really annoying; moving on...
+  [index: string]: any;
 }
 
 // owner info to add to all posted notifications; does NOT start/end with a space
@@ -69,7 +71,7 @@ export const view: Dict = {
     close: () => 'Reset back to normal view',
   },
   help: {
-    html: () =>
+    html: ({ catalogSource, srcLabelName, nsLabelName }) =>
       `
 <h2>Adding Clusters</h2>
 <p>
@@ -81,15 +83,18 @@ export const view: Dict = {
   files (unless you remove the pertaining cluster from Lens) because Lens references
   them whenever a related cluster is activated.
 </p>
-<h3>Workspaces</h3>
+<h3>Catalog</h3>
 <p>
-  By default, clusters are added to new workspaces that match their ${mccShortName} namespace
-  names with an added <code>${workspacePrefix}</code> prefix.
+  Clusters are added to the Lens Catalog with a <em>Source</em> set to
+  &quot;<code>${catalogSource}</code>&quot. They also get two default labels:
+  <code>${srcLabelName}</code> (set to &quot;<code>true</code>&quot;), and
+  <code>${nsLabelName}</code> (set to the cluster's original <em>Project</em> name
+  in ${mccShortName}).
 </p>
 <p>
-  For example, if a cluster from a <code>demo</code> namespace is added, it will
-  be added to the <code>${workspacePrefix}demo</code> workspace (and the workspace will be
-  created if it doesn't exist already).
+  To quickly filter the Catalog for clusters added by this extension, belonging
+  to a specific Project, simply filter for
+  &quot;<code>${srcLabelName}=true ${nsLabelName}=NAMESPACE</code>&quot;.
 </p>
 <h2>Links</h2>
 <p>
@@ -176,12 +181,6 @@ export const preferencesPanel: Dict = {
     message: () => 'Choose kubeConfig file location',
     action: () => 'Use location',
   },
-  addToNew: {
-    label: () => 'Add to new workspaces',
-    tipOn: () =>
-      `Add clusters to new workspaces that correlate to their original ${mccShortName} namespaces`,
-    tipOff: () => 'Add clusters to the active workspace',
-  },
   offline: {
     label: () => 'Offline use',
     tip: () =>
@@ -207,6 +206,8 @@ export const clusterActionsProvider: Dict = {
       `Failed to save kubeConfig file to disk for cluster ${clusterId}`,
     clusterNotFound: (name) =>
       `The ${name} cluster was not found in Lens. Try adding it first.`,
+    catalogAddFailed: () =>
+      'Failed to add some clusters to the Lens Catalog. See logs for more details.',
     sso: {
       addClustersUserCanceled: () =>
         'The operation to add clusters was canceled by the user during the SSO authorization process.',
@@ -266,5 +267,30 @@ export const apiClient: Dict = {
     failedToCreate: (entity = 'unknown') => `Failed to create ${entity}`,
     failedToUpdate: (entity = 'unknown') => `Failed to update ${entity}`,
     failedToDelete: (entity = 'unknown') => `Failed to delete ${entity}`,
+  },
+};
+
+export const renderer: Dict = {
+  catalog: {
+    contextMenuItems: {
+      remove: {
+        title: () => 'Remove',
+        confirm: (cluster) =>
+          `Are you sure you want to remove the ${cluster} cluster from Lens? The kubeConfig file NOT be deleted (use the Delete option to also delete it from disk).`,
+        error: {
+          errorDuringRemove: (cluster) =>
+            `An error occurred while attempting to remove the ${cluster} cluster from Lens. See logs for more details.`,
+        },
+      },
+      delete: {
+        title: () => 'Delete',
+        confirm: (cluster) =>
+          `Are you sure you want to remove the ${cluster} cluster from Lens and delete the kubeConfig file from disk?`,
+        error: {
+          errorDuringDelete: (cluster) =>
+            `An error occurred while attempting remove the ${cluster} cluster from Lens and delete the kubeConfig file. See logs for more details.`,
+        },
+      },
+    },
   },
 };

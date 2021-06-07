@@ -28,7 +28,7 @@ export const AddClusters = function ({ onAdd, clusters }) {
   //
 
   const {
-    state: { loading: addClustersLoading },
+    state: { loading: addClustersLoading, ssoAddClustersInProgress },
     actions: clusterActions,
   } = useClusterActions();
 
@@ -67,7 +67,7 @@ export const AddClusters = function ({ onAdd, clusters }) {
           onClick={handleAddClick}
         />
       </div>
-      {addClustersLoading && (
+      {addClustersLoading && ssoAddClustersInProgress && (
         <>
           <InlineNotice>
             <p

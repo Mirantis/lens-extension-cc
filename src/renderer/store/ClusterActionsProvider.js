@@ -10,16 +10,18 @@ import { Common, Renderer } from '@k8slens/extensions';
 import { AuthClient } from '../auth/clients/AuthClient';
 import { kubeConfigTemplate } from '../../util/templates';
 import { AuthAccess } from '../auth/AuthAccess';
-import * as strings from '../../strings';
 import { ProviderStore } from './ProviderStore';
 import { Cluster } from './Cluster';
 import { logger } from '../../util/logger';
-import { clusterModelTs } from '../../util/typesets';
+import { clusterModelTs } from '../../typesets';
 import { extractJwtPayload } from '../auth/authUtil';
 import { IpcRenderer } from '../IpcRenderer';
-import pkg from '../../../package.json';
+import { getLensClusters } from '../rendererUtil';
+import ExtensionRenderer from '../renderer';
+import * as strings from '../../strings';
+import * as consts from '../../constants';
 
-const { Store, Util } = Common;
+const { Util } = Common;
 const {
   Component: { Notifications },
 } = Renderer;
@@ -76,13 +78,11 @@ const _postInfo = function (Message, options) {
  *  `undefined` otherwise.
  */
 const _getLensCluster = function (cluster) {
-  // TODO[catalog]: how to search all existing clusters? look in the source?
-
-  const existingLensClusters = [];
+  const existingLensClusters = getLensClusters();
   const clusterId = cluster instanceof Cluster ? cluster.id : cluster;
 
   return existingLensClusters.find(
-    (lensCluster) => lensCluster.id === clusterId
+    (lensCluster) => lensCluster.metadata.uid === clusterId
   );
 };
 
@@ -180,6 +180,7 @@ const _getClusterAccess = async function ({
 
 /**
  * [ASYNC] Writes a kubeConfig to the local disk for the given cluster.
+ * @param {string} options.cloudUrl MCC instance base URL that owns the cluster.
  * @param {string} options.namespace MCC namespace the cluster comes from.
  * @param {string} options.clusterName Name of the cluster in MCC.
  * @param {string} options.clusterId ID of the cluster in MCC.
@@ -191,6 +192,7 @@ const _getClusterAccess = async function ({
  *  workspace by default.
  */
 const _writeKubeConfig = async function ({
+  cloudUrl,
   namespace,
   clusterName,
   clusterId,
@@ -224,8 +226,13 @@ const _writeKubeConfig = async function ({
       //  @see node_modules/@k8slens/extensions/dist/src/common/catalog/catalog-entity.d.ts
 
       metadata: {
+        // native metadata
         uid: clusterId,
         name: clusterName,
+
+        // custom metadata
+        namespace,
+        cloudUrl,
       },
       spec: {
         kubeconfigPath,
@@ -258,32 +265,33 @@ const _notifyNewClusters = function (clusterShims) {
 };
 
 /**
- * [ASYNC] Switch to the specified cluster (and associated workspace).
- * @param {string} clusterId ID of the cluster in Lens. Can be in any workspace,
- *  even if it's not the active one.
+ * Switch to the specified cluster (and associated workspace).
+ * @param {string} clusterId ID of the cluster in Lens.
  */
-const _switchToCluster = async function (clusterId) {
-  await Store.workspaceStore.setActiveCluster(clusterId);
+const _switchToCluster = function (clusterId) {
+  // NOTE: we need a short delay to ensure the navigation actually takes place,
+  //  since we have just navigated to this extension's global page, and we're
+  //  about to navigate elsewhere; if we do it too quickly, we end-up with a
+  //  race condition and this navigation doesn't take place (we remain on our
+  //  global page instead of going to the cluster)
+  setTimeout(() => Renderer.Navigation.navigate(`/cluster/${clusterId}`), 500);
 };
 
 /**
  * Adds metadata to cluster models to prepare them to be added to the Lens Catalog.
- * @param {string} cloudUrl MCC instance base URL that owns all the clusters.
  * @param {Array<{namespace: string, id: string, name: string}>} clusterPartials
  *  Clusters being added. Subset of full `./Cluster.js` class properties.
  * @param {Array<ClusterModel>} models List of models for clusters to add, one for each
  *  item in `clusters`. See `clusterModelTs` typeset for interface.
  */
-const _addMetadata = function (cloudUrl, clusterPartials, models) {
+const _addMetadata = function (clusterPartials, models) {
   DEV_ENV &&
     rtv.verify(
       {
-        cloudUrl,
         clusterPartials,
         models,
       },
       {
-        cloudUrl: rtv.STRING,
         clusterPartials: [
           [{ namespace: rtv.STRING, name: rtv.STRING, id: rtv.STRING }],
         ],
@@ -301,19 +309,32 @@ const _addMetadata = function (cloudUrl, clusterPartials, models) {
     // NOTE: @see `CatalogEntityMetadata` in
     //  `node_modules/@k8slens/extensions/dist/src/common/catalog/catalog-entity.d.ts`
     //  for required/supported/optional metadata properties; note that arbitrary
-    //  metadata properties are also supporeted
+    //  metadata properties are also supported
 
     // Lens-specific optional metadata
-    model.metadata.source = pkg.name;
+    model.metadata.source = consts.catalog.source;
     model.metadata.labels = {
-      namespace: partial.namespace, // TODO[catalog]: add custom prefix to this?
+      [consts.catalog.labels.source]: 'true', // labels must be strings only
+      [consts.catalog.labels.namespace]: partial.namespace,
     };
-
-    // custom metdata
-    // NOTE: `metadata.uid` and `metadata.name` will already be set to the cluster
-    //  ID and name from `_writeKubeConfig()`
-    model.metadata.cloudUrl = cloudUrl;
   });
+};
+
+/**
+ * [ASYNC] Sends the specified cluster models to the Lens Catalog to be added.
+ * @param {Array<ClusterModel>} models Models for the clusters to add to (send to)
+ *  the Lens Catalog for display.
+ * @returns {Promise.<Object>} Does not fail. Resolves to an empty object on success;
+ *  resolves to an object with `error: string` property on failure.
+ */
+const _sendClustersToCatalog = async function (models) {
+  try {
+    await IpcRenderer.getInstance().invoke('addClusters', models);
+  } catch (err) {
+    return { error: err.message };
+  }
+
+  return {};
 };
 
 /**
@@ -325,7 +346,6 @@ const _addMetadata = function (cloudUrl, clusterPartials, models) {
  *  are designed NOT to fail, and which will yield objects containing `cluster` and
  *  associated `kubeConfig` for each cluster in `newClusters`.
  * @param {string} options.savePath Absolute path where kubeConfigs are to be saved.
- * @param {boolean} [options.addToNew] If true, the clusters will be added
  *  to new (or existing if the workspaces already exist) workspaces that
  *  correlate to their original MCC namespaces; otherwise, they will all
  *  be added to the active workspace.
@@ -337,7 +357,6 @@ const _addClusterKubeConfigs = async function ({
   newClusters,
   promises,
   savePath,
-  addToNew = false, // TODO[catalog]: no longer needed?
 }) {
   // these promises are designed NOT to reject
   let results = await Promise.all(promises); // {Array<{cluster: Cluster, kubeConfig: Object}>} on success
@@ -347,6 +366,7 @@ const _addClusterKubeConfigs = async function ({
     // write each kubeConfig to disk
     promises = results.map(({ cluster, kubeConfig }) =>
       _writeKubeConfig({
+        cloudUrl,
         namespace: cluster.namespace,
         clusterName: cluster.name,
         clusterId: cluster.id,
@@ -364,12 +384,16 @@ const _addClusterKubeConfigs = async function ({
     return { error: failure.error };
   } else {
     const models = results.map(({ model }) => model);
-    _addMetadata(cloudUrl, newClusters, models);
+    _addMetadata(newClusters, models);
 
-    try {
-      await IpcRenderer.getInstance().invoke('addClusters', models);
-    } catch (err) {
-      return { error: err.message };
+    const sendResult = await _sendClustersToCatalog(models);
+    if (sendResult.error) {
+      logger.error(
+        'ClusterActionProvider._addClusterKubeConfigs()',
+        'Failed to add some clusters to Catalog, error="%s"',
+        sendResult.error
+      );
+      return { error: strings.clusterActionsProvider.error.catalogAddFailed() };
     }
 
     if (newClusters.length > 0) {
@@ -440,10 +464,6 @@ const _addClusters = async function ({ clusters, config, offline = false }) {
  * @param {boolean} [options.offline] If true, the refresh token generated for the
  *  clusters will be enabled for offline access. WARNING: This is less secure
  *  than a normal refresh token as it will never expire.
- * @param {boolean} [options.addToNew] If true, the clusters will be added
- *  to new (or existing if the workspaces already exist) workspaces that
- *  correlate to their original MCC namespaces; otherwise, they will all
- *  be added to the active workspace.
  * @throws {Error} If the store is not aware of a pending 'add clusters' operation.
  */
 const _ssoFinishAddClusters = async function ({
@@ -452,7 +472,6 @@ const _ssoFinishAddClusters = async function ({
   savePath,
   cloudUrl,
   config,
-  addToNew = false,
   offline = false,
 }) {
   if (!pr.store.ssoAddClustersInProgress) {
@@ -490,7 +509,6 @@ const _ssoFinishAddClusters = async function ({
         }),
       ],
       savePath,
-      addToNew,
     });
 
     if (addResult.error) {
@@ -514,10 +532,6 @@ const _ssoFinishAddClusters = async function ({
  * @param {string} options.namespace MCC namespace to which the cluster belongs.
  * @param {string} options.clusterName Name of the cluster.
  * @param {string} options.clusterId ID of the cluster.
- * @param {boolean} [options.addToNew] If true, the clusters will be added
- *  to new (or existing if the workspaces already exist) workspaces that
- *  correlate to their original MCC namespaces; otherwise, they will all
- *  be added to the active workspace.
  */
 const _addKubeCluster = async function ({
   savePath,
@@ -526,7 +540,6 @@ const _addKubeCluster = async function ({
   namespace,
   clusterName,
   clusterId,
-  addToNew = false,
 }) {
   pr.reset(true);
 
@@ -542,6 +555,7 @@ const _addKubeCluster = async function ({
     );
   } else {
     const { model, error } = await _writeKubeConfig({
+      cloudUrl,
       namespace,
       clusterName,
       clusterId,
@@ -553,14 +567,21 @@ const _addKubeCluster = async function ({
       pr.error = error;
     } else {
       const partial = { namespace, id: clusterId, name: clusterName };
-      _addMetadata(cloudUrl, [partial], [model]);
-      _addToCatalog([model]);
-      pr.store.kubeClusterAdded = true;
+      _addMetadata([partial], [model]);
 
-      _notifyNewClusters([{ namespace, id: clusterId, name: clusterName }]);
-
-      // NOTE: this is async but we don't need to wait on it
-      _switchToCluster(clusterId);
+      const sendResult = await _sendClustersToCatalog([model]);
+      if (sendResult.error) {
+        logger.error(
+          'ClusterActionProvider._addKubeCluster()',
+          'Failed to add cluster to Catalog, error="%s"',
+          sendResult.error
+        );
+        pr.error = strings.clusterActionsProvider.error.catalogAddFailed();
+      } else {
+        pr.store.kubeClusterAdded = true;
+        _notifyNewClusters([{ namespace, id: clusterId, name: clusterName }]);
+        _switchToCluster(clusterId);
+      }
     }
   }
 
@@ -584,7 +605,6 @@ const _activateCluster = function ({ namespace, clusterName, clusterId }) {
   const lensCluster = _getLensCluster(clusterId);
 
   if (lensCluster) {
-    // NOTE: this is async but we don't need to wait on it
     _switchToCluster(clusterId, lensCluster.workspace);
   } else {
     pr.error = strings.clusterActionsProvider.error.clusterNotFound(
@@ -666,10 +686,6 @@ export const useClusterActions = function () {
        * @param {boolean} [options.offline] If true, the refresh token generated for the
        *  clusters will be enabled for offline access. WARNING: This is less secure
        *  than a normal refresh token as it will never expire.
-       * @param {boolean} [options.addToNew] If true, the clusters will be added
-       *  to new (or existing if the workspaces already exist) workspaces that
-       *  correlate to their original MCC namespaces; otherwise, they will all
-       *  be added to the active workspace.
        * @throws {Error} If `options.config` is not using SSO.
        * @throws {Error} If `options.clusters` contains more than 1 cluster.
        */
@@ -724,10 +740,6 @@ export const useClusterActions = function () {
        * @param {string} options.namespace MCC namespace to which the cluster belongs.
        * @param {string} options.clusterName Name of the cluster.
        * @param {string} options.clusterId ID of the cluster.
-       * @param {boolean} [options.addToNew] If true, the clusters will be added
-       *  to new (or existing if the workspaces already exist) workspaces that
-       *  correlate to their original MCC namespaces; otherwise, they will all
-       *  be added to the active workspace.
        */
       addKubeCluster(options) {
         if (!pr.loading) {

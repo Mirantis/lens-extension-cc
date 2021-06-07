@@ -1,6 +1,7 @@
 import { Main } from '@k8slens/extensions';
 import { mainRoute } from '../routes';
-import { prefStore } from '../store/PreferencesStore';
+import { prefStore } from '../store/PreferenceStore';
+import { clusterStore } from '../store/ClusterStore';
 import { IpcMain } from './IpcMain';
 import { logger as loggerUtil } from '../util/logger';
 import * as strings from '../strings';
@@ -27,12 +28,13 @@ export default class ExtensionMain extends Main.LensExtension {
   ];
 
   onActivate() {
-    logger.log('main', 'extension activated');
-    IpcMain.createInstance(this);
+    logger.log('ExtensionMain.onActivate()', 'extension activated');
     prefStore.loadExtension(this);
+    clusterStore.loadExtension(this);
+    IpcMain.createInstance(this); // AFTER load stores
   }
 
   onDeactivate() {
-    logger.log('main', 'extension deactivated');
+    logger.log('ExtensionMain.onDeactivate()', 'extension deactivated');
   }
 }
