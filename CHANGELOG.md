@@ -4,12 +4,20 @@
 
 Supports Lens `>= 5.0.0`.
 
+### Added
+
+- Clusters are now added to the new Lens Catalog. Each cluster is given `mcc=true` and `project=NAMESPACE` labels.
+- Clusters added by this extension have new Remove and Delete context menu options in the Catalog:
+    - Remove: Removes the cluster while leaving the kubeConfig file on disk in the location configured in the extension's Preferences.
+    - Delete: Removes the cluster and deletes the kubeConfig file.
+
 ### Changed
 
 - 🚨 __BREAKING:__ Lens `5.0.0` or later is required to run this extension. It is not backward-compatible with a previous version of Lens. To use this extension with a version of Lens prior to `5.0.0`, install an older version of this extension in Lens.
 - 🚨 __BREAKING:__ Mirantis Container Cloud instances using basic authentication are no longer supported. Your instance must now use Keycloak SSO authentication in order to use this extension.
     - Keycloak-based authentication/authorization is much more secure than basic username/password authentication. Consider migrating your Container Cloud instance to it if you haven't already.
 - The [/addClusters](#protocol---add-multiple-clusters) protocol API no longer supports the `keycloakLogin` option. SSO is now assumed/expected.
+- Clusters in the "default" namespace are no longer selected by default when available clusters are listed, since we assume that any clusters in that namespace are likely management- or regional-type clusters that are of less interest to introspect in Lens. They can still be added; they simply won't be selected by default.
 - Docs: Removed an unnecessary [Keycloak configuration](README.md#keycloak-configuration) requirement for permitting requests from `"*"` origin. That is not needed, and can remain as the default `"+"` setting (which means "allow requests from any configured `redirect_uri` origins).
 
 ## v2.2.1

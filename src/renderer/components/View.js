@@ -20,6 +20,7 @@ import { ErrorPanel } from './ErrorPanel';
 import { InfoPanel } from './InfoPanel';
 import { PreferencesPanel } from './PreferencesPanel';
 import * as strings from '../../strings';
+import { catalog as catalogConsts } from '../../constants';
 import { layout, mixinFlexColumnGaps } from './styles';
 import {
   EXT_EVENT_ACTIVATE_CLUSTER,
@@ -127,7 +128,7 @@ export const View = function () {
   const {
     state: {
       authAccess,
-      prefs: { cloudUrl, addToNew, offline, savePath },
+      prefs: { cloudUrl, offline, savePath },
     },
     actions: extActions,
   } = useExtState();
@@ -382,12 +383,11 @@ export const View = function () {
         setEventClusterName(`${data.namespace}/${data.clusterName}`);
         clusterActions.addKubeCluster({
           savePath,
-          addToNew,
           ...data,
         });
       }
     },
-    [savePath, addToNew, clusterActionsLoading, clusterActions]
+    [savePath, clusterActionsLoading, clusterActions]
   );
 
   // SSO authorization redirect/callback
@@ -408,7 +408,6 @@ export const View = function () {
           savePath,
           cloudUrl,
           config,
-          addToNew,
           offline,
         });
       }
@@ -421,7 +420,6 @@ export const View = function () {
       clusterActions,
       config,
       authAccess,
-      addToNew,
       offline,
       savePath,
       cloudUrl,
@@ -476,12 +474,13 @@ export const View = function () {
         // set initial selection, skipping management clusters since they typically
         //  are of less importance, as well as clusters that aren't ready yet
         const candidateClusters = clusters.filter(
-          (cl) => cl.ready && !cl.isManagementCluster
+          (cl) =>
+            cl.ready && !cl.isManagementCluster && cl.namespace !== 'default'
         );
         setSelectedClusters(
           singleClusterOnly
             ? // initialize the selection to first candidate only
-              candidateClusters.slice(0, 1)
+              candidateClusters.slice(0, 1) // slice of any array will always return an array, may empty
             : candidateClusters
         );
       } else if (
@@ -602,7 +601,11 @@ export const View = function () {
       <HelpColumn>
         <HelpContent
           dangerouslySetInnerHTML={{
-            __html: strings.view.help.html(),
+            __html: strings.view.help.html({
+              catalogSource: catalogConsts.source,
+              srcLabelName: catalogConsts.labels.source,
+              nsLabelName: catalogConsts.labels.namespace,
+            }),
           }}
         />
         <PreferencesPanel />

@@ -6,12 +6,12 @@ import { createContext, useContext, useState, useMemo } from 'react';
 import propTypes from 'prop-types';
 import * as rtv from 'rtvjs';
 import { cloneDeep, cloneDeepWith } from 'lodash';
-import { PreferencesStore, prefStore } from '../../store/PreferencesStore';
+import { PreferenceStore, prefStore } from '../../store/PreferenceStore';
 import { AuthAccess } from '../auth/AuthAccess';
 import { ProviderStore } from './ProviderStore';
 
 const extStateTs = {
-  prefs: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: PreferencesStore }],
+  prefs: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: PreferenceStore }],
   authAccess: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: AuthAccess }],
 };
 
@@ -157,15 +157,6 @@ export const useExtState = function () {
         pr.store.prefs.offline = newValue;
         pr.onChange();
       },
-
-      /**
-       * Updates the 'add to new' option when adding clusters.
-       * @param {boolean} newValue
-       */
-      setAddToNew(newValue) {
-        pr.store.prefs.addToNew = newValue;
-        pr.onChange();
-      },
     },
   };
 };
@@ -179,26 +170,26 @@ export const ExtStateProvider = function ({
   // attempt to load the special data directory path that Lens consistently assigns
   //  to this extension on every load (should always be the same one as long as the
   //  extension remains installed)
-  if (!PreferencesStore.defaultSavePath && !extFileFolderLoading) {
+  if (!PreferenceStore.defaultSavePath && !extFileFolderLoading) {
     extFileFolderLoading = true;
     extension
       .getExtensionFileFolder()
       .then((folder) => {
-        PreferencesStore.defaultSavePath = folder;
+        PreferenceStore.defaultSavePath = folder;
       })
       .catch(() => {
         // use the extension's installation directory as a fallback, though
         //  this is not safe because if the extension is uninstalled, this
         //  directory is removed by Lens, and would result in any Kubeconfig
         //  files also being deleted, and therefore clusters lost in Lens
-        PreferencesStore.defaultSavePath = __dirname;
+        PreferenceStore.defaultSavePath = __dirname;
       })
       .finally(() => {
         extFileFolderLoading = false;
 
         // only use default if we didn't get a path when we loaded the pref store
         if (!pr.store.prefs.savePath) {
-          pr.store.prefs.savePath = PreferencesStore.defaultSavePath;
+          pr.store.prefs.savePath = PreferenceStore.defaultSavePath;
           pr.onChange();
         }
       });

@@ -77,7 +77,7 @@ export const PreferencesPanel = function () {
 
   const {
     state: {
-      prefs: { savePath, offline, addToNew },
+      prefs: { savePath, offline },
     },
     actions: extActions,
   } = useExtState();
@@ -121,11 +121,6 @@ export const PreferencesPanel = function () {
       extActions.setSavePath(newPath);
       setShowSaved(true);
     }
-  };
-
-  const handleAddToNewChange = function (checked) {
-    extActions.setAddToNew(checked);
-    setShowSaved(true);
   };
 
   const handleOfflineChange = function (checked) {
@@ -189,18 +184,6 @@ export const PreferencesPanel = function () {
         />
       </SavePath>
       <small className="hint">{strings.preferencesPanel.location.tip()}</small>
-
-      <Component.Checkbox
-        label={strings.preferencesPanel.addToNew.label()}
-        disabled={addingClusters}
-        value={addToNew}
-        onChange={handleAddToNewChange}
-      />
-      <small className="hint">
-        {addToNew
-          ? strings.preferencesPanel.addToNew.tipOn()
-          : strings.preferencesPanel.addToNew.tipOff()}
-      </small>
 
       <Component.Checkbox
         label={strings.preferencesPanel.offline.label()}
