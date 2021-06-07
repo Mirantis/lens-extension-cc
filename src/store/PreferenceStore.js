@@ -8,7 +8,7 @@ import * as rtv from 'rtvjs';
 import { logger } from '../util/logger';
 
 /** RTV.js typeset for preferences model. */
-export const preferencesTs = {
+export const storeTs = {
   /** MCC instance URL, does NOT end with a slash. */
   cloudUrl: [
     rtv.EXPECTED,
@@ -32,19 +32,12 @@ export const preferencesTs = {
    *  it will never expire.
    */
   offline: [rtv.EXPECTED, rtv.BOOLEAN],
-
-  /**
-   * If true, the clusters will be added to new (or existing if the workspaces already
-   *  exist) workspaces that correlate to their original MCC namespaces; otherwise,
-   *  they will all be added to the active workspace.
-   */
-  addToNew: [rtv.EXPECTED, rtv.BOOLEAN],
 };
 
 /** Preferences auto-persisted by Lens. Singleton. Use `getInstance()` static method. */
-export class PreferencesStore extends Common.Store.ExtensionStore {
-  // NOTE: See renderer.tsx#onActivate() where this.loadExtension() is called on
-  //  the store instance in order to get Lens to load it from storage.
+export class PreferenceStore extends Common.Store.ExtensionStore {
+  // NOTE: See main.ts#onActivate() and renderer.tsx#onActivate() where this.loadExtension()
+  //  is called on the store instance in order to get Lens to load it from storage.
 
   // ultimately, we try to set this to the getExtensionFileFolder() directory that
   //  Lens gives the extension, but we don't know what it is until later
@@ -54,9 +47,8 @@ export class PreferencesStore extends Common.Store.ExtensionStore {
     return {
       cloudUrl: null,
       username: null,
-      savePath: PreferencesStore.defaultSavePath,
+      savePath: PreferenceStore.defaultSavePath,
       offline: false,
-      addToNew: true,
     };
   }
 
@@ -92,36 +84,27 @@ export class PreferencesStore extends Common.Store.ExtensionStore {
    */
   @observable offline;
 
-  /**
-   * [Stored]
-   * @property {boolean} addToNew True if MCC clusters added by this extension to Lens
-   *  should be added into new/existing workspaces with names similar to their original
-   *  MCC namespaces/projects; false if they should always be added to the active
-   *  Lens workspace.
-   */
-  @observable addToNew;
-
   constructor() {
     super({
-      configName: 'preferences-store',
-      defaults: PreferencesStore.getDefaults(),
+      configName: 'preference-store',
+      defaults: PreferenceStore.getDefaults(),
     });
     makeObservable(this);
   }
 
   /** Reset all preferences to their default values. */
   reset() {
-    const defaults = PreferencesStore.getDefaults();
+    const defaults = PreferenceStore.getDefaults();
     Object.keys(this).forEach((key) => (this[key] = defaults[key]));
   }
 
   fromStore(store) {
-    const result = rtv.check({ store }, { store: preferencesTs });
+    const result = rtv.check({ store }, { store: storeTs });
 
     if (!result.valid) {
       logger.error(
-        'PreferencesStore.fromStore()',
-        `Invalid preferences found, error="${result.message}"`
+        'PreferenceStore.fromStore()',
+        `Invalid data found, error="${result.message}"`
       );
       return;
     }
@@ -134,7 +117,7 @@ export class PreferencesStore extends Common.Store.ExtensionStore {
 
   toJSON() {
     // throw-away: just to get keys we care about on this
-    const defaults = PreferencesStore.getDefaults();
+    const defaults = PreferenceStore.getDefaults();
 
     const observableThis = Object.keys(defaults).reduce((obj, key) => {
       obj[key] = this[key];
@@ -169,5 +152,5 @@ export class PreferencesStore extends Common.Store.ExtensionStore {
 }
 
 // create singleton instance, and export it for convenience (otherwise, one can also
-//  import the exported PreferencesStore class and call PreferencesStore.getInstance())
-export const prefStore = PreferencesStore.createInstance();
+//  import the exported PreferenceStore class and call PreferenceStore.getInstance())
+export const prefStore = PreferenceStore.createInstance();
