@@ -10,6 +10,7 @@ Supports Lens `>= 5.0.0`.
 - Clusters added by this extension have new Remove and Delete context menu options in the Catalog:
     - Remove: Removes the cluster while leaving the kubeConfig file on disk in the location configured in the extension's Preferences.
     - Delete: Removes the cluster and deletes the kubeConfig file.
+- When adding clusters the normal way (not via a protocol request from the Mirantis Container Cloud UI), the extension automatically switches the view to the Catalog after adding clusters to show the new clusters available in Lens.
 
 ### Changed
 

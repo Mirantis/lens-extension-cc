@@ -277,6 +277,19 @@ const _switchToCluster = function (clusterId) {
 };
 
 /**
+ * Switch to the Catalog view to show all the clusters.
+ */
+const _switchToCatalog = function () {
+  // TODO: eventually, once Lens supports filtering the Catalog view via navigation,
+  //  like `/catalog#filter=...`, it would be great to switch to the Catalog
+  //  view and somehow filter the list to only the clusters that were just added,
+  //  or at least only MCC clusters with `mcc=true` label...
+
+  // NOTE: adding a little delay seems to just help navigation work better
+  setTimeout(() => Renderer.Navigation.navigate('/catalog'), 500);
+};
+
+/**
  * Adds metadata to cluster models to prepare them to be added to the Lens Catalog.
  * @param {Array<{namespace: string, id: string, name: string}>} clusterPartials
  *  Clusters being added. Subset of full `./Cluster.js` class properties.
@@ -520,6 +533,10 @@ const _ssoFinishAddClusters = async function ({
   pr.loaded = true;
   pr.notifyIfError();
   pr.onChange();
+
+  if (!pr.error) {
+    _switchToCatalog();
+  }
 };
 
 /**
