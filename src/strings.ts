@@ -144,6 +144,7 @@ export const ssoAuthProvider: Dict = {
 export const clusterList: Dict = {
   title: () => 'Select clusters',
   notReady: () => '(not ready)',
+  alreadyInLens: () => '(in Lens)',
   onlyNamespaces: (namespaces = []) =>
     `Showing only the following namespaces: ${namespaces.join(', ')}`,
   ssoLimitationHtml: () =>

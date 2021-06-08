@@ -6,6 +6,7 @@ import { Cluster } from '../store/Cluster';
 import { Section } from './Section';
 import { InlineNotice, types as noticeTypes, iconSizes } from './InlineNotice';
 import { layout, mixinFlexColumnGaps } from './styles';
+import { getLensClusters } from '../rendererUtil';
 import * as strings from '../../strings';
 
 const { Component } = Renderer;
@@ -80,6 +81,8 @@ export const ClusterList = function ({
     return left.name.localeCompare(right.name);
   };
 
+  const lensClusters = getLensClusters();
+
   return (
     <Section className="lecc-ClusterList">
       <h3>{strings.clusterList.title()}</h3>
@@ -99,17 +102,26 @@ export const ClusterList = function ({
         {clusters.sort(compareClusters).map(
           (
             cluster // list ALL clusters
-          ) => (
-            <Component.Checkbox
-              key={cluster.id}
-              label={`${cluster.namespace} / ${cluster.name}${
-                cluster.ready ? '' : ` ${strings.clusterList.notReady()}`
-              }`}
-              disabled={!cluster.ready || loading}
-              value={isClusterSelected(cluster)}
-              onChange={(checked) => handleClusterSelect(checked, cluster)}
-            />
-          )
+          ) => {
+            const inLens = lensClusters.find(
+              (lc) => lc.metadata.uid === cluster.id
+            );
+            return (
+              <Component.Checkbox
+                key={cluster.id}
+                label={`${cluster.namespace} / ${cluster.name}${
+                  cluster.ready
+                    ? inLens
+                      ? ` ${strings.clusterList.alreadyInLens()}`
+                      : ''
+                    : ` ${strings.clusterList.notReady()}`
+                }`}
+                disabled={!cluster.ready || inLens || loading}
+                value={isClusterSelected(cluster)}
+                onChange={(checked) => handleClusterSelect(checked, cluster)}
+              />
+            );
+          }
         )}
       </CheckList>
       {!singleSelectOnly && (
