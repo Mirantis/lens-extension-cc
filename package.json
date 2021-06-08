@@ -60,7 +60,7 @@
     "@k8slens/extensions": "^4.2.4",
     "@types/node": "^15.12.1",
     "@types/react": "^17.0.9",
-    "@types/react-router": "^5.1.14",
+    "@types/react-router": "^5.1.15",
     "@typescript-eslint/eslint-plugin": "^4.26.0",
     "@typescript-eslint/parser": "^4.26.0",
     "babel-loader": "^8.2.2",
