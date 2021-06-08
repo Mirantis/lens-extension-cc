@@ -17,7 +17,6 @@ import { clusterModelTs } from '../../typesets';
 import { extractJwtPayload } from '../auth/authUtil';
 import { IpcRenderer } from '../IpcRenderer';
 import { getLensClusters } from '../rendererUtil';
-import ExtensionRenderer from '../renderer';
 import * as strings from '../../strings';
 import * as consts from '../../constants';
 

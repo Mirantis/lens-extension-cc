@@ -35,6 +35,7 @@ import {
   removeExtEventHandler,
 } from '../eventBus';
 import { normalizeUrl } from '../../util/netUtil';
+import { getLensClusters } from '../rendererUtil';
 
 const { Component } = Renderer;
 
@@ -471,11 +472,16 @@ export const View = function () {
         //  tells us not to render the ClusterList and AddClusters panel
         setSelectedClusters(null); // clear selection because we're (re-)loading clusters
       } else if (clusterDataLoaded && !selectedClusters) {
+        const lensClusters = getLensClusters();
         // set initial selection, skipping management clusters since they typically
-        //  are of less importance, as well as clusters that aren't ready yet
+        //  are of less importance, as well as clusters that aren't ready yet,
+        //  and clusters that are already in Lens
         const candidateClusters = clusters.filter(
           (cl) =>
-            cl.ready && !cl.isManagementCluster && cl.namespace !== 'default'
+            cl.ready &&
+            !cl.isManagementCluster &&
+            cl.namespace !== 'default' &&
+            !lensClusters.find((lc) => lc.metadata.uid === cl.id)
         );
         setSelectedClusters(
           singleClusterOnly
