@@ -9,13 +9,14 @@ import { cloneDeep, cloneDeepWith } from 'lodash';
 import { PreferenceStore, prefStore } from '../../store/PreferenceStore';
 import { AuthAccess } from '../auth/AuthAccess';
 import { ProviderStore } from './ProviderStore';
+import ExtensionRenderer from '../renderer';
 
 const extStateTs = {
   prefs: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: PreferenceStore }],
   authAccess: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: AuthAccess }],
 };
 
-let extension; // {LensErendererExtension} instance reference
+let extension; // {ExtensionRenderer} instance reference
 let extFileFolderLoading = false; // true if we're waiting for the file folder to load async
 
 //
@@ -208,5 +209,5 @@ export const ExtStateProvider = function ({
 };
 
 ExtStateProvider.propTypes = {
-  extension: propTypes.object.isRequired,
+  extension: propTypes.instanceOf(ExtensionRenderer).isRequired,
 };
