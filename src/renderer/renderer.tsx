@@ -188,7 +188,7 @@ export default class ExtensionRenderer extends LensExtension {
       onClick: async () => {
         try {
           await IpcRenderer.getInstance().invoke(
-            'removeCluster',
+            consts.ipcEvents.invoke.REMOVE_CLUSTER,
             cluster.metadata.uid
           );
         } catch (err) {
@@ -217,7 +217,7 @@ export default class ExtensionRenderer extends LensExtension {
       onClick: async () => {
         try {
           await IpcRenderer.getInstance().invoke(
-            'deleteCluster',
+            consts.ipcEvents.invoke.DELETE_CLUSTER,
             cluster.metadata.uid
           );
         } catch (err) {

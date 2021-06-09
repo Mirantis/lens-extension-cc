@@ -341,7 +341,10 @@ const _addMetadata = function (clusterPartials, models) {
  */
 const _sendClustersToCatalog = async function (models) {
   try {
-    await IpcRenderer.getInstance().invoke('addClusters', models);
+    await IpcRenderer.getInstance().invoke(
+      consts.ipcEvents.invoke.ADD_CLUSTERS,
+      models
+    );
   } catch (err) {
     return { error: err.message };
   }

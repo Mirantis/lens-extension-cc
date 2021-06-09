@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import propTypes from 'prop-types';
 import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
@@ -7,7 +8,9 @@ import { Section } from './Section';
 import { InlineNotice, types as noticeTypes, iconSizes } from './InlineNotice';
 import { layout, mixinFlexColumnGaps } from './styles';
 import { getLensClusters } from '../rendererUtil';
+import { IpcRenderer } from '../IpcRenderer';
 import * as strings from '../../strings';
+import { ipcEvents } from '../../constants';
 
 const { Component } = Renderer;
 
@@ -45,6 +48,8 @@ export const ClusterList = function ({
   // only ready clusters can actually be selected
   const selectableClusters = clusters.filter((cl) => cl.ready);
 
+  const [lensClusters, setLensClusters] = useState(getLensClusters());
+
   //
   // EVENTS
   //
@@ -63,6 +68,30 @@ export const ClusterList = function ({
     }
   };
 
+  const handleIpcClustersChanged = function () {
+    setLensClusters(getLensClusters());
+  };
+
+  //
+  // EFFECTS
+  //
+
+  useEffect(function () {
+    const disposeClusterAdded = IpcRenderer.getInstance().listen(
+      ipcEvents.broadcast.CLUSTERS_ADDED,
+      handleIpcClustersChanged
+    );
+    const disposeClusterRemoved = IpcRenderer.getInstance().listen(
+      ipcEvents.broadcast.CLUSTERS_REMOVED,
+      handleIpcClustersChanged
+    );
+
+    return function () {
+      disposeClusterAdded();
+      disposeClusterRemoved();
+    };
+  }, []);
+
   //
   // RENDER
   //
@@ -80,8 +109,6 @@ export const ClusterList = function ({
 
     return left.name.localeCompare(right.name);
   };
-
-  const lensClusters = getLensClusters();
 
   return (
     <Section className="lecc-ClusterList">
