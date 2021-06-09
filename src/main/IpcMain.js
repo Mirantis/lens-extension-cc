@@ -10,14 +10,11 @@ import { clusterModelTs } from '../typesets';
 import { clusterStore } from '../store/ClusterStore';
 import { logger } from '../util/logger';
 import pkg from '../../package.json';
+import { ipcEvents } from '../constants';
 
 const {
   Catalog: { KubernetesCluster },
 } = Common;
-
-//
-// SINGLETON
-//
 
 // typeset for the capture() method
 const captureTs = {
@@ -50,6 +47,10 @@ export class IpcMain extends Main.Ipc {
         .map((model) => model.metadata.uid)
         .join(', ')}]`
     );
+    this.broadcast(
+      ipcEvents.broadcast.CLUSTERS_ADDED,
+      models.map((model) => model.metadata.uid)
+    );
   };
 
   /**
@@ -66,6 +67,7 @@ export class IpcMain extends Main.Ipc {
         'onRemoveCluster()',
         `Removed cluster ${clusterId} from catalog and clusterStore, kubeConfig file untouched`
       );
+      this.broadcast(ipcEvents.broadcast.CLUSTERS_REMOVED, [clusterId]);
     }
   };
 
@@ -107,6 +109,7 @@ export class IpcMain extends Main.Ipc {
         'onDeleteCluster()',
         `Removed cluster ${clusterId} from catalog and clusterStore, kubeConfig file deleted`
       );
+      this.broadcast(ipcEvents.broadcast.CLUSTERS_REMOVED, [clusterId]);
     }
   };
 
@@ -120,9 +123,9 @@ export class IpcMain extends Main.Ipc {
     extension.addCatalogSource(pkg.name, catalogSource);
     this.restoreClusters();
 
-    this.handle('addClusters', this.onAddClusters);
-    this.handle('removeCluster', this.onRemoveCluster);
-    this.handle('deleteCluster', this.onDeleteCluster);
+    this.handle(ipcEvents.invoke.ADD_CLUSTERS, this.onAddClusters);
+    this.handle(ipcEvents.invoke.REMOVE_CLUSTER, this.onRemoveCluster);
+    this.handle(ipcEvents.invoke.DELETE_CLUSTER, this.onDeleteCluster);
   }
 
   /**
@@ -131,7 +134,7 @@ export class IpcMain extends Main.Ipc {
    * @param {string} context Identifies where the message came from, e.g. 'methodName()'.
    *  The prefix "IpcMain." is added to this string.
    * @param {string} message Log message.
-   * @param {...rest} rest Anything else to pass to the Logger to be printed as data
+   * @param {...any} rest Anything else to pass to the Logger to be printed as data
    *  or parsed with '%s' placeholders in the message (same as `console` API).
    */
   capture(level, context, message, ...rest) {
@@ -139,7 +142,7 @@ export class IpcMain extends Main.Ipc {
 
     const params = [`IpcMain.${context}`, message, ...rest];
     logger[level](...params);
-    this.broadcast('logger', level, ...params);
+    this.broadcast(ipcEvents.broadcast.LOGGER, level, ...params);
   }
 
   /**
