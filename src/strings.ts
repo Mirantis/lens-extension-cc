@@ -277,14 +277,14 @@ export const renderer: Dict = {
       remove: {
         title: () => 'Remove',
         confirm: (cluster) =>
-          `Are you sure you want to remove the ${cluster} cluster from Lens? The kubeConfig file NOT be deleted (use the Delete option to also delete it from disk).`,
+          `Are you sure you want to remove the ${cluster} cluster from Lens? The kubeConfig file NOT be deleted (use the "Delete config" option to also delete it from disk).`,
         error: {
           errorDuringRemove: (cluster) =>
             `An error occurred while attempting to remove the ${cluster} cluster from Lens. See logs for more details.`,
         },
       },
       delete: {
-        title: () => 'Delete',
+        title: () => 'Delete config',
         confirm: (cluster) =>
           `Are you sure you want to remove the ${cluster} cluster from Lens and delete the kubeConfig file from disk?`,
         error: {

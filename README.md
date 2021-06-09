@@ -4,13 +4,13 @@
 
 This [Lens](https://k8slens.dev/) Extension adds a status bar item, and a menu item, that makes it easy to connect Lens to a Mirantis Container Cloud instance and add its clusters to Lens.
 
-ℹ️ Requires Lens `>= 4.2.4`.
+ℹ️ Requires Lens `>= 5.0.0`.
 
 ![Extension UI](./docs/screen-shot.png)
 
 ## Installing
 
-Installation is very easy! Just make sure Lens 4.2.4 or later is running, and follow these simple steps:
+Installation is very easy! Just make sure Lens `5.0.0` or later is running, and follow these simple steps:
 
 1. Switch to the Extensions view (`CMD+SHIFT+E` on macOS).
 2. Enter the name of this extension, `@mirantis/lens-extension-cc`, into the Install Extension box.
@@ -29,6 +29,22 @@ To upgrade to a newer release, go to the Extensions view (`CMD+SHIFT+E` on macOS
 ## Uninstalling
 
 Go to the Lens Extensions view (`CMD+SHIFT+E` on macOS) and click the Uninstall button next to this extension.
+
+## Catalog
+
+Lens 5.0.0 replaced its Workspace concept with a new Catalog that allows much more flexibility.
+
+When adding clusters to Lens with this extension, each cluster will get the following labels:
+
+- `mcc=true`
+- `project=NAMESPACE` (set to the name of the project/namespace in Container Cloud to which the cluster belongs)
+
+The extension also supports __removing__ and __deleting__ clusters that it added by choosing these items from the cluster's "More" context menu in the Catalog (as well as icons in the Catalog Drawer's toolbar):
+
+- __Remove:__ Removes the cluster from the Catalog, but leaves the kubeConfig on disk in the configured location.
+- __Delete config:__ Removes the cluster from the Catalog __and deletes__ the kubeConfig from disk.
+
+In either case, __the cluster in Container Cloud is unaffected__. If you need to terminate the cluster, please do so in the Container Cloud web application.
 
 ## SSO support
 
