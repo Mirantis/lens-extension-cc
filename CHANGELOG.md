@@ -1,6 +1,6 @@
 # ChangeLog
 
-## UNRELEASED
+## v3.0.0-beta.1
 
 Supports Lens `>= 5.0.0`.
 
