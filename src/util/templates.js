@@ -44,16 +44,30 @@ export const kubeConfigTemplate = function ({
       {
         name: username,
         user: {
-          'auth-provider': {
-            config: {
-              'client-id': cluster.idpClientId,
-              'id-token': token,
-              'idp-certificate-authority-data': cluster.idpCertificate,
-              'idp-issuer-url': cluster.idpIssuerUrl,
-              'refresh-token': refreshToken,
-            },
-            name: 'oidc',
-          },
+          // DEBUG
+          // 'auth-provider': {
+          //   config: {
+          //     'client-id': cluster.idpClientId,
+          //     'id-token': token,
+          //     'idp-certificate-authority-data': cluster.idpCertificate,
+          //     'idp-issuer-url': cluster.idpIssuerUrl,
+          //     'refresh-token': refreshToken,
+          //   },
+          //   name: 'oidc',
+          // },
+
+          // DEBUG
+          exec: {
+            apiVersion: 'client.authentication.k8s.io/v1beta1',
+            command: 'kubectl',
+            args: [
+              'oidc-login',
+              'get-token',
+              `--oidc-issuer-url=${cluster.idpIssuerUrl}`,
+              `--oidc-client-id=${cluster.idpClientId}`,
+              `--certificate-authority-data=${cluster.idpCertificate}`,
+            ]
+          }
         },
       },
     ],
