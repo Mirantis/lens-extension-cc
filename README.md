@@ -50,6 +50,8 @@ Since the integration leverages the `lens://` URL protocol handling feature for 
 
 > 💡 Be sure to make these configuration adjustments __on every Keycloak Client__ (`kaas` for the management cluster, and `k8s` for child clusters, by default) that manages clusters you will want to add. The extension does not know ahead of time whether you have given it the appropriate access, and adding clusters without this configuration will result in an error.
 
+> 💬 __Mirantis Container Cloud 2.9__ configures the above for you __automatically__ so you should not have to do this if you're using 2.9 or later.
+
 ### Authentication flow
 
 The extension will automatically detect when an instance uses SSO (upon clicking the __Access__ button).
