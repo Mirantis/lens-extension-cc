@@ -1138,10 +1138,10 @@
     minimatch "^3.0.4"
     strip-json-comments "^3.1.1"
 
-"@k8slens/extensions@^4.2.4":
-  version "4.2.4"
-  resolved "https://registry.yarnpkg.com/@k8slens/extensions/-/extensions-4.2.4.tgz#ff07e8112919af2e7fd40cd8e66eb3b69ecf68bc"
-  integrity sha512-8qMfphpFbvCfqf+UlofKcD6W0hXBlpEYOwqI5oJCbA3ClD1DCpJ8giG0Yfgs9xS968fLrabJwutRK/77ZUl3xw==
+"@k8slens/extensions@^4.2.5":
+  version "4.2.5"
+  resolved "https://registry.yarnpkg.com/@k8slens/extensions/-/extensions-4.2.5.tgz#ccf30a16c960e3bf649e455c94b0d91e626e516d"
+  integrity sha512-/Rt8Si5z8YB49cNsD/Bw7B2UQP87EfCm0Cl6KDmB7llYz7lvEh+BUmLajLb4WCgYKNDW/oVlzeW8Xdwk/4VHxg==
   dependencies:
     "@material-ui/core" "*"
     "@types/node" "*"
