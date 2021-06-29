@@ -4,7 +4,7 @@
   "version": "3.0.0-beta.1",
   "description": "Lens extension that loads Mirantis Container Cloud clusters.",
   "engines": {
-    "lens": ">=5.0.0-beta.7"
+    "lens": ">=5.0.0-latest"
   },
   "main": "dist/main.js",
   "renderer": "dist/renderer.js",
@@ -57,7 +57,7 @@
     "@emotion/core": "^11.0.0",
     "@emotion/react": "^11.4.0",
     "@emotion/styled": "^11.3.0",
-    "@k8slens/extensions": "^5.0.0-beta.9",
+    "@k8slens/extensions": "^5.0.0",
     "@types/node": "^15.12.5",
     "@types/react": "^17.0.11",
     "@types/react-router": "^5.1.15",
