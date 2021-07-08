@@ -59,7 +59,7 @@
     "@emotion/styled": "^11.3.0",
     "@k8slens/extensions": "^5.0.2",
     "@types/node": "^16.0.1",
-    "@types/react": "^17.0.13",
+    "@types/react": "^17.0.14",
     "@types/react-router": "^5.1.16",
     "@typescript-eslint/eslint-plugin": "^4.28.2",
     "@typescript-eslint/parser": "^4.28.2",
