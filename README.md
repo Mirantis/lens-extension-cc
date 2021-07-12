@@ -1,3 +1,11 @@
+# 🚨 CURRENT STATUS: BROKEN 🚨
+
+Unfortunately, in spite of working very hard to make sure this extension would be ready for the Lens 5 launch that took place on June 29, 2021, sometime around Lens 5 `beta.12`, or perhaps at the last minute, [this issue](https://github.com/lensapp/lens/pull/3225) -- among others -- was __introduced into Lens__. I am still waiting for Lens to fix it, and the Lens team is aware that this extension is broken because of it. The fix is currently slated for Lens 5.1.0, though that may change.
+
+Until this issue is fixed, the only recourse you have is to uninstall Lens 5, re-install Lens 4, and install the latest published release of this extension.
+
+Once a version of Lens 5 is released that finally fixes the problems preventing this extension from working, I will published the `master` branch of this repo as the latest version, and installing `@mirantis/lens-extension-cc` in Lens 5.x will get you version `3.0.0` that has Lens 5 compatibility.
+
 # Mirantis Container Cloud Lens Extension
 
 ![CI](https://github.com/Mirantis/lens-extension-cc/workflows/CI/badge.svg?branch=master&event=push)
