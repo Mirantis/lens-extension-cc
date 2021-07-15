@@ -16,6 +16,16 @@ const rules = {
   ],
   'no-console': 'error',
   'no-unsafe-optional-chaining': 'error',
+  'no-catch-shadow': 'error',
+  'no-shadow': 'error',
+  'no-unused-vars': [
+    'error',
+    {
+      args: 'none',
+      caughtErrors: 'none'
+    }
+  ],
+  'no-use-before-define': 'error',
 
   //// react plugin
 
@@ -97,6 +107,7 @@ module.exports = {
       env,
       rules: {
         ...rules,
+        'no-use-before-define': 'off', // ESLint finds false-positives with React imports in TSX files
         '@typescript-eslint/explicit-function-return-type': 'off',
         '@typescript-eslint/no-explicit-any': 'off',
         '@typescript-eslint/no-unused-vars': 'off',
