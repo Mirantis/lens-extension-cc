@@ -1,5 +1,15 @@
 # ChangeLog
 
+## v3.0.0
+
+This is the official release. __Requires Lens 5.1.0 or later.__
+
+### Changed
+
+- Updated the `lens` engine compatibility to `^5.0.0`.
+    - Technically, it should be `^5.1.0` but, because of [this Lens issue](https://github.com/lensapp/lens/issues/3404), it had to be kept to `^5.0.0` even though the extension will not function properly in `< 5.1.0`.
+- Fixed a bug where the size of the cluster store (where the extension stores cluster models so they can be restored to the Catalog on restart) was doubling with duplicate models on every restart.
+
 ## v3.0.0-beta.1
 
 Supports Lens `>= 5.0.0`.

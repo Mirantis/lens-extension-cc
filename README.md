@@ -1,24 +1,16 @@
-# 🚨 CURRENT STATUS: BROKEN 🚨
-
-Unfortunately, in spite of working very hard to make sure this extension would be ready for the Lens 5 launch that took place on June 29, 2021, sometime around Lens 5 `beta.12`, or perhaps at the last minute, [this issue](https://github.com/lensapp/lens/pull/3225) -- among others -- was __introduced into Lens__. I am still waiting for Lens to fix it, and the Lens team is aware that this extension is broken because of it. The fix is currently slated for Lens 5.1.0, though that may change.
-
-Until this issue is fixed, the only recourse you have is to uninstall Lens 5, re-install Lens 4, and install the latest published release of this extension.
-
-Once a version of Lens 5 is released that finally fixes the problems preventing this extension from working, I will published the `master` branch of this repo as the latest version, and installing `@mirantis/lens-extension-cc` in Lens 5.x will get you version `3.0.0` that has Lens 5 compatibility.
-
 # Mirantis Container Cloud Lens Extension
 
 ![CI](https://github.com/Mirantis/lens-extension-cc/workflows/CI/badge.svg?branch=master&event=push)
 
 This [Lens](https://k8slens.dev/) Extension adds a status bar item, and a menu item, that makes it easy to connect Lens to a Mirantis Container Cloud instance and add its clusters to Lens.
 
-ℹ️ Requires Lens `>= 5.0.0`.
+ℹ️ Requires Lens `>= 5.1.0`.
 
 ![Extension UI](./docs/screen-shot.png)
 
 ## Installing
 
-Installation is very easy! Just make sure Lens `5.0.0` or later is running, and follow these simple steps:
+Installation is very easy! Just make sure Lens `5.1.0` or later is running, and follow these simple steps:
 
 1. Switch to the Extensions view (`CMD+SHIFT+E` on macOS).
 2. Enter the name of this extension, `@mirantis/lens-extension-cc`, into the Install Extension box.
@@ -40,7 +32,7 @@ Go to the Lens Extensions view (`CMD+SHIFT+E` on macOS) and click the Uninstall 
 
 ## Catalog
 
-Lens 5.0.0 replaced its Workspace concept with a new Catalog that allows much more flexibility.
+Lens 5 replaced its Workspace concept with a new Catalog that allows much more flexibility.
 
 When adding clusters to Lens with this extension, each cluster will get the following labels:
 
