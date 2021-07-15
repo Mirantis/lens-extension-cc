@@ -149,7 +149,7 @@ export class IpcMain extends Main.Ipc {
    * Restores clusters from the `clusterStore` to the `catalogSource`.
    */
   restoreClusters() {
-    this.addClusters(clusterStore.models);
+    this.addClusters(clusterStore.models, false);
     this.capture(
       'log',
       'restoreClusters()',
@@ -161,7 +161,12 @@ export class IpcMain extends Main.Ipc {
     );
   }
 
-  addClusters(models) {
+  /**
+   * Adds clusters to the `catalogSource`.
+   * @param {Array<ClusterModel>} models Cluster models to add.
+   * @param {boolean} [persist] If false, models will not be persisted to the store.
+   */
+  addClusters(models, persist = true) {
     DEV_ENV && rtv.verify({ models }, { models: [[clusterModelTs]] });
 
     models.forEach((model) => {
@@ -172,7 +177,9 @@ export class IpcMain extends Main.Ipc {
         `adding cluster to catalog, clusterId=${model.metadata.uid}, name=${model.metadata.name}, namespace=${model.metadata.namespace}`
       );
       catalogSource.push(new KubernetesCluster(model));
-      clusterStore.models.push(model);
+      if (persist) {
+        clusterStore.models.push(model);
+      }
     });
   }
 
