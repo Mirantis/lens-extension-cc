@@ -22,8 +22,8 @@ const rules = {
     'error',
     {
       args: 'none',
-      caughtErrors: 'none'
-    }
+      caughtErrors: 'none',
+    },
   ],
   'no-use-before-define': 'error',
 
