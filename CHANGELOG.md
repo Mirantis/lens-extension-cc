@@ -1,5 +1,11 @@
 # ChangeLog
 
+## UNRELEASED
+
+### Changed
+
+- Updated `@k8slens/extensions` dependency from 5.0.2 to 5.1.0.
+
 ## v3.0.0
 
 This is the official release. __Requires Lens 5.1.0 or later.__
