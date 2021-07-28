@@ -26,7 +26,7 @@ You should now be able to choose the new `File > Add Cloud Clusters` menu item, 
 
 To upgrade to a newer release, go to the Extensions view (`CMD+SHIFT+E` on macOS), [uninstall](#uninstalling) the extension, and then [re-install](#installing) it again.
 
-> 🚨 Up to, and including, __Lens 5.1.3__ (and probably some versions after that as well), __Lens must be restarted__ after upgrading the extension. This is __due to a bug in Lens__ that causes the extension's registration of [IPC event handlers](https://api-docs.k8slens.dev/v5.1.2/extensions/guides/ipc/) to be ignored, leading to an error message like "Failed to add cluster to Lens" after choosing a cluster and clicking on the "Add cluster" button. It will also manifest itself when choosing "Add cluster to lens" from the cluster's extended menu options in Mirantis Container Cloud v2.9 or later.
+> 🚨 Up to, and including, __Lens 5.1.3__ (and probably some versions after that as well), __Lens must be restarted__ after upgrading the extension. This is __due to a bug in Lens__ that causes the extension's registration of [IPC event handlers](https://api-docs.k8slens.dev/v5.1.2/extensions/guides/ipc/) to be ignored, leading to an error message like "Failed to add cluster to Lens" after choosing a cluster and clicking on the "Add cluster" button. It will also manifest itself when choosing "Add cluster to lens" from the cluster's extended menu options in Mirantis Container Cloud v2.9 or later. [This Lens PR](https://github.com/lensapp/lens/pull/3505) tracks the fix.
 
 ## Uninstalling
 
@@ -179,7 +179,7 @@ GET /oauth/code
 - I was able to add my cluster to Lens, but Lens fails to show it because of an authentication error.
     - Check if the cluster is only accessible over a private network (i.e. VPN) connection, and try opening it in Lens once connected to the network. Even though you can see the cluster in Container Cloud, as well as in the extension, accessing the cluster's details may still require a VPN connection in this case.
 - Up to, and including, __Lens 5.1.3__ (and probably some versions after that as well), I get an error like, "Failed to add cluster to Lens" after choosing a cluster and clicking on the "Add cluster" button in the extension, or choosing the "Add cluster to Lens" cluster menu option in Mirantis Container Cloud v2.9 or later.
-    - __Lens must be restarted__ after upgrading the extension. This is __due to a bug in Lens__ that causes the extension's registration of [IPC event handlers](https://api-docs.k8slens.dev/v5.1.2/extensions/guides/ipc/) to be ignored, leading to an error message like this.
+    - __Lens must be restarted__ after upgrading the extension. This is __due to a bug in Lens__ that causes the extension's registration of [IPC event handlers](https://api-docs.k8slens.dev/v5.1.2/extensions/guides/ipc/) to be ignored, leading to an error message like this. [This Lens PR](https://github.com/lensapp/lens/pull/3505) tracks the fix.
 
 ## Development
 
