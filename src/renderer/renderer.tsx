@@ -178,8 +178,14 @@ export default class ExtensionRenderer extends LensExtension {
    */
   protected handleClusterContextMenuOpen = async (cluster, ctx) => {
     if (cluster.metadata.source !== consts.catalog.source) {
-      return; // not once of our clusters: ignore it
+      return; // not one of our clusters: ignore it
     }
+
+    // CLUSTER SETTINGS
+    ctx.menuItems.push({
+      title: strings.renderer.catalog.contextMenuItems.settings.title(),
+      onClick: () => ctx.navigate(`/entity/${cluster.metadata.uid}/settings`),
+    });
 
     // REMOVE CLUSTER (but keep kubeConfig file)
     ctx.menuItems.push({

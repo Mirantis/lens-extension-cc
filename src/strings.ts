@@ -274,6 +274,9 @@ export const apiClient: Dict = {
 export const renderer: Dict = {
   catalog: {
     contextMenuItems: {
+      settings: {
+        title: () => 'Settings',
+      },
       remove: {
         title: () => 'Remove',
         confirm: (cluster) =>
