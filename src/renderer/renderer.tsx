@@ -184,6 +184,7 @@ export default class ExtensionRenderer extends LensExtension {
     // CLUSTER SETTINGS
     ctx.menuItems.push({
       title: strings.renderer.catalog.contextMenuItems.settings.title(),
+      icon: 'edit', // pencil, like Lens uses on its own cluster items
       onClick: () => ctx.navigate(`/entity/${cluster.metadata.uid}/settings`),
     });
 

@@ -1,5 +1,11 @@
 # ChangeLog
 
+## UNRELEASED
+
+### Changed
+
+- Fixed: The "Settings" item in the Catalog's cluster context menu was not appearing in the toolbar when selecting the cluster.
+
 ## v3.0.2
 
 ### Added
