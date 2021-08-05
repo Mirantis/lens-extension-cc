@@ -1,10 +1,10 @@
 # ChangeLog
 
-## UNRELEASED
+## v3.0.2
 
 ### Added
 
-- New "Settings" item in the Catalog's cluster context menu allows you to edit the settings of clusters added by this extension.
+- Fixed: There was no "Settings" item in the Catalog's cluster context menu to allow editing settings of clusters added by this extension.
 
 ## v3.0.1
 
