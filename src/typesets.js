@@ -37,6 +37,16 @@ export const clusterModelTs = {
     kubeconfigContext: rtv.STRING,
   },
   status: {
-    phase: [rtv.STRING, { oneOf: ['connected', 'disconnected'] }],
+    phase: [
+      rtv.STRING,
+      { oneOf: ['connecting', 'connected', 'disconnecting', 'disconnected'] },
+    ],
   },
 };
+
+/**
+ * Describes a `Common.Catalog.KubernetesCluster` object that we get from iterating
+ *  "entities" of this type in the Catalog, as well as from getting the active entity
+ *  via `Renderer.Catalog.catalogEntities.activeEntity` (which is a mobx observable).
+ */
+export const clusterEntityTs = { ...clusterModelTs };

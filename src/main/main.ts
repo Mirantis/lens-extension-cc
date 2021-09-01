@@ -1,5 +1,5 @@
 import { Main } from '@k8slens/extensions';
-import { mainRoute } from '../routes';
+import { ROUTE_GLOBAL_PAGE } from '../routes';
 import { prefStore } from '../store/PreferenceStore';
 import { clusterStore } from '../store/ClusterStore';
 import { IpcMain } from './IpcMain';
@@ -22,7 +22,7 @@ export default class ExtensionMain extends Main.LensExtension {
       parentId: 'file',
       label: strings.extension.appMenu['label'](),
       click: () => {
-        this.navigate(mainRoute);
+        this.navigate(ROUTE_GLOBAL_PAGE);
       },
     },
   ];

@@ -1,22 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { ThemeProvider, CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
-import { View } from './View';
-import { ExtStateProvider } from '../store/ExtStateProvider';
-import { ConfigProvider } from '../store/ConfigProvider';
-import { SsoAuthProvider } from '../store/SsoAuthProvider';
-import { ClusterDataProvider } from '../store/ClusterDataProvider';
-import { ClusterActionsProvider } from '../store/ClusterActionsProvider';
-import { lightThemeClassName, lightTheme, darkTheme } from './theme';
-import ExtensionRenderer from '../renderer';
+import { GlobalView } from './GlobalView';
+import { ExtStateProvider } from '../../store/ExtStateProvider';
+import { ConfigProvider } from '../../store/ConfigProvider';
+import { SsoAuthProvider } from '../../store/SsoAuthProvider';
+import { ClusterDataProvider } from '../../store/ClusterDataProvider';
+import { ClusterActionsProvider } from '../../store/ClusterActionsProvider';
+import { lightThemeClassName, lightTheme, darkTheme } from '../theme';
+import ExtensionRenderer from '../../renderer';
 
-export { ContainerCloudIcon } from './ContainerCloudIcon';
+export { ContainerCloudIcon as GlobalPageIcon } from '../ContainerCloudIcon';
 
 interface Props {
   extension: ExtensionRenderer;
 }
 
-export const AddClusterPage = function ({ extension }: Props) {
+export const GlobalPage = function ({ extension }: Props) {
   //
   // STATE
   //
@@ -80,7 +80,7 @@ export const AddClusterPage = function ({ extension }: Props) {
             <SsoAuthProvider>
               <ClusterDataProvider>
                 <ClusterActionsProvider>
-                  <View />
+                  <GlobalView />
                 </ClusterActionsProvider>
               </ClusterDataProvider>
             </SsoAuthProvider>

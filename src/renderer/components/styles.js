@@ -27,3 +27,39 @@ export const mixinFlexColumnGaps = function (gap = layout.gap) {
     },
   };
 };
+
+/**
+ * Styles for columns in a Flex column layout.
+ */
+export const mixinColumnStyles = function () {
+  return {
+    // as flex children, grow/shrink evenly
+    flex: 1,
+
+    // as flex containers
+    ...mixinFlexColumnGaps(layout.grid * 6),
+
+    borderRadius: layout.grid,
+    backgroundColor: 'var(--contentColor)',
+    marginRight: layout.gap,
+    padding: layout.gap,
+    overflow: 'auto',
+  };
+};
+
+/**
+ * Common styles for pages.
+ */
+export const mixinPageStyles = function () {
+  return {
+    padding: layout.gap,
+    backgroundColor: 'var(--mainBackground)',
+
+    // style all <code> elements herein
+    code: {
+      // TODO: remove once https://github.com/lensapp/lens/issues/1683 is fixed
+      // TRACKING: https://github.com/Mirantis/lens-extension-cc/issues/27
+      fontSize: 'calc(var(--font-size) * .9)',
+    },
+  };
+};

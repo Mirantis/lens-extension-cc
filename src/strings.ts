@@ -33,7 +33,7 @@ export const extension: Dict = {
   },
 };
 
-export const view: Dict = {
+export const globalView: Dict = {
   main: {
     titles: {
       generic: () => `Add ${mccFullName} Clusters`,
@@ -296,5 +296,16 @@ export const renderer: Dict = {
         },
       },
     },
+  },
+};
+
+export const clusterPage: Dict = {
+  menuItem: () => mccShortName,
+  title: () => `${mccFullName} Cluster`,
+};
+
+export const clusterView: Dict = {
+  infoPanel: {
+    viewInBrowser: () => 'View in browser',
   },
 };

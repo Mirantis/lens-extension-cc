@@ -5,12 +5,12 @@
 import propTypes from 'prop-types';
 import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
-import { Cluster } from '../store/Cluster';
-import { useClusterActions } from '../store/ClusterActionsProvider';
-import { Section as BaseSection } from './Section';
-import { layout } from './styles';
-import { InlineNotice } from './InlineNotice';
-import * as strings from '../../strings';
+import { Cluster } from '../../store/Cluster';
+import { useClusterActions } from '../../store/ClusterActionsProvider';
+import { Section as BaseSection } from '../Section';
+import { layout } from '../styles';
+import { InlineNotice } from '../InlineNotice';
+import * as strings from '../../../strings';
 
 const { Component } = Renderer;
 
