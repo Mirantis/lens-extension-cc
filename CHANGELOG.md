@@ -1,5 +1,11 @@
 # ChangeLog
 
+## UNRELEASED
+
+### Changed
+
+- Updated @k8slens/extensions dependency 5.2.1.
+
 ## v3.0.3
 
 ### Changed
