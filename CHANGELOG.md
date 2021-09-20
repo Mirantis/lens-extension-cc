@@ -4,7 +4,7 @@
 
 ### Changed
 
-- Updated @k8slens/extensions dependency 5.2.1.
+- Updated @k8slens/extensions dependency 5.2.2.
 
 ## v3.0.3
 
