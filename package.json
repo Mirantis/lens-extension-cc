@@ -61,7 +61,7 @@
     "@types/node": "^16.9.4",
     "@types/react": "^17.0.22",
     "@types/react-router": "^5.1.16",
-    "@typescript-eslint/eslint-plugin": "^4.31.1",
+    "@typescript-eslint/eslint-plugin": "^4.31.2",
     "@typescript-eslint/parser": "^4.31.2",
     "babel-loader": "^8.2.2",
     "babel-plugin-lodash": "^3.3.4",
