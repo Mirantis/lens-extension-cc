@@ -1223,10 +1223,10 @@
   resolved "https://registry.yarnpkg.com/@humanwhocodes/object-schema/-/object-schema-1.2.0.tgz#87de7af9c231826fdd68ac7258f77c429e0e5fcf"
   integrity sha512-wdppn25U8z/2yiaT6YGquE6X8sSv7hNMWSXYSSU1jGv/yd6XqjXgTDJ8KP4NgjTXfJ3GbRjeeb8RTV7a/VpM+w==
 
-"@k8slens/extensions@^5.2.2":
-  version "5.2.2"
-  resolved "https://registry.yarnpkg.com/@k8slens/extensions/-/extensions-5.2.2.tgz#87f10cdc5f9432e52d451b10b5c5c6892c84c986"
-  integrity sha512-w/6yXytboyy0ETispTLcFKS1VxwCK8QB1IXR6K/jXeyuaZzWnijIEubFZU/GLAlOqwtAovlffkjemQp11YOYEg==
+"@k8slens/extensions@^5.2.3":
+  version "5.2.3"
+  resolved "https://registry.yarnpkg.com/@k8slens/extensions/-/extensions-5.2.3.tgz#48d33293a87cf2ee2310790704481c1be620bb92"
+  integrity sha512-HgI1MJNESXAgV8EOXL3uZMk8ZyFmUMk4PoPwPYDRKbwxDetfzCvVTvfPhZcTOFXonPHK6qj1ZMyvYlR5xIFdgA==
   dependencies:
     "@material-ui/core" "*"
     "@types/node" "*"
