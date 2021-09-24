@@ -1,27 +1,31 @@
+//
+// Main view for the GlobalPage
+//
+
 import { useState, useEffect, useCallback } from 'react';
 import styled from '@emotion/styled';
 import * as rtv from 'rtvjs';
 import { Renderer } from '@k8slens/extensions';
-import { useExtState } from '../store/ExtStateProvider';
-import { useConfig } from '../store/ConfigProvider';
-import { useSsoAuth } from '../store/SsoAuthProvider';
-import { useClusterData } from '../store/ClusterDataProvider';
+import { useExtState } from '../../store/ExtStateProvider';
+import { useConfig } from '../../store/ConfigProvider';
+import { useSsoAuth } from '../../store/SsoAuthProvider';
+import { useClusterData } from '../../store/ClusterDataProvider';
 import {
   useClusterActions,
   SSO_STATE_ADD_CLUSTERS,
-} from '../store/ClusterActionsProvider';
-import { useClusterLoader } from '../hooks/useClusterLoader';
-import { useClusterLoadingState } from '../hooks/useClusterLoadingState';
+} from '../../store/ClusterActionsProvider';
+import { useClusterLoader } from '../../hooks/useClusterLoader';
+import { useClusterLoadingState } from '../../hooks/useClusterLoadingState';
 import { Login } from './Login';
 import { ClusterList } from './ClusterList';
 import { AddClusters } from './AddClusters';
-import { Loader } from './Loader';
-import { ErrorPanel } from './ErrorPanel';
-import { InfoPanel } from './InfoPanel';
+import { Loader } from '../Loader';
+import { ErrorPanel } from '../ErrorPanel';
+import { InfoPanel } from '../InfoPanel';
 import { PreferencesPanel } from './PreferencesPanel';
-import * as strings from '../../strings';
-import { catalog as catalogConsts } from '../../constants';
-import { layout, mixinFlexColumnGaps } from './styles';
+import * as strings from '../../../strings';
+import { catalog as catalogConsts } from '../../../constants';
+import { layout, mixinColumnStyles, mixinPageStyles } from '../styles';
 import {
   EXT_EVENT_ACTIVATE_CLUSTER,
   EXT_EVENT_ADD_CLUSTERS,
@@ -33,9 +37,9 @@ import {
   extEventOauthCodeTs,
   addExtEventHandler,
   removeExtEventHandler,
-} from '../eventBus';
-import { normalizeUrl } from '../../util/netUtil';
-import { getLensClusters } from '../rendererUtil';
+} from '../../eventBus';
+import { normalizeUrl } from '../../../util/netUtil';
+import { getLensClusters } from '../../rendererUtil';
 
 const { Component } = Renderer;
 
@@ -43,51 +47,15 @@ const { Component } = Renderer;
 // INTERNAL STYLED COMPONENTS
 //
 
-const Container = styled.div(function () {
-  return {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    right: 0,
-    bottom: 0,
-    display: 'flex',
-    padding: layout.gap,
-    backgroundColor: 'var(--mainBackground)',
-
-    // style all <code> elements herein
-    code: {
-      // TODO: remove once https://github.com/lensapp/lens/issues/1683 is fixed
-      // TRACKING: https://github.com/Mirantis/lens-extension-cc/issues/27
-      fontSize: 'calc(var(--font-size) * .9)',
-    },
-  };
-});
-
-const getColumnStyles = function () {
-  return {
-    // as flex children, grow/shrink evenly
-    flex: 1,
-
-    // as flex containers
-    ...mixinFlexColumnGaps(layout.grid * 6),
-
-    borderRadius: layout.grid,
-    backgroundColor: 'var(--contentColor)',
-    marginRight: layout.gap,
-    padding: layout.gap,
-    overflow: 'auto',
-  };
-};
-
 const MainColumn = styled.div(function () {
   return {
-    ...getColumnStyles(),
+    ...mixinColumnStyles(),
   };
 });
 
 const HelpColumn = styled.div(function () {
   return {
-    ...getColumnStyles(),
+    ...mixinColumnStyles(),
     justifyContent: 'space-between', // push PreferencesPanel to the bottom
     marginRight: 0,
   };
@@ -117,11 +85,23 @@ const Title = styled.div(function () {
   };
 });
 
+const PageContainer = styled.div(function () {
+  return {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    right: 0,
+    bottom: 0,
+    display: 'flex',
+    ...mixinPageStyles(),
+  };
+});
+
 //
 // MAIN COMPONENT
 //
 
-export const View = function () {
+export const GlobalView = function () {
   //
   // STATE
   //
@@ -289,7 +269,7 @@ export const View = function () {
       if (!results.valid) {
         setActiveEventType(EXT_EVENT_ACTIVATE_CLUSTER);
         setExtEventError(
-          strings.view.main.activateClusterEvent.error.invalidEventData()
+          strings.globalView.main.activateClusterEvent.error.invalidEventData()
         );
         return;
       }
@@ -299,7 +279,7 @@ export const View = function () {
       if (!clusterActionsLoading) {
         setActiveEventType(EXT_EVENT_ACTIVATE_CLUSTER);
         setLoaderMessage(
-          strings.view.main.loaders.activateCluster(
+          strings.globalView.main.loaders.activateCluster(
             `${data.namespace}/${data.clusterName}`
           )
         );
@@ -320,7 +300,7 @@ export const View = function () {
       if (!results.valid) {
         setActiveEventType(EXT_EVENT_ADD_CLUSTERS);
         setExtEventError(
-          strings.view.main.addClustersEvent.error.invalidEventData()
+          strings.globalView.main.addClustersEvent.error.invalidEventData()
         );
         return;
       }
@@ -336,7 +316,7 @@ export const View = function () {
       //  load before `onlyNamespaces` gets set, and we'll end-up with the wrong
       //  list of clusters to show the user
       setActiveEventType(EXT_EVENT_ADD_CLUSTERS);
-      setLoaderMessage(strings.view.main.loaders.addClustersHtml(url));
+      setLoaderMessage(strings.globalView.main.loaders.addClustersHtml(url));
       setOnlyNamespaces(data.onlyNamespaces || null);
 
       extActions.setCloudUrl(url);
@@ -364,7 +344,7 @@ export const View = function () {
       if (!results.valid) {
         setActiveEventType(EXT_EVENT_KUBECONFIG);
         setExtEventError(
-          strings.view.main.kubeConfigEvent.error.invalidEventData()
+          strings.globalView.main.kubeConfigEvent.error.invalidEventData()
         );
         return;
       }
@@ -377,7 +357,7 @@ export const View = function () {
       if (!clusterActionsLoading) {
         setActiveEventType(EXT_EVENT_KUBECONFIG);
         setLoaderMessage(
-          strings.view.main.loaders.addKubeCluster(
+          strings.globalView.main.loaders.addKubeCluster(
             `${data.namespace}/${data.clusterName}`
           )
         );
@@ -512,13 +492,13 @@ export const View = function () {
 
   const title =
     activeEventType === EXT_EVENT_KUBECONFIG
-      ? strings.view.main.titles.kubeConfig()
+      ? strings.globalView.main.titles.kubeConfig()
       : activeEventType === EXT_EVENT_ACTIVATE_CLUSTER
-      ? strings.view.main.titles.activateCluster()
-      : strings.view.main.titles.generic();
+      ? strings.globalView.main.titles.activateCluster()
+      : strings.globalView.main.titles.generic();
 
   return (
-    <Container className="lecc-View">
+    <PageContainer>
       <MainColumn>
         {/* include X (close) only if we're handling an extension event */}
         <Title>
@@ -528,7 +508,7 @@ export const View = function () {
               material="close"
               interactive
               big
-              title={strings.view.main.close()}
+              title={strings.globalView.main.close()}
               onClick={handleCloseClick}
             />
           )}
@@ -554,7 +534,9 @@ export const View = function () {
           !errMessage &&
           kubeClusterAdded && (
             <InfoPanel>
-              {strings.view.main.kubeConfigEvent.clusterAdded(eventClusterName)}
+              {strings.globalView.main.kubeConfigEvent.clusterAdded(
+                eventClusterName
+              )}
             </InfoPanel>
           )}
         {activeEventType === EXT_EVENT_KUBECONFIG &&
@@ -562,7 +544,7 @@ export const View = function () {
           !errMessage &&
           !kubeClusterAdded && (
             <InfoPanel>
-              {strings.view.main.kubeConfigEvent.clusterSkipped(
+              {strings.globalView.main.kubeConfigEvent.clusterSkipped(
                 eventClusterName
               )}
             </InfoPanel>
@@ -576,7 +558,7 @@ export const View = function () {
           !loading &&
           !errMessage && (
             <InfoPanel>
-              {strings.view.main.activateClusterEvent.clusterActivated(
+              {strings.globalView.main.activateClusterEvent.clusterActivated(
                 eventClusterName
               )}
             </InfoPanel>
@@ -607,7 +589,7 @@ export const View = function () {
       <HelpColumn>
         <HelpContent
           dangerouslySetInnerHTML={{
-            __html: strings.view.help.html({
+            __html: strings.globalView.help.html({
               catalogSource: catalogConsts.source,
               srcLabelName: catalogConsts.labels.source,
               nsLabelName: catalogConsts.labels.namespace,
@@ -616,6 +598,6 @@ export const View = function () {
         />
         <PreferencesPanel />
       </HelpColumn>
-    </Container>
+    </PageContainer>
   );
 };

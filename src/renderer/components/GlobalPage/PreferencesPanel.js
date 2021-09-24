@@ -7,13 +7,13 @@ import os from 'os';
 import styled from '@emotion/styled';
 import { remote } from 'electron';
 import { Renderer } from '@k8slens/extensions';
-import { useExtState } from '../store/ExtStateProvider';
-import { useClusterActions } from '../store/ClusterActionsProvider';
-import { Section as BaseSection } from './Section';
-import { InlineNotice, types as noticeTypes, iconSizes } from './InlineNotice';
-import { layout } from './styles';
-import * as strings from '../../strings';
-import pkg from '../../../package.json';
+import { useExtState } from '../../store/ExtStateProvider';
+import { useClusterActions } from '../../store/ClusterActionsProvider';
+import { Section as BaseSection } from '../Section';
+import { InlineNotice, types as noticeTypes, iconSizes } from '../InlineNotice';
+import { layout } from '../styles';
+import * as strings from '../../../strings';
+import pkg from '../../../../package.json';
 
 const { Component } = Renderer;
 

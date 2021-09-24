@@ -1,10 +1,13 @@
 import React from 'react';
 import { Renderer } from '@k8slens/extensions';
-import { AddClusterPage } from './components/AddClusterPage';
-import { ContainerCloudIcon } from './components/ContainerCloudIcon';
+import { GlobalPage, GlobalPageIcon } from './components/GlobalPage/GlobalPage';
+import {
+  ClusterPage,
+  ClusterPageIcon,
+} from './components/ClusterPage/ClusterPage';
 import * as strings from '../strings';
 import * as consts from '../constants';
-import { mainRoute } from '../routes';
+import { ROUTE_GLOBAL_PAGE, ROUTE_CLUSTER_PAGE } from '../routes';
 import {
   EXT_EVENT_ACTIVATE_CLUSTER,
   EXT_EVENT_ADD_CLUSTERS,
@@ -24,7 +27,7 @@ const {
 } = Renderer;
 
 const logger: any = loggerUtil; // get around TS compiler's complaining
-const itemColor = 'white'; // CSS color; Lens hard-codes the color of the workspace indicator item to 'white' also
+const statusItemColor = 'white'; // CSS color; Lens hard-codes the color of the workspace indicator item to 'white' also
 
 export default class ExtensionRenderer extends LensExtension {
   //
@@ -33,9 +36,20 @@ export default class ExtensionRenderer extends LensExtension {
 
   globalPages = [
     {
-      id: mainRoute,
+      id: ROUTE_GLOBAL_PAGE,
       components: {
-        Page: () => <AddClusterPage extension={this} />,
+        Page: () => <GlobalPage extension={this} />,
+      },
+    },
+  ];
+
+  // NOTE: the cluster page is dynamically added to the cluster menu in onActivate()
+  //  depending on what the active entity is at the time
+  clusterPages = [
+    {
+      id: ROUTE_CLUSTER_PAGE,
+      components: {
+        Page: () => <ClusterPage extension={this} />,
       },
     },
   ];
@@ -64,16 +78,16 @@ export default class ExtensionRenderer extends LensExtension {
         <div
           className="flex align-center gaps"
           title={strings.extension.statusBar['label']()}
-          onClick={() => this.navigate(mainRoute)}
+          onClick={() => this.navigate(ROUTE_GLOBAL_PAGE)}
         >
-          <ContainerCloudIcon fill={itemColor} />
+          <GlobalPageIcon size={16} fill={statusItemColor} />
         </div>
       ),
     },
   ];
 
   protected handleProtocolActivateCluster = ({ search }) => {
-    this.navigate(mainRoute);
+    this.navigate(ROUTE_GLOBAL_PAGE);
 
     dispatchExtEvent({
       type: EXT_EVENT_ACTIVATE_CLUSTER,
@@ -101,7 +115,7 @@ export default class ExtensionRenderer extends LensExtension {
 
     const onlyNamespaces = search.namespaces?.split(',');
 
-    this.navigate(mainRoute);
+    this.navigate(ROUTE_GLOBAL_PAGE);
 
     dispatchExtEvent({
       type: EXT_EVENT_ADD_CLUSTERS,
@@ -128,7 +142,7 @@ export default class ExtensionRenderer extends LensExtension {
       return;
     }
 
-    this.navigate(mainRoute);
+    this.navigate(ROUTE_GLOBAL_PAGE);
 
     dispatchExtEvent({
       type: EXT_EVENT_KUBECONFIG,
@@ -143,7 +157,7 @@ export default class ExtensionRenderer extends LensExtension {
   };
 
   protected handleProtocolOauthCode = ({ search }) => {
-    this.navigate(mainRoute);
+    this.navigate(ROUTE_GLOBAL_PAGE);
 
     dispatchExtEvent({
       type: EXT_EVENT_OAUTH_CODE,
@@ -247,10 +261,26 @@ export default class ExtensionRenderer extends LensExtension {
     });
   };
 
+  /**
+   * Updates the cluster page menus with our custom cluster page menu item if
+   *  the active Catalog entity is an MCC cluster.
+   * @param {Object} activeEntity
+   */
+  public async isEnabledForCluster(cluster): Promise<boolean> {
+    const entity = Renderer.Catalog.catalogEntities.getById(cluster.id);
+
+    // TODO[#498]: We should ALWAYS have an entity, but we may not.
+    //  https://github.com/lensapp/lens/issues/3790
+    return entity?.metadata.source === consts.catalog.source;
+  }
+
   //
   // METHODS
   //
 
+  // WARNING: Lens calls this method more often that just when the extension
+  //  gets activated. For example, it will call it _again_ if it adds a cluster
+  //  page and the cluster page is activated.
   onActivate() {
     logger.log('ExtensionRenderer.onActivate()', 'extension activated');
 
@@ -271,6 +301,29 @@ export default class ExtensionRenderer extends LensExtension {
         `Unable to add ${consts.catalog.entities.kubeCluster.type} context menu items: No related category found in the Catalog!`
       );
     }
+
+    // NOTE: Cluster page menu list must be STATIC. Checking here if the
+    //  `Renderer.Catalog.catalogEntities.activeEntity` is an MCC cluster will
+    //  not work. Neither will adding a mobx reaction like this
+    //
+    //    this.activeEntityDisposer = reaction(
+    //      () => Renderer.Catalog.catalogEntities.activeEntity,
+    //      this.updateClusterPageMenus
+    //    );
+    //
+    //  It has to be static, and also, it's currently not possible to decide whether
+    //   one cluster page is visible and another is not: It's all or nothing, and
+    //   must be done by overriding the `isEnabledForCluster(cluster)` method on
+    //   this class.
+    this.clusterPageMenus = [
+      {
+        target: { pageId: ROUTE_CLUSTER_PAGE },
+        title: strings.clusterPage.menuItem(),
+        components: {
+          Icon: () => <ClusterPageIcon size={30} />,
+        },
+      },
+    ];
   }
 
   onDeactivate() {

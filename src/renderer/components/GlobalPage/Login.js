@@ -1,16 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
-import { layout } from './styles';
-import { Section } from './Section';
-import { useExtState } from '../store/ExtStateProvider';
-import { useConfig } from '../store/ConfigProvider';
-import { useSsoAuth } from '../store/SsoAuthProvider';
-import { useClusterData } from '../store/ClusterDataProvider';
-import { useClusterLoadingState } from '../hooks/useClusterLoadingState';
-import { InlineNotice } from './InlineNotice';
-import { normalizeUrl } from '../../util/netUtil';
-import * as strings from '../../strings';
+import { layout } from '../styles';
+import { Section } from '../Section';
+import { useExtState } from '../../store/ExtStateProvider';
+import { useConfig } from '../../store/ConfigProvider';
+import { useSsoAuth } from '../../store/SsoAuthProvider';
+import { useClusterData } from '../../store/ClusterDataProvider';
+import { useClusterLoadingState } from '../../hooks/useClusterLoadingState';
+import { InlineNotice } from '../InlineNotice';
+import { normalizeUrl } from '../../../util/netUtil';
+import * as strings from '../../../strings';
 
 const {
   Component: { Notifications, Input, Button },

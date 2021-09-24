@@ -2,15 +2,15 @@ import { useState, useEffect } from 'react';
 import propTypes from 'prop-types';
 import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
-import { useClusterLoadingState } from '../hooks/useClusterLoadingState';
-import { Cluster } from '../store/Cluster';
-import { Section } from './Section';
-import { InlineNotice, types as noticeTypes, iconSizes } from './InlineNotice';
-import { layout, mixinFlexColumnGaps } from './styles';
-import { getLensClusters } from '../rendererUtil';
-import { IpcRenderer } from '../IpcRenderer';
-import * as strings from '../../strings';
-import { ipcEvents } from '../../constants';
+import { useClusterLoadingState } from '../../hooks/useClusterLoadingState';
+import { Cluster } from '../../store/Cluster';
+import { Section } from '../Section';
+import { InlineNotice, types as noticeTypes, iconSizes } from '../InlineNotice';
+import { layout, mixinFlexColumnGaps } from '../styles';
+import { getLensClusters } from '../../rendererUtil';
+import { IpcRenderer } from '../../IpcRenderer';
+import * as strings from '../../../strings';
+import { ipcEvents } from '../../../constants';
 
 const { Component } = Renderer;
 
