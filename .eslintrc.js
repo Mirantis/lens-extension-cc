@@ -48,6 +48,7 @@ const env = {
 const globals = {
   DEV_ENV: 'readonly',
   DEV_UNSAFE_NO_CERT: 'readonly',
+  FEAT_CLUSTER_PAGE_ENABLED: 'readonly', // TODO[clusterpage]: remove flag
 };
 
 module.exports = {

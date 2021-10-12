@@ -4,6 +4,7 @@
 // Environment Variables:
 // - TARGET: Either 'development' or 'production' (default).
 // - DEV_UNSAFE_NO_CERT: Set to 'thisisunsafe' to disable TLS certificate verification on MCC instances
+// - FEAT_CLUSTER_PAGE_ENABLED: Set to 1 to enable the Cluster Page feature. Disabled by default.
 //
 
 const path = require('path');
@@ -34,6 +35,9 @@ const plugins = [
     DEV_UNSAFE_NO_CERT: JSON.stringify(
       buildTarget !== 'production' &&
         process.env.DEV_UNSAFE_NO_CERT === 'thisisunsafe'
+    ),
+    FEAT_CLUSTER_PAGE_ENABLED: JSON.stringify(
+      !!Number(process.env.FEAT_CLUSTER_PAGE_ENABLED)
     ),
     'process.env.TARGET': JSON.stringify(buildTarget),
   }),

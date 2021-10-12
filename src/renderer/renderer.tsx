@@ -29,6 +29,8 @@ const {
 const logger: any = loggerUtil; // get around TS compiler's complaining
 const statusItemColor = 'white'; // CSS color; Lens hard-codes the color of the workspace indicator item to 'white' also
 
+declare const FEAT_CLUSTER_PAGE_ENABLED: any; // TODO[clusterpage]: remove
+
 export default class ExtensionRenderer extends LensExtension {
   //
   // PROPERTIES AND PROPERTY METHODS
@@ -267,11 +269,16 @@ export default class ExtensionRenderer extends LensExtension {
    * @param {Object} activeEntity
    */
   public async isEnabledForCluster(cluster): Promise<boolean> {
-    const entity = Renderer.Catalog.catalogEntities.getById(cluster.id);
+    // TODO[clusterpage]: remove flag
+    if (FEAT_CLUSTER_PAGE_ENABLED) {
+      const entity = Renderer.Catalog.catalogEntities.getById(cluster.id);
 
-    // TODO[#498]: We should ALWAYS have an entity, but we may not.
-    //  https://github.com/lensapp/lens/issues/3790
-    return entity?.metadata.source === consts.catalog.source;
+      // TODO[#498]: We should ALWAYS have an entity, but we may not.
+      //  https://github.com/lensapp/lens/issues/3790
+      return entity?.metadata.source === consts.catalog.source;
+    }
+
+    return false;
   }
 
   //
@@ -315,15 +322,17 @@ export default class ExtensionRenderer extends LensExtension {
     //   one cluster page is visible and another is not: It's all or nothing, and
     //   must be done by overriding the `isEnabledForCluster(cluster)` method on
     //   this class.
-    this.clusterPageMenus = [
-      {
-        target: { pageId: ROUTE_CLUSTER_PAGE },
-        title: strings.clusterPage.menuItem(),
-        components: {
-          Icon: () => <ClusterPageIcon size={30} />,
+    if (FEAT_CLUSTER_PAGE_ENABLED) {
+      this.clusterPageMenus = [
+        {
+          target: { pageId: ROUTE_CLUSTER_PAGE },
+          title: strings.clusterPage.menuItem(),
+          components: {
+            Icon: () => <ClusterPageIcon size={30} />,
+          },
         },
-      },
-    ];
+      ];
+    }
   }
 
   onDeactivate() {
