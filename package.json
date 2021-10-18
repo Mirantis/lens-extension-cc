@@ -55,7 +55,7 @@
     "@babel/preset-react": "^7.14.5",
     "@emotion/babel-plugin": "^11.3.0",
     "@emotion/core": "^11.0.0",
-    "@emotion/react": "^11.4.1",
+    "@emotion/react": "^11.5.0",
     "@emotion/styled": "^11.3.0",
     "@k8slens/extensions": "^5.2.5",
     "@types/node": "^16.11.0",
