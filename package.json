@@ -57,7 +57,7 @@
     "@emotion/core": "^11.0.0",
     "@emotion/react": "^11.5.0",
     "@emotion/styled": "^11.3.0",
-    "@k8slens/extensions": "^5.2.5",
+    "@k8slens/extensions": "^5.2.6",
     "@types/node": "^16.11.6",
     "@types/react": "^17.0.34",
     "@types/react-router": "^5.1.17",
