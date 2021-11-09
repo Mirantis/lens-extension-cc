@@ -2,14 +2,9 @@
 
 ## UNRELEASED
 
-### Minor
-
-- New cluster page with link back to the cluster in the Container Cloud UI.
-    - NOTE: Depends on https://github.com/lensapp/lens/issues/3790 being fixed.
-
 ### Patch
 
-- Updated @k8slens/extensions dependency to v5.2.5.
+- Updated @k8slens/extensions dependency to v5.3.0
 - Updated the Container Cloud icon to have a thicker/bolder appearance, which is better balanced with Material icons used by Lens.
 
 ## v3.0.3

@@ -17,3 +17,5 @@ updates:
     versioning-strategy: 'increase'
     ignore:
       - dependency-name: 'electron' # must be upgraded in lock-step with what Lens uses
+      - dependency-name: 'node-fetch'
+        versions: ['3.x'] # it's ESM-only, needs node:http/s modules that Lens/Electron 5.3.0 does not support
