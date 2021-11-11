@@ -1,4 +1,4 @@
-# Mirantis Container Cloud Lens Extension
+# Mirantis Container Cloud Lens Extension - v3 Maintenance
 
 ![CI](https://github.com/Mirantis/lens-extension-cc/workflows/CI/badge.svg?branch=master&event=push)
 
