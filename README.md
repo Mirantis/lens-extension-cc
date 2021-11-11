@@ -1,3 +1,9 @@
+# ⚠️ Version 3 Maintenance ⚠️
+
+For v3 (the currently-published version), please see [this README](https://github.com/Mirantis/lens-extension-cc/tree/v3-maint#readme) and code on the [v3-maint](https://github.com/Mirantis/lens-extension-cc/tree/v3-maint) branch. This branch will be maintained until v4 is published.
+
+__The master branch will be used for v4 development__, which will introduce significant architectural changes that will make this extension even more useful and powerful for integrating Mirantis Container Cloud with the Lens IDE.
+
 # Mirantis Container Cloud Lens Extension
 
 ![CI](https://github.com/Mirantis/lens-extension-cc/workflows/CI/badge.svg?branch=master&event=push)
