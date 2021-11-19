@@ -1155,10 +1155,10 @@
   resolved "https://registry.yarnpkg.com/@humanwhocodes/object-schema/-/object-schema-1.2.0.tgz#87de7af9c231826fdd68ac7258f77c429e0e5fcf"
   integrity sha512-wdppn25U8z/2yiaT6YGquE6X8sSv7hNMWSXYSSU1jGv/yd6XqjXgTDJ8KP4NgjTXfJ3GbRjeeb8RTV7a/VpM+w==
 
-"@k8slens/extensions@^5.3.0-beta.1":
-  version "5.3.0-beta.1"
-  resolved "https://registry.yarnpkg.com/@k8slens/extensions/-/extensions-5.3.0-beta.1.tgz#4d15be60ae113371a062b2526190d82dce17ab1e"
-  integrity sha512-n/yX8WMU7kuLHOTpBMhsEN0sjlFlCTLqfkcQoOYk4WDAQuCNbBoNyJnis3pFAEp3MTsxAm/OQ6OZaWdWdTkF2Q==
+"@k8slens/extensions@^5.3.0-beta.2":
+  version "5.3.0-beta.2"
+  resolved "https://registry.yarnpkg.com/@k8slens/extensions/-/extensions-5.3.0-beta.2.tgz#c93c2ecc9994093d2281d8783c062df96f823865"
+  integrity sha512-5PAAP0SqLu2fWc9jsvB6Lf5k0URDIAqjebkDlmm2FzKRnNY1vsr3C5k39vSHPfKjt76cNb9P0gyXPqiI2hJQgw==
   dependencies:
     "@material-ui/core" "4.12.3"
     "@types/node" "14.17.14"
