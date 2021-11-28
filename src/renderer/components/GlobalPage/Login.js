@@ -46,7 +46,7 @@ export const Login = function () {
 
   const {
     state: {
-      authAccess,
+      cloud,
       prefs: { cloudUrl },
     },
     actions: extActions,
@@ -95,16 +95,15 @@ export const Login = function () {
 
   const startLogin = useCallback(
     function () {
-      authAccess.resetCredentials();
-      authAccess.resetTokens();
-      authAccess.usesSso = usesSso;
+      cloud.resetCredentials();
+      cloud.resetTokens();
 
       // capture changes to auth details so far, and trigger SSO login in
-      //  useClusterLoader() effect (because this will result in an updated authAccess
+      //  useClusterLoader() effect (because this will result in an updated cloud
       //  object that has the right configuration per updates above)
-      extActions.setAuthAccess(authAccess);
+      extActions.setCloud(cloud);
     },
-    [authAccess, extActions, usesSso]
+    [cloud, extActions]
   );
 
   // returns true if refresh is possible and has started; false otherwise
@@ -113,12 +112,11 @@ export const Login = function () {
       clusterDataLoaded &&
       !clusterDataError &&
       url === cloudUrl &&
-      authAccess.isValid() &&
-      authAccess.usesSso
+      cloud.isValid()
     ) {
       // just do a cluster data refresh instead of going through auth again
       setRefreshing(true);
-      clusterDataActions.load({ cloudUrl, config, authAccess });
+      clusterDataActions.load({ cloudUrl, config, cloud });
       return true;
     }
 
@@ -140,9 +138,9 @@ export const Login = function () {
 
       // we're accessing a different instance, so nothing we may have already will
       //  work there
-      authAccess.resetCredentials();
-      authAccess.resetTokens();
-      extActions.setAuthAccess(authAccess);
+      cloud.resetCredentials();
+      cloud.resetTokens();
+      extActions.setCloud(cloud);
 
       // save URL as `cloudUrl` in preferences since the user claims it's valid
       extActions.setCloudUrl(normUrl);
@@ -188,6 +186,7 @@ export const Login = function () {
     function () {
       if (configLoaded && !configError && connectClicked) {
         setConnectClicked(false);
+        // startLogin();
 
         // start the SSO login process if the instance uses SSO since the user has
         //  clicked on the Connect button indicating intent to take action

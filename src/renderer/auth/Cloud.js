@@ -11,9 +11,9 @@ const hasPassed = function (date) {
 
 /**
  * Captures API authorization tokens and expiries.
- * @class AuthAccess
+ * @class Cloud
  */
-export class AuthAccess {
+export class Cloud {
   /** @static {Object} RTV Typeset (shape) for an API tokens payload. */
   static tokensTs = {
     id_token: [rtv.REQUIRED, rtv.STRING],
@@ -33,12 +33,12 @@ export class AuthAccess {
   };
 
   /**
-   * @static {Object} RTV Typeset (shape) for a new AuthAccess instance. All members
+   * @static {Object} RTV Typeset (shape) for a new Cloud instance. All members
    *  are expected, which means properties must exist but may have `null` values.
    */
   static specTs = {
-    ...Object.keys(AuthAccess.tokensTs).reduce((ts, key) => {
-      ts[key] = AuthAccess.tokensTs[key].concat(); // shallow clone of property typeset
+    ...Object.keys(Cloud.tokensTs).reduce((ts, key) => {
+      ts[key] = Cloud.tokensTs[key].concat(); // shallow clone of property typeset
 
       if (ts[key][0] === rtv.REQUIRED) {
         // each API property becomes optional, which means it can be `null`, which
@@ -54,9 +54,8 @@ export class AuthAccess {
     // IDP client associated with current tokens; undefined if unknown; null if not specified
     idpClientId: [rtv.OPTIONAL, rtv.STRING],
 
-    // true if access is via SSO; false if it's via basic auth (which would require a
-    //  password, and which we no longer support); null if it's undetermined
-    usesSso: [rtv.OPTIONAL, rtv.BOOLEAN],
+    //
+    cloudUrl: [rtv.OPTIONAL, rtv.STRING],
   };
 
   /**
@@ -67,7 +66,7 @@ export class AuthAccess {
    */
   constructor(spec) {
     DEV_ENV &&
-      rtv.verify({ spec }, { spec: [rtv.OPTIONAL, AuthAccess.specTs] });
+      rtv.verify({ spec }, { spec: [rtv.OPTIONAL, Cloud.specTs] });
 
     let _changed = false; // true if any property has changed since the last time the flag was reset
     let _token = null;
@@ -78,7 +77,7 @@ export class AuthAccess {
     let _refreshTokenValidTill = null;
     let _username = null;
     let _idpClientId = null;
-    let _usesSso = null;
+    let _cloudUrl = null;
 
     /** @member {boolean} changed */
     Object.defineProperty(this, 'changed', {
@@ -101,7 +100,7 @@ export class AuthAccess {
         DEV_ENV &&
           rtv.verify(
             { token: newValue },
-            { token: AuthAccess.specTs.id_token }
+            { token: Cloud.specTs.id_token }
           );
         _changed = _changed || _token !== newValue;
         _token = newValue || null; // normalize empty to null
@@ -118,7 +117,7 @@ export class AuthAccess {
         DEV_ENV &&
           rtv.verify(
             { expiresIn: newValue },
-            { expiresIn: AuthAccess.specTs.expires_in }
+            { expiresIn: Cloud.specTs.expires_in }
           );
         _changed = _changed || _expiresIn !== newValue;
         _expiresIn = newValue;
@@ -152,7 +151,7 @@ export class AuthAccess {
         DEV_ENV &&
           rtv.verify(
             { refreshToken: newValue },
-            { refreshToken: AuthAccess.specTs.refresh_token }
+            { refreshToken: Cloud.specTs.refresh_token }
           );
         _changed = _changed || _refreshToken !== newValue;
         _refreshToken = newValue || null; // normalize empty to null
@@ -169,7 +168,7 @@ export class AuthAccess {
         DEV_ENV &&
           rtv.verify(
             { refreshExpiresIn: newValue },
-            { refreshExpiresIn: AuthAccess.specTs.refresh_expires_in }
+            { refreshExpiresIn: Cloud.specTs.refresh_expires_in }
           );
         _changed = _changed || _refreshExpiresIn !== newValue;
         _refreshExpiresIn = newValue;
@@ -203,7 +202,7 @@ export class AuthAccess {
         DEV_ENV &&
           rtv.verify(
             { username: newValue },
-            { username: AuthAccess.specTs.username }
+            { username: Cloud.specTs.username }
           );
         _changed = _changed || _username !== newValue;
         _username = newValue || null; // normalize empty to null
@@ -226,7 +225,7 @@ export class AuthAccess {
         DEV_ENV &&
           rtv.verify(
             { idpClientId: normalizedNewValue },
-            { idpClientId: AuthAccess.specTs.idpClientId }
+            { idpClientId: Cloud.specTs.idpClientId }
           );
         _changed = _changed || _idpClientId !== normalizedNewValue;
         _idpClientId = normalizedNewValue;
@@ -234,25 +233,26 @@ export class AuthAccess {
     });
 
     /**
-     * @member {boolean|null} usesSso True if access is via SSO; false if it's via
-     *  basic auth; null if unknown
+     * @member {string|null} cloudUrl
      */
-    Object.defineProperty(this, 'usesSso', {
+    Object.defineProperty(this, 'cloudUrl', {
       enumerable: true,
       get() {
-        return _usesSso;
+        return _cloudUrl;
       },
       set(newValue) {
         const normalizedNewValue = newValue ?? null; // undefined -> null
         DEV_ENV &&
           rtv.verify(
-            { usesSso: normalizedNewValue },
-            { usesSso: AuthAccess.specTs.usesSso }
+            { cloudUrl: normalizedNewValue },
+            { cloudUrl: Cloud.specTs.cloudUrl }
           );
-        _changed = _changed || _usesSso !== normalizedNewValue;
-        _usesSso = normalizedNewValue;
+        _changed = _changed || _cloudUrl !== normalizedNewValue;
+        _cloudUrl = normalizedNewValue;
       },
     });
+
+    console.log('cloudUrl', this.cloudUrl);
 
     //// initialize
 
@@ -263,7 +263,6 @@ export class AuthAccess {
 
     this.username = spec ? spec.username : null;
     this.idpClientId = spec ? spec.idpClientId : null;
-    this.usesSso = spec ? spec.usesSso : null;
 
     _changed = false; // make sure unchanged after initialization
   }
@@ -273,7 +272,7 @@ export class AuthAccess {
    *  it's boolean and it's known to be SSO, not just a truthy/falsy value).
    */
   hasCredentials() {
-    return !!(this.username && this.usesSso === true);
+    return !!this.username;
   }
 
   /**
@@ -304,7 +303,6 @@ export class AuthAccess {
    */
   resetCredentials() {
     this.username = null;
-    this.usesSso = null; // related to credentials to clear this too
   }
 
   /**
@@ -334,7 +332,7 @@ export class AuthAccess {
    * @param {Object} tokens API token payload. See `tokensTs` for expected shape.
    */
   updateTokens(tokens) {
-    DEV_ENV && rtv.verify({ tokens }, { tokens: AuthAccess.tokensTs });
+    DEV_ENV && rtv.verify({ tokens }, { tokens: Cloud.tokensTs });
 
     this.token = tokens.id_token;
     this.expiresIn = tokens.expires_in;
@@ -357,9 +355,9 @@ export class AuthAccess {
 
   /**
    * Serializes this instance to a JSON object for storage. Called automatically
-   *  by `JSON.stringify(authAccess)`.
+   *  by `JSON.stringify(cloud)`.
    * @returns {Object} This object can subsequently be used as a `spec` object
-   *  to create a new `AuthAccess` instance.
+   *  to create a new `Cloud` instance.
    */
   toJSON() {
     return {
@@ -377,7 +375,6 @@ export class AuthAccess {
       idpClientId: this.idpClientId,
 
       username: this.username,
-      usesSso: this.usesSso,
     };
   }
 }

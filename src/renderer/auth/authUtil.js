@@ -54,15 +54,15 @@ export function extractJwtPayload(token) {
  * [ASYNC] Refreshes the auth tokens.
  * @param {string} baseUrl MCC URL. Must NOT end with a slash.
  * @param {Object} config MCC Configuration object.
- * @param {AuthAccess} authAccess An AuthAccess object.
- * @returns {string|undefined} On success, the `authAccess` object is updated with new tokens
- *  and expiries, and `undefined` is returned. On error, `authAccess` remains unchanged,
+ * @param {Cloud} cloud An Cloud object.
+ * @returns {string|undefined} On success, the `cloud` object is updated with new tokens
+ *  and expiries, and `undefined` is returned. On error, `cloud` remains unchanged,
  *  and an error message is returned.
  */
-export async function refreshToken(baseUrl, config, authAccess) {
+export async function refreshToken(baseUrl, config, cloud) {
   const authClient = new AuthClient({ baseUrl, config });
   const { response, body, error } = await authClient.refreshToken(
-    authAccess.refreshToken
+    cloud.refreshToken
   );
 
   if (response && response.status === 400) {
@@ -72,20 +72,20 @@ export async function refreshToken(baseUrl, config, authAccess) {
   }
 
   // token was refreshed
-  authAccess.updateTokens(body);
+  cloud.updateTokens(body);
 }
 
 /**
  * Terminates the session.
  * @param {string} baseUrl MCC URL. Must NOT end with a slash.
  * @param {Object} config MCC Configuration object.
- * @param {AuthAccess} authAccess An AuthAccess object.
+ * @param {Cloud} cloud An Cloud object.
  * @returns {string|undefined} `undefined` if successful; error message otherwise.
  */
-export async function logout(baseUrl, config, authAccess) {
+export async function logout(baseUrl, config, cloud) {
   const authClient = new AuthClient({ baseUrl, config });
   const { error: refreshError } = await authClient.logout(
-    authAccess.refreshToken
+    cloud.refreshToken
   );
 
   if (refreshError) {
@@ -96,11 +96,11 @@ export async function logout(baseUrl, config, authAccess) {
 }
 
 /**
- * Makes an authenticated request using the tokens in the `authAccess` object.
+ * Makes an authenticated request using the tokens in the `cloud` object.
  * @param {Object} options
  * @param {string} options.baseUrl MCC URL. Must NOT end with a slash.
  * @param {Object} options.config MCC Configuration object.
- * @param {AuthAccess} options.authAccess An AuthAccess object. NOTE: This instance will be UPDATED
+ * @param {Cloud} options.cloud An Cloud object. NOTE: This instance will be UPDATED
  *  with new tokens if the token is expired and successfully refreshed.
  * @param {string} options.method Name of the method to call on the `entity`.
  * @param {string} options.entity One of the keys from `entityToClient`, the API entity
@@ -111,32 +111,32 @@ export async function logout(baseUrl, config, authAccess) {
 export async function authedRequest({
   baseUrl,
   config,
-  authAccess,
+  cloud,
   method,
   entity,
   args,
 }) {
   // NOTE: it's useless to fetch if we don't have a token, or we can't refresh it
-  if (!authAccess.token || authAccess.isRefreshTokenExpired()) {
-    authAccess.resetTokens();
+  if (!cloud.token || cloud.isRefreshTokenExpired()) {
+    cloud.resetTokens();
     return { error: strings.authUtil.error.invalidCredentials(), status: 401 };
   }
 
   const Client = entityToClient[entity];
 
   // the first attempt to fetch
-  let k8sClient = new Client(baseUrl, authAccess.token, entity);
+  let k8sClient = new Client(baseUrl, cloud.token, entity);
   const { response, error, body } = await k8sClient[method](entity, args);
 
   if (response && response.status === 401) {
     // assume token is expired, try to refresh
-    const refreshError = await refreshToken(baseUrl, config, authAccess);
+    const refreshError = await refreshToken(baseUrl, config, cloud);
     if (refreshError) {
       return { error: refreshError, status: 401 };
     }
 
     // try to fetch again with updated token
-    k8sClient = new Client(baseUrl, authAccess.token, entity);
+    k8sClient = new Client(baseUrl, cloud.token, entity);
     const {
       response: newResponse,
       error: newError,
