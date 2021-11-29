@@ -73,7 +73,7 @@
     "eslint-plugin-react-hooks": "^4.3.0",
     "mobx": "^6.3.8",
     "node-fetch": "^2.6.6",
-    "prettier": "^2.4.1",
+    "prettier": "^2.5.0",
     "prop-types": "^15.7.2",
     "query-string": "^7.0.1",
     "react": "^17.0.2",
