@@ -4,13 +4,13 @@
 
 This [Lens](https://k8slens.dev/) Extension adds a status bar item, and a menu item, that makes it easy to connect Lens to a Mirantis Container Cloud instance and add its clusters to Lens.
 
-ℹ️ Requires Lens `>= 5.1.0`.
+ℹ️ Requires Lens `>= 5.3.0`.
 
 ![Extension UI](./docs/screen-shot.png)
 
 ## Installing
 
-Installation is very easy! Just make sure Lens `5.1.0` or later is running, and follow these simple steps:
+Installation is very easy! Just make sure Lens `5.3.0` or later is running, and follow these simple steps:
 
 1. Switch to the Extensions view (`CMD+SHIFT+E` on macOS).
 2. Enter the name of this extension, `@mirantis/lens-extension-cc`, into the Install Extension box.
@@ -25,8 +25,6 @@ You should now be able to choose the new `File > Add Cloud Clusters` menu item, 
 ## Upgrading
 
 To upgrade to a newer release, go to the Extensions view (`CMD+SHIFT+E` on macOS), [uninstall](#uninstalling) the extension, and then [re-install](#installing) it again.
-
-> 🚨 Up to, and including, __Lens 5.1.3__ (and probably some versions after that as well), __Lens must be restarted__ after upgrading the extension. This is __due to a bug in Lens__ that causes the extension's registration of [IPC event handlers](https://api-docs.k8slens.dev/v5.1.2/extensions/guides/ipc/) to be ignored, leading to an error message like "Failed to add cluster to Lens" after choosing a cluster and clicking on the "Add cluster" button. It will also manifest itself when choosing "Add cluster to lens" from the cluster's extended menu options in Mirantis Container Cloud v2.9 or later. [This Lens PR](https://github.com/lensapp/lens/pull/3505) tracks the fix.
 
 ## Uninstalling
 
