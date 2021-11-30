@@ -1,7 +1,7 @@
 import { Common } from '@k8slens/extensions';
-import { logger } from '../../util/logger';
-import { extractJwtPayload } from '../auth/authUtil';
-import { AuthClient } from '../auth/clients/AuthClient';
+import { logger } from './logger';
+import { extractJwtPayload } from '../renderer/auth/authUtil';
+import { AuthClient } from '../renderer/auth/clients/AuthClient';
 
 //
 // Store
