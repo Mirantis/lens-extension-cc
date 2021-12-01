@@ -84,9 +84,7 @@ export async function refreshToken(baseUrl, config, cloud) {
  */
 export async function logout(baseUrl, config, cloud) {
   const authClient = new AuthClient({ baseUrl, config });
-  const { error: refreshError } = await authClient.logout(
-    cloud.refreshToken
-  );
+  const { error: refreshError } = await authClient.logout(cloud.refreshToken);
 
   if (refreshError) {
     return refreshError;

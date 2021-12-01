@@ -178,12 +178,7 @@ const _deserializeClustersList = function (body) {
  *  on error `{error: string}`. The error will be the first-found error out of
  *  all namespaces on which cluster retrieval was attempted.
  */
-const _fetchClusters = async function (
-  cloudUrl,
-  config,
-  cloud,
-  namespaces
-) {
+const _fetchClusters = async function (cloudUrl, config, cloud, namespaces) {
   const results = await Promise.all(
     namespaces.map((namespaceName) =>
       authedRequest({
@@ -230,12 +225,7 @@ const _fetchClusters = async function (
  *  namespaces will be loaded; otherwise, all clusters in all namespaces will
  *  be loaded.
  */
-const _loadData = async function ({
-  cloudUrl,
-  config,
-  cloud,
-  onlyNamespaces,
-}) {
+const _loadData = async function ({ cloudUrl, config, cloud, onlyNamespaces }) {
   pr.reset(true);
 
   const nsResults = await _fetchNamespaces(
@@ -253,12 +243,7 @@ const _loadData = async function ({
     pr.store.data.namespaces = nsResults.namespaces;
 
     const namespaces = pr.store.data.namespaces.map((ns) => ns.name);
-    const clResults = await _fetchClusters(
-      cloudUrl,
-      config,
-      cloud,
-      namespaces
-    );
+    const clResults = await _fetchClusters(cloudUrl, config, cloud, namespaces);
 
     pr.loading = false;
     pr.loaded = true;

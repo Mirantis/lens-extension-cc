@@ -87,8 +87,6 @@ export const Login = function () {
   // {boolean} true if user has clicked the Access button; false otherwise
   const [connectClicked, setConnectClicked] = useState(false);
 
-  const usesSso = !!config?.keycloakLogin;
-
   //
   // EVENTS
   //
@@ -186,17 +184,18 @@ export const Login = function () {
     function () {
       if (configLoaded && !configError && connectClicked) {
         setConnectClicked(false);
-        // startLogin();
+
+        startLogin();
 
         // start the SSO login process if the instance uses SSO since the user has
         //  clicked on the Connect button indicating intent to take action
-        if (usesSso) {
-          startLogin();
-        } else {
-          Notifications.error(
-            `${strings.login.error.basicAuth()} ${strings.noteOwner}`
-          );
-        }
+        // if (usesSso) {
+        //   startLogin();
+        // } else {
+        //   Notifications.error(
+        //     `${strings.login.error.basicAuth()} ${strings.noteOwner}`
+        //   );
+        // }
       }
     },
     [
@@ -207,7 +206,6 @@ export const Login = function () {
       extActions,
       startLogin,
       connectClicked,
-      usesSso,
     ]
   );
 

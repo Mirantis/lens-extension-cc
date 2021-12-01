@@ -65,8 +65,7 @@ export class Cloud {
    *  is called to set token properties, and `username` is updated to a valid string.
    */
   constructor(spec) {
-    DEV_ENV &&
-      rtv.verify({ spec }, { spec: [rtv.OPTIONAL, Cloud.specTs] });
+    DEV_ENV && rtv.verify({ spec }, { spec: [rtv.OPTIONAL, Cloud.specTs] });
 
     let _changed = false; // true if any property has changed since the last time the flag was reset
     let _token = null;
@@ -98,10 +97,7 @@ export class Cloud {
       },
       set(newValue) {
         DEV_ENV &&
-          rtv.verify(
-            { token: newValue },
-            { token: Cloud.specTs.id_token }
-          );
+          rtv.verify({ token: newValue }, { token: Cloud.specTs.id_token });
         _changed = _changed || _token !== newValue;
         _token = newValue || null; // normalize empty to null
       },
