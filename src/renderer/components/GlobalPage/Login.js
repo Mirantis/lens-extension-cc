@@ -13,7 +13,7 @@ import { normalizeUrl } from '../../../util/netUtil';
 import * as strings from '../../../strings';
 
 const {
-  Component: { Notifications, Input, Button },
+  Component: { Input, Button },
 } = Renderer;
 
 const urlClassName = 'lecc-Login--url';

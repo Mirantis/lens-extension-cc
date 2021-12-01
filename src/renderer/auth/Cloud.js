@@ -248,8 +248,6 @@ export class Cloud {
       },
     });
 
-    console.log('cloudUrl', this.cloudUrl);
-
     //// initialize
 
     // set all token-related members if they're specified
