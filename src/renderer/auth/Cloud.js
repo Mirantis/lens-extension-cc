@@ -10,7 +10,8 @@ const hasPassed = function (date) {
 };
 
 /**
- * Captures API authorization tokens and expiries.
+ * Represents a connection to a single MCC instance (i.e. Management Cluster),
+ * including access tokens and expiry times.
  * @class Cloud
  */
 export class Cloud {
@@ -54,7 +55,7 @@ export class Cloud {
     // IDP client associated with current tokens; undefined if unknown; null if not specified
     idpClientId: [rtv.OPTIONAL, rtv.STRING],
 
-    //
+    // URL to the MCC instance
     cloudUrl: [rtv.OPTIONAL, rtv.STRING],
   };
 
