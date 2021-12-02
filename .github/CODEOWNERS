@@ -1,0 +1,14 @@
+# This file allows us to configure who automatically gets added to any PRs opened
+#  against the branch in which this file is present based on the matching rules
+#  similar to .gitignore syntax, but with specific precedence rules.
+#
+# See https://help.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners#codeowners-syntax
+#  for syntax and an example.
+#
+# In the future, if we have maintainers of specific parts like certain people
+#  familiar with certain components, it would be easy to add a rule to make them
+#  code owners of their components so they automatically get added as code
+#  reviews for PRs that affect those areas they're most familiar with.
+
+# Anything and everything, unless a later rule matches and takes precedence
+*  @stefcameron
