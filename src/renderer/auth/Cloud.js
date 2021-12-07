@@ -370,6 +370,7 @@ export class Cloud {
       idpClientId: this.idpClientId,
 
       username: this.username,
+      cloudUrl: this.cloudUrl,
     };
   }
 }
