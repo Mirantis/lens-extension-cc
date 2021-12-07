@@ -15,11 +15,11 @@ const { Util } = Common;
 /**
  * [ASYNC] Start authorization with MCC to get the temp access code via the
  *  redirect URI that will use the 'lens://' protocol to redirect the user
- *  to Lens and ultimately call back into `_finishAuthorization()`.
+ *  to Lens and ultimately call back into `finishAuthorization()`.
  * @param {Object} options
  * @param {Object} options.config MCC Config object.
  */
-export const _startAuthorization = async function ({ config }) {
+export const startAuthorization = async function ({ config }) {
   pr.reset(true);
 
   const authClient = new AuthClient({ config });
@@ -41,8 +41,6 @@ export const _startAuthorization = async function ({ config }) {
  * [ASYNC] Completes the authorization process by exchanging the temp access code
  *  for access tokens.
  *
- * NOTE: This method ASSUMES `loading` is `true` (i.e. load is in progress).
- *
  * @param {Object} options
  * @param {Object} options.oAuth OAuth response data from request for auth code.
  *  See `extEventOauthCodeTs` typeset in `eventBus.ts` for expected shape.
@@ -50,7 +48,7 @@ export const _startAuthorization = async function ({ config }) {
  * @param {Cloud} options.cloud Current authentication information.
  *  This instance WILL be cleared and updated with new tokens.
  */
-export const _finishAuthorization = async function ({ oAuth, config, cloud }) {
+export const finishAuthorization = async function ({ oAuth, config, cloud }) {
   if (!pr.loading) {
     // ignore rogue request to complete auth if it was canceled in Lens, but then
     //  user completed request in browser for some reason
@@ -87,7 +85,7 @@ export const _finishAuthorization = async function ({ oAuth, config, cloud }) {
         'SsoAuthProvider._finishAuthorization()',
         'Failed to get username from token JWT'
       );
-      pr.error = strings.ssoAuthProvider.error.authCode();
+      throw new Error('Failed to get username from token JWT');
     }
   }
 
