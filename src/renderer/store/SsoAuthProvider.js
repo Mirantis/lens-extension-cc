@@ -4,7 +4,7 @@
 
 import { createContext, useContext, useState, useMemo } from 'react';
 import { ProviderStore } from './ProviderStore';
-import { startAuthorization, finishAuthorization } from '../../util/ssoUtil'
+import { ssoUtil } from '../../util/ssoUtil'
 import * as strings from '../../strings';
 
 class SsoAuthProviderStore extends ProviderStore {
@@ -46,8 +46,19 @@ export const useSsoAuth = function () {
        */
       startAuthorization(options) {
         if (!pr.loading) {
+          pr.reset(true);
+
           // must not be loading (we can only handle one load at a time)
-          startAuthorization(options);
+          try {
+            ssoUtil.startAuthorization(options)
+          } catch (error) {
+            pr.loading = false;
+            pr.loaded = true;
+            pr.error = error;
+          }
+
+          pr.notifyIfError();
+          pr.onChange();
         }
       },
 
@@ -62,8 +73,18 @@ export const useSsoAuth = function () {
        */
       finishAuthorization(options) {
         if (pr.loading) {
+
           // must be loading (i.e. in the middle of the process)
-          finishAuthorization(options);
+          try {
+            ssoUtil.finishAuthorization(options);
+          } catch (error) {
+            pr.error = error;
+          }
+
+          pr.loading = false;
+          pr.loaded = true;
+          pr.notifyIfError();
+          pr.onChange();
         }
       },
 

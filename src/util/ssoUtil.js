@@ -3,38 +3,24 @@ import { logger } from './logger';
 import { extractJwtPayload } from '../renderer/auth/authUtil';
 import { AuthClient } from '../renderer/auth/clients/AuthClient';
 
-//
-// Store
-//
 const { Util } = Common;
 
-//
-// Internal Methods
-//
-
 /**
- * [ASYNC] Start authorization with MCC to get the temp access code via the
+ *  Start authorization with MCC to get the temp access code via the
  *  redirect URI that will use the 'lens://' protocol to redirect the user
  *  to Lens and ultimately call back into `finishAuthorization()`.
  * @param {Object} options
  * @param {Object} options.config MCC Config object.
  */
-export const startAuthorization = async function ({ config }) {
-  pr.reset(true);
-
+const startAuthorization = function ({ config }) {
   const authClient = new AuthClient({ config });
 
   if (config.keycloakLogin) {
     const url = authClient.getSsoAuthUrl();
     Util.openExternal(url); // open in default browser
   } else {
-    pr.loading = false;
-    pr.loaded = true;
-    pr.error = strings.ssoAuthProvider.error.basicOnly();
+    throw new Error(strings.ssoAuthProvider.error.basicOnly());
   }
-
-  pr.notifyIfError();
-  pr.onChange();
 };
 
 /**
@@ -48,13 +34,7 @@ export const startAuthorization = async function ({ config }) {
  * @param {Cloud} options.cloud Current authentication information.
  *  This instance WILL be cleared and updated with new tokens.
  */
-export const finishAuthorization = async function ({ oAuth, config, cloud }) {
-  if (!pr.loading) {
-    // ignore rogue request to complete auth if it was canceled in Lens, but then
-    //  user completed request in browser for some reason
-    return;
-  }
-
+const finishAuthorization = async function ({ oAuth, config, cloud }) {
   const authClient = new AuthClient({ config });
   let body;
   let error;
@@ -66,15 +46,12 @@ export const finishAuthorization = async function ({ oAuth, config, cloud }) {
     error = oAuth.error || oAuth.error_description || 'unknown';
   }
 
-  pr.loading = false;
-  pr.loaded = true;
-
   if (error) {
     logger.error(
-      'SsoAuthProvider._finishAuthorization()',
+      'ssoUtil.finishAuthorization()',
       `Failed to get tokens from authorization code, error="${error}"`
     );
-    pr.error = strings.ssoAuthProvider.error.authCode();
+    throw new Error(strings.ssoAuthProvider.error.authCode());
   } else {
     const jwt = extractJwtPayload(body.id_token);
     if (jwt.preferred_username) {
@@ -82,13 +59,15 @@ export const finishAuthorization = async function ({ oAuth, config, cloud }) {
       cloud.username = jwt.preferred_username;
     } else {
       logger.error(
-        'SsoAuthProvider._finishAuthorization()',
+        'ssoUtil.finishAuthorization()',
         'Failed to get username from token JWT'
       );
       throw new Error('Failed to get username from token JWT');
     }
   }
-
-  pr.notifyIfError();
-  pr.onChange();
 };
+
+export const ssoUtil = {
+  startAuthorization,
+  finishAuthorization
+}
