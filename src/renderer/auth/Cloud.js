@@ -56,7 +56,7 @@ export class Cloud {
     idpClientId: [rtv.OPTIONAL, rtv.STRING],
 
     // URL to the MCC instance
-    cloudUrl: [rtv.EXPECTED, rtv.STRING],
+    cloudUrl: [rtv.OPTIONAL, rtv.STRING],
   };
 
   /**
@@ -238,7 +238,7 @@ export class Cloud {
         return _cloudUrl;
       },
       set(newValue) {
-        const normalizedNewValue = newValue || null; // '' or undefined -> null
+        const normalizedNewValue = newValue && null; // '' or undefined -> null
         DEV_ENV &&
           rtv.verify(
             { cloudUrl: normalizedNewValue },
