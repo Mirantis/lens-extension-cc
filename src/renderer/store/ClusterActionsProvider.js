@@ -9,7 +9,7 @@ import path from 'path';
 import { Common, Renderer } from '@k8slens/extensions';
 import { AuthClient } from '../auth/clients/AuthClient';
 import { kubeConfigTemplate } from '../../util/templates';
-import { AuthAccess } from '../auth/AuthAccess';
+import { Cloud } from '../auth/Cloud';
 import { ProviderStore } from './ProviderStore';
 import { Cluster } from './Cluster';
 import { logger } from '../../util/logger';
@@ -121,7 +121,7 @@ const _filterClusters = function (clusters) {
  * @param {boolean} [options.offline] If true, the refresh token generated for the
  *  clusters will be enabled for offline access. WARNING: This is less secure
  *  than a normal refresh token as it will never expire.
- * @returns {Promise<Object>} On success, `{authAccess: AuthAccess}`, a new AuthAccess
+ * @returns {Promise<Object>} On success, `{cloud: Cloud}`, a new Cloud
  *  object that contains the token information; on error, `{error: string}`.
  * @throws {Error} If `config` is not using SSO.
  */
@@ -150,7 +150,7 @@ const _getClusterAccess = async function ({
     error = oAuth.error || oAuth.error_description || 'unknown';
   }
 
-  let authAccess;
+  let cloud;
   if (error) {
     logger.error(
       'ClusterActionsProvider._ssoGetClusterAccess()',
@@ -160,9 +160,8 @@ const _getClusterAccess = async function ({
   } else {
     const jwt = extractJwtPayload(body.id_token);
     if (jwt.preferred_username) {
-      authAccess = new AuthAccess({
+      cloud = new Cloud({
         username: jwt.preferred_username,
-        usesSso: true,
         ...body,
       });
     } else {
@@ -174,7 +173,7 @@ const _getClusterAccess = async function ({
     }
   }
 
-  return { authAccess, error };
+  return { cloud, error };
 };
 
 /**
@@ -498,7 +497,7 @@ const _ssoFinishAddClusters = async function ({
   }
 
   const cluster = clusters[0];
-  const { error: accessError, authAccess } = await _getClusterAccess({
+  const { error: accessError, cloud } = await _getClusterAccess({
     cluster,
     oAuth,
     config,
@@ -516,9 +515,9 @@ const _ssoFinishAddClusters = async function ({
         Promise.resolve({
           cluster,
           kubeConfig: kubeConfigTemplate({
-            username: authAccess.username,
-            token: authAccess.token,
-            refreshToken: authAccess.refreshToken,
+            username: cloud.username,
+            token: cloud.token,
+            refreshToken: cloud.refreshToken,
             cluster,
           }),
         }),

@@ -5,7 +5,7 @@
 //
 
 import * as rtv from 'rtvjs';
-import { AuthAccess } from './auth/AuthAccess';
+import { Cloud } from './auth/Cloud';
 
 //
 // TYPES
@@ -78,7 +78,7 @@ export const extEventAddClustersTs = {
     cloudUrl: rtv.STRING,
     onlyNamespaces: [rtv.OPTIONAL, [rtv.STRING]],
     username: rtv.STRING,
-    tokens: AuthAccess.tokensTs,
+    tokens: Cloud.tokensTs,
   },
 };
 

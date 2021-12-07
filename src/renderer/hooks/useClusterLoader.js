@@ -25,7 +25,7 @@ export const useClusterLoader = function (
 
   const {
     state: {
-      authAccess,
+      cloud,
       prefs: { cloudUrl },
     },
     actions: extActions,
@@ -64,12 +64,12 @@ export const useClusterLoader = function (
 
   useEffect(
     function () {
-      if (authAccess.changed) {
+      if (cloud.changed) {
         // capture any changes after authenticating (steps 1a or 1b) or loading clusters
-        extActions.setAuthAccess(authAccess);
+        extActions.setCloud(cloud);
       }
     },
-    [authAccess, extActions]
+    [cloud, extActions]
   );
 
   useEffect(
@@ -97,8 +97,8 @@ export const useClusterLoader = function (
             config ? '<set>' : '<none>'
           }, ssoAuthLoading=${ssoAuthLoading}, ssoAuthLoaded=${ssoAuthLoaded}, ssoAuthError=${
             ssoAuthError ? `"${ssoAuthError}"` : '<none>'
-          }, activeEventType=${activeEventType}, authAccess.isValid()=${authAccess.isValid()}`,
-          { cloudUrl, config, authAccess, ssoAuthLoading, ssoAuthLoaded }
+          }, activeEventType=${activeEventType}, cloud.isValid()=${cloud.isValid()}`,
+          { cloudUrl, config, cloud, ssoAuthLoading, ssoAuthLoaded }
         );
       }
 
@@ -106,11 +106,10 @@ export const useClusterLoader = function (
         cloudUrl && // MCC instance is known
         config && // config loaded
         config.keycloakLogin && // WITH SSO gates this effect
-        authAccess.usesSso && // auth access is for SSO auth
         !ssoAuthLoading &&
         !ssoAuthLoaded
       ) {
-        if (authAccess.isValid()) {
+        if (cloud.isValid()) {
           // skip authentication, go straight for the clusters
           DEV_ENV &&
             logger.log(
@@ -138,7 +137,7 @@ export const useClusterLoader = function (
       ssoAuthLoaded,
       ssoAuthError,
       ssoAuthActions,
-      authAccess,
+      cloud,
       cloudUrl,
       config,
       activeEventType,
@@ -153,14 +152,14 @@ export const useClusterLoader = function (
           'hooks/useClusterLoader#getClusterData',
           `=== config=${
             config ? '<set>' : '<none>'
-          }, authAccess.isValid()=${authAccess.isValid()}, clusterDataLoading=${clusterDataLoading}, clusterDataLoaded=${clusterDataLoaded}, clusterDataError=${
+          }, cloud.isValid()=${cloud.isValid()}, clusterDataLoading=${clusterDataLoading}, clusterDataLoaded=${clusterDataLoaded}, clusterDataError=${
             clusterDataError ? `"${clusterDataError}"` : '<none>'
           }, onlyNamespaces=${onlyNamespaces?.join(',')}`,
           {
             cloudUrl,
             config,
             ssoAuthLoaded,
-            authAccess,
+            cloud,
             clusterDataLoading,
             clusterDataLoaded,
           }
@@ -171,7 +170,7 @@ export const useClusterLoader = function (
         cloudUrl && // MCC instance is known
         config && // config loaded
         ssoAuthLoaded && // must be authenticated at this point
-        authAccess.isValid() && // must have valid tokens (they may have expired)
+        cloud.isValid() && // must have valid tokens (they may have expired)
         !clusterDataLoading &&
         !clusterDataLoaded
       ) {
@@ -183,7 +182,7 @@ export const useClusterLoader = function (
         clusterDataActions.load({
           cloudUrl,
           config,
-          authAccess,
+          cloud,
           onlyNamespaces,
         });
       } else if (DEV_ENV) {
@@ -192,7 +191,7 @@ export const useClusterLoader = function (
     },
     [
       cloudUrl,
-      authAccess,
+      cloud,
       config,
       ssoAuthLoaded,
       clusterDataLoading,

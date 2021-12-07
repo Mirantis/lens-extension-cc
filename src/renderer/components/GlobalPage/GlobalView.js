@@ -108,7 +108,7 @@ export const GlobalView = function () {
 
   const {
     state: {
-      authAccess,
+      cloud,
       prefs: { cloudUrl, offline, savePath },
     },
     actions: extActions,
@@ -231,7 +231,7 @@ export const GlobalView = function () {
     function () {
       if (activeEventType !== EXT_EVENT_ACTIVATE_CLUSTER) {
         // adding a new cluster or adding 'all' clusters requires new tokens
-        //  in `authAccess` and a new `cloudUrl`, so we assume whatever cluster
+        //  in `cloud` and a new `cloudUrl`, so we assume whatever cluster
         //  data we may have already loaded is now invalid because the credentials
         //  could be for a different user even if the `cloudUrl` is the same,
         //  so reset everything, bringing the View back to the login step
@@ -240,7 +240,7 @@ export const GlobalView = function () {
         clusterDataActions.reset();
         setSelectedClusters([]);
       }
-      // else, just activating a cluster doesn't require changes to `authAccess`
+      // else, just activating a cluster doesn't require changes to `cloud`
       //  or to the `config`, so reset View back to clusters if we have any
 
       clusterActions.reset();
@@ -309,7 +309,7 @@ export const GlobalView = function () {
       const url = normalizeUrl(data.cloudUrl);
 
       // NOTE: it's critical these local state variables be set BEFORE resetting
-      //  the providers and updating the `authAccess` via `extActions.setAuthAccess()`
+      //  the providers and updating the `cloud` via `extActions.setCloud()`
       //  to make sure that `onlyNamespaces` is set before the cluster data load
       //  takes place; otherwise, because of the way state updates are performed
       //  async in React, we'll have a race condition and the cluster data may
@@ -328,13 +328,12 @@ export const GlobalView = function () {
       //  we don't need to make an initial auth request; we can just go straight
       //  for the clusters; but we'll need to re-auth when we want to generate
       //  kubeConfigs for the clusters the user wants to add
-      authAccess.reset();
-      authAccess.username = data.username;
-      authAccess.usesSso = true; // assumed/expected
-      authAccess.updateTokens(data.tokens);
-      extActions.setAuthAccess(authAccess); // authAccess should be valid since we have tokens
+      cloud.reset();
+      cloud.username = data.username;
+      cloud.updateTokens(data.tokens);
+      extActions.setCloud(cloud); // cloud should be valid since we have tokens
     },
-    [authAccess, ssoAuthActions, extActions, clusterDataActions, configActions]
+    [cloud, ssoAuthActions, extActions, clusterDataActions, configActions]
   );
 
   // add a single cluster given its kubeConfig
@@ -378,7 +377,7 @@ export const GlobalView = function () {
       const { data: oAuth } = event;
 
       if (!oAuth.state && ssoAuthLoading) {
-        ssoAuthActions.finishAuthorization({ oAuth, config, authAccess });
+        ssoAuthActions.finishAuthorization({ oAuth, config, cloud });
       } else if (
         oAuth.state === SSO_STATE_ADD_CLUSTERS &&
         clusterActionsLoading
@@ -400,7 +399,7 @@ export const GlobalView = function () {
       clusterActionsLoading,
       clusterActions,
       config,
-      authAccess,
+      cloud,
       offline,
       savePath,
       cloudUrl,
@@ -566,7 +565,7 @@ export const GlobalView = function () {
 
         {/* ClusterList and AddClusters apply only if NOT loading a kubeConfig */}
         {(!activeEventType || activeEventType === EXT_EVENT_ADD_CLUSTERS) &&
-        authAccess.isValid() &&
+        cloud.isValid() &&
         clusterDataLoaded &&
         selectedClusters ? (
           <>

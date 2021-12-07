@@ -84,7 +84,7 @@ const _deserializeNamespacesList = function (body) {
  * [ASYNC] Get all existing namespaces from the management cluster.
  * @param {string} cloudUrl MCC URL. Must NOT end with a slash.
  * @param {Object} config MCC Configuration object.
- * @param {AuthAccess} authAccess An AuthAccess object. Tokens will be updated/cleared
+ * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
  *  if necessary.
  * @param {Array<string>} [onlyNamespaces] If specified, only clusters from these
  *  namespaces will be loaded; otherwise, all clusters in all namespaces will
@@ -95,12 +95,12 @@ const _deserializeNamespacesList = function (body) {
 const _fetchNamespaces = async function (
   cloudUrl,
   config,
-  authAccess,
+  cloud,
   onlyNamespaces
 ) {
   const { error, body } = await authedRequest({
     baseUrl: cloudUrl,
-    authAccess,
+    cloud,
     config,
     method: 'list',
     entity: 'namespace',
@@ -115,7 +115,7 @@ const _fetchNamespaces = async function (
     return { error: dsError };
   }
 
-  const userRoles = extractJwtPayload(authAccess.token).iam_roles || [];
+  const userRoles = extractJwtPayload(cloud.token).iam_roles || [];
 
   const hasReadPermissions = (name) =>
     userRoles.includes(`m:kaas:${name}@reader`) ||
@@ -168,7 +168,7 @@ const _deserializeClustersList = function (body) {
  *  specified.
  * @param {string} cloudUrl MCC URL. Must NOT end with a slash.
  * @param {Object} config MCC Configuration object.
- * @param {AuthAccess} authAccess An AuthAccess object. Tokens will be updated/cleared
+ * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
  *  if necessary.
  * @param {Array<string>} namespaces List of namespace NAMES for which to retrieve
  *  clusters.
@@ -178,17 +178,12 @@ const _deserializeClustersList = function (body) {
  *  on error `{error: string}`. The error will be the first-found error out of
  *  all namespaces on which cluster retrieval was attempted.
  */
-const _fetchClusters = async function (
-  cloudUrl,
-  config,
-  authAccess,
-  namespaces
-) {
+const _fetchClusters = async function (cloudUrl, config, cloud, namespaces) {
   const results = await Promise.all(
     namespaces.map((namespaceName) =>
       authedRequest({
         baseUrl: cloudUrl,
-        authAccess,
+        cloud,
         config,
         method: 'list',
         entity: 'cluster',
@@ -224,24 +219,19 @@ const _fetchClusters = async function (
  * @param {Object} options
  * @param {string} options.cloudUrl MCC URL. Must NOT end with a slash.
  * @param {Object} options.config MCC Configuration object.
- * @param {AuthAccess} options.authAccess Current authentication information. This
+ * @param {Cloud} options.cloud Current authentication information. This
  *  instance MAY be updated if a token refresh is required during the load.
  * @param {Array<string>} [options.onlyNamespaces] If specified, only clusters from these
  *  namespaces will be loaded; otherwise, all clusters in all namespaces will
  *  be loaded.
  */
-const _loadData = async function ({
-  cloudUrl,
-  config,
-  authAccess,
-  onlyNamespaces,
-}) {
+const _loadData = async function ({ cloudUrl, config, cloud, onlyNamespaces }) {
   pr.reset(true);
 
   const nsResults = await _fetchNamespaces(
     cloudUrl,
     config,
-    authAccess,
+    cloud,
     onlyNamespaces
   );
 
@@ -253,12 +243,7 @@ const _loadData = async function ({
     pr.store.data.namespaces = nsResults.namespaces;
 
     const namespaces = pr.store.data.namespaces.map((ns) => ns.name);
-    const clResults = await _fetchClusters(
-      cloudUrl,
-      config,
-      authAccess,
-      namespaces
-    );
+    const clResults = await _fetchClusters(cloudUrl, config, cloud, namespaces);
 
     pr.loading = false;
     pr.loaded = true;
@@ -308,7 +293,7 @@ export const useClusterData = function () {
        * @param {Object} options
        * @param {string} options.cloudUrl MCC URL. Must NOT end with a slash.
        * @param {Object} options.config MCC Configuration object.
-       * @param {AuthAccess} options.authAccess Current authentication information. This
+       * @param {Cloud} options.cloud Current authentication information. This
        *  instance MAY be updated if a token refresh is required during the load.
        * @param {Array<string>} [options.onlyNamespaces] If specified, only clusters from these
        *  namespaces will be loaded; otherwise, all clusters in all namespaces will

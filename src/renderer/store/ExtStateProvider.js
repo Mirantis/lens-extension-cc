@@ -7,13 +7,13 @@ import propTypes from 'prop-types';
 import * as rtv from 'rtvjs';
 import { cloneDeep, cloneDeepWith } from 'lodash';
 import { PreferenceStore, prefStore } from '../../store/PreferenceStore';
-import { AuthAccess } from '../auth/AuthAccess';
+import { Cloud } from '../auth/Cloud';
 import { ProviderStore } from './ProviderStore';
 import ExtensionRenderer from '../renderer';
 
 const extStateTs = {
   prefs: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: PreferenceStore }],
-  authAccess: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: AuthAccess }],
+  cloud: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: Cloud }],
 };
 
 let extension; // {ExtensionRenderer} instance reference
@@ -34,10 +34,10 @@ class ExtStateProviderStore extends ProviderStore {
     const newStore = {
       ...super.makeNew(),
       prefs: prefStore, // singleton instance
-      authAccess: new AuthAccess(),
+      cloud: new Cloud(),
     };
 
-    newStore.authAccess.username = prefStore.username || null;
+    newStore.cloud.username = prefStore.username || null;
     newStore.loaded = true; // always
 
     return newStore;
@@ -52,9 +52,9 @@ class ExtStateProviderStore extends ProviderStore {
   // @override
   clone() {
     return cloneDeepWith(this.store, (value, key) => {
-      if (key === 'authAccess') {
+      if (key === 'cloud') {
         // instead of letting Lodash dig deep into this object, clone it manually
-        return new AuthAccess(cloneDeep(value.toJSON()));
+        return new Cloud(cloneDeep(value.toJSON()));
       } else if (key === 'prefs') {
         return value; // it's a singleton instance so just return the instance
       }
@@ -75,7 +75,7 @@ class ExtStateProviderStore extends ProviderStore {
 
   // called whenever the pref store is updated from disk
   onStoreUpdate() {
-    this.store.authAccess.username = this.store.prefs.username;
+    this.store.cloud.username = this.store.prefs.username;
   }
 }
 
@@ -116,17 +116,17 @@ export const useExtState = function () {
       },
 
       /**
-       * Sets a new AuthAccess object into the store, which implicitely updates
+       * Sets a new Cloud object into the store, which implicitely updates
        *  the `username` in the store based on `newValue.username`.
-       * @param {AuthAccess|null} newValue
+       * @param {Cloud|null} newValue
        */
-      setAuthAccess(newValue) {
-        pr.store.authAccess = newValue;
+      setCloud(newValue) {
+        pr.store.cloud = newValue;
         pr.store.prefs.username = newValue ? newValue.username : null;
 
-        if (pr.store.authAccess) {
+        if (pr.store.cloud) {
           // mark it as no longer being changed if it was
-          pr.store.authAccess.changed = false;
+          pr.store.cloud.changed = false;
         }
 
         pr.onChange();

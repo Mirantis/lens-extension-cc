@@ -61,10 +61,10 @@ const _startAuthorization = async function ({ config }) {
  * @param {Object} options.oAuth OAuth response data from request for auth code.
  *  See `extEventOauthCodeTs` typeset in `eventBus.ts` for expected shape.
  * @param {Object} options.config MCC Config object.
- * @param {AuthAccess} options.authAccess Current authentication information.
+ * @param {Cloud} options.cloud Current authentication information.
  *  This instance WILL be cleared and updated with new tokens.
  */
-const _finishAuthorization = async function ({ oAuth, config, authAccess }) {
+const _finishAuthorization = async function ({ oAuth, config, cloud }) {
   if (!pr.loading) {
     // ignore rogue request to complete auth if it was canceled in Lens, but then
     //  user completed request in browser for some reason
@@ -94,9 +94,8 @@ const _finishAuthorization = async function ({ oAuth, config, authAccess }) {
   } else {
     const jwt = extractJwtPayload(body.id_token);
     if (jwt.preferred_username) {
-      authAccess.updateTokens(body);
-      authAccess.username = jwt.preferred_username;
-      authAccess.usesSso = true;
+      cloud.updateTokens(body);
+      cloud.username = jwt.preferred_username;
     } else {
       logger.error(
         'SsoAuthProvider._finishAuthorization()',
@@ -154,7 +153,7 @@ export const useSsoAuth = function () {
        * @param {Object} options
        * @param {string} code Temporary access code.
        * @param {Object} options.config MCC Config object.
-       * @param {AuthAccess} options.authAccess Current authentication information.
+       * @param {Cloud} options.cloud Current authentication information.
        *  This instance WILL be cleared and updated with new tokens.
        */
       finishAuthorization(options) {
@@ -166,7 +165,7 @@ export const useSsoAuth = function () {
 
       /**
        * Imperatively update the loaded state to `true`. Use this if you already
-       *  have a valid AuthAccess instance and don't need to authenticate.
+       *  have a valid Cloud instance and don't need to authenticate.
        */
       setAuthorized() {
         if (!pr.loading) {
