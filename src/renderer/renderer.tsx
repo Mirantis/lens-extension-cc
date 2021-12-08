@@ -1,6 +1,6 @@
 import React from 'react';
 // DEBUG TODO: CategoryEntityDetailsProps is not exported...
-import { Renderer, CategoryEntityDetailsProps } from '@k8slens/extensions';
+import { Common, Renderer } from '@k8slens/extensions';
 import { GlobalPage, GlobalPageIcon } from './components/GlobalPage/GlobalPage';
 import {
   ClusterPage,
@@ -20,7 +20,9 @@ import { prefStore } from '../store/PreferenceStore';
 import { clusterStore } from '../store/ClusterStore';
 import { logger as loggerUtil } from '../util/logger';
 import { IpcRenderer } from './IpcRenderer';
-import { SshKeyEntity } from '../catalog/SshKeyCatalogEntity';
+import { SshKeyEntity } from '../catalog/SshKeyEntity';
+
+// DEBUG type CategoryEntityDetailsProps = Common.Catalog.catalogentityde
 
 const {
   LensExtension,

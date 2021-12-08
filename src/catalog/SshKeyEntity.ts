@@ -1,18 +1,17 @@
 import {
+  Common,
   Renderer,
   Main,
-  // DEBUG TODO: the TSC complains that none of the types below are known, yet they are
-  //  defined in node_modules/@k8slens/extensions/dist/src/common/catalog/catalog-entity.d.ts
-  CatalogCategory,
-  CatalogEntity,
-  CatalogEntityAddMenuContext,
-  CatalogEntityContextMenuContext,
-  CatalogEntityMetadata,
-  CatalogEntityStatus,
 } from '@k8slens/extensions';
 import * as consts from '../constants';
 import { logger as loggerUtil } from '../util/logger';
 // DEBUG TODO: import { WeblinkStore } from '../weblink-store';
+
+type CatalogEntityAddMenuContext = Common.Catalog.CatalogEntityAddMenuContext;
+type CatalogEntityContextMenuContext = Common.Catalog.CatalogEntityContextMenuContext;
+type CatalogEntityMetadata = Common.Catalog.CatalogEntityMetadata;
+type CatalogEntityStatus = Common.Catalog.CatalogEntityStatus;
+type CatalogEntityActionContext = Common.Catalog.CatalogEntityActionContext;
 
 const logger: any = loggerUtil; // get around TS compiler's complaining
 
@@ -26,7 +25,7 @@ export type SshKeySpec = {
   publicKey: string;
 };
 
-export class SshKeyEntity extends CatalogEntity<
+export class SshKeyEntity extends Common.Catalog.CatalogEntity<
   CatalogEntityMetadata,
   SshKeyStatus,
   SshKeySpec
@@ -38,26 +37,13 @@ export class SshKeyEntity extends CatalogEntity<
   public readonly kind = SshKeyEntity.kind;
 
   // "runs" the entity; called when the user just clicks on the item in the Catalog
-  async onRun() {
-    // DEBUG window.open(this.spec.url, '_blank');
-    // DEBUG TODO: somehow trigger showing details panel if possible
-    logger.log('SshKeyCatalogEntity/SshKeyEntity.onRun', 'running...');
+  async onRun(context: CatalogEntityActionContext) {
+    // nothing to do for an SSH Key
   }
 
   public onSettingsOpen(): void {
-    // DEBUG TODO: what does this do? is this for the details panel?
-    logger.log(
-      'SshKeyCatalogEntity/SshKeyEntity.onSettingsOpen',
-      'settings are opening'
-    );
-  }
-
-  // DEBUG TODO: what is this for?
-  public onDetailsOpen(): void {
-    logger.log(
-      'SshKeyCatalogEntity/SshKeyEntity.onDetailsOpen',
-      'details are opening'
-    );
+    // NOTE: this function is NOT used by Lens, even though it's still in the CatalogEntity
+    //  class and marked as abstract, which means we have to define it to keep TCS happy
   }
 
   async onContextMenuOpen(context: CatalogEntityContextMenuContext) {
@@ -79,16 +65,15 @@ export class SshKeyEntity extends CatalogEntity<
       });
     }
 
-    // DEBUG TODO: what does this do, and how do I do it?
-    //  Renderer.Catalog. does not have something that looks like the registry
-    //  object being accessed here
-    catalogCategoryRegistry
-      .getCategoryForEntity<SshKeyCategory>(this)
-      ?.emit('contextMenuOpen', this, context);
+    // emit an event via the category so that other code (and extensions, for example)
+    //  can add listeners to these events and add there own entries
+    const category = Renderer.Catalog.catalogCategories
+      .getCategoryForEntity<SshKeyCategory>(this);
+    category?.emit('contextMenuOpen', this, context);
   }
 }
 
-export class SshKeyCategory extends CatalogCategory {
+export class SshKeyCategory extends Common.Catalog.CatalogCategory {
   public readonly apiVersion = 'catalog.k8slens.dev/v1alpha1';
   public readonly kind = 'CatalogCategory';
 
@@ -112,14 +97,17 @@ export class SshKeyCategory extends CatalogCategory {
 
   // DEBUG TODO: what is this? it's being called below; I don't recognize this syntax,
   //  Is it TypeScript or some new ECMAScript proposal?
+  // Lens team's answer:
+  //  This is a optional static field of type function that takes no args and produces void.
+  //  This was used in for weblinks because of the decision to have the same class be used both
+  //  on renderer and main but the onAdd code is only applicable on renderer so we initialize
+  //  this static field to a function there.
   public static onAdd?: () => void;
 
   constructor() {
     super();
 
     // DEBUG NOTE: this must be the big blue "+" button
-    // DEBUG TODO: there's a type error with `this.on` which seems wrong, but why?
-    //  TypeEmitter is available in node_modules
     this.on('catalogAddMenu', (ctx: CatalogEntityAddMenuContext) => {
       ctx.menuItems.push({
         icon: 'key',
@@ -132,6 +120,7 @@ export class SshKeyCategory extends CatalogCategory {
   }
 }
 
-// DEBUG TODO: Can I actually add to both right here?
-Renderer.Catalog.catalogCategories.add(new SshKeyCategory());
-Main.Catalog.catalogCategories.add(new SshKeyCategory());
+// NOTE: Renderer and Main will only be defined on their respective "sides", but
+//  this code must run on each side, so we have to test for existence for both
+Renderer?.Catalog.catalogCategories.add(new SshKeyCategory());
+Main?.Catalog.catalogCategories.add(new SshKeyCategory());
