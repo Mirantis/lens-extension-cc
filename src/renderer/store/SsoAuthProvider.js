@@ -78,7 +78,7 @@ export const useSsoAuth = function () {
           try {
             ssoUtil.finishAuthorization(options);
           } catch (error) {
-            pr.error = error;
+            pr.error = strings.ssoAuthProvider.error.authCode();
           }
 
           pr.loading = false;
