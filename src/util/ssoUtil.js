@@ -70,5 +70,5 @@ const finishAuthorization = async function ({ oAuth, config, cloud }) {
 
 export const ssoUtil = {
   startAuthorization,
-  finishAuthorization
-}
+  finishAuthorization,
+};
