@@ -2,6 +2,7 @@ import { Common } from '@k8slens/extensions';
 import { logger } from './logger';
 import { extractJwtPayload } from '../renderer/auth/authUtil';
 import { AuthClient } from '../renderer/auth/clients/AuthClient';
+import * as strings from '../strings';
 
 const { Util } = Common;
 
