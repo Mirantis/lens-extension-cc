@@ -17,9 +17,9 @@ export const catalog = deepFreeze({
     namespace: 'project',
   },
 
-  /** Lens entities (built-in). */
+  /** Lens entities (built-in and custom). */
   entities: {
-    /** `Common.Catalog.KubernetesCluster` */
+    /** `Common.Catalog.KubernetesCluster` (built-in) */
     kubeCluster: {
       /** Entity type (there may be multiple versions in the future; see `versions`). */
       kind: 'KubernetesCluster',
@@ -27,7 +27,18 @@ export const catalog = deepFreeze({
       group: 'entity.k8slens.dev',
       /** API versions of KubernetesCluster object kinds. */
       versions: {
-        v1alpha1: 'entity.k8slens.dev/v1alpha1', // Common.Catalog.KubernetesCluster class
+        v1alpha1: 'v1alpha1', // Common.Catalog.KubernetesCluster class
+      },
+    },
+    /** MCC SSH Key (custom) */
+    sshKey: {
+      /** Entity type (there may be multiple versions in the future; see `versions`). */
+      kind: 'SshKey',
+      /** Generic group (could be ssh keys of any version). */
+      group: 'entity.mcc.dev', // DEBUG TODO does this make sense?
+      /** API versions of SSH Key object kinds. */
+      versions: {
+        v1alpha1: 'v1alpha1',
       },
     },
   },

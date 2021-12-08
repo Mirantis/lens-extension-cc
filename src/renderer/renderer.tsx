@@ -1,5 +1,6 @@
 import React from 'react';
-import { Renderer } from '@k8slens/extensions';
+// DEBUG TODO: CategoryEntityDetailsProps is not exported...
+import { Renderer, CategoryEntityDetailsProps } from '@k8slens/extensions';
 import { GlobalPage, GlobalPageIcon } from './components/GlobalPage/GlobalPage';
 import {
   ClusterPage,
@@ -19,11 +20,12 @@ import { prefStore } from '../store/PreferenceStore';
 import { clusterStore } from '../store/ClusterStore';
 import { logger as loggerUtil } from '../util/logger';
 import { IpcRenderer } from './IpcRenderer';
+import { SshKeyEntity } from '../catalog/SshKeyCatalogEntity';
 
 const {
   LensExtension,
   Catalog,
-  Component: { Notifications },
+  Component: { Notifications, DrawerTitle, DrawerItem },
 } = Renderer;
 
 const logger: any = loggerUtil; // get around TS compiler's complaining
@@ -85,6 +87,25 @@ export default class ExtensionRenderer extends LensExtension {
           <GlobalPageIcon size={16} fill={statusItemColor} />
         </div>
       ),
+    },
+  ];
+
+  catalogEntityDetailItems = [
+    {
+      kind: SshKeyEntity.kind,
+      apiVersions: [SshKeyEntity.apiVersion],
+      // DEBUG TODO: what is priority? what does it do? do I need it?
+      // priority: 10,
+      components: {
+        Details: (props: CategoryEntityDetailsProps<SshKeyEntity>) => (
+          <>
+            <DrawerTitle title="More Information" />
+            <DrawerItem name="Public Key">
+              {props.entity.spec.publicKey}
+            </DrawerItem>
+          </>
+        ),
+      },
     },
   ];
 
