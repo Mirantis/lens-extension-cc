@@ -2,7 +2,6 @@ import { Common } from '@k8slens/extensions';
 import { logger } from './logger';
 import { extractJwtPayload } from '../renderer/auth/authUtil';
 import { AuthClient } from '../renderer/auth/clients/AuthClient';
-import * as strings from '../strings';
 
 const { Util } = Common;
 
@@ -13,14 +12,14 @@ const { Util } = Common;
  * @param {Object} options
  * @param {Object} options.config MCC Config object.
  */
-const startAuthorization = function ({ config }) {
+export const startAuthorization = function ({ config }) {
   const authClient = new AuthClient({ config });
 
   if (config.keycloakLogin) {
     const url = authClient.getSsoAuthUrl();
     Util.openExternal(url); // open in default browser
   } else {
-    throw new Error(strings.ssoAuthProvider.error.basicOnly());
+    throw new Error('Cloud instance does not support SSO');
   }
 };
 
@@ -35,7 +34,7 @@ const startAuthorization = function ({ config }) {
  * @param {Cloud} options.cloud Current authentication information.
  *  This instance WILL be cleared and updated with new tokens.
  */
-const finishAuthorization = async function ({ oAuth, config, cloud }) {
+export const finishAuthorization = async function ({ oAuth, config, cloud }) {
   const authClient = new AuthClient({ config });
   let body;
   let error;
@@ -52,7 +51,7 @@ const finishAuthorization = async function ({ oAuth, config, cloud }) {
       'ssoUtil.finishAuthorization()',
       `Failed to get tokens from authorization code, error="${error}"`
     );
-    throw new Error(strings.ssoAuthProvider.error.authCode());
+    throw new Error(error);
   } else {
     const jwt = extractJwtPayload(body.id_token);
     if (jwt.preferred_username) {
@@ -66,9 +65,4 @@ const finishAuthorization = async function ({ oAuth, config, cloud }) {
       throw new Error('Failed to get username from token JWT');
     }
   }
-};
-
-export const ssoUtil = {
-  startAuthorization,
-  finishAuthorization,
 };

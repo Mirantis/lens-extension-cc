@@ -4,7 +4,7 @@
 
 import { createContext, useContext, useState, useMemo } from 'react';
 import { ProviderStore } from './ProviderStore';
-import { ssoUtil } from '../../util/ssoUtil';
+import * as ssoUtil from '../../util/ssoUtil';
 import * as strings from '../../strings';
 
 class SsoAuthProviderStore extends ProviderStore {
@@ -54,7 +54,7 @@ export const useSsoAuth = function () {
           } catch (error) {
             pr.loading = false;
             pr.loaded = true;
-            pr.error = error;
+            pr.error = strings.ssoAuthProvider.error.basicOnly();
           }
 
           pr.notifyIfError();
