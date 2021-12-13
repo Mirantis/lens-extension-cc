@@ -71,11 +71,11 @@ export const useSsoAuth = function () {
        * @param {Cloud} options.cloud Current authentication information.
        *  This instance WILL be cleared and updated with new tokens.
        */
-      finishAuthorization(options) {
+      async finishAuthorization(options) {
         if (pr.loading) {
           // must be loading (i.e. in the middle of the process)
           try {
-            ssoUtil.finishAuthorization(options);
+            await ssoUtil.finishAuthorization(options);
           } catch (error) {
             pr.error = strings.ssoAuthProvider.error.authCode();
           }
