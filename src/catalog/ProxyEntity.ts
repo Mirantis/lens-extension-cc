@@ -61,10 +61,6 @@ export class ProxyEntity extends Common.Catalog.CatalogEntity<
             this.metadata.name
           );
         },
-        // can optionally show a confirmation dialog
-        // confirm: {
-        //   message: 'string',
-        // },
       });
     }
 
