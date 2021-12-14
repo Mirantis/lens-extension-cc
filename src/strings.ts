@@ -20,6 +20,7 @@ export interface Dict {
 // owner info to add to all posted notifications; does NOT start/end with a space
 export const noteOwner = `(${pkg.name})`;
 
+export const mccCodeName = 'MCC';
 export const mccShortName = 'Container Cloud';
 export const mccFullName = `Mirantis ${mccShortName}`;
 
@@ -307,5 +308,99 @@ export const clusterPage: Dict = {
 export const clusterView: Dict = {
   infoPanel: {
     viewInBrowser: () => 'View in browser',
+  },
+};
+
+export const catalog: Dict = {
+  entities: {
+    cluster: {
+      // NOTE: this is a native Lens category/entity type which we're extending
+      //  so there's no need for `categoryName`
+
+      // big blue contextual "+" button when viewing the Catalog
+      catalogMenu: {
+        create: {
+          title: () => `New ${mccCodeName} cluster...`,
+        },
+      },
+    },
+
+    sshKey: {
+      categoryName: () => `${mccCodeName} SSH Keys`,
+
+      // big blue contextual "+" button when viewing the Catalog
+      catalogMenu: {
+        create: {
+          title: () => 'New SSH Key...',
+        },
+      },
+
+      // 3-dots context menu on specific entity
+      contextMenu: {
+        browserOpen: {
+          title: () => `Open in ${mccCodeName}`,
+        },
+      },
+
+      // details panel
+      details: {
+        title: () => 'More Information',
+        props: {
+          publicKey: () => 'Public key',
+        },
+      },
+    },
+
+    credential: {
+      categoryName: () => `${mccCodeName} Credentials`,
+
+      // big blue contextual "+" button when viewing the Catalog
+      catalogMenu: {
+        create: {
+          title: () => 'New Credential...',
+        },
+      },
+
+      // 3-dots context menu on specific entity
+      contextMenu: {
+        browserOpen: {
+          title: () => `Open in ${mccCodeName}`,
+        },
+      },
+
+      // details panel
+      details: {
+        title: () => 'More Information',
+        props: {
+          provider: () => 'Provider',
+        },
+      },
+    },
+
+    proxy: {
+      categoryName: () => `${mccCodeName} Proxies`,
+
+      // big blue contextual "+" button when viewing the Catalog
+      catalogMenu: {
+        create: {
+          title: () => 'New Proxy...',
+        },
+      },
+
+      // 3-dots context menu on specific entity
+      contextMenu: {
+        browserOpen: {
+          title: () => `Open in ${mccCodeName}`,
+        },
+      },
+
+      // details panel
+      details: {
+        title: () => 'More Information',
+        props: {
+          region: () => 'Region',
+        },
+      },
+    },
   },
 };

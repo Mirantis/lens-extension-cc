@@ -13,7 +13,7 @@ const { Catalog } = Renderer;
  */
 export const getLensClusters = function () {
   return Catalog.catalogEntities.getItemsForApiKind(
-    consts.catalog.entities.kubeCluster.versions.v1alpha1,
+    `${consts.catalog.entities.kubeCluster.group}/${consts.catalog.entities.kubeCluster.versions.v1alpha1}`,
     consts.catalog.entities.kubeCluster.kind
   );
 };
