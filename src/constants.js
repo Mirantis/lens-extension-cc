@@ -1,11 +1,14 @@
 import pkg from '../package.json';
 import { deepFreeze } from './util/deepFreeze';
 
-/** Lens Catalog-related constants. */
+const extEntityGroup = 'entity.mcc.dev';
+
+/** Catalog-related constants. */
 export const catalog = deepFreeze({
   /**
-   * Name of the boolean label added to all clusters added to the Lens Catalog by this
-   *  extension, e.g. "mcc=true".
+   * Source for the catalog entity; identifies _what_ added the entity to the Catalog,
+   *  or where it came from. Searching the Catalog will include the entity's source
+   *  as search content.
    */
   source: pkg.name,
 
@@ -17,26 +20,45 @@ export const catalog = deepFreeze({
     namespace: 'project',
   },
 
+  /** Lens built-in generic Catalog category type and versions. */
+  category: {
+    kind: 'CatalogCategory',
+    group: 'catalog.k8slens.dev',
+    versions: {
+      v1alpha1: 'v1alpha1',
+    },
+  },
+
   /** Lens entities (built-in and custom). */
   entities: {
     /** `Common.Catalog.KubernetesCluster` (built-in) */
     kubeCluster: {
-      /** Entity type (there may be multiple versions in the future; see `versions`). */
       kind: 'KubernetesCluster',
-      /** Generic group (could be clusters of any version). */
       group: 'entity.k8slens.dev',
-      /** API versions of KubernetesCluster object kinds. */
       versions: {
-        v1alpha1: 'v1alpha1', // Common.Catalog.KubernetesCluster class
+        v1alpha1: 'v1alpha1',
       },
     },
     /** MCC SSH Key (custom) */
     sshKey: {
-      /** Entity type (there may be multiple versions in the future; see `versions`). */
-      kind: 'SshKey',
-      /** Generic group (could be ssh keys of any version). */
-      group: 'entity.mcc.dev', // DEBUG TODO does this make sense?
-      /** API versions of SSH Key object kinds. */
+      kind: 'SSHKey',
+      group: extEntityGroup,
+      versions: {
+        v1alpha1: 'v1alpha1',
+      },
+    },
+    /** MCC Credential (custom) */
+    credential: {
+      kind: 'Credential',
+      group: extEntityGroup,
+      versions: {
+        v1alpha1: 'v1alpha1',
+      },
+    },
+    /** MCC Proxy (custom) */
+    proxy: {
+      kind: 'Proxy',
+      group: extEntityGroup,
       versions: {
         v1alpha1: 'v1alpha1',
       },

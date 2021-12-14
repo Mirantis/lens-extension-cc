@@ -1,5 +1,5 @@
 //
-// SSH Key Category and Entity
+// Credential Category and Entity
 //
 
 import { Common, Renderer, Main } from '@k8slens/extensions';
@@ -16,26 +16,29 @@ type CatalogEntityActionContext = Common.Catalog.CatalogEntityActionContext;
 
 const logger: any = loggerUtil; // get around TS compiler's complaining
 
-export interface SshKeyStatus extends CatalogEntityStatus {
+export interface CredentialStatus extends CatalogEntityStatus {
   phase: string; // see typesets.js for possible values
 }
 
-export type SshKeySpec = {
-  publicKey: string; // see typesets.js for possible values
-};
+export interface CredentialSpec {
+  provider: string; // see typesets.js for possible values
+  status: {
+    valid: boolean;
+  };
+}
 
-export const sshKeyIconName = 'vpn_key'; // must be a Material Icon name
+export const credentialIconName = 'verified_user'; // must be a Material Icon name
 
-export class SshKeyEntity extends Common.Catalog.CatalogEntity<
+export class CredentialEntity extends Common.Catalog.CatalogEntity<
   CatalogEntityMetadata,
-  SshKeyStatus,
-  SshKeySpec
+  CredentialStatus,
+  CredentialSpec
 > {
-  public static readonly apiVersion = `${consts.catalog.entities.sshKey.group}/${consts.catalog.entities.sshKey.versions.v1alpha1}`;
-  public static readonly kind = consts.catalog.entities.sshKey.kind;
+  public static readonly apiVersion = `${consts.catalog.entities.credential.group}/${consts.catalog.entities.credential.versions.v1alpha1}`;
+  public static readonly kind = consts.catalog.entities.credential.kind;
 
-  public readonly apiVersion = SshKeyEntity.apiVersion;
-  public readonly kind = SshKeyEntity.kind;
+  public readonly apiVersion = CredentialEntity.apiVersion;
+  public readonly kind = CredentialEntity.kind;
 
   // "runs" the entity; called when the user just clicks on the item in the Catalog
   async onRun(context: CatalogEntityActionContext) {
@@ -50,12 +53,13 @@ export class SshKeyEntity extends Common.Catalog.CatalogEntity<
   async onContextMenuOpen(context: CatalogEntityContextMenuContext) {
     if (this.metadata.source === consts.catalog.source) {
       context.menuItems.push({
-        title: strings.catalog.entities.sshKey.contextMenu.browserOpen.title(),
+        title:
+          strings.catalog.entities.credential.contextMenu.browserOpen.title(),
         icon: 'launch', // NOTE: must be a string; cannot be a component that renders an icon
         onClick: async () => {
           logger.log(
-            'SshKeyEntity/SshKeyEntity.onContextMenuOpen.browserOpen',
-            'opening SSH key %s in browser...',
+            'CredentialEntity/CredentialEntity.onContextMenuOpen.browserOpen',
+            'opening Credential %s in browser...',
             this.metadata.name
           );
         },
@@ -69,32 +73,32 @@ export class SshKeyEntity extends Common.Catalog.CatalogEntity<
     // emit an event via the category so that other code (and extensions, for example)
     //  can add listeners to these events and add there own entries
     const category =
-      Renderer.Catalog.catalogCategories.getCategoryForEntity<SshKeyCategory>(
+      Renderer.Catalog.catalogCategories.getCategoryForEntity<CredentialCategory>(
         this
       );
     category?.emit('contextMenuOpen', this, context);
   }
 }
 
-export class SshKeyCategory extends Common.Catalog.CatalogCategory {
+export class CredentialCategory extends Common.Catalog.CatalogCategory {
   public readonly apiVersion = `${consts.catalog.category.group}/${consts.catalog.category.versions.v1alpha1}`;
   public readonly kind = consts.catalog.category.kind;
 
   public metadata = {
-    name: strings.catalog.entities.sshKey.categoryName(),
-    icon: sshKeyIconName, // NOTE: must be a string; cannot be a component that renders an icon
+    name: strings.catalog.entities.credential.categoryName(),
+    icon: credentialIconName, // NOTE: must be a string; cannot be a component that renders an icon
   };
 
   public spec = {
-    group: consts.catalog.entities.sshKey.group,
+    group: consts.catalog.entities.credential.group,
     versions: [
       {
-        name: consts.catalog.entities.sshKey.versions.v1alpha1,
-        entityClass: SshKeyEntity,
+        name: consts.catalog.entities.credential.versions.v1alpha1,
+        entityClass: CredentialEntity,
       },
     ],
     names: {
-      kind: SshKeyEntity.kind,
+      kind: CredentialEntity.kind,
     },
   };
 
@@ -106,12 +110,12 @@ export class SshKeyCategory extends Common.Catalog.CatalogCategory {
     //  Catalog
     this.on('catalogAddMenu', (ctx: CatalogEntityAddMenuContext) => {
       ctx.menuItems.push({
-        icon: sshKeyIconName, // NOTE: must be a string; cannot be a component that renders an icon
-        title: strings.catalog.entities.sshKey.catalogMenu.create.title(),
+        icon: credentialIconName, // NOTE: must be a string; cannot be a component that renders an icon
+        title: strings.catalog.entities.credential.catalogMenu.create.title(),
         onClick: async () => {
           logger.log(
-            'SshKeyEntity/SshKeyCategory.onCatalogAddMenu.create',
-            'Creating new SSH key...'
+            'CredentialEntity/CredentialCategory.onCatalogAddMenu.create',
+            'Creating new Credential...'
           );
         },
       });
@@ -121,5 +125,5 @@ export class SshKeyCategory extends Common.Catalog.CatalogCategory {
 
 // NOTE: Renderer and Main will only be defined on their respective "sides", but
 //  this code must run on each side, so we have to test for existence for both
-Renderer?.Catalog.catalogCategories.add(new SshKeyCategory());
-Main?.Catalog.catalogCategories.add(new SshKeyCategory());
+Renderer?.Catalog.catalogCategories.add(new CredentialCategory());
+Main?.Catalog.catalogCategories.add(new CredentialCategory());

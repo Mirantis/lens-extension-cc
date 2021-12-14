@@ -1,5 +1,4 @@
 import React from 'react';
-// DEBUG TODO: CategoryEntityDetailsProps is not exported...
 import { Common, Renderer } from '@k8slens/extensions';
 import { GlobalPage, GlobalPageIcon } from './components/GlobalPage/GlobalPage';
 import {
@@ -21,8 +20,16 @@ import { clusterStore } from '../store/ClusterStore';
 import { logger as loggerUtil } from '../util/logger';
 import { IpcRenderer } from './IpcRenderer';
 import { SshKeyEntity } from '../catalog/SshKeyEntity';
+import { CredentialEntity } from '../catalog/CredentialEntity';
+import { ProxyEntity } from '../catalog/ProxyEntity';
+import { CatalogEntityAddMenuContext } from '@k8slens/extensions/dist/src/common/catalog';
 
-// DEBUG type CategoryEntityDetailsProps = Common.Catalog.catalogentityde
+// NOTE: The following interface _should_ be exported by the Lens extension package
+//  as `Common.Types.CatalogEntityDetailsProps`, but it's not, which is a known bug
+//  that will hopefully be fixed "soon". In the meantime, we define it ourselves here.
+interface CatalogEntityDetailsProps<T extends Common.Catalog.CatalogEntity> {
+  entity: T;
+}
 
 const {
   LensExtension,
@@ -96,14 +103,52 @@ export default class ExtensionRenderer extends LensExtension {
     {
       kind: SshKeyEntity.kind,
       apiVersions: [SshKeyEntity.apiVersion],
-      // DEBUG TODO: what is priority? what does it do? do I need it?
-      // priority: 10,
       components: {
-        Details: (props: CategoryEntityDetailsProps<SshKeyEntity>) => (
+        Details: (props: CatalogEntityDetailsProps<SshKeyEntity>) => (
           <>
-            <DrawerTitle title="More Information" />
-            <DrawerItem name="Public Key">
+            <DrawerTitle
+              title={strings.catalog.entities.sshKey.details.title()}
+            />
+            <DrawerItem
+              name={strings.catalog.entities.sshKey.details.props.publicKey()}
+            >
               {props.entity.spec.publicKey}
+            </DrawerItem>
+          </>
+        ),
+      },
+    },
+    {
+      kind: CredentialEntity.kind,
+      apiVersions: [CredentialEntity.apiVersion],
+      components: {
+        Details: (props: CatalogEntityDetailsProps<CredentialEntity>) => (
+          <>
+            <DrawerTitle
+              title={strings.catalog.entities.credential.details.title()}
+            />
+            <DrawerItem
+              name={strings.catalog.entities.credential.details.props.provider()}
+            >
+              {props.entity.spec.provider}
+            </DrawerItem>
+          </>
+        ),
+      },
+    },
+    {
+      kind: ProxyEntity.kind,
+      apiVersions: [ProxyEntity.apiVersion],
+      components: {
+        Details: (props: CatalogEntityDetailsProps<ProxyEntity>) => (
+          <>
+            <DrawerTitle
+              title={strings.catalog.entities.proxy.details.title()}
+            />
+            <DrawerItem
+              name={strings.catalog.entities.proxy.details.props.region()}
+            >
+              {props.entity.spec.region}
             </DrawerItem>
           </>
         ),
@@ -286,6 +331,21 @@ export default class ExtensionRenderer extends LensExtension {
     });
   };
 
+  protected handleClusterCatalogMenuOpen = (
+    ctx: CatalogEntityAddMenuContext
+  ) => {
+    ctx.menuItems.push({
+      icon: 'dns', // TODO: need better icon
+      title: strings.catalog.entities.cluster.catalogMenu.create.title(),
+      onClick: async () => {
+        logger.log(
+          'ExtensionRenderer.clusterCatalogMenu.newCluster.onClick()',
+          'Creating new cluster...'
+        );
+      },
+    });
+  };
+
   /**
    * Updates the cluster page menus with our custom cluster page menu item if
    *  the active Catalog entity is an MCC cluster.
@@ -325,6 +385,7 @@ export default class ExtensionRenderer extends LensExtension {
 
     if (category) {
       category.on('contextMenuOpen', this.handleClusterContextMenuOpen);
+      category.on('catalogAddMenu', this.handleClusterCatalogMenuOpen);
     } else {
       logger.warn(
         'ExtensionRenderer.onActivate()',

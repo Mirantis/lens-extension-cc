@@ -32,6 +32,10 @@ export default class ExtensionMain extends Main.LensExtension {
     prefStore.loadExtension(this);
     clusterStore.loadExtension(this);
     IpcMain.createInstance(this); // AFTER load stores
+
+    if (DEV_ENV) {
+      IpcMain.getInstance().addFakeItems();
+    }
   }
 
   onDeactivate() {
