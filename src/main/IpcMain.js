@@ -6,11 +6,19 @@ import { promises as fs } from 'fs';
 import { observable } from 'mobx';
 import { Main, Common } from '@k8slens/extensions';
 import * as rtv from 'rtvjs';
-import { clusterModelTs } from '../typesets';
+import {
+  clusterModelTs,
+  sshKeyModelTs,
+  credentialModelTs,
+  proxyModelTs,
+} from '../typesets';
 import { clusterStore } from '../store/ClusterStore';
 import { logger } from '../util/logger';
-import pkg from '../../package.json';
 import { ipcEvents } from '../constants';
+import { SshKeyEntity } from '../catalog/SshKeyEntity';
+import { CredentialEntity } from '../catalog/CredentialEntity';
+import { ProxyEntity } from '../catalog/ProxyEntity';
+import * as consts from '../constants';
 
 const {
   Catalog: { KubernetesCluster },
@@ -117,10 +125,13 @@ export class IpcMain extends Main.Ipc {
   // SINGLETON
   //
 
+  /**
+   * @param {Main.LensExtension} extension
+   */
   constructor(extension) {
     super(extension);
 
-    extension.addCatalogSource(pkg.name, catalogSource);
+    extension.addCatalogSource(consts.catalog.source, catalogSource);
     this.restoreClusters();
 
     this.handle(ipcEvents.invoke.ADD_CLUSTERS, this.onAddClusters);
@@ -219,5 +230,162 @@ export class IpcMain extends Main.Ipc {
     }
 
     return removed;
+  }
+
+  /**
+   * Adds fake/dummy items to the Catalog for testing.
+   */
+  addFakeItems() {
+    if (!DEV_ENV) {
+      return;
+    }
+
+    //// SSH KEYS
+
+    const sshKeyModels = [
+      {
+        metadata: {
+          source: consts.catalog.source,
+          uid: 'sshkey-uid-1',
+          name: 'SSH Key 1',
+          namespace: 'lex-ns-1',
+          cloudUrl: 'https://container-cloud.acme.com',
+        },
+        spec: {
+          publicKey: 'sshkey-public-key-1',
+        },
+        status: {
+          phase: 'available',
+        },
+      },
+      {
+        metadata: {
+          source: consts.catalog.source,
+          uid: 'sshkey-uid-2',
+          name: 'SSH Key 2',
+          namespace: 'lex-ns-2',
+          cloudUrl: 'https://container-cloud.acme.com',
+        },
+        spec: {
+          publicKey: 'sshkey-public-key-2',
+        },
+        status: {
+          phase: 'available',
+        },
+      },
+    ];
+
+    DEV_ENV && rtv.verify(sshKeyModels, [[sshKeyModelTs]]);
+
+    sshKeyModels.forEach((model) => {
+      this.capture(
+        'log',
+        'addFakeItems()',
+        `adding ssh key to catalog, keyId=${model.metadata.uid}, name=${model.metadata.name}, namespace=${model.metadata.namespace}`
+      );
+      catalogSource.push(new SshKeyEntity(model));
+    });
+
+    //// CREDENTIALS
+
+    const credentialModels = [
+      {
+        metadata: {
+          source: consts.catalog.source,
+          uid: 'credential-uid-1',
+          name: 'Credential 1',
+          namespace: 'lex-ns-1',
+          cloudUrl: 'https://container-cloud.acme.com',
+        },
+        spec: {
+          provider: 'aws',
+          status: {
+            valid: true,
+          },
+        },
+        status: {
+          phase: 'available',
+        },
+      },
+      {
+        metadata: {
+          source: consts.catalog.source,
+          uid: 'credential-uid-2',
+          name: 'Credential 2',
+          namespace: 'lex-ns-2',
+          cloudUrl: 'https://container-cloud.acme.com',
+        },
+        spec: {
+          provider: 'openstack',
+          status: {
+            valid: false,
+          },
+        },
+        status: {
+          phase: 'available',
+        },
+      },
+    ];
+
+    DEV_ENV && rtv.verify(credentialModels, [[credentialModelTs]]);
+
+    credentialModels.forEach((model) => {
+      this.capture(
+        'log',
+        'addFakeItems()',
+        `adding credential to catalog, keyId=${model.metadata.uid}, name=${model.metadata.name}, namespace=${model.metadata.namespace}`
+      );
+      catalogSource.push(new CredentialEntity(model));
+    });
+
+    //// PROXIES
+
+    const proxyModels = [
+      {
+        metadata: {
+          source: consts.catalog.source,
+          uid: 'proxy-uid-1',
+          name: 'Proxy 1',
+          namespace: 'lex-ns-1',
+          cloudUrl: 'https://container-cloud.acme.com',
+        },
+        spec: {
+          region: 'aws-us-east-1',
+          http: 'http://east.proxy.com',
+          https: 'https://east.proxy.com',
+        },
+        status: {
+          phase: 'available',
+        },
+      },
+      {
+        metadata: {
+          source: consts.catalog.source,
+          uid: 'proxy-uid-2',
+          name: 'Proxy 2',
+          namespace: 'lex-ns-2',
+          cloudUrl: 'https://container-cloud.acme.com',
+        },
+        spec: {
+          region: 'aws-us-west-1',
+          http: 'http://west.proxy.com',
+          https: 'https://west.proxy.com',
+        },
+        status: {
+          phase: 'available',
+        },
+      },
+    ];
+
+    DEV_ENV && rtv.verify(proxyModels, [[proxyModelTs]]);
+
+    proxyModels.forEach((model) => {
+      this.capture(
+        'log',
+        'addFakeItems()',
+        `adding proxy to catalog, keyId=${model.metadata.uid}, name=${model.metadata.name}, namespace=${model.metadata.namespace}`
+      );
+      catalogSource.push(new ProxyEntity(model));
+    });
   }
 }

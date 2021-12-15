@@ -114,6 +114,7 @@ const _filterClusters = function (clusters) {
 /**
  * [ASYNC] Gets access tokens for the specified cluster using SSO AUTH.
  * @param {Object} options
+ * @param {string} options.cloudUrl MCC instance base URL that owns the cluster.
  * @param {Cluster} options.cluster The cluster to access.
  * @param {Object} options.oAuth The OAuth response request parameters as JSON.
  *  `code` is the authorization code needed to obtain access tokens for the cluster.
@@ -126,6 +127,7 @@ const _filterClusters = function (clusters) {
  * @throws {Error} If `config` is not using SSO.
  */
 const _getClusterAccess = async function ({
+  cloudUrl,
   cluster,
   oAuth,
   config,
@@ -163,6 +165,7 @@ const _getClusterAccess = async function ({
       cloud = new Cloud({
         username: jwt.preferred_username,
         ...body,
+        cloudUrl,
       });
     } else {
       logger.error(
@@ -498,6 +501,7 @@ const _ssoFinishAddClusters = async function ({
 
   const cluster = clusters[0];
   const { error: accessError, cloud } = await _getClusterAccess({
+    cloudUrl,
     cluster,
     oAuth,
     config,
