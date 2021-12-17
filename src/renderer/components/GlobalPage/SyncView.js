@@ -101,7 +101,7 @@ const PageContainer = styled.div(function () {
 // MAIN COMPONENT
 //
 
-export const GlobalView = function () {
+export const SyncView = function () {
   //
   // STATE
   //
@@ -269,7 +269,7 @@ export const GlobalView = function () {
       if (!results.valid) {
         setActiveEventType(EXT_EVENT_ACTIVATE_CLUSTER);
         setExtEventError(
-          strings.globalView.main.activateClusterEvent.error.invalidEventData()
+          strings.syncView.main.activateClusterEvent.error.invalidEventData()
         );
         return;
       }
@@ -279,7 +279,7 @@ export const GlobalView = function () {
       if (!clusterActionsLoading) {
         setActiveEventType(EXT_EVENT_ACTIVATE_CLUSTER);
         setLoaderMessage(
-          strings.globalView.main.loaders.activateCluster(
+          strings.syncView.main.loaders.activateCluster(
             `${data.namespace}/${data.clusterName}`
           )
         );
@@ -300,7 +300,7 @@ export const GlobalView = function () {
       if (!results.valid) {
         setActiveEventType(EXT_EVENT_ADD_CLUSTERS);
         setExtEventError(
-          strings.globalView.main.addClustersEvent.error.invalidEventData()
+          strings.syncView.main.addClustersEvent.error.invalidEventData()
         );
         return;
       }
@@ -316,7 +316,7 @@ export const GlobalView = function () {
       //  load before `onlyNamespaces` gets set, and we'll end-up with the wrong
       //  list of clusters to show the user
       setActiveEventType(EXT_EVENT_ADD_CLUSTERS);
-      setLoaderMessage(strings.globalView.main.loaders.addClustersHtml(url));
+      setLoaderMessage(strings.syncView.main.loaders.addClustersHtml(url));
       setOnlyNamespaces(data.onlyNamespaces || null);
 
       extActions.setCloudUrl(url);
@@ -343,7 +343,7 @@ export const GlobalView = function () {
       if (!results.valid) {
         setActiveEventType(EXT_EVENT_KUBECONFIG);
         setExtEventError(
-          strings.globalView.main.kubeConfigEvent.error.invalidEventData()
+          strings.syncView.main.kubeConfigEvent.error.invalidEventData()
         );
         return;
       }
@@ -356,7 +356,7 @@ export const GlobalView = function () {
       if (!clusterActionsLoading) {
         setActiveEventType(EXT_EVENT_KUBECONFIG);
         setLoaderMessage(
-          strings.globalView.main.loaders.addKubeCluster(
+          strings.syncView.main.loaders.addKubeCluster(
             `${data.namespace}/${data.clusterName}`
           )
         );
@@ -491,10 +491,10 @@ export const GlobalView = function () {
 
   const title =
     activeEventType === EXT_EVENT_KUBECONFIG
-      ? strings.globalView.main.titles.kubeConfig()
+      ? strings.syncView.main.titles.kubeConfig()
       : activeEventType === EXT_EVENT_ACTIVATE_CLUSTER
-      ? strings.globalView.main.titles.activateCluster()
-      : strings.globalView.main.titles.generic();
+      ? strings.syncView.main.titles.activateCluster()
+      : strings.syncView.main.titles.generic();
 
   return (
     <PageContainer>
@@ -507,7 +507,7 @@ export const GlobalView = function () {
               material="close"
               interactive
               big
-              title={strings.globalView.main.close()}
+              title={strings.syncView.main.close()}
               onClick={handleCloseClick}
             />
           )}
@@ -533,7 +533,7 @@ export const GlobalView = function () {
           !errMessage &&
           kubeClusterAdded && (
             <InfoPanel>
-              {strings.globalView.main.kubeConfigEvent.clusterAdded(
+              {strings.syncView.main.kubeConfigEvent.clusterAdded(
                 eventClusterName
               )}
             </InfoPanel>
@@ -543,7 +543,7 @@ export const GlobalView = function () {
           !errMessage &&
           !kubeClusterAdded && (
             <InfoPanel>
-              {strings.globalView.main.kubeConfigEvent.clusterSkipped(
+              {strings.syncView.main.kubeConfigEvent.clusterSkipped(
                 eventClusterName
               )}
             </InfoPanel>
@@ -557,7 +557,7 @@ export const GlobalView = function () {
           !loading &&
           !errMessage && (
             <InfoPanel>
-              {strings.globalView.main.activateClusterEvent.clusterActivated(
+              {strings.syncView.main.activateClusterEvent.clusterActivated(
                 eventClusterName
               )}
             </InfoPanel>
@@ -588,7 +588,7 @@ export const GlobalView = function () {
       <HelpColumn>
         <HelpContent
           dangerouslySetInnerHTML={{
-            __html: strings.globalView.help.html({
+            __html: strings.syncView.help.html({
               catalogSource: catalogConsts.source,
               srcLabelName: catalogConsts.labels.source,
               nsLabelName: catalogConsts.labels.namespace,

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ThemeProvider, CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
-import { GlobalView } from './GlobalView';
+import { SyncView } from './SyncView.js';
 import { ExtStateProvider } from '../../store/ExtStateProvider';
 import { ConfigProvider } from '../../store/ConfigProvider';
 import { SsoAuthProvider } from '../../store/SsoAuthProvider';
@@ -80,7 +80,7 @@ export const GlobalPage = function ({ extension }: Props) {
             <SsoAuthProvider>
               <ClusterDataProvider>
                 <ClusterActionsProvider>
-                  <GlobalView />
+                  <SyncView />
                 </ClusterActionsProvider>
               </ClusterDataProvider>
             </SsoAuthProvider>
