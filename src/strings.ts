@@ -34,7 +34,7 @@ export const extension: Dict = {
   },
 };
 
-export const globalView: Dict = {
+export const syncView: Dict = {
   main: {
     titles: {
       generic: () => `Add ${mccFullName} Clusters`,
