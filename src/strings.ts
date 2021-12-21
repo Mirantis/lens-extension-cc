@@ -39,7 +39,6 @@ export const syncView: Dict = {
     titles: {
       generic: () => `Add ${mccFullName} Clusters`,
       kubeConfig: () => `Adding ${mccFullName} Cluster`,
-      activateCluster: () => `Activate ${mccFullName} Cluster`,
     },
     loaders: {
       activateCluster: (name) => `Activating ${name} cluster...`,
@@ -55,13 +54,6 @@ export const syncView: Dict = {
       clusterAdded: (name) =>
         `The ${name} cluster was successfully added to Lens.`,
       clusterSkipped: (name) => `The ${name} cluster was already in Lens.`,
-    },
-    activateClusterEvent: {
-      error: {
-        invalidEventData: () =>
-          `The data provided for activating the cluster is invalid. Make sure the ${mccShortName} instance is compatible with this extension and try again.`,
-      },
-      clusterActivated: (name) => `The ${name} cluster was activated.`,
     },
     addClustersEvent: {
       error: {
@@ -273,6 +265,11 @@ export const apiClient: Dict = {
 };
 
 export const renderer: Dict = {
+  clusterActions: {
+    error: {
+      clusterNotFound: (name) => `The ${name} cluster was not found in Lens. Try adding it first.`,
+    }
+  },
   catalog: {
     contextMenuItems: {
       settings: {

@@ -49,17 +49,6 @@ type EventQueue = Array<ExtensionEvent>;
  */
 export const EXT_EVENT_ACTIVATE_CLUSTER = 'activateCluster';
 
-/** RTV Typeset to validate the event object for an `EXT_EVENT_ACTIVATE_CLUSTER` event. */
-export const extEventActivateClusterTs = {
-  type: [rtv.STRING, { exact: EXT_EVENT_ACTIVATE_CLUSTER }],
-  data: {
-    cloudUrl: rtv.STRING,
-    namespace: rtv.STRING,
-    clusterName: rtv.STRING,
-    clusterId: rtv.STRING,
-  },
-};
-
 /**
  * List all clusters in MCC instance.
  *

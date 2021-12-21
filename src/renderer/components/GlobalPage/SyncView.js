@@ -27,11 +27,9 @@ import * as strings from '../../../strings';
 import { catalog as catalogConsts } from '../../../constants';
 import { layout, mixinColumnStyles, mixinPageStyles } from '../styles';
 import {
-  EXT_EVENT_ACTIVATE_CLUSTER,
   EXT_EVENT_ADD_CLUSTERS,
   EXT_EVENT_KUBECONFIG,
   EXT_EVENT_OAUTH_CODE,
-  extEventActivateClusterTs,
   extEventAddClustersTs,
   extEventKubeconfigTs,
   extEventOauthCodeTs,
@@ -152,7 +150,7 @@ export const SyncView = function () {
   const [activeEventType, setActiveEventType] = useState(null);
 
   // name of the cluster being added/skipped/activated via an event; null if not
-  //  processing an EXT_EVENT_KUBECONFIG or EXT_EVENT_ACTIVATE_CLUSTER event
+  //  processing an EXT_EVENT_KUBECONFIG event
   const [eventClusterName, setEventClusterName] = useState(null);
 
   // @type {string} message to show in Loader; null if none
@@ -229,7 +227,6 @@ export const SyncView = function () {
 
   const handleCloseClick = useCallback(
     function () {
-      if (activeEventType !== EXT_EVENT_ACTIVATE_CLUSTER) {
         // adding a new cluster or adding 'all' clusters requires new tokens
         //  in `cloud` and a new `cloudUrl`, so we assume whatever cluster
         //  data we may have already loaded is now invalid because the credentials
@@ -239,7 +236,6 @@ export const SyncView = function () {
         ssoAuthActions.reset();
         clusterDataActions.reset();
         setSelectedClusters([]);
-      }
       // else, just activating a cluster doesn't require changes to `cloud`
       //  or to the `config`, so reset View back to clusters if we have any
 
@@ -251,43 +247,11 @@ export const SyncView = function () {
       setOnlyNamespaces(null);
     },
     [
-      activeEventType,
       configActions,
       ssoAuthActions,
       clusterDataActions,
       clusterActions,
     ]
-  );
-
-  // activate a single (pre-added/existing) cluster in Lens in any workspace
-  const handleActivateClusterEvent = useCallback(
-    function (event) {
-      const results = rtv.check(
-        { event },
-        { event: extEventActivateClusterTs }
-      );
-      if (!results.valid) {
-        setActiveEventType(EXT_EVENT_ACTIVATE_CLUSTER);
-        setExtEventError(
-          strings.syncView.main.activateClusterEvent.error.invalidEventData()
-        );
-        return;
-      }
-
-      const { data } = event;
-
-      if (!clusterActionsLoading) {
-        setActiveEventType(EXT_EVENT_ACTIVATE_CLUSTER);
-        setLoaderMessage(
-          strings.syncView.main.loaders.activateCluster(
-            `${data.namespace}/${data.clusterName}`
-          )
-        );
-        setEventClusterName(`${data.namespace}/${data.clusterName}`);
-        clusterActions.activateCluster(data);
-      }
-    },
-    [clusterActionsLoading, clusterActions]
   );
 
   // find all clusters in one or all namespaces from a given MCC instance and
@@ -416,26 +380,17 @@ export const SyncView = function () {
 
   useEffect(
     function () {
-      addExtEventHandler(
-        EXT_EVENT_ACTIVATE_CLUSTER,
-        handleActivateClusterEvent
-      );
       addExtEventHandler(EXT_EVENT_ADD_CLUSTERS, handleAddClustersEvent);
       addExtEventHandler(EXT_EVENT_KUBECONFIG, handleKubeconfigEvent);
       addExtEventHandler(EXT_EVENT_OAUTH_CODE, handleOauthCodeEvent);
 
       return function () {
-        removeExtEventHandler(
-          EXT_EVENT_ACTIVATE_CLUSTER,
-          handleActivateClusterEvent
-        );
         removeExtEventHandler(EXT_EVENT_ADD_CLUSTERS, handleAddClustersEvent);
         removeExtEventHandler(EXT_EVENT_KUBECONFIG, handleKubeconfigEvent);
         removeExtEventHandler(EXT_EVENT_OAUTH_CODE, handleOauthCodeEvent);
       };
     },
     [
-      handleActivateClusterEvent,
       handleAddClustersEvent,
       handleKubeconfigEvent,
       handleOauthCodeEvent,
@@ -492,8 +447,6 @@ export const SyncView = function () {
   const title =
     activeEventType === EXT_EVENT_KUBECONFIG
       ? strings.syncView.main.titles.kubeConfig()
-      : activeEventType === EXT_EVENT_ACTIVATE_CLUSTER
-      ? strings.syncView.main.titles.activateCluster()
       : strings.syncView.main.titles.generic();
 
   return (
@@ -544,20 +497,6 @@ export const SyncView = function () {
           !kubeClusterAdded && (
             <InfoPanel>
               {strings.syncView.main.kubeConfigEvent.clusterSkipped(
-                eventClusterName
-              )}
-            </InfoPanel>
-          )}
-
-        {/*
-          when handling the EXT_EVENT_ACTIVATE_CLUSTER event, show the result in the UI even though
-           user won't see it since we activate the cluster; just in case, as a neutral state
-        */}
-        {activeEventType === EXT_EVENT_ACTIVATE_CLUSTER &&
-          !loading &&
-          !errMessage && (
-            <InfoPanel>
-              {strings.syncView.main.activateClusterEvent.clusterActivated(
                 eventClusterName
               )}
             </InfoPanel>

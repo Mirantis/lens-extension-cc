@@ -23,6 +23,7 @@ import { SshKeyEntity } from '../catalog/SshKeyEntity';
 import { CredentialEntity } from '../catalog/CredentialEntity';
 import { ProxyEntity } from '../catalog/ProxyEntity';
 import { CatalogEntityAddMenuContext } from '@k8slens/extensions/dist/src/common/catalog';
+import { getLensClusters } from './rendererUtil';
 
 // NOTE: The following interface _should_ be exported by the Lens extension package
 //  as `Common.Types.CatalogEntityDetailsProps`, but it's not, which is a known bug
@@ -157,17 +158,16 @@ export default class ExtensionRenderer extends LensExtension {
   ];
 
   protected handleProtocolActivateCluster = ({ search }) => {
-    this.navigate(ROUTE_GLOBAL_PAGE);
-
-    dispatchExtEvent({
-      type: EXT_EVENT_ACTIVATE_CLUSTER,
-      data: {
-        cloudUrl: search.cloudUrl,
-        namespace: search.namespace,
-        clusterName: search.clusterName,
-        clusterId: search.clusterId,
-      },
-    });
+    const { clusterId, namespace, clusterName } = search
+    const existingLensClusters = getLensClusters()
+    const lensCluster = existingLensClusters.find((cluster) => cluster.metadata.uid === clusterId);
+    if(lensCluster) {
+      Renderer.Navigation.navigate(`/cluster/${clusterId}`)
+    } else {
+      // TODO find way to show error notification
+      this.navigate(ROUTE_GLOBAL_PAGE);
+      logger.error(strings.renderer.clusterActions.error.clusterNotFound(`${namespace}/${clusterName}`))
+    }
   };
 
   protected handleProtocolAddClusters = ({ search }) => {

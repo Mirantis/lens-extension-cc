@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { ThemeProvider, CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
 import { SyncView } from './SyncView.js';
-import { ExtStateProvider } from '../../store/ExtStateProvider';
-import { ConfigProvider } from '../../store/ConfigProvider';
-import { SsoAuthProvider } from '../../store/SsoAuthProvider';
-import { ClusterDataProvider } from '../../store/ClusterDataProvider';
-import { ClusterActionsProvider } from '../../store/ClusterActionsProvider';
+import { ExtStateProvider } from '../../store/ExtStateProvider.js';
+import { ConfigProvider } from '../../store/ConfigProvider.js';
+import { SsoAuthProvider } from '../../store/SsoAuthProvider.js';
+import { ClusterDataProvider } from '../../store/ClusterDataProvider.js';
+import { ClusterActionsProvider } from '../../store/ClusterActionsProvider.js';
 import { lightThemeClassName, lightTheme, darkTheme } from '../theme';
 import ExtensionRenderer from '../../renderer';
 
