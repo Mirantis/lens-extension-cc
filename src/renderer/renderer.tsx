@@ -9,10 +9,10 @@ import * as strings from '../strings';
 import * as consts from '../constants';
 import { ROUTE_GLOBAL_PAGE, ROUTE_CLUSTER_PAGE } from '../routes';
 import {
-  EXT_EVENT_ACTIVATE_CLUSTER,
   EXT_EVENT_ADD_CLUSTERS,
   EXT_EVENT_KUBECONFIG,
   EXT_EVENT_OAUTH_CODE,
+  EXT_EXTERNAL_ERROR_SHOW,
   dispatchExtEvent,
 } from './eventBus';
 import { prefStore } from '../store/PreferenceStore';
@@ -37,6 +37,9 @@ const {
   Catalog,
   Component: { Notifications, DrawerTitle, DrawerItem },
 } = Renderer;
+
+/** Activates an existing cluster in Lens */
+export const EXT_EVENT_ACTIVATE_CLUSTER = 'activateCluster';
 
 const logger: any = loggerUtil; // get around TS compiler's complaining
 const statusItemColor = 'white'; // CSS color; Lens hard-codes the color of the workspace indicator item to 'white' also
@@ -164,9 +167,14 @@ export default class ExtensionRenderer extends LensExtension {
     if(lensCluster) {
       Renderer.Navigation.navigate(`/cluster/${clusterId}`)
     } else {
-      // TODO find way to show error notification
       this.navigate(ROUTE_GLOBAL_PAGE);
-      logger.error(strings.renderer.clusterActions.error.clusterNotFound(`${namespace}/${clusterName}`))
+
+      dispatchExtEvent({
+        type: EXT_EXTERNAL_ERROR_SHOW,
+        data: {
+          error: strings.renderer.clusterActions.error.clusterNotFound(`${namespace}/${clusterName}`),
+        },
+      });
     }
   };
 

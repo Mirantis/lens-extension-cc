@@ -33,6 +33,8 @@ import {
   extEventAddClustersTs,
   extEventKubeconfigTs,
   extEventOauthCodeTs,
+  EXT_EXTERNAL_ERROR_SHOW,
+  extExternalErrorShowTs,
   addExtEventHandler,
   removeExtEventHandler,
 } from '../../eventBus';
@@ -254,6 +256,18 @@ export const SyncView = function () {
     ]
   );
 
+  // handle errors which not connected to any Providers. 
+  // eg from rendered.tsx, where context isn't allowed
+  const handleExternalErrorEvent = useCallback(
+    function (event){
+      const results = rtv.check({ event }, { event: extExternalErrorShowTs });
+      if (results.valid && event?.data?.error) {
+        setActiveEventType(EXT_EXTERNAL_ERROR_SHOW);
+        setExtEventError(event.data.error)
+      }
+    }, []
+  )
+
   // find all clusters in one or all namespaces from a given MCC instance and
   //  list them so that the user can add some or all of them to Lens, but without
   //  having to first authenticate with the instance since they're already
@@ -383,14 +397,17 @@ export const SyncView = function () {
       addExtEventHandler(EXT_EVENT_ADD_CLUSTERS, handleAddClustersEvent);
       addExtEventHandler(EXT_EVENT_KUBECONFIG, handleKubeconfigEvent);
       addExtEventHandler(EXT_EVENT_OAUTH_CODE, handleOauthCodeEvent);
+      addExtEventHandler(EXT_EXTERNAL_ERROR_SHOW, handleExternalErrorEvent)
 
       return function () {
         removeExtEventHandler(EXT_EVENT_ADD_CLUSTERS, handleAddClustersEvent);
         removeExtEventHandler(EXT_EVENT_KUBECONFIG, handleKubeconfigEvent);
         removeExtEventHandler(EXT_EVENT_OAUTH_CODE, handleOauthCodeEvent);
+        removeExtEventHandler(EXT_EXTERNAL_ERROR_SHOW, handleExternalErrorEvent)
       };
     },
     [
+      handleExternalErrorEvent,
       handleAddClustersEvent,
       handleKubeconfigEvent,
       handleOauthCodeEvent,
