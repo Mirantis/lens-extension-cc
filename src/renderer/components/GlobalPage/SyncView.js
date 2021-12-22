@@ -229,15 +229,15 @@ export const SyncView = function () {
 
   const handleCloseClick = useCallback(
     function () {
-        // adding a new cluster or adding 'all' clusters requires new tokens
-        //  in `cloud` and a new `cloudUrl`, so we assume whatever cluster
-        //  data we may have already loaded is now invalid because the credentials
-        //  could be for a different user even if the `cloudUrl` is the same,
-        //  so reset everything, bringing the View back to the login step
-        configActions.reset();
-        ssoAuthActions.reset();
-        clusterDataActions.reset();
-        setSelectedClusters([]);
+      // adding a new cluster or adding 'all' clusters requires new tokens
+      //  in `cloud` and a new `cloudUrl`, so we assume whatever cluster
+      //  data we may have already loaded is now invalid because the credentials
+      //  could be for a different user even if the `cloudUrl` is the same,
+      //  so reset everything, bringing the View back to the login step
+      configActions.reset();
+      ssoAuthActions.reset();
+      clusterDataActions.reset();
+      setSelectedClusters([]);
       // else, just activating a cluster doesn't require changes to `cloud`
       //  or to the `config`, so reset View back to clusters if we have any
 
@@ -248,29 +248,22 @@ export const SyncView = function () {
       setEventClusterName(null);
       setOnlyNamespaces(null);
     },
-    [
-      configActions,
-      ssoAuthActions,
-      clusterDataActions,
-      clusterActions,
-    ]
+    [configActions, ssoAuthActions, clusterDataActions, clusterActions]
   );
 
-  // handle errors which not connected to any Providers. 
+  // handle errors which not connected to any Providers.
   // eg from rendered.tsx, where context isn't allowed
   // Pay attention that SyncView will be totally changed soon,
   // so probably we remove this part and show only logger
   // at renderer.tsx. When refactoring will be finished
   // we return this(or similar) notification logic.
-  const handleExternalErrorEvent = useCallback(
-    function (event){
-      const results = rtv.check({ event }, { event: extExternalErrorShowTs });
-      if (results.valid && event?.data?.error) {
-        setActiveEventType(EXT_EXTERNAL_ERROR_SHOW);
-        setExtEventError(event.data.error)
-      }
-    }, []
-  )
+  const handleExternalErrorEvent = useCallback(function (event) {
+    const results = rtv.check({ event }, { event: extExternalErrorShowTs });
+    if (results.valid && event?.data?.error) {
+      setActiveEventType(EXT_EXTERNAL_ERROR_SHOW);
+      setExtEventError(event.data.error);
+    }
+  }, []);
 
   // find all clusters in one or all namespaces from a given MCC instance and
   //  list them so that the user can add some or all of them to Lens, but without
@@ -401,13 +394,16 @@ export const SyncView = function () {
       addExtEventHandler(EXT_EVENT_ADD_CLUSTERS, handleAddClustersEvent);
       addExtEventHandler(EXT_EVENT_KUBECONFIG, handleKubeconfigEvent);
       addExtEventHandler(EXT_EVENT_OAUTH_CODE, handleOauthCodeEvent);
-      addExtEventHandler(EXT_EXTERNAL_ERROR_SHOW, handleExternalErrorEvent)
+      addExtEventHandler(EXT_EXTERNAL_ERROR_SHOW, handleExternalErrorEvent);
 
       return function () {
         removeExtEventHandler(EXT_EVENT_ADD_CLUSTERS, handleAddClustersEvent);
         removeExtEventHandler(EXT_EVENT_KUBECONFIG, handleKubeconfigEvent);
         removeExtEventHandler(EXT_EVENT_OAUTH_CODE, handleOauthCodeEvent);
-        removeExtEventHandler(EXT_EXTERNAL_ERROR_SHOW, handleExternalErrorEvent)
+        removeExtEventHandler(
+          EXT_EXTERNAL_ERROR_SHOW,
+          handleExternalErrorEvent
+        );
       };
     },
     [

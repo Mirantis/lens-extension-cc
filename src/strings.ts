@@ -267,8 +267,9 @@ export const apiClient: Dict = {
 export const renderer: Dict = {
   clusterActions: {
     error: {
-      clusterNotFound: (name) => `The ${name} cluster was not found in Lens. Try adding it first.`,
-    }
+      clusterNotFound: (name) =>
+        `The ${name} cluster was not found in Lens. Try adding it first.`,
+    },
   },
   catalog: {
     contextMenuItems: {

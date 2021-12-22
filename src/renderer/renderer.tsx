@@ -161,11 +161,13 @@ export default class ExtensionRenderer extends LensExtension {
   ];
 
   protected handleProtocolActivateCluster = ({ search }) => {
-    const { clusterId, namespace, clusterName } = search
-    const existingLensClusters = getLensClusters()
-    const lensCluster = existingLensClusters.find((cluster) => cluster.metadata.uid === clusterId);
-    if(lensCluster) {
-      Renderer.Navigation.navigate(`/cluster/${clusterId}`)
+    const { clusterId, namespace, clusterName } = search;
+    const existingLensClusters = getLensClusters();
+    const lensCluster = existingLensClusters.find(
+      (cluster) => cluster.metadata.uid === clusterId
+    );
+    if (lensCluster) {
+      Renderer.Navigation.navigate(`/cluster/${clusterId}`);
     } else {
       // I'm not sure is the best way to show notifications.
       // The SyncView will be totally changed soon, so probably we remove
@@ -175,7 +177,9 @@ export default class ExtensionRenderer extends LensExtension {
       dispatchExtEvent({
         type: EXT_EXTERNAL_ERROR_SHOW,
         data: {
-          error: strings.renderer.clusterActions.error.clusterNotFound(`${namespace}/${clusterName}`),
+          error: strings.renderer.clusterActions.error.clusterNotFound(
+            `${namespace}/${clusterName}`
+          ),
         },
       });
     }
