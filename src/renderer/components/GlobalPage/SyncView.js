@@ -258,6 +258,10 @@ export const SyncView = function () {
 
   // handle errors which not connected to any Providers. 
   // eg from rendered.tsx, where context isn't allowed
+  // Pay attention that SyncView will be totally changed soon,
+  // so probably we remove this part and show only logger
+  // at renderer.tsx. When refactoring will be finished
+  // we return this(or similar) notification logic.
   const handleExternalErrorEvent = useCallback(
     function (event){
       const results = rtv.check({ event }, { event: extExternalErrorShowTs });

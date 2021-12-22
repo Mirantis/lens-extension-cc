@@ -167,8 +167,11 @@ export default class ExtensionRenderer extends LensExtension {
     if(lensCluster) {
       Renderer.Navigation.navigate(`/cluster/${clusterId}`)
     } else {
+      // I'm not sure is the best way to show notifications.
+      // The SyncView will be totally changed soon, so probably we remove
+      // this part as well and left here only logger.error instead, for a while.
+      // During new design implementation we find a proper place fot this
       this.navigate(ROUTE_GLOBAL_PAGE);
-
       dispatchExtEvent({
         type: EXT_EXTERNAL_ERROR_SHOW,
         data: {
