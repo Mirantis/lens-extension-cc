@@ -38,7 +38,6 @@ import {
 } from '../../eventBus';
 import { normalizeUrl } from '../../../util/netUtil';
 import { getLensClusters } from '../../rendererUtil';
-import AddCloudInstance from './AddCloudInstance.js'
 
 const { Component } = Renderer;
 
@@ -412,7 +411,7 @@ export const SyncView = function () {
         setSelectedClusters(
           singleClusterOnly
             ? // initialize the selection to first candidate only
-              candidateClusters.slice(0, 1) // slice of any array will always return an array, may empty
+            candidateClusters.slice(0, 1) // slice of any array will always return an array, may empty
             : candidateClusters
         );
       } else if (

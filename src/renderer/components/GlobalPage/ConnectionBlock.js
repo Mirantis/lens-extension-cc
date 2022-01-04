@@ -15,21 +15,15 @@ const {
   Component: { Input, Button },
 } = Renderer;
 
-const Title = styled.div(() => ({
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-
-  h2: {
+const Title = styled.h2(() => ({
     marginBottom: layout.gap * 3,
     marginRight: layout.gap,
-  },
 }));
 
 const MainContent = styled.div(() => ({
   marginTop: layout.gap * 3,
-  padding: layout.gap,
   maxWidth: '750px',
+  width: '100%',
 }));
 
 const Field = styled.div(() => ({
@@ -147,9 +141,7 @@ const ConnectionBlock = () => {
 
   return (
     <MainContent>
-      <Title>
-        <h2>{connectionBlock.title()}</h2>
-      </Title>
+      <Title>{connectionBlock.title()}</Title>
       <Field>
         <label htmlFor="lecc-cluster-name">
           {connectionBlock.clusterName.label()}

@@ -1,7 +1,7 @@
 import styled from '@emotion/styled';
 import { layout } from '../styles';
 import ConnectionBlock from './ConnectionBlock';
-
+import SynchronizeBlock from './SynchronizeBlock';
 
 const PageContainer = styled.div(function () {
   return {
@@ -28,7 +28,9 @@ const MainColumn = styled.div(function () {
   return {
     display: 'flex',
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'start',
+    flexDirection: 'column',
+    alignItems:  'center',
   };
 });
 
@@ -37,6 +39,7 @@ const AddCloudInstance = () => {
     <PageContainer>
       <MainColumn>
         <ConnectionBlock />
+        <SynchronizeBlock />
       </MainColumn>
       <EscColumn>Esc</EscColumn>
     </PageContainer>
