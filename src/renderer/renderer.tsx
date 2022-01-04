@@ -12,7 +12,6 @@ import {
   EXT_EVENT_ADD_CLUSTERS,
   EXT_EVENT_KUBECONFIG,
   EXT_EVENT_OAUTH_CODE,
-  EXT_EXTERNAL_ERROR_SHOW,
   dispatchExtEvent,
 } from './eventBus';
 import { prefStore } from '../store/PreferenceStore';
@@ -163,25 +162,19 @@ export default class ExtensionRenderer extends LensExtension {
   protected handleProtocolActivateCluster = ({ search }) => {
     const { clusterId, namespace, clusterName } = search;
     const existingLensClusters = getLensClusters();
+
     const lensCluster = existingLensClusters.find(
       (cluster) => cluster.metadata.uid === clusterId
     );
     if (lensCluster) {
       Renderer.Navigation.navigate(`/cluster/${clusterId}`);
     } else {
-      // I'm not sure is the best way to show notifications.
-      // The SyncView will be totally changed soon, so probably we remove
-      // this part as well and left here only logger.error instead, for a while.
-      // During new design implementation we find a proper place fot this
       this.navigate(ROUTE_GLOBAL_PAGE);
-      dispatchExtEvent({
-        type: EXT_EXTERNAL_ERROR_SHOW,
-        data: {
-          error: strings.renderer.clusterActions.error.clusterNotFound(
-            `${namespace}/${clusterName}`
-          ),
-        },
-      });
+      Notifications.error(
+        strings.renderer.clusterActions.error.clusterNotFound(
+          `${namespace}/${clusterName}`
+        )
+      );
     }
   };
 

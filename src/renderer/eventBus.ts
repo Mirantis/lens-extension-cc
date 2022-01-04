@@ -38,16 +38,6 @@ type EventQueue = Array<ExtensionEvent>;
 // EVENTS
 //
 
-/** RTV Typeset to validate the event object for an `EXT_EXTERNAL_ERROR_SHOW` event. */
-export const EXT_EXTERNAL_ERROR_SHOW = 'showError';
-
-export const extExternalErrorShowTs = {
-  type: [rtv.STRING, { exact: EXT_EXTERNAL_ERROR_SHOW }],
-  data: {
-    error: rtv.STRING,
-  },
-};
-
 /**
  * List all clusters in MCC instance.
  *
