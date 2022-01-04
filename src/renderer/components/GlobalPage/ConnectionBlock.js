@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { InlineNotice } from '../InlineNotice';
 import { Renderer } from '@k8slens/extensions';
 import styled from '@emotion/styled';
@@ -46,9 +46,6 @@ const ConnectionBlock = () => {
   const {
     state: {
       loading: configLoading,
-      loaded: configLoaded,
-      error: configError,
-      config,
     },
     actions: configActions,
   } = useConfig();
@@ -58,24 +55,19 @@ const ConnectionBlock = () => {
     actions: ssoAuthActions,
   } = useSsoAuth();
   const {
-    state: {
-      cloud,
-      prefs: { cloudUrl },
-    },
+    state: { cloud },
     actions: extActions,
   } = useExtState();
   const { actions: clusterDataActions } = useClusterData();
 
   const [clusterName, setClusterName] = useState('');
-  const [clusterURL, setClusterURL] = useState(cloudUrl || '');
-  const [connectClicked, setConnectClicked] = useState(false);
+  const [clusterURL, setClusterURL] = useState( '');
 
   const loading = useClusterLoadingState();
 
   const handleConnectClick = function () {
-    const normUrl = normalizeUrl(clusterURL);
+    const normUrl = normalizeUrl(clusterURL.trim());
     setClusterURL(normUrl); // update to actual URL we'll use
-    setConnectClicked(true);
 
     ssoAuthActions.reset();
     clusterDataActions.reset();
@@ -94,50 +86,7 @@ const ConnectionBlock = () => {
     //  will auto-trigger onLogin(), which will then trigger SSO auth
     configActions.load(normUrl); // implicit reset of current config, if any
   };
-
-  // on load, if we already have an instance URL but haven't yet loaded the config,
-  //  load it immediately so we can know right away if it supports SSO or not, and
-  //  save some time when the user clicks Connect
-  useEffect(
-    function () {
-      if (cloudUrl && !configLoading && !configLoaded) {
-        configActions.load(cloudUrl);
-      }
-    },
-    [cloudUrl, configLoading, configLoaded, configActions]
-  );
-  const startLogin = useCallback(
-    function () {
-      cloud.resetCredentials();
-      cloud.resetTokens();
-
-      // capture changes to auth details so far, and trigger SSO login in
-      //  useClusterLoader() effect (because this will result in an updated cloud
-      //  object that has the right configuration per updates above)
-      extActions.setCloud(cloud);
-    },
-    [cloud, extActions]
-  );
-  useEffect(
-    function () {
-      if (configError) {
-        setConnectClicked(false);
-      }
-      if (configLoaded && !configError && connectClicked) {
-        setConnectClicked(false);
-        startLogin();
-      }
-    },
-    [
-      configLoaded,
-      configError,
-      config,
-      cloudUrl,
-      extActions,
-      startLogin,
-      connectClicked,
-    ]
-  );
+  
 
   return (
     <MainContent>
@@ -171,7 +120,7 @@ const ConnectionBlock = () => {
         <ButtonWrapper>
           <Button
             primary
-            waiting={configLoading || ssoAuthLoading || connectClicked}
+            waiting={configLoading || ssoAuthLoading}
             label={connectionBlock.button.label()}
             onClick={handleConnectClick}
             disabled={loading}
