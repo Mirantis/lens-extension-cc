@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import { Renderer } from '@k8slens/extensions';
 import styled from '@emotion/styled';
