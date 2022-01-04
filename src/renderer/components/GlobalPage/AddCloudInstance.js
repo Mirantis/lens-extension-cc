@@ -2,6 +2,7 @@ import styled from '@emotion/styled';
 import { layout } from '../styles';
 import ConnectionBlock from './ConnectionBlock';
 import SynchronizeBlock from './SynchronizeBlock';
+import CloseButton from '../CloseButton/CloseButton';
 
 const PageContainer = styled.div(function () {
   return {
@@ -17,8 +18,7 @@ const PageContainer = styled.div(function () {
 });
 const EscColumn = styled.div(function () {
   return {
-    marginTop: layout.gap,
-    padding: layout.gap,
+    margin: layout.gap,
     width: '50px',
     flexShrink: 1,
   };
@@ -41,7 +41,9 @@ const AddCloudInstance = () => {
         <ConnectionBlock />
         <SynchronizeBlock />
       </MainColumn>
-      <EscColumn>Esc</EscColumn>
+      <EscColumn>
+        <CloseButton onClick={() => {}}/>
+      </EscColumn>
     </PageContainer>
   );
 };
