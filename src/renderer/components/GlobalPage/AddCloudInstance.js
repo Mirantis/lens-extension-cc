@@ -31,11 +31,11 @@ const MainColumn = styled.div(function () {
     flex: 1,
     justifyContent: 'start',
     flexDirection: 'column',
-    alignItems:  'center',
+    alignItems: 'center',
   };
 });
 
-const AddCloudInstance = ({setShowNewDesign}) => {
+const AddCloudInstance = ({ setShowNewDesign }) => {
   return (
     <PageContainer>
       <MainColumn>
@@ -43,7 +43,7 @@ const AddCloudInstance = ({setShowNewDesign}) => {
         <SynchronizeBlock />
       </MainColumn>
       <EscColumn>
-        <CloseButton onClick={() => setShowNewDesign(false)}/>
+        <CloseButton onClick={() => setShowNewDesign(false)} />
       </EscColumn>
     </PageContainer>
   );

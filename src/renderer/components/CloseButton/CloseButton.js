@@ -8,7 +8,7 @@ const { Icon } = Renderer.Component;
 const CloseButtonContent = styled.div`
   position: absolute;
   margin-left: auto;
-`
+`;
 
 const CloseIconWrapper = styled.div`
   width: 35px;

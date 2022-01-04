@@ -414,7 +414,7 @@ export const SyncView = function () {
         setSelectedClusters(
           singleClusterOnly
             ? // initialize the selection to first candidate only
-            candidateClusters.slice(0, 1) // slice of any array will always return an array, may empty
+              candidateClusters.slice(0, 1) // slice of any array will always return an array, may empty
             : candidateClusters
         );
       } else if (
@@ -438,18 +438,18 @@ export const SyncView = function () {
   // RENDER
   //
   const onShowNewDesign = (e) => {
-    if(e.shiftKey) {
-      setShowNewDesign(true)
+    if (e.shiftKey) {
+      setShowNewDesign(true);
     }
-  }
+  };
   const title =
     activeEventType === EXT_EVENT_KUBECONFIG
       ? strings.syncView.main.titles.kubeConfig()
       : strings.syncView.main.titles.generic();
 
   // TODO way to go on New Design shift+click on title
-  if(showNewDesign) {
-    return <AddCloudInstance setShowNewDesign={setShowNewDesign}/>
+  if (showNewDesign) {
+    return <AddCloudInstance setShowNewDesign={setShowNewDesign} />;
   }
 
   return (

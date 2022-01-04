@@ -22,5 +22,4 @@ const SynchronizeBlock = () => {
   );
 };
 
-
 export default SynchronizeBlock;

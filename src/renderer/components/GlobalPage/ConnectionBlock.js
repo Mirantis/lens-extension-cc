@@ -16,8 +16,8 @@ const {
 } = Renderer;
 
 const Title = styled.h2(() => ({
-    marginBottom: layout.gap * 3,
-    marginRight: layout.gap,
+  marginBottom: layout.gap * 3,
+  marginRight: layout.gap,
 }));
 
 const MainContent = styled.div(() => ({
@@ -44,9 +44,7 @@ const ButtonWrapper = styled.div(() => ({
 
 const ConnectionBlock = () => {
   const {
-    state: {
-      loading: configLoading,
-    },
+    state: { loading: configLoading },
     actions: configActions,
   } = useConfig();
 
@@ -61,7 +59,7 @@ const ConnectionBlock = () => {
   const { actions: clusterDataActions } = useClusterData();
 
   const [clusterName, setClusterName] = useState('');
-  const [clusterURL, setClusterURL] = useState( '');
+  const [clusterURL, setClusterURL] = useState('');
 
   const loading = useClusterLoadingState();
 
@@ -86,7 +84,6 @@ const ConnectionBlock = () => {
     //  will auto-trigger onLogin(), which will then trigger SSO auth
     configActions.load(normUrl); // implicit reset of current config, if any
   };
-  
 
   return (
     <MainContent>

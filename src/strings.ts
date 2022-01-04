@@ -102,18 +102,20 @@ export const connectionBlock: Dict = {
   title: () => 'Add a Mirantis Container Cloud Management Custer to Lens',
   clusterName: {
     label: () => 'Management Cluster name:',
-    placeholder: () => 'This name will be used to identify your Management Cluster in Lens',
+    placeholder: () =>
+      'This name will be used to identify your Management Cluster in Lens',
   },
   clusterUrl: {
-    label: () => 'Management Cluster URL:'
+    label: () => 'Management Cluster URL:',
   },
   button: {
     label: () => 'Connect',
   },
   notice: {
-    info: () => "You will be directed to your Management Cluster's login page through your web browser where you should enter your SSO credentials"
-  }
-}
+    info: () =>
+      "You will be directed to your Management Cluster's login page through your web browser where you should enter your SSO credentials",
+  },
+};
 export const login: Dict = {
   title: () => 'Get clusters',
   url: { label: () => 'Instance URL:' },
