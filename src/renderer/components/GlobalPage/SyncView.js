@@ -329,14 +329,15 @@ export const SyncView = function () {
     ]
   );
 
-  //
-  // RENDER
-  //
   const onShowNewDesign = (e) => {
     if (e.shiftKey) {
       setShowNewDesign(true);
     }
   };
+
+  //
+  // RENDER
+  //
 
   const title = strings.syncView.main.titles.generic();
 
