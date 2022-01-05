@@ -455,7 +455,6 @@ export const SyncView = function () {
 
   return (
     <PageContainer>
-      <WelcomeView />
       <MainColumn>
         {/* include X (close) only if we're handling an extension event */}
         <Title>

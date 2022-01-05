@@ -6,8 +6,11 @@ import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
 import { mixinPageStyles } from '../styles';
 import { ContainerCloudIcon } from '../ContainerCloudIcon';
+import * as strings from '../../../strings';
 
 const { Component } = Renderer;
+
+console.log(strings.welcome.title());
 
 //
 // INTERNAL STYLED COMPONENTS
@@ -119,18 +122,18 @@ export const WelcomeView = function () {
           <WelcomeIconWrapper>
             <ContainerCloudIcon size={100} fill='#FFFFFF' />
           </WelcomeIconWrapper>
-          <WelcomeTitle>Welcome to the <br/>Mirantis Container Cloud for Lens Extention</WelcomeTitle>
-          <WelcomeDescription>This extension enables you to connect to multiple Mirantis Container Cloud management clusters through Lens. You can now leverage Lens for basic lifecycle management operations such as:</WelcomeDescription>
-          <WelcomeList>
-            <li>Synchronizing projects to view and manage their resources in the Lens Catalog</li>
-            <li>Monitoring real-time cluster status and resource utilization in Lens</li>
-            <li>Creating and deleting clusters in your projects from Lens</li>
-          </WelcomeList>
-          <WelcomeLink href='#'>And more!</WelcomeLink>
+          <WelcomeTitle dangerouslySetInnerHTML={{
+            __html: strings.welcome.title()
+          }} />
+          <WelcomeDescription>{strings.welcome.description()}</WelcomeDescription>
+          <WelcomeList dangerouslySetInnerHTML={{
+            __html: strings.welcome.listItems()
+          }} />
+          <WelcomeLink href={strings.welcome.link.href()} target='_blank'>{strings.welcome.link.label()}</WelcomeLink>
           <WelcomeButtonWrapper>
             <Component.Button
               primary
-              label='Add your first management cluster'
+              label={strings.welcome.button.label()}
             />
           </WelcomeButtonWrapper>
         </WelcomeInner>
