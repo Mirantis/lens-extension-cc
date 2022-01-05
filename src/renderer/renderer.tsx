@@ -9,7 +9,6 @@ import * as strings from '../strings';
 import * as consts from '../constants';
 import { ROUTE_GLOBAL_PAGE, ROUTE_CLUSTER_PAGE } from '../routes';
 import {
-  EXT_EVENT_ACTIVATE_CLUSTER,
   EXT_EVENT_ADD_CLUSTERS,
   EXT_EVENT_KUBECONFIG,
   EXT_EVENT_OAUTH_CODE,
@@ -23,6 +22,7 @@ import { SshKeyEntity } from '../catalog/SshKeyEntity';
 import { CredentialEntity } from '../catalog/CredentialEntity';
 import { ProxyEntity } from '../catalog/ProxyEntity';
 import { CatalogEntityAddMenuContext } from '@k8slens/extensions/dist/src/common/catalog';
+import { getLensClusters } from './rendererUtil';
 
 // NOTE: The following interface _should_ be exported by the Lens extension package
 //  as `Common.Types.CatalogEntityDetailsProps`, but it's not, which is a known bug
@@ -36,6 +36,9 @@ const {
   Catalog,
   Component: { Notifications, DrawerTitle, DrawerItem },
 } = Renderer;
+
+/** Activates an existing cluster in Lens */
+export const EXT_EVENT_ACTIVATE_CLUSTER = 'activateCluster';
 
 const logger: any = loggerUtil; // get around TS compiler's complaining
 const statusItemColor = 'white'; // CSS color; Lens hard-codes the color of the workspace indicator item to 'white' also
@@ -157,17 +160,22 @@ export default class ExtensionRenderer extends LensExtension {
   ];
 
   protected handleProtocolActivateCluster = ({ search }) => {
-    this.navigate(ROUTE_GLOBAL_PAGE);
+    const { clusterId, namespace, clusterName } = search;
+    const existingLensClusters = getLensClusters();
 
-    dispatchExtEvent({
-      type: EXT_EVENT_ACTIVATE_CLUSTER,
-      data: {
-        cloudUrl: search.cloudUrl,
-        namespace: search.namespace,
-        clusterName: search.clusterName,
-        clusterId: search.clusterId,
-      },
-    });
+    const lensCluster = existingLensClusters.find(
+      (cluster) => cluster.metadata.uid === clusterId
+    );
+    if (lensCluster) {
+      Renderer.Navigation.navigate(`/cluster/${clusterId}`);
+    } else {
+      this.navigate(ROUTE_GLOBAL_PAGE);
+      Notifications.error(
+        strings.renderer.clusterActions.error.clusterNotFound(
+          `${namespace}/${clusterName}`
+        )
+      );
+    }
   };
 
   protected handleProtocolAddClusters = ({ search }) => {

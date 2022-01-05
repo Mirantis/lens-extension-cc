@@ -769,6 +769,9 @@ export const useClusterActions = function () {
         }
       },
 
+      // TODO this code is not used anymore.
+      // Need to check if we will have ability to activate cluster from the extension at new design.
+      // If not - then remove it. Lets keep this part till then
       /**
        * [ASYNC] Activate the specified cluster in Lens if it already exists.
        * @param {Object} options
