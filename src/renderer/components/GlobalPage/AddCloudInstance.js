@@ -35,7 +35,7 @@ const MainColumn = styled.div(function () {
   };
 });
 
-export const AddCloudInstance = ({ setShowNewDesign }) => {
+export const AddCloudInstance = ({ onCancel }) => {
   return (
     <PageContainer>
       <MainColumn>
@@ -43,12 +43,12 @@ export const AddCloudInstance = ({ setShowNewDesign }) => {
         <SynchronizeBlock />
       </MainColumn>
       <EscColumn>
-        <CloseButton onClick={() => setShowNewDesign(false)} />
+        <CloseButton onClick={onCancel} />
       </EscColumn>
     </PageContainer>
   );
 };
 
 AddCloudInstance.propTypes = {
-  setShowNewDesign: PropTypes.func.isRequired, // temporary func. Will be remove later
+  onCancel: PropTypes.func.isRequired,
 };

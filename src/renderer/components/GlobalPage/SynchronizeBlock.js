@@ -1,5 +1,6 @@
 import styled from '@emotion/styled';
 import { layout } from '../styles';
+import { synchronizeBlock } from '../../../strings';
 
 const Content = styled.div(() => ({
   marginTop: layout.gap * 2,
@@ -16,7 +17,7 @@ const Title = styled.h3(() => ({
 export const SynchronizeBlock = () => {
   return (
     <Content>
-      <Title>Select projects to synchronize</Title>
+      <Title>{synchronizeBlock.title()}</Title>
     </Content>
   );
 };

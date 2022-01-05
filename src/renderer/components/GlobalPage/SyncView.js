@@ -449,7 +449,7 @@ export const SyncView = function () {
 
   // TODO way to go on New Design shift+click on title
   if (showNewDesign) {
-    return <AddCloudInstance setShowNewDesign={setShowNewDesign} />;
+    return <AddCloudInstance onCancel={() => setShowNewDesign(false)} />;
   }
 
   return (
