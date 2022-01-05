@@ -98,6 +98,9 @@ export const syncView: Dict = {
 `,
   },
 };
+export const closeButton: Dict = {
+  title: () => 'ESC',
+}
 export const connectionBlock: Dict = {
   title: () => 'Add a Mirantis Container Cloud Management Custer to Lens',
   clusterName: {

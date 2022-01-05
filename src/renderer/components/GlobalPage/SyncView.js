@@ -38,7 +38,7 @@ import {
 } from '../../eventBus';
 import { normalizeUrl } from '../../../util/netUtil';
 import { getLensClusters } from '../../rendererUtil';
-import AddCloudInstance from '../GlobalPage/AddCloudInstance.js';
+import { AddCloudInstance } from './AddCloudInstance.js';
 
 const { Component } = Renderer;
 

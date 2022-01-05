@@ -42,7 +42,7 @@ const ButtonWrapper = styled.div(() => ({
   marginTop: layout.gap,
 }));
 
-const ConnectionBlock = () => {
+export const ConnectionBlock = () => {
   const {
     state: { loading: configLoading },
     actions: configActions,
@@ -59,13 +59,15 @@ const ConnectionBlock = () => {
   const { actions: clusterDataActions } = useClusterData();
 
   const [clusterName, setClusterName] = useState('');
-  const [clusterURL, setClusterURL] = useState('');
+  const [clusterUrl, setClusterUrl] = useState('');
 
   const loading = useClusterLoadingState();
 
+  // TODO this func should be changed when new CloudStore will be ready.
+  //  This is a temporary solution, with old logic
   const handleConnectClick = function () {
-    const normUrl = normalizeUrl(clusterURL.trim());
-    setClusterURL(normUrl); // update to actual URL we'll use
+    const normUrl = normalizeUrl(clusterUrl.trim());
+    setClusterUrl(normUrl); // update to actual URL we'll use
 
     ssoAuthActions.reset();
     clusterDataActions.reset();
@@ -110,8 +112,8 @@ const ConnectionBlock = () => {
           type="text"
           theme="round-black" // borders on all sides, rounded corners
           id="lecc-cluster-url"
-          value={clusterURL}
-          onChange={setClusterURL}
+          value={clusterUrl}
+          onChange={setClusterUrl}
           disabled={loading}
         />
         <ButtonWrapper>
@@ -138,5 +140,3 @@ const ConnectionBlock = () => {
     </MainContent>
   );
 };
-
-export default ConnectionBlock;

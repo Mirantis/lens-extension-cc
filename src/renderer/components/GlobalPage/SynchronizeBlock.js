@@ -13,12 +13,10 @@ const Title = styled.h3(() => ({
   alignSelf: 'start',
 }));
 
-const SynchronizeBlock = () => {
+export const SynchronizeBlock = () => {
   return (
     <Content>
       <Title>Select projects to synchronize</Title>
     </Content>
   );
 };
-
-export default SynchronizeBlock;

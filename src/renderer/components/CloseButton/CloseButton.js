@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import { Renderer } from '@k8slens/extensions';
 import styled from '@emotion/styled';
+import { closeButton } from '../../../strings';
 
 const { Icon } = Renderer.Component;
 
@@ -36,17 +37,15 @@ const Esc = styled.div`
   pointer-events: none;
 `;
 
-const CloseButton = ({ onClick }) => (
+export const CloseButton = ({ onClick }) => (
   <CloseButtonContent onClick={onClick}>
     <CloseIconWrapper role="button" aria-label="Close">
       <Icon material="close" />
     </CloseIconWrapper>
-    <Esc aria-hidden="true">ESC</Esc>
+    <Esc aria-hidden="true">{closeButton.title()}</Esc>
   </CloseButtonContent>
 );
 
 CloseButton.propTypes = {
   onClick: PropTypes.func.isRequired,
 };
-
-export default CloseButton;

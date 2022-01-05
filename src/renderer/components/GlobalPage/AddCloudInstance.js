@@ -1,9 +1,9 @@
 import styled from '@emotion/styled';
 import PropTypes from 'prop-types';
 import { layout } from '../styles';
-import ConnectionBlock from './ConnectionBlock';
-import SynchronizeBlock from './SynchronizeBlock';
-import CloseButton from '../CloseButton/CloseButton';
+import {ConnectionBlock} from './ConnectionBlock';
+import {SynchronizeBlock} from './SynchronizeBlock';
+import {CloseButton} from '../CloseButton/CloseButton';
 
 const PageContainer = styled.div(function () {
   return {
@@ -35,7 +35,7 @@ const MainColumn = styled.div(function () {
   };
 });
 
-const AddCloudInstance = ({ setShowNewDesign }) => {
+export const AddCloudInstance = ({ setShowNewDesign }) => {
   return (
     <PageContainer>
       <MainColumn>
@@ -52,5 +52,3 @@ const AddCloudInstance = ({ setShowNewDesign }) => {
 AddCloudInstance.propTypes = {
   setShowNewDesign: PropTypes.func.isRequired, // temporary func. Will be remove later
 };
-
-export default AddCloudInstance;
