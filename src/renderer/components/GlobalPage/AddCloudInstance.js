@@ -1,9 +1,9 @@
 import styled from '@emotion/styled';
 import PropTypes from 'prop-types';
 import { layout } from '../styles';
-import {ConnectionBlock} from './ConnectionBlock';
-import {SynchronizeBlock} from './SynchronizeBlock';
-import {CloseButton} from '../CloseButton/CloseButton';
+import { ConnectionBlock } from './ConnectionBlock';
+import { SynchronizeBlock } from './SynchronizeBlock';
+import { CloseButton } from '../CloseButton/CloseButton';
 
 const PageContainer = styled.div(function () {
   return {
