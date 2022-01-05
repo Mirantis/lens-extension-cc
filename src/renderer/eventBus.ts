@@ -39,28 +39,6 @@ type EventQueue = Array<ExtensionEvent>;
 //
 
 /**
- * Activates an existing cluster in Lens.
- *
- * `event.data` is an object with the following properties:
- * - cloudUrl {string} MCC instance base URL.
- * - namespace {string} Name of the namespace that contains the cluster.
- * - clusterName (string) Name of the cluster being activated.
- * - clusterId {string} ID of the cluster being activated.
- */
-export const EXT_EVENT_ACTIVATE_CLUSTER = 'activateCluster';
-
-/** RTV Typeset to validate the event object for an `EXT_EVENT_ACTIVATE_CLUSTER` event. */
-export const extEventActivateClusterTs = {
-  type: [rtv.STRING, { exact: EXT_EVENT_ACTIVATE_CLUSTER }],
-  data: {
-    cloudUrl: rtv.STRING,
-    namespace: rtv.STRING,
-    clusterName: rtv.STRING,
-    clusterId: rtv.STRING,
-  },
-};
-
-/**
  * List all clusters in MCC instance.
  *
  * `event.data` is an object with the following properties:

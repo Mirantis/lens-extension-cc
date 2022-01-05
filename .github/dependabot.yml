@@ -11,7 +11,7 @@ updates:
     labels:
       - 'dependencies'
       - 'dependabot'
-    open-pull-requests-limit: 0 # temporarily disabled until Jan 4, 2022, was: 8
+    open-pull-requests-limit: 8
     reviewers:
       - 'stefcameron'
     versioning-strategy: 'increase'
