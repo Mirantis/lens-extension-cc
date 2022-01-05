@@ -1,10 +1,8 @@
 import { Main } from '@k8slens/extensions';
-import { ROUTE_GLOBAL_PAGE } from '../routes';
 import { prefStore } from '../store/PreferenceStore';
 import { clusterStore } from '../store/ClusterStore';
 import { IpcMain } from './IpcMain';
 import { logger as loggerUtil } from '../util/logger';
-import * as strings from '../strings';
 
 const logger: any = loggerUtil; // get around TS compiler's complaining
 
@@ -17,16 +15,6 @@ const logger: any = loggerUtil; // get around TS compiler's complaining
 // For instance, you may want to hook into onActivate() or onDeactivate().
 
 export default class ExtensionMain extends Main.LensExtension {
-  appMenus = [
-    {
-      parentId: 'file',
-      label: strings.extension.appMenu['label'](),
-      click: () => {
-        this.navigate(ROUTE_GLOBAL_PAGE);
-      },
-    },
-  ];
-
   onActivate() {
     logger.log('ExtensionMain.onActivate()', 'extension activated');
     prefStore.loadExtension(this);

@@ -5,7 +5,6 @@
 //
 
 import * as rtv from 'rtvjs';
-import { Cloud } from './auth/Cloud';
 
 //
 // TYPES
@@ -37,52 +36,6 @@ type EventQueue = Array<ExtensionEvent>;
 //
 // EVENTS
 //
-
-/**
- * List all clusters in MCC instance.
- *
- * `event.data` is an object with the following properties:
- * - cloudUrl {string} MCC instance base URL.
- * - [namespaces] {Array<string>} If specified, only clusters from these namespaces will be considered.
- * - username {string}
- * - tokens {{ id_token: string, expires_in: number, refresh_token: string, refresh_expires_in: number }} API tokens object.
- */
-export const EXT_EVENT_ADD_CLUSTERS = 'addClusters';
-
-/** RTV Typeset to validate the event object for an `EXT_EVENT_ADD_CLUSTERS` event. */
-export const extEventAddClustersTs = {
-  type: [rtv.STRING, { exact: EXT_EVENT_ADD_CLUSTERS }],
-  data: {
-    cloudUrl: rtv.STRING,
-    onlyNamespaces: [rtv.OPTIONAL, [rtv.STRING]],
-    username: rtv.STRING,
-    tokens: Cloud.tokensTs,
-  },
-};
-
-/**
- * Add a single kubeConfig.
- *
- * `event.data` is an object with the following properties:
- * - cloudUrl {string} URL of the MCC instance.
- * - namespace {string} Name of the namespace that contains the cluster.
- * - clusterName (string) Name of the cluster being added.
- * - clusterId {string} ID of the cluster being added.
- * - kubeConfig {Object} JSON object representing the kubeConfig to add.
- */
-export const EXT_EVENT_KUBECONFIG = 'kubeConfig';
-
-/** RTV Typeset to validate the event object for an `EXT_EVENT_KUBECONFIG` event. */
-export const extEventKubeconfigTs = {
-  type: [rtv.STRING, { exact: EXT_EVENT_KUBECONFIG }],
-  data: {
-    cloudUrl: rtv.STRING,
-    namespace: rtv.STRING,
-    clusterName: rtv.STRING,
-    clusterId: rtv.STRING,
-    kubeConfig: rtv.PLAIN_OBJECT,
-  },
-};
 
 /**
  * OAuth (SSO) redirect route after user gives Lens access permission.

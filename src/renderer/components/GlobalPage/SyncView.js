@@ -21,22 +21,16 @@ import { ClusterList } from './ClusterList';
 import { AddClusters } from './AddClusters';
 import { Loader } from '../Loader';
 import { ErrorPanel } from '../ErrorPanel';
-import { InfoPanel } from '../InfoPanel';
 import { PreferencesPanel } from './PreferencesPanel';
 import * as strings from '../../../strings';
 import { catalog as catalogConsts } from '../../../constants';
 import { layout, mixinColumnStyles, mixinPageStyles } from '../styles';
 import {
-  EXT_EVENT_ADD_CLUSTERS,
-  EXT_EVENT_KUBECONFIG,
   EXT_EVENT_OAUTH_CODE,
-  extEventAddClustersTs,
-  extEventKubeconfigTs,
   extEventOauthCodeTs,
   addExtEventHandler,
   removeExtEventHandler,
 } from '../../eventBus';
-import { normalizeUrl } from '../../../util/netUtil';
 import { getLensClusters } from '../../rendererUtil';
 import { AddCloudInstance } from './AddCloudInstance.js';
 
@@ -110,7 +104,6 @@ export const SyncView = function () {
       cloud,
       prefs: { cloudUrl, offline, savePath },
     },
-    actions: extActions,
   } = useExtState();
 
   const {
@@ -134,11 +127,7 @@ export const SyncView = function () {
   } = useClusterData();
 
   const {
-    state: {
-      loading: clusterActionsLoading,
-      error: clusterActionsError,
-      kubeClusterAdded,
-    },
+    state: { loading: clusterActionsLoading, error: clusterActionsError },
     actions: clusterActions,
   } = useClusterActions();
 
@@ -151,10 +140,6 @@ export const SyncView = function () {
   // @type {string|null} if set, the type of extension event (from the `eventBus`) that
   //  is currently being handled; otherwise, the extension is in its 'normal' state
   const [activeEventType, setActiveEventType] = useState(null);
-
-  // name of the cluster being added/skipped/activated via an event; null if not
-  //  processing an EXT_EVENT_KUBECONFIG event
-  const [eventClusterName, setEventClusterName] = useState(null);
 
   // @type {string} message to show in Loader; null if none
   const [loaderMessage, setLoaderMessage] = useState(null);
@@ -246,90 +231,9 @@ export const SyncView = function () {
       setActiveEventType(null);
       setExtEventError(null);
       setLoaderMessage(null);
-      setEventClusterName(null);
       setOnlyNamespaces(null);
     },
     [configActions, ssoAuthActions, clusterDataActions, clusterActions]
-  );
-
-  // find all clusters in one or all namespaces from a given MCC instance and
-  //  list them so that the user can add some or all of them to Lens, but without
-  //  having to first authenticate with the instance since they're already
-  //  authenticated when coming from MCC
-  const handleAddClustersEvent = useCallback(
-    function (event) {
-      const results = rtv.check({ event }, { event: extEventAddClustersTs });
-      if (!results.valid) {
-        setActiveEventType(EXT_EVENT_ADD_CLUSTERS);
-        setExtEventError(
-          strings.syncView.main.addClustersEvent.error.invalidEventData()
-        );
-        return;
-      }
-
-      const { data } = event;
-      const url = normalizeUrl(data.cloudUrl);
-
-      // NOTE: it's critical these local state variables be set BEFORE resetting
-      //  the providers and updating the `cloud` via `extActions.setCloud()`
-      //  to make sure that `onlyNamespaces` is set before the cluster data load
-      //  takes place; otherwise, because of the way state updates are performed
-      //  async in React, we'll have a race condition and the cluster data may
-      //  load before `onlyNamespaces` gets set, and we'll end-up with the wrong
-      //  list of clusters to show the user
-      setActiveEventType(EXT_EVENT_ADD_CLUSTERS);
-      setLoaderMessage(strings.syncView.main.loaders.addClustersHtml(url));
-      setOnlyNamespaces(data.onlyNamespaces || null);
-
-      extActions.setCloudUrl(url);
-      configActions.load(url); // implicit reset of current config
-      ssoAuthActions.reset();
-      clusterDataActions.reset();
-
-      // NOTE: even under SSO auth, since we're getting the user's tokens,
-      //  we don't need to make an initial auth request; we can just go straight
-      //  for the clusters; but we'll need to re-auth when we want to generate
-      //  kubeConfigs for the clusters the user wants to add
-      cloud.reset();
-      cloud.username = data.username;
-      cloud.updateTokens(data.tokens);
-      extActions.setCloud(cloud); // cloud should be valid since we have tokens
-    },
-    [cloud, ssoAuthActions, extActions, clusterDataActions, configActions]
-  );
-
-  // add a single cluster given its kubeConfig
-  const handleKubeconfigEvent = useCallback(
-    function (event) {
-      const results = rtv.check({ event }, { event: extEventKubeconfigTs });
-      if (!results.valid) {
-        setActiveEventType(EXT_EVENT_KUBECONFIG);
-        setExtEventError(
-          strings.syncView.main.kubeConfigEvent.error.invalidEventData()
-        );
-        return;
-      }
-
-      const { data } = event;
-
-      // NOTE: we don't have to do any authentication in case since we're just
-      //  receiving the already-generated kubeConfig and we just need to
-      //  write it to disk and load it up in Lens
-      if (!clusterActionsLoading) {
-        setActiveEventType(EXT_EVENT_KUBECONFIG);
-        setLoaderMessage(
-          strings.syncView.main.loaders.addKubeCluster(
-            `${data.namespace}/${data.clusterName}`
-          )
-        );
-        setEventClusterName(`${data.namespace}/${data.clusterName}`);
-        clusterActions.addKubeCluster({
-          savePath,
-          ...data,
-        });
-      }
-    },
-    [savePath, clusterActionsLoading, clusterActions]
   );
 
   // SSO authorization redirect/callback
@@ -378,17 +282,13 @@ export const SyncView = function () {
 
   useEffect(
     function () {
-      addExtEventHandler(EXT_EVENT_ADD_CLUSTERS, handleAddClustersEvent);
-      addExtEventHandler(EXT_EVENT_KUBECONFIG, handleKubeconfigEvent);
       addExtEventHandler(EXT_EVENT_OAUTH_CODE, handleOauthCodeEvent);
 
       return function () {
-        removeExtEventHandler(EXT_EVENT_ADD_CLUSTERS, handleAddClustersEvent);
-        removeExtEventHandler(EXT_EVENT_KUBECONFIG, handleKubeconfigEvent);
         removeExtEventHandler(EXT_EVENT_OAUTH_CODE, handleOauthCodeEvent);
       };
     },
-    [handleAddClustersEvent, handleKubeconfigEvent, handleOauthCodeEvent]
+    [handleOauthCodeEvent]
   );
 
   // set initial selection after cluster load
@@ -417,11 +317,6 @@ export const SyncView = function () {
               candidateClusters.slice(0, 1) // slice of any array will always return an array, may empty
             : candidateClusters
         );
-      } else if (
-        clusterDataLoaded &&
-        activeEventType === EXT_EVENT_ADD_CLUSTERS
-      ) {
-        setLoaderMessage(null); // don't show the loader again when user actually adds the clusters
       }
     },
     [
@@ -442,10 +337,8 @@ export const SyncView = function () {
       setShowNewDesign(true);
     }
   };
-  const title =
-    activeEventType === EXT_EVENT_KUBECONFIG
-      ? strings.syncView.main.titles.kubeConfig()
-      : strings.syncView.main.titles.generic();
+
+  const title = strings.syncView.main.titles.generic();
 
   // TODO way to go on New Design shift+click on title
   if (showNewDesign) {
@@ -480,33 +373,8 @@ export const SyncView = function () {
           <ErrorPanel>{errMessage}</ErrorPanel>
         )}
 
-        {/*
-          when handling the EXT_EVENT_KUBECONFIG event, show the result in the UI even though
-           user won't see it since we activate the cluster; just in case, as a neutral state
-        */}
-        {activeEventType === EXT_EVENT_KUBECONFIG &&
-          !loading &&
-          !errMessage &&
-          kubeClusterAdded && (
-            <InfoPanel>
-              {strings.syncView.main.kubeConfigEvent.clusterAdded(
-                eventClusterName
-              )}
-            </InfoPanel>
-          )}
-        {activeEventType === EXT_EVENT_KUBECONFIG &&
-          !loading &&
-          !errMessage &&
-          !kubeClusterAdded && (
-            <InfoPanel>
-              {strings.syncView.main.kubeConfigEvent.clusterSkipped(
-                eventClusterName
-              )}
-            </InfoPanel>
-          )}
-
         {/* ClusterList and AddClusters apply only if NOT loading a kubeConfig */}
-        {(!activeEventType || activeEventType === EXT_EVENT_ADD_CLUSTERS) &&
+        {!activeEventType &&
         cloud.isValid() &&
         clusterDataLoaded &&
         selectedClusters ? (

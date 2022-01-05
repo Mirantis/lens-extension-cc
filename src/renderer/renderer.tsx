@@ -8,12 +8,7 @@ import {
 import * as strings from '../strings';
 import * as consts from '../constants';
 import { ROUTE_GLOBAL_PAGE, ROUTE_CLUSTER_PAGE } from '../routes';
-import {
-  EXT_EVENT_ADD_CLUSTERS,
-  EXT_EVENT_KUBECONFIG,
-  EXT_EVENT_OAUTH_CODE,
-  dispatchExtEvent,
-} from './eventBus';
+import { EXT_EVENT_OAUTH_CODE, dispatchExtEvent } from './eventBus';
 import { prefStore } from '../store/PreferenceStore';
 import { clusterStore } from '../store/ClusterStore';
 import { logger as loggerUtil } from '../util/logger';
@@ -178,62 +173,6 @@ export default class ExtensionRenderer extends LensExtension {
     }
   };
 
-  protected handleProtocolAddClusters = ({ search }) => {
-    let tokens;
-    try {
-      tokens = JSON.parse(atob(search.tokens));
-    } catch (err) {
-      logger.error(
-        'renderer/handleProtocolAddClusters',
-        `Failed to decode tokens parameter, error="${err.message}"`,
-        err
-      );
-      return;
-    }
-
-    const onlyNamespaces = search.namespaces?.split(',');
-
-    this.navigate(ROUTE_GLOBAL_PAGE);
-
-    dispatchExtEvent({
-      type: EXT_EVENT_ADD_CLUSTERS,
-      data: {
-        cloudUrl: search.cloudUrl,
-        keycloakLogin: search.keycloakLogin === 'true',
-        onlyNamespaces,
-        username: search.username,
-        tokens,
-      },
-    });
-  };
-
-  protected handleProtocolKubeConfig = ({ search }) => {
-    let kubeConfig;
-    try {
-      kubeConfig = JSON.parse(atob(search.kubeConfig));
-    } catch (err) {
-      logger.error(
-        'renderer/handleProtocolKubeConfig',
-        `Failed to decode kubeConfig parameter, error="${err.message}"`,
-        err
-      );
-      return;
-    }
-
-    this.navigate(ROUTE_GLOBAL_PAGE);
-
-    dispatchExtEvent({
-      type: EXT_EVENT_KUBECONFIG,
-      data: {
-        cloudUrl: search.cloudUrl,
-        namespace: search.namespace,
-        clusterName: search.clusterName,
-        clusterId: search.clusterId,
-        kubeConfig,
-      },
-    });
-  };
-
   protected handleProtocolOauthCode = ({ search }) => {
     this.navigate(ROUTE_GLOBAL_PAGE);
 
@@ -247,14 +186,6 @@ export default class ExtensionRenderer extends LensExtension {
     {
       pathSchema: `/${EXT_EVENT_ACTIVATE_CLUSTER}`,
       handler: this.handleProtocolActivateCluster,
-    },
-    {
-      pathSchema: `/${EXT_EVENT_ADD_CLUSTERS}`,
-      handler: this.handleProtocolAddClusters,
-    },
-    {
-      pathSchema: `/${EXT_EVENT_KUBECONFIG}`,
-      handler: this.handleProtocolKubeConfig,
     },
     {
       pathSchema: `/${EXT_EVENT_OAUTH_CODE}`,
