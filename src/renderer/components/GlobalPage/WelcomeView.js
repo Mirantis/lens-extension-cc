@@ -10,8 +10,6 @@ import * as strings from '../../../strings';
 
 const { Component } = Renderer;
 
-console.log(strings.welcome.title());
-
 //
 // INTERNAL STYLED COMPONENTS
 //
@@ -110,7 +108,6 @@ const WelcomeButtonWrapper = styled.div(function () {
 //
 
 export const WelcomeView = function () {
-
   //
   // RENDER
   //
@@ -120,21 +117,26 @@ export const WelcomeView = function () {
       <WelcomeWrapper>
         <WelcomeInner>
           <WelcomeIconWrapper>
-            <ContainerCloudIcon size={100} fill='#FFFFFF' />
+            <ContainerCloudIcon size={100} fill="#FFFFFF" />
           </WelcomeIconWrapper>
-          <WelcomeTitle dangerouslySetInnerHTML={{
-            __html: strings.welcome.title()
-          }} />
-          <WelcomeDescription>{strings.welcome.description()}</WelcomeDescription>
-          <WelcomeList dangerouslySetInnerHTML={{
-            __html: strings.welcome.listItems()
-          }} />
-          <WelcomeLink href={strings.welcome.link.href()} target='_blank'>{strings.welcome.link.label()}</WelcomeLink>
+          <WelcomeTitle
+            dangerouslySetInnerHTML={{
+              __html: strings.welcome.title(),
+            }}
+          />
+          <WelcomeDescription>
+            {strings.welcome.description()}
+          </WelcomeDescription>
+          <WelcomeList
+            dangerouslySetInnerHTML={{
+              __html: strings.welcome.listItems(),
+            }}
+          />
+          <WelcomeLink href={strings.welcome.link.href()} target="_blank">
+            {strings.welcome.link.label()}
+          </WelcomeLink>
           <WelcomeButtonWrapper>
-            <Component.Button
-              primary
-              label={strings.welcome.button.label()}
-            />
+            <Component.Button primary label={strings.welcome.button.label()} />
           </WelcomeButtonWrapper>
         </WelcomeInner>
       </WelcomeWrapper>

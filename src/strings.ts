@@ -427,8 +427,10 @@ export const catalog: Dict = {
 };
 
 export const welcome: Dict = {
-  title: () => 'Welcome to the <br/>Mirantis Container Cloud for Lens Extention',
-  description: () => 'This extension enables you to connect to multiple Mirantis Container Cloud management clusters through Lens. You can now leverage Lens for basic lifecycle management operations such as:',
+  title: () =>
+    'Welcome to the <br/>Mirantis Container Cloud for Lens Extention',
+  description: () =>
+    'This extension enables you to connect to multiple Mirantis Container Cloud management clusters through Lens. You can now leverage Lens for basic lifecycle management operations such as:',
   listItems: () => `
     <li>Synchronizing projects to view and manage their resources in the Lens Catalog</li>
     <li>Monitoring real-time cluster status and resource utilization in Lens</li>
@@ -436,7 +438,8 @@ export const welcome: Dict = {
   `,
   link: {
     label: () => 'And more!',
-    href: () => 'https://github.com/Mirantis/lens-extension-cc/blob/master/README.md',
+    href: () =>
+      'https://github.com/Mirantis/lens-extension-cc/blob/master/README.md',
   },
   button: {
     label: () => 'Add your first management cluster',
