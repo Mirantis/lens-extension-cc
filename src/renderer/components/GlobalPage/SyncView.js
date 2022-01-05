@@ -38,6 +38,7 @@ import {
 } from '../../eventBus';
 import { normalizeUrl } from '../../../util/netUtil';
 import { getLensClusters } from '../../rendererUtil';
+import { AddCloudInstance } from './AddCloudInstance.js';
 
 const { Component } = Renderer;
 
@@ -140,6 +141,8 @@ export const SyncView = function () {
     },
     actions: clusterActions,
   } = useClusterActions();
+
+  const [showNewDesign, setShowNewDesign] = useState(false);
 
   // @type {null|Array<Cluster>} null until clusters are loaded, then an array
   //  that represents the current selection, could be empty
@@ -434,18 +437,27 @@ export const SyncView = function () {
   //
   // RENDER
   //
-
+  const onShowNewDesign = (e) => {
+    if (e.shiftKey) {
+      setShowNewDesign(true);
+    }
+  };
   const title =
     activeEventType === EXT_EVENT_KUBECONFIG
       ? strings.syncView.main.titles.kubeConfig()
       : strings.syncView.main.titles.generic();
+
+  // TODO way to go on New Design shift+click on title
+  if (showNewDesign) {
+    return <AddCloudInstance onCancel={() => setShowNewDesign(false)} />;
+  }
 
   return (
     <PageContainer>
       <MainColumn>
         {/* include X (close) only if we're handling an extension event */}
         <Title>
-          <h2>{title}</h2>
+          <h2 onClick={onShowNewDesign}>{title}</h2>
           {activeEventType && (
             <Component.Icon
               material="close"
