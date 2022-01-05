@@ -23,6 +23,7 @@ import { Loader } from '../Loader';
 import { ErrorPanel } from '../ErrorPanel';
 import { InfoPanel } from '../InfoPanel';
 import { PreferencesPanel } from './PreferencesPanel';
+import { WelcomeView } from './WelcomeView';
 import * as strings from '../../../strings';
 import { catalog as catalogConsts } from '../../../constants';
 import { layout, mixinColumnStyles, mixinPageStyles } from '../styles';
@@ -454,6 +455,7 @@ export const SyncView = function () {
 
   return (
     <PageContainer>
+      <WelcomeView />
       <MainColumn>
         {/* include X (close) only if we're handling an extension event */}
         <Title>
