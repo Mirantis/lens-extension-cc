@@ -4,9 +4,10 @@
 
 import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
-import { mixinPageStyles } from '../styles';
+import { layout, mixinPageStyles } from '../styles';
 import { ContainerCloudIcon } from '../ContainerCloudIcon';
 import * as strings from '../../../strings';
+import * as constants from '../../../constants';
 
 const { Component } = Renderer;
 
@@ -21,8 +22,8 @@ const WelcomeContainer = styled.div(function () {
     top: 0,
     right: 0,
     bottom: 0,
-    fontSize: 24,
-    lineHeight: '30px',
+    fontSize: 'calc(var(--font-size) * 1.7)',
+    lineHeight: '1.25',
     zIndex: 10,
     ...mixinPageStyles(),
   };
@@ -43,7 +44,7 @@ const WelcomeInner = styled.div(function () {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
-    maxWidth: 717,
+    maxWidth: layout.grid * 180,
     width: '100%',
     backgroundColor: 'var(--layoutBackground)',
   };
@@ -53,37 +54,37 @@ const WelcomeIconWrapper = styled.div(function () {
   return {
     width: '100%',
     textAlign: 'center',
-    paddingTop: 32,
-    marginBottom: 22,
+    paddingTop: layout.grid * 8,
+    marginBottom: layout.grid * 6,
   };
 });
 
 const WelcomeTitle = styled.h1(function () {
   return {
-    fontSize: 36,
-    lineHeight: '40px',
+    fontSize: 'calc(var(--font-size) * 2.6)',
+    lineHeight: '1.11',
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: layout.grid * 6,
   };
 });
 
 const WelcomeDescription = styled.p(function () {
   return {
-    marginBottom: 36,
+    marginBottom: layout.grid * 9,
   };
 });
 
 const WelcomeList = styled.ul(function () {
   return {
-    marginBottom: 20,
+    marginBottom: layout.grid * 5,
 
     'li:not(:last-of-type)': {
-      marginBottom: 16,
+      marginBottom: layout.grid * 4,
     },
 
     'li::before': {
       content: '"-"',
-      marginRight: 4,
+      marginRight: layout.grid,
     },
   };
 });
@@ -91,7 +92,7 @@ const WelcomeList = styled.ul(function () {
 const WelcomeLink = styled.a(function () {
   return {
     textDecoration: 'none',
-    color: 'var(--blue)',
+    color: 'var(--primary)',
   };
 });
 
@@ -99,7 +100,7 @@ const WelcomeButtonWrapper = styled.div(function () {
   return {
     width: '100%',
     textAlign: 'center',
-    marginTop: 48,
+    marginTop: layout.grid * 12,
   };
 });
 
@@ -117,11 +118,11 @@ export const WelcomeView = function () {
       <WelcomeWrapper>
         <WelcomeInner>
           <WelcomeIconWrapper>
-            <ContainerCloudIcon size={100} fill="#FFFFFF" />
+            <ContainerCloudIcon size={100} fill="var(--textColorAccent)" />
           </WelcomeIconWrapper>
           <WelcomeTitle
             dangerouslySetInnerHTML={{
-              __html: strings.welcome.title(),
+              __html: strings.welcome.titleHtml(),
             }}
           />
           <WelcomeDescription>
@@ -129,10 +130,10 @@ export const WelcomeView = function () {
           </WelcomeDescription>
           <WelcomeList
             dangerouslySetInnerHTML={{
-              __html: strings.welcome.listItems(),
+              __html: strings.welcome.listItemsHtml(),
             }}
           />
-          <WelcomeLink href={strings.welcome.link.href()} target="_blank">
+          <WelcomeLink href={constants.welcomePage.andMoreButton.url} target={constants.welcomePage.andMoreButton.target}>
             {strings.welcome.link.label()}
           </WelcomeLink>
           <WelcomeButtonWrapper>
