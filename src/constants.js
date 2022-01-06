@@ -88,3 +88,12 @@ export const ipcEvents = deepFreeze({
     DELETE_CLUSTER: 'deleteCluster',
   },
 });
+
+/** Welcome Page */
+export const welcomePage = deepFreeze({
+  /** And more! button */
+  andMoreButton: {
+    url: 'https://github.com/Mirantis/lens-extension-cc/blob/master/README.md',
+    target: '_blank',
+  },
+});
