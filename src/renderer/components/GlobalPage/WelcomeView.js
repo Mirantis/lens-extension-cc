@@ -133,7 +133,10 @@ export const WelcomeView = function () {
               __html: strings.welcome.listItemsHtml(),
             }}
           />
-          <WelcomeLink href={constants.welcomePage.andMoreButton.url} target={constants.welcomePage.andMoreButton.target}>
+          <WelcomeLink
+            href={constants.welcomePage.andMoreButton.url}
+            target={constants.welcomePage.andMoreButton.target}
+          >
             {strings.welcome.link.label()}
           </WelcomeLink>
           <WelcomeButtonWrapper>
