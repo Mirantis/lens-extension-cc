@@ -5,6 +5,7 @@
 //
 
 import * as rtv from 'rtvjs';
+import { EXT_EVENT_OAUTH_CODE } from '../constants';
 
 //
 // TYPES
@@ -46,8 +47,6 @@ type EventQueue = Array<ExtensionEvent>;
  * - [error] (string} Optional error message.
  * - [error_description] {string} Optional error description.
  */
-export const EXT_EVENT_OAUTH_CODE = 'oauth/code';
-
 /** RTV Typeset to validate the event object for an `EXT_EVENT_OAUTH_CODE` event. */
 export const extEventOauthCodeTs = {
   type: [rtv.STRING, { exact: EXT_EVENT_OAUTH_CODE }],

@@ -89,6 +89,8 @@ export const ipcEvents = deepFreeze({
   },
 });
 
+export const EXT_EVENT_OAUTH_CODE = 'oauth/code';
+
 /** Welcome Page */
 export const welcomePage = deepFreeze({
   /** And more! button */
