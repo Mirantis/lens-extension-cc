@@ -1,15 +1,23 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import * as rtv from 'rtvjs';
 import { InlineNotice } from '../InlineNotice';
 import { Renderer } from '@k8slens/extensions';
+import { cloneDeep } from 'lodash';
 import styled from '@emotion/styled';
 import { layout } from '../styles';
 import { useClusterLoadingState } from '../../hooks/useClusterLoadingState';
 import { normalizeUrl } from '../../../util/netUtil';
-import { useConfig } from '../../store/ConfigProvider';
 import { useSsoAuth } from '../../store/SsoAuthProvider';
-import { useExtState } from '../../store/ExtStateProvider';
-import { useClusterData } from '../../store/ClusterDataProvider';
 import { connectionBlock } from '../../../strings';
+import { cloudStore } from '../../../store/CloudStore';
+import { Cloud } from '../../auth/Cloud';
+import { EXT_EVENT_OAUTH_CODE } from '../../../constants';
+import {
+  addExtEventHandler,
+  removeExtEventHandler,
+  extEventOauthCodeTs,
+} from '../../eventBus';
+import * as ssoUtil from '../../../util/ssoUtil';
 
 const {
   Component: { Input, Button },
@@ -44,47 +52,55 @@ const ButtonWrapper = styled.div(() => ({
 
 export const ConnectionBlock = () => {
   const {
-    state: { loading: configLoading },
-    actions: configActions,
-  } = useConfig();
-
-  const {
     state: { loading: ssoAuthLoading, loaded: ssoAuthLoaded },
-    actions: ssoAuthActions,
   } = useSsoAuth();
-  const {
-    state: { cloud },
-    actions: extActions,
-  } = useExtState();
-  const { actions: clusterDataActions } = useClusterData();
-
+  const [config, setConfig] = useState(null);
+  const [cloud, setCloud] = useState(null);
   const [clusterName, setClusterName] = useState('');
   const [clusterUrl, setClusterUrl] = useState('');
 
   const loading = useClusterLoadingState();
 
-  // TODO this func should be changed when new CloudStore will be ready.
-  //  This is a temporary solution, with old logic
-  const handleConnectClick = function () {
+  // TODO here we still need changes related to eventBus
+  // Also open question if we have to use ssoAuthActions to show loaders, etc
+  const handleOauthCodeEvent = useCallback(
+    async function (event) {
+      DEV_ENV && rtv.verify({ event }, { event: extEventOauthCodeTs });
+      const { data: oAuth } = event;
+
+      if (config && cloud) {
+        await ssoUtil.finishAuthorization({ oAuth, config, cloud });
+        // update value inside object
+        cloudStore.clouds[clusterUrl] = cloneDeep(cloud);
+      }
+      // else, ignore as this is unsolicited/unexpected
+    },
+    [config, cloud, clusterUrl]
+  );
+  //
+  useEffect(
+    function () {
+      addExtEventHandler(EXT_EVENT_OAUTH_CODE, handleOauthCodeEvent);
+
+      return function () {
+        removeExtEventHandler(EXT_EVENT_OAUTH_CODE, handleOauthCodeEvent);
+      };
+    },
+    [handleOauthCodeEvent]
+  );
+
+  const handleConnectClick = async function () {
     const normUrl = normalizeUrl(clusterUrl.trim());
     setClusterUrl(normUrl); // update to actual URL we'll use
+    let newCloud = new Cloud();
+    cloudStore.clouds[normUrl] = newCloud; // update existing or add new cloud
+    const c = await newCloud.connect(normUrl);
 
-    ssoAuthActions.reset();
-    clusterDataActions.reset();
-
-    // we're accessing a different instance, so nothing we may have already will
-    //  work there
-    cloud.resetCredentials();
-    cloud.resetTokens();
-    extActions.setCloud(cloud);
-
-    // save URL as `cloudUrl` in preferences since the user claims it's valid
-    extActions.setCloudUrl(normUrl);
-
-    // NOTE: if the config loads successfully and we see that the instance is
-    //  set for SSO auth, our effect() below that checks for `configLoaded`
-    //  will auto-trigger onLogin(), which will then trigger SSO auth
-    configActions.load(normUrl); // implicit reset of current config, if any
+    if (!c) {
+      delete cloudStore.clouds[normUrl];
+    }
+    setConfig(c);
+    setCloud(newCloud);
   };
 
   return (
@@ -119,7 +135,7 @@ export const ConnectionBlock = () => {
         <ButtonWrapper>
           <Button
             primary
-            waiting={configLoading || ssoAuthLoading}
+            waiting={ssoAuthLoading}
             label={connectionBlock.button.label()}
             onClick={handleConnectClick}
             disabled={loading}
