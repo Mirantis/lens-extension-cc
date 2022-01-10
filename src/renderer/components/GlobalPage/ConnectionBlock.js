@@ -59,9 +59,10 @@ export const ConnectionBlock = () => {
   const [clusterName, setClusterName] = useState('');
   const [clusterUrl, setClusterUrl] = useState('');
 
+  // TODO currently this is not working. Need to be updated according to new logic
   const loading = useClusterLoadingState();
 
-  // TODO here we still need changes related to eventBus
+  // TODO here we need changes related to eventBus
   // Also open question if we have to use ssoAuthActions to show loaders, etc
   const handleOauthCodeEvent = useCallback(
     async function (event) {
@@ -77,7 +78,7 @@ export const ConnectionBlock = () => {
     },
     [config, cloud, clusterUrl]
   );
-  //
+  // TODO this logic should be updated to follow multiple oAuth events (update eventBus)
   useEffect(
     function () {
       addExtEventHandler(EXT_EVENT_OAUTH_CODE, handleOauthCodeEvent);
@@ -94,12 +95,12 @@ export const ConnectionBlock = () => {
     setClusterUrl(normUrl); // update to actual URL we'll use
     let newCloud = new Cloud();
     cloudStore.clouds[normUrl] = newCloud; // update existing or add new cloud
-    const c = await newCloud.connect(normUrl);
+    const conf = await newCloud.connect(normUrl);
 
-    if (!c) {
+    if (!conf) {
       delete cloudStore.clouds[normUrl];
     }
-    setConfig(c);
+    setConfig(conf);
     setCloud(newCloud);
   };
 
@@ -117,7 +118,7 @@ export const ConnectionBlock = () => {
           id="lecc-cluster-name"
           value={clusterName}
           onChange={setClusterName}
-          disabled={loading}
+          disabled={loading} // currently this is not working. Need to be updated according to new logic
         />
       </Field>
       <Field>
@@ -130,15 +131,15 @@ export const ConnectionBlock = () => {
           id="lecc-cluster-url"
           value={clusterUrl}
           onChange={setClusterUrl}
-          disabled={loading}
+          disabled={loading} // currently this is not working. Need to be updated according to new logic
         />
         <ButtonWrapper>
           <Button
             primary
-            waiting={ssoAuthLoading}
+            waiting={ssoAuthLoading} // currently this is not working. Need to be updated according to new logic
             label={connectionBlock.button.label()}
             onClick={handleConnectClick}
-            disabled={loading}
+            disabled={loading} // currently this is not working. Need to be updated according to new logic
           />
         </ButtonWrapper>
       </Field>
