@@ -1,4 +1,13 @@
 import * as rtv from 'rtvjs';
+import { request } from '../../util/netUtil';
+import { logger } from '../../util/logger';
+import * as strings from '../../strings';
+import { Renderer } from '@k8slens/extensions';
+import * as ssoUtil from '../../util/ssoUtil';
+
+const {
+  Component: { Notifications },
+} = Renderer;
 
 /**
  * Determines if a date has passed.
@@ -9,6 +18,36 @@ const hasPassed = function (date) {
   return date.getTime() - Date.now() < 0;
 };
 
+const _loadConfig = async (url) => {
+  const res = await request(
+    `${url}/config.js`,
+    {},
+    { extractBodyMethod: 'text' }
+  );
+  if (res.error) {
+    Notifications.error(res.error);
+    return false;
+  } else {
+    const content = res.body
+      .replace(/^window\.CONFIG\s*=\s*{/, '{')
+      .replace('};', '}');
+
+    try {
+      return JSON.parse(content);
+    } catch (err) {
+      logger.error(
+        'ConfigProvider._loadConfig()',
+        `Failed to parse config, error="${err.message}"`
+      );
+      if (err.message.match(/^unexpected token/i)) {
+        Notifications.error(strings.configProvider.error.unexpectedToken());
+      } else {
+        Notifications.error(err.message);
+      }
+      return false;
+    }
+  }
+};
 /**
  * Represents a connection to a single MCC instance (i.e. Management Cluster),
  * including access tokens and expiry times.
@@ -372,5 +411,17 @@ export class Cloud {
       username: this.username,
       cloudUrl: this.cloudUrl,
     };
+  }
+  async connect(url) {
+    this.cloudUrl = url;
+    const config = await _loadConfig(url);
+    if (config) {
+      ssoUtil.startAuthorization({ config });
+    }
+    return config;
+  }
+
+  disconnect() {
+    this.resetTokens();
   }
 }

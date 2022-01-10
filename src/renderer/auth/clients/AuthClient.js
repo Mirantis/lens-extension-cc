@@ -1,7 +1,7 @@
 import queryString from 'query-string';
 import { request } from '../../../util/netUtil';
 import * as strings from '../../../strings';
-import { EXT_EVENT_OAUTH_CODE } from '../../eventBus';
+import { EXT_EVENT_OAUTH_CODE } from '../../../constants';
 import pkg from '../../../../package.json';
 
 const redirectUri = `lens://extension/${pkg.name}/${EXT_EVENT_OAUTH_CODE}`;

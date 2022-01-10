@@ -3,6 +3,7 @@ import { useSsoAuth } from '../store/SsoAuthProvider';
 import { useClusterData } from '../store/ClusterDataProvider';
 import { useClusterActions } from '../store/ClusterActionsProvider';
 
+// TODO this hook need to be updated/removed when new components/logic will be added. Now this mostly an artifact
 /**
  * Custom hook that determines the current loading state for all things related
  *  to clusters.
@@ -19,15 +20,11 @@ export const useClusterLoadingState = function () {
   } = useConfig();
 
   const {
-    state: {
-      loading: ssoAuthLoading,
-      loaded: ssoAuthLoaded,
-      error: ssoAuthError,
-    },
+    state: { loading: ssoAuthLoading },
   } = useSsoAuth();
 
   const {
-    state: { loading: clusterDataLoading, loaded: clusterDataLoaded },
+    state: { loading: clusterDataLoading },
   } = useClusterData();
 
   const {
@@ -39,10 +36,6 @@ export const useClusterLoadingState = function () {
     configLoading ||
     // performing SSO auth
     ssoAuthLoading ||
-    // since we always auto-load clusters once auth is done, fill a potential
-    //  gap that would flash loading state `true > false > true` between end
-    //  of auth load and beginning of cluster load
-    (ssoAuthLoaded && !ssoAuthError && !clusterDataLoaded) ||
     // loading list of clusters
     clusterDataLoading ||
     // performing an action like adding clusters or activating a cluster
