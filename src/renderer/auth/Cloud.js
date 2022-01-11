@@ -2,12 +2,13 @@ import * as rtv from 'rtvjs';
 import { request } from '../../util/netUtil';
 import { logger } from '../../util/logger';
 import * as strings from '../../strings';
-import { Renderer } from '@k8slens/extensions';
 import * as ssoUtil from '../../util/ssoUtil';
-
-const {
-  Component: { Notifications },
-} = Renderer;
+import {
+  extEventOauthCodeTs,
+  addExtEventHandler,
+  removeExtEventHandler,
+} from '../eventBus';
+import { EXT_EVENT_OAUTH_CODE } from '../../constants';
 
 /**
  * Determines if a date has passed.
@@ -18,6 +19,12 @@ const hasPassed = function (date) {
   return date.getTime() - Date.now() < 0;
 };
 
+export const CONNECTION_STATUSES = Object.freeze({
+  CONNECTED: 'connected',
+  DISCONNECTED: 'disconnected',
+  CONNECTING: 'connecting',
+});
+
 const _loadConfig = async (url) => {
   const res = await request(
     `${url}/config.js`,
@@ -25,8 +32,7 @@ const _loadConfig = async (url) => {
     { extractBodyMethod: 'text' }
   );
   if (res.error) {
-    Notifications.error(res.error);
-    return false;
+    throw new Error(res.error);
   } else {
     const content = res.body
       .replace(/^window\.CONFIG\s*=\s*{/, '{')
@@ -36,15 +42,14 @@ const _loadConfig = async (url) => {
       return JSON.parse(content);
     } catch (err) {
       logger.error(
-        'ConfigProvider._loadConfig()',
+        'Cloud._loadConfig()',
         `Failed to parse config, error="${err.message}"`
       );
       if (err.message.match(/^unexpected token/i)) {
-        Notifications.error(strings.configProvider.error.unexpectedToken());
+        throw new Error(strings.configProvider.error.unexpectedToken());
       } else {
-        Notifications.error(err.message);
+        throw new Error(err.message);
       }
-      return false;
     }
   }
 };
@@ -117,6 +122,52 @@ export class Cloud {
     let _username = null;
     let _idpClientId = null;
     let _cloudUrl = null;
+    let _connectionStatus = CONNECTION_STATUSES.DISCONNECTED;
+    let _config = null;
+    // this.statusListener = null;
+    let _connectError = null;
+
+    Object.defineProperty(this, 'statusListener', {
+      enumerable: false,
+      value: null,
+      writable: true,
+    });
+
+    /** @member {string} connectError */
+    Object.defineProperty(this, 'connectError', {
+      enumerable: false, // NOTE: we make this non-enumerable so it doesn't get persisted to JSON
+      get() {
+        return _connectError;
+      },
+      set(newValue) {
+        _connectError = newValue;
+      },
+    });
+
+    /** @member {Object} config */
+    Object.defineProperty(this, 'config', {
+      enumerable: false, // NOTE: we make this non-enumerable so it doesn't get persisted to JSON
+      get() {
+        return _config;
+      },
+      set(newValue) {
+        _config = newValue;
+      },
+    });
+
+    /** @member {string} connectionStatus */
+    Object.defineProperty(this, 'connectionStatus', {
+      enumerable: false, // NOTE: we make this non-enumerable so it doesn't get persisted to JSON
+      get() {
+        return _connectionStatus;
+      },
+      set(newValue) {
+        _connectionStatus = newValue;
+        if (typeof this.statusListener === 'function') {
+          this.statusListener(newValue);
+        }
+      },
+    });
 
     /** @member {boolean} changed */
     Object.defineProperty(this, 'changed', {
@@ -297,6 +348,7 @@ export class Cloud {
 
     this.username = spec ? spec.username : null;
     this.idpClientId = spec ? spec.idpClientId : null;
+    this.cloudUrl = spec ? spec.cloudUrl : null;
 
     _changed = false; // make sure unchanged after initialization
   }
@@ -353,6 +405,7 @@ export class Cloud {
     this.refreshTokenValidTill = null;
 
     this.idpClientId = null; // tokens are tied to the IDP so clear this too
+    this.connectionStatus = CONNECTION_STATUSES.DISCONNECTED;
   }
 
   /** Clears all data. */
@@ -385,6 +438,8 @@ export class Cloud {
         Date.now() + this.refreshExpiresIn * 1000
       );
     }
+    // TODO here we need be sure if tokens are still valid. Need to add checks?
+    this.connectionStatus = CONNECTION_STATUSES.CONNECTED;
   }
 
   /**
@@ -412,16 +467,58 @@ export class Cloud {
       cloudUrl: this.cloudUrl,
     };
   }
-  async connect(url) {
-    this.cloudUrl = url;
-    const config = await _loadConfig(url);
-    if (config) {
-      ssoUtil.startAuthorization({ config });
+
+  cleanStatusListener() {
+    this.statusListener = null;
+  }
+
+  async connect() {
+    if (this.connectionStatus === CONNECTION_STATUSES.CONNECTING) {
+      return;
     }
-    return config;
+    this.connectionStatus = CONNECTION_STATUSES.CONNECTING;
+
+    try {
+      this.config = await _loadConfig(this.cloudUrl);
+    } catch (error) {
+      this.connectError = error;
+    }
+
+    // TODO use url as id (for now). cloudUrl is unique
+    const state = this.cloudUrl;
+
+    if (this.config) {
+      ssoUtil.startAuthorization({ config: this.config, state });
+
+      const handler = async function (event) {
+        DEV_ENV && rtv.verify({ event }, { event: extEventOauthCodeTs });
+        const { data: oAuth } = event;
+        removeExtEventHandler(EXT_EVENT_OAUTH_CODE, handler, state);
+
+        try {
+          await ssoUtil.finishAuthorization({
+            oAuth,
+            config: this.config,
+            cloud: this,
+          });
+          this.connectionStatus = CONNECTION_STATUSES.CONNECTED;
+        } catch (err) {
+          this.disconnect();
+        }
+        this.statusListener = null;
+      }.bind(this);
+
+      addExtEventHandler(EXT_EVENT_OAUTH_CODE, handler, state);
+    } else {
+      this.connectionStatus = CONNECTION_STATUSES.DISCONNECTED;
+      this.statusListener = null;
+    }
+
+    return this.connectionStatus;
   }
 
   disconnect() {
+    this.config = null;
     this.resetTokens();
   }
 }

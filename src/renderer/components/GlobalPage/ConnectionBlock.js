@@ -1,26 +1,15 @@
-import { useCallback, useEffect, useState } from 'react';
-import * as rtv from 'rtvjs';
-import { InlineNotice } from '../InlineNotice';
+import { useState } from 'react';
 import { Renderer } from '@k8slens/extensions';
-import { cloneDeep } from 'lodash';
+import { InlineNotice } from '../InlineNotice';
 import styled from '@emotion/styled';
 import { layout } from '../styles';
-import { useClusterLoadingState } from '../../hooks/useClusterLoadingState';
 import { normalizeUrl } from '../../../util/netUtil';
-import { useSsoAuth } from '../../store/SsoAuthProvider';
 import { connectionBlock } from '../../../strings';
 import { cloudStore } from '../../../store/CloudStore';
-import { Cloud } from '../../auth/Cloud';
-import { EXT_EVENT_OAUTH_CODE } from '../../../constants';
-import {
-  addExtEventHandler,
-  removeExtEventHandler,
-  extEventOauthCodeTs,
-} from '../../eventBus';
-import * as ssoUtil from '../../../util/ssoUtil';
+import { Cloud, CONNECTION_STATUSES } from '../../auth/Cloud';
 
 const {
-  Component: { Input, Button },
+  Component: { Input, Button, Notifications },
 } = Renderer;
 
 const Title = styled.h2(() => ({
@@ -51,57 +40,36 @@ const ButtonWrapper = styled.div(() => ({
 }));
 
 export const ConnectionBlock = () => {
-  const {
-    state: { loading: ssoAuthLoading, loaded: ssoAuthLoaded },
-  } = useSsoAuth();
-  const [config, setConfig] = useState(null);
-  const [cloud, setCloud] = useState(null);
   const [clusterName, setClusterName] = useState('');
+  const [loading, setLoading] = useState(false);
   const [clusterUrl, setClusterUrl] = useState('');
 
-  // TODO currently this is not working. Need to be updated according to new logic
-  const loading = useClusterLoadingState();
-
-  // TODO here we need changes related to eventBus
-  // Also open question if we have to use ssoAuthActions to show loaders, etc
-  const handleOauthCodeEvent = useCallback(
-    async function (event) {
-      DEV_ENV && rtv.verify({ event }, { event: extEventOauthCodeTs });
-      const { data: oAuth } = event;
-
-      if (config && cloud) {
-        await ssoUtil.finishAuthorization({ oAuth, config, cloud });
-        // update value inside object
-        cloudStore.clouds[clusterUrl] = cloneDeep(cloud);
-      }
-      // else, ignore as this is unsolicited/unexpected
-    },
-    [config, cloud, clusterUrl]
-  );
-  // TODO this logic should be updated to follow multiple oAuth events (update eventBus)
-  useEffect(
-    function () {
-      addExtEventHandler(EXT_EVENT_OAUTH_CODE, handleOauthCodeEvent);
-
-      return function () {
-        removeExtEventHandler(EXT_EVENT_OAUTH_CODE, handleOauthCodeEvent);
-      };
-    },
-    [handleOauthCodeEvent]
-  );
+  const checkError = (cloud) => {
+    if (cloud?.connectError) {
+      Notifications.error(cloud.connectError);
+    }
+  };
 
   const handleConnectClick = async function () {
     const normUrl = normalizeUrl(clusterUrl.trim());
     setClusterUrl(normUrl); // update to actual URL we'll use
+    setLoading(true);
     let newCloud = new Cloud();
-    cloudStore.clouds[normUrl] = newCloud; // update existing or add new cloud
-    const conf = await newCloud.connect(normUrl);
-
-    if (!conf) {
-      delete cloudStore.clouds[normUrl];
-    }
-    setConfig(conf);
-    setCloud(newCloud);
+    newCloud.cloudUrl = normUrl;
+    newCloud.statusListener = (status) => {
+      if (status === CONNECTION_STATUSES.CONNECTING) {
+        setLoading(true);
+      } else if (status === CONNECTION_STATUSES.CONNECTED) {
+        newCloud.cleanStatusListener();
+        cloudStore.clouds[normUrl] = { ...newCloud };
+        setLoading(false);
+      } else if (status === CONNECTION_STATUSES.DISCONNECTED) {
+        checkError(newCloud);
+        newCloud.cleanStatusListener();
+        setLoading(false);
+      }
+    };
+    await newCloud.connect();
   };
 
   return (
@@ -118,7 +86,7 @@ export const ConnectionBlock = () => {
           id="lecc-cluster-name"
           value={clusterName}
           onChange={setClusterName}
-          disabled={loading} // currently this is not working. Need to be updated according to new logic
+          disabled={loading}
         />
       </Field>
       <Field>
@@ -131,20 +99,20 @@ export const ConnectionBlock = () => {
           id="lecc-cluster-url"
           value={clusterUrl}
           onChange={setClusterUrl}
-          disabled={loading} // currently this is not working. Need to be updated according to new logic
+          disabled={loading}
         />
         <ButtonWrapper>
           <Button
             primary
-            waiting={ssoAuthLoading} // currently this is not working. Need to be updated according to new logic
+            waiting={loading}
             label={connectionBlock.button.label()}
             onClick={handleConnectClick}
-            disabled={loading} // currently this is not working. Need to be updated according to new logic
+            disabled={loading || !clusterUrl.trim().length}
           />
         </ButtonWrapper>
       </Field>
       <div>
-        {!ssoAuthLoaded && (
+        {!cloudStore?.clouds?.[clusterUrl] && (
           <InlineNotice>
             <p
               dangerouslySetInnerHTML={{

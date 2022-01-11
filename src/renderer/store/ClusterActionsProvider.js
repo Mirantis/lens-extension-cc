@@ -160,6 +160,7 @@ const _getClusterAccess = async function ({
     );
     error = strings.clusterActionsProvider.error.sso.authCode(cluster.id);
   } else {
+    // TODO Do we need this in new realization? Ask Stefan
     const jwt = extractJwtPayload(body.id_token);
     if (jwt.preferred_username) {
       cloud = new Cloud({
