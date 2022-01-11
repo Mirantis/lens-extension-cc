@@ -12,6 +12,7 @@ import { EXT_EVENT_OAUTH_CODE } from '../constants';
 //
 
 type eventType = string;
+type stateType = string;
 
 export interface ExtensionEvent {
   type: eventType;
@@ -103,7 +104,8 @@ export const dispatchExtEvent = function (event: ExtensionEvent): void {
 /** Add an extension event handler for a specific event type and schedule dispatch. */
 export const addExtEventHandler = function (
   type: eventType,
-  handler: eventHandler
+  handler: eventHandler,
+  state: stateType
 ): void {
   eventHandlers[type] = eventHandlers[type] || [];
   eventHandlers[type].push(handler);
@@ -113,7 +115,8 @@ export const addExtEventHandler = function (
 /** Remove an extension event handler for a specific event type. */
 export const removeExtEventHandler = function (
   type: eventType,
-  handler: eventHandler
+  handler: eventHandler,
+  state: stateType
 ): void {
   if (eventHandlers[type]) {
     const idx = eventHandlers[type].indexOf(handler);

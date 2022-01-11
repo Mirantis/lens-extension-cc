@@ -3,33 +3,28 @@ import { Common } from '@k8slens/extensions';
 import * as rtv from 'rtvjs';
 import { logger } from '../util/logger';
 
+// we cannot use Cloud.specTs because they have different props.
+// probably we don't need all of them, or need additional. Will see in process
 // eslint-disable-next-line no-unused-vars
 const cloudTs = {
-  id_token: [rtv.REQUIRED, rtv.STRING],
-  expires_in: [rtv.REQUIRED, rtv.SAFE_INT], // SECONDS valid from now
-  refresh_token: [rtv.REQUIRED, rtv.STRING],
-  refresh_expires_in: [rtv.REQUIRED, rtv.SAFE_INT], // SECONDS valid from now
+  token: [rtv.REQUIRED, rtv.STRING],
+  expiresIn: [rtv.REQUIRED, rtv.SAFE_INT], // SECONDS valid from now
+  refreshToken: [rtv.REQUIRED, rtv.STRING],
+  refreshExpiresIn: [rtv.REQUIRED, rtv.SAFE_INT], // SECONDS valid from now
 
-  // NOTE: this is not an API-provided property
-  // SECONDS in epoch when token expires
-  // if this is included (typically when restoring from storage), it overrides expires_in
-  expiresAt: [rtv.OPTIONAL, rtv.SAFE_INT],
+  refreshTokenValidTill: [rtv.REQUIRED, rtv.STRING],
+  tokenValidTill: [rtv.REQUIRED, rtv.STRING],
 
-  // NOTE: this is not an API-provided property
-  // SECONDS in epoch when refresh token expires
-  // if this is included (typically when restoring from storage), it overrides refresh_expires_in
-  refreshExpiresAt: [rtv.OPTIONAL, rtv.SAFE_INT],
-  username: [rtv.EXPECTED, rtv.STRING],
-
+  username: [rtv.OPTIONAL, rtv.STRING],
   // IDP client associated with current tokens; undefined if unknown; null if not specified
   idpClientId: [rtv.OPTIONAL, rtv.STRING],
 
   // URL to the MCC instance
-  cloudUrl: [rtv.EXPECTED, rtv.STRING],
+  cloudUrl: [rtv.REQUIRED, rtv.STRING],
 };
 
-// TODO need to describe it better, and use cloudTs. Ask Stefan how to do that for Objects inside Objects
 export const storeTs = {
+  // clouds: [rtv.HASH_MAP, { $values: cloudTs }]
   clouds: [rtv.OBJECT],
 };
 
