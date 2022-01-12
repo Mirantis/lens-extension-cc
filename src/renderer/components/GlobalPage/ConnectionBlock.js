@@ -6,7 +6,7 @@ import { layout } from '../styles';
 import { normalizeUrl } from '../../../util/netUtil';
 import { connectionBlock } from '../../../strings';
 import { cloudStore } from '../../../store/CloudStore';
-import { Cloud, CONNECTION_STATUSES } from '../../auth/Cloud';
+import { Cloud, CONNECTION_STATUSES } from '../../../common/Cloud';
 
 const {
   Component: { Input, Button, Notifications },
@@ -61,7 +61,7 @@ export const ConnectionBlock = () => {
         setLoading(true);
       } else if (status === CONNECTION_STATUSES.CONNECTED) {
         newCloud.cleanStatusListener();
-        cloudStore.clouds[normUrl] = { ...newCloud };
+        cloudStore.clouds[normUrl] = newCloud.toJSON();
         setLoading(false);
       } else if (status === CONNECTION_STATUSES.DISCONNECTED) {
         checkError(newCloud);

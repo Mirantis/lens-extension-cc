@@ -105,7 +105,7 @@ export const dispatchExtEvent = function (event: ExtensionEvent): void {
 export const addExtEventHandler = function (
   type: eventType,
   handler: eventHandler,
-  state: stateType
+  state?: stateType
 ): void {
   eventHandlers[type] = eventHandlers[type] || [];
   eventHandlers[type].push(handler);
@@ -116,7 +116,7 @@ export const addExtEventHandler = function (
 export const removeExtEventHandler = function (
   type: eventType,
   handler: eventHandler,
-  state: stateType
+  state?: stateType
 ): void {
   if (eventHandlers[type]) {
     const idx = eventHandlers[type].indexOf(handler);

@@ -1,14 +1,14 @@
 import * as rtv from 'rtvjs';
-import { request } from '../../util/netUtil';
-import { logger } from '../../util/logger';
-import * as strings from '../../strings';
-import * as ssoUtil from '../../util/ssoUtil';
+import { request } from '../util/netUtil';
+import { logger } from '../util/logger';
+import * as strings from '../strings';
+import * as ssoUtil from '../util/ssoUtil';
 import {
   extEventOauthCodeTs,
   addExtEventHandler,
   removeExtEventHandler,
-} from '../eventBus';
-import { EXT_EVENT_OAUTH_CODE } from '../../constants';
+} from '../renderer/eventBus';
+import { EXT_EVENT_OAUTH_CODE } from '../constants';
 
 /**
  * Determines if a date has passed.
@@ -124,7 +124,6 @@ export class Cloud {
     let _cloudUrl = null;
     let _connectionStatus = CONNECTION_STATUSES.DISCONNECTED;
     let _config = null;
-    // this.statusListener = null;
     let _connectError = null;
 
     Object.defineProperty(this, 'statusListener', {
@@ -140,7 +139,9 @@ export class Cloud {
         return _connectError;
       },
       set(newValue) {
-        _connectError = newValue;
+        const validValue = (newValue instanceof Error ? newValue.message : newValue) || null
+        DEV_ENV && rtv.verify({validValue}, {validValue: [rtv.EXPECTED, rtv.STRING]});
+        _connectError = validValue;
       },
     });
 
@@ -438,8 +439,9 @@ export class Cloud {
         Date.now() + this.refreshExpiresIn * 1000
       );
     }
-    // TODO here we need be sure if tokens are still valid. Need to add checks?
-    this.connectionStatus = CONNECTION_STATUSES.CONNECTED;
+    if(this.isValid()) {
+      this.connectionStatus = CONNECTION_STATUSES.CONNECTED;
+    }
   }
 
   /**
@@ -476,7 +478,11 @@ export class Cloud {
     if (this.connectionStatus === CONNECTION_STATUSES.CONNECTING) {
       return;
     }
+    // set initial values
     this.connectionStatus = CONNECTION_STATUSES.CONNECTING;
+    this.connectError = null;
+    this.config = null;
+
 
     try {
       this.config = await _loadConfig(this.cloudUrl);
@@ -503,15 +509,18 @@ export class Cloud {
           });
           this.connectionStatus = CONNECTION_STATUSES.CONNECTED;
         } catch (err) {
-          this.disconnect();
+          logger.error(
+            'Cloud.connect => ssoUtil.finishAuthorization',
+            `Failed to finishAuthorization, error="${err}"`
+          );
+          this.connectError = err;
+          this.resetTokens();
         }
-        this.statusListener = null;
       }.bind(this);
 
       addExtEventHandler(EXT_EVENT_OAUTH_CODE, handler, state);
     } else {
       this.connectionStatus = CONNECTION_STATUSES.DISCONNECTED;
-      this.statusListener = null;
     }
 
     return this.connectionStatus;
@@ -519,6 +528,7 @@ export class Cloud {
 
   disconnect() {
     this.config = null;
+    this.connectError = null;
     this.resetTokens();
   }
 }
