@@ -2,30 +2,10 @@ import { observable, toJS, makeObservable } from 'mobx';
 import { Common } from '@k8slens/extensions';
 import * as rtv from 'rtvjs';
 import { logger } from '../util/logger';
-
-// we cannot use Cloud.specTs because they have different props.
-// probably we don't need all of them, or need additional. Will see in process
-// eslint-disable-next-line no-unused-vars
-const cloudTs = {
-  token: [rtv.REQUIRED, rtv.STRING],
-  expiresIn: [rtv.REQUIRED, rtv.SAFE_INT], // SECONDS valid from now
-  refreshToken: [rtv.REQUIRED, rtv.STRING],
-  refreshExpiresIn: [rtv.REQUIRED, rtv.SAFE_INT], // SECONDS valid from now
-
-  refreshTokenValidTill: [rtv.REQUIRED, rtv.STRING],
-  tokenValidTill: [rtv.REQUIRED, rtv.STRING],
-
-  username: [rtv.OPTIONAL, rtv.STRING],
-  // IDP client associated with current tokens; undefined if unknown; null if not specified
-  idpClientId: [rtv.OPTIONAL, rtv.STRING],
-
-  // URL to the MCC instance
-  cloudUrl: [rtv.REQUIRED, rtv.STRING],
-};
+import { Cloud } from '../common/Cloud';
 
 export const storeTs = {
-  // clouds: [rtv.HASH_MAP, { $values: cloudTs }]
-  clouds: [rtv.OBJECT],
+  clouds: [rtv.HASH_MAP, { $values: Cloud.specTs }]
 };
 
 export class CloudStore extends Common.Store.ExtensionStore {
@@ -88,7 +68,6 @@ export class CloudStore extends Common.Store.ExtensionStore {
       obj[key] = this[key];
       return obj;
     }, {});
-
     // return a deep-clone that is no longer observable
     return toJS(observableThis);
   }

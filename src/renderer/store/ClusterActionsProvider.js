@@ -9,7 +9,7 @@ import path from 'path';
 import { Common, Renderer } from '@k8slens/extensions';
 import { AuthClient } from '../auth/clients/AuthClient';
 import { kubeConfigTemplate } from '../../util/templates';
-import { Cloud } from '../auth/Cloud';
+import { Cloud } from '../../common/Cloud';
 import { ProviderStore } from './ProviderStore';
 import { Cluster } from './Cluster';
 import { logger } from '../../util/logger';

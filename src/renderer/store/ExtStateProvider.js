@@ -7,7 +7,7 @@ import propTypes from 'prop-types';
 import * as rtv from 'rtvjs';
 import { cloneDeep, cloneDeepWith } from 'lodash';
 import { PreferenceStore, prefStore } from '../../store/PreferenceStore';
-import { Cloud } from '../auth/Cloud';
+import { Cloud } from '../../common/Cloud';
 import { ProviderStore } from './ProviderStore';
 import ExtensionRenderer from '../renderer';
 
