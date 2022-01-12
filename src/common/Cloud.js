@@ -126,9 +126,9 @@ export class Cloud {
     let _config = null;
     let _connectError = null;
 
-    Object.defineProperty(this, 'statusListener', {
+    Object.defineProperty(this, 'statusListeners', {
       enumerable: false,
-      value: null,
+      value: [],
       writable: true,
     });
 
@@ -169,8 +169,8 @@ export class Cloud {
       },
       set(newValue) {
         _connectionStatus = newValue;
-        if (typeof this.statusListener === 'function') {
-          this.statusListener(newValue);
+        if (this.statusListeners?.length) {
+          this.statusListeners.forEach((f) => f(newValue));
         }
       },
     });
@@ -475,8 +475,14 @@ export class Cloud {
     };
   }
 
-  cleanStatusListener() {
-    this.statusListener = null;
+  /**
+   * @param {string} name of listener function
+   */
+  cleanStatusListener(name) {
+    const index = this.statusListeners.findIndex((f) => f.name === name);
+    if (index >= 0) {
+      this.statusListeners.splice(index, 1);
+    }
   }
 
   async connect() {
@@ -494,7 +500,6 @@ export class Cloud {
       this.connectError = error;
     }
 
-    // TODO use url as id (for now). cloudUrl is unique
     const state = this.cloudUrl;
 
     if (this.config) {

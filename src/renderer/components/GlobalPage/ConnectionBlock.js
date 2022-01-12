@@ -56,19 +56,20 @@ export const ConnectionBlock = () => {
     setLoading(true);
     let newCloud = new Cloud();
     newCloud.cloudUrl = normUrl;
-    newCloud.statusListener = (status) => {
+    const statusListener = (status) => {
       if (status === CONNECTION_STATUSES.CONNECTING) {
         setLoading(true);
       } else if (status === CONNECTION_STATUSES.CONNECTED) {
-        newCloud.cleanStatusListener();
+        newCloud.cleanStatusListener('statusListener'); // it's not necessary to clean this. But just in case
         cloudStore.clouds[normUrl] = newCloud.toJSON();
         setLoading(false);
       } else if (status === CONNECTION_STATUSES.DISCONNECTED) {
         checkError(newCloud);
-        newCloud.cleanStatusListener();
+        newCloud.cleanStatusListener('statusListener');
         setLoading(false);
       }
     };
+    newCloud.statusListeners.push(statusListener);
     await newCloud.connect();
   };
 
