@@ -17,6 +17,7 @@ type stateType = string;
 export interface ExtensionEvent {
   type: eventType;
   data?: any;
+  state?: stateType;
 }
 
 interface buildKey {
@@ -56,9 +57,9 @@ type EventQueue = Array<ExtensionEvent>;
 /** RTV Typeset to validate the event object for an `EXT_EVENT_OAUTH_CODE` event. */
 export const extEventOauthCodeTs = {
   type: [rtv.STRING, { exact: EXT_EVENT_OAUTH_CODE }],
+  state: [rtv.OPTIONAL, rtv.STRING],
   data: {
     code: rtv.STRING,
-    state: [rtv.OPTIONAL, rtv.STRING],
     error: [rtv.OPTIONAL, rtv.STRING],
     error_description: [rtv.OPTIONAL, rtv.STRING],
   },
@@ -89,8 +90,8 @@ const scheduleDispatch = function (): void {
   setTimeout(function () {
     if (Object.keys(eventHandlers).length > 0 && eventQueue.length > 0) {
       eventQueue.forEach((event: ExtensionEvent) => {
-        const state = event?.data?.state;
-        const key = getKey({ state, type: event?.type });
+        const { state, type } = event;
+        const key = getKey({ state, type });
         const handlers = eventHandlers[key] || [];
         handlers.forEach((handler) => {
           try {

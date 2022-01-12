@@ -520,7 +520,7 @@ export class Cloud {
         } catch (err) {
           logger.error(
             'Cloud.connect => ssoUtil.finishAuthorization',
-            `Failed to finishAuthorization, error="${err}"`
+            `Failed to finishAuthorization, error="${err.message}"`
           );
           this.connectError = err;
           this.resetTokens();
