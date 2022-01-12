@@ -5,7 +5,7 @@ import { logger } from '../util/logger';
 import { Cloud } from '../common/Cloud';
 
 export const storeTs = {
-  clouds: [rtv.HASH_MAP, { $values: Cloud.specTs }]
+  clouds: [rtv.HASH_MAP, { $values: Cloud.specTs }],
 };
 
 export class CloudStore extends Common.Store.ExtensionStore {
