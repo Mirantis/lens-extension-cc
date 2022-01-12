@@ -19,6 +19,11 @@ export interface ExtensionEvent {
   data?: any;
 }
 
+interface buildKey {
+  type: eventType;
+  state?: stateType;
+}
+
 interface eventHandler {
   (event: ExtensionEvent): void;
 }
@@ -66,6 +71,10 @@ export const extEventOauthCodeTs = {
 const eventHandlers: HandlerMap = {};
 const eventQueue: EventQueue = [];
 
+/** Use state param (if exist) to build unique key */
+const getKey = ({ type, state }: buildKey): string =>
+  `${type}${state ? `@@${state}` : ''}`;
+
 /**
  * Dispatches events asynchronously IIF there are handlers and events in the queue.
  *  Otherwise, events are queued until there is at least one handler, regardless
@@ -80,7 +89,9 @@ const scheduleDispatch = function (): void {
   setTimeout(function () {
     if (Object.keys(eventHandlers).length > 0 && eventQueue.length > 0) {
       eventQueue.forEach((event: ExtensionEvent) => {
-        const handlers = eventHandlers[event.type] || [];
+        const state = event?.data?.state;
+        const key = getKey({ state, type: event?.type });
+        const handlers = eventHandlers[key] || [];
         handlers.forEach((handler) => {
           try {
             handler(event);
@@ -89,7 +100,6 @@ const scheduleDispatch = function (): void {
           }
         });
       });
-
       eventQueue.length = 0; // remove all events
     }
   });
@@ -107,8 +117,9 @@ export const addExtEventHandler = function (
   handler: eventHandler,
   state?: stateType
 ): void {
-  eventHandlers[type] = eventHandlers[type] || [];
-  eventHandlers[type].push(handler);
+  const key = getKey({ type, state });
+  eventHandlers[key] = eventHandlers[key] || [];
+  eventHandlers[key].push(handler);
   scheduleDispatch();
 };
 
@@ -118,12 +129,13 @@ export const removeExtEventHandler = function (
   handler: eventHandler,
   state?: stateType
 ): void {
-  if (eventHandlers[type]) {
-    const idx = eventHandlers[type].indexOf(handler);
+  const key = getKey({ type, state });
+  if (eventHandlers[key]) {
+    const idx = eventHandlers[key].indexOf(handler);
     if (idx >= 0) {
-      eventHandlers[type].splice(idx, 1);
-      if (eventHandlers[type].length <= 0) {
-        delete eventHandlers[type]; // no more handlers for this type
+      eventHandlers[key].splice(idx, 1);
+      if (eventHandlers[key].length <= 0) {
+        delete eventHandlers[key]; // no more handlers for this type
       }
     }
   }

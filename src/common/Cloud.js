@@ -139,8 +139,13 @@ export class Cloud {
         return _connectError;
       },
       set(newValue) {
-        const validValue = (newValue instanceof Error ? newValue.message : newValue) || null
-        DEV_ENV && rtv.verify({validValue}, {validValue: [rtv.EXPECTED, rtv.STRING]});
+        const validValue =
+          (newValue instanceof Error ? newValue.message : newValue) || null;
+        DEV_ENV &&
+          rtv.verify(
+            { validValue },
+            { validValue: [rtv.EXPECTED, rtv.STRING] }
+          );
         _connectError = validValue;
       },
     });
@@ -439,7 +444,7 @@ export class Cloud {
         Date.now() + this.refreshExpiresIn * 1000
       );
     }
-    if(this.isValid()) {
+    if (this.isValid()) {
       this.connectionStatus = CONNECTION_STATUSES.CONNECTED;
     }
   }
@@ -482,7 +487,6 @@ export class Cloud {
     this.connectionStatus = CONNECTION_STATUSES.CONNECTING;
     this.connectError = null;
     this.config = null;
-
 
     try {
       this.config = await _loadConfig(this.cloudUrl);
