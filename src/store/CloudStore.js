@@ -55,7 +55,22 @@ export class CloudStore extends Common.Store.ExtensionStore {
       return;
     }
 
-    Object.keys(store).forEach((key) => (this[key] = store[key]));
+    Object.keys(store).forEach((key) => {
+      if (key === 'clouds') {
+        // restore from a map of cloudUrl to JSON object -> into a map of cloudUrl
+        //  to Cloud instance
+        this[key] = Object.entries(store[key] || {}).reduce(
+          (cloudMap, [cloudUrl, cloudJson]) => {
+            cloudMap[cloudUrl] = new Cloud(cloudJson);
+            return cloudMap;
+          },
+          {}
+        );
+      } else {
+        this[key] = store[key];
+      }
+    });
+
     // call any onUpdate() handlers
     this.updateHandlers.forEach((h) => h());
   }
@@ -65,9 +80,19 @@ export class CloudStore extends Common.Store.ExtensionStore {
     const defaults = CloudStore.getDefaults();
 
     const observableThis = Object.keys(defaults).reduce((obj, key) => {
-      obj[key] = this[key];
+      if (key === 'clouds') {
+        // store from map of cloudUrl to Cloud instance -> into a map of cloudUrl
+        //  to JSON object
+        obj[key] = Object.keys(this[key]).reduce((jsonMap, cloudUrl) => {
+          jsonMap[cloudUrl] = this[key][cloudUrl].toJSON();
+          return jsonMap;
+        }, {});
+      } else {
+        obj[key] = this[key];
+      }
       return obj;
     }, {});
+
     // return a deep-clone that is no longer observable
     return toJS(observableThis);
   }

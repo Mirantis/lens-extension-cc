@@ -60,6 +60,7 @@ export const extEventOauthCodeTs = {
   state: [rtv.OPTIONAL, rtv.STRING],
   data: {
     code: rtv.STRING,
+    state: [rtv.OPTIONAL, rtv.STRING],
     error: [rtv.OPTIONAL, rtv.STRING],
     error_description: [rtv.OPTIONAL, rtv.STRING],
   },

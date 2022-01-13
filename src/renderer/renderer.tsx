@@ -179,12 +179,10 @@ export default class ExtensionRenderer extends LensExtension {
   protected handleProtocolOauthCode = ({ search }) => {
     this.navigate(ROUTE_GLOBAL_PAGE);
 
-    const { state, ...data } = search;
-
     dispatchExtEvent({
       type: EXT_EVENT_OAUTH_CODE,
-      data,
-      state,
+      state: search.state,
+      data: search,
     });
   };
 
