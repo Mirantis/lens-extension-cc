@@ -78,7 +78,8 @@ const SortButton = styled.button`
   background: transparent;
   margin-left: ${layout.grid * 2};
   cursor: pointer;
-  transform: ${({isRotated}) => isRotated ? 'rotate(180deg)' : 'rotate(0deg)'};
+  transform: ${({ isRotated }) =>
+    isRotated ? 'rotate(180deg)' : 'rotate(0deg)'};
 `;
 
 const mockedProjects = [
@@ -86,54 +87,54 @@ const mockedProjects = [
     projectName: 'imc-pm-team (Default)',
     children: [
       {
-        title: 'clusters (23)'
+        title: 'clusters (23)',
       },
       {
-        title: 'ssh keys (8)'
+        title: 'ssh keys (8)',
       },
       {
-        title: 'credentials (12)'
-      }
-    ]
+        title: 'credentials (12)',
+      },
+    ],
   },
   {
     projectName: 'test-project',
     children: [
       {
-        title: 'clusters (21)'
+        title: 'clusters (21)',
       },
       {
-        title: 'ssh keys (12)'
-      }
-    ]
+        title: 'ssh keys (12)',
+      },
+    ],
   },
   {
     projectName: 'ceph project',
     children: [
       {
-        title: 'clusters (25)'
+        title: 'clusters (25)',
       },
       {
-        title: 'ssh keys (19)'
+        title: 'ssh keys (19)',
       },
       {
-        title: 'credentials (4)'
-      }
-    ]
+        title: 'credentials (4)',
+      },
+    ],
   },
   {
     projectName: 'mcc-management-team',
     children: [
       {
-        title: 'clusters (15)'
+        title: 'clusters (15)',
       },
       {
-        title: 'ssh keys (11)'
+        title: 'ssh keys (11)',
       },
       {
-        title: 'credentials (6)'
-      }
-    ]
+        title: 'credentials (6)',
+      },
+    ],
   },
 ];
 
@@ -164,16 +165,19 @@ export const SynchronizeBlock = () => {
   // get state of child checkbox
   const handleChildCheckbox = (value) => {
     setIsAllChecked(value);
-  }
+  };
 
   return (
     <Content>
       <Title>{synchronizeBlock.title()}</Title>
       <Projects>
         <ProjectsHead>
-          <Checkbox handleChildCheckbox={handleChildCheckbox} label="Project name" />
+          <Checkbox
+            handleChildCheckbox={handleChildCheckbox}
+            label="Project name"
+          />
           <SortButton
-            type='button'
+            type="button"
             onClick={sortByName}
             isRotated={nextSortType === 'DESC' ? true : false}
           >
@@ -182,28 +186,34 @@ export const SynchronizeBlock = () => {
         </ProjectsHead>
         <ProjectsBody>
           <ProjectsList>
-            {
-              projectsList.map((project, index) => (
-                <li key={index}>
-                  <Accordion title={<Checkbox isAllChecked={isAllChecked} label={project.projectName} />}>
-                    <AccordionChildrenList>
-                      {
-                        project.children.map((child, i) => (
-                          <li key={i}>
-                            <p>{child.title}</p>
-                          </li>
-                        ))
-                      }
-                    </AccordionChildrenList>
-                  </Accordion>
-                </li>
-              ))
-            }
+            {projectsList.map((project, index) => (
+              <li key={index}>
+                <Accordion
+                  title={
+                    <Checkbox
+                      isAllChecked={isAllChecked}
+                      label={project.projectName}
+                    />
+                  }
+                >
+                  <AccordionChildrenList>
+                    {project.children.map((child, i) => (
+                      <li key={i}>
+                        <p>{child.title}</p>
+                      </li>
+                    ))}
+                  </AccordionChildrenList>
+                </Accordion>
+              </li>
+            ))}
           </ProjectsList>
         </ProjectsBody>
       </Projects>
       <SynchronizeProjectsButtonWrapper>
-        <Component.Button primary label={synchronizeBlock.synchronizeButtonLabel()} />
+        <Component.Button
+          primary
+          label={synchronizeBlock.synchronizeButtonLabel()}
+        />
       </SynchronizeProjectsButtonWrapper>
     </Content>
   );

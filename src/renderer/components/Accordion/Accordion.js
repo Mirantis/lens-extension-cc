@@ -14,7 +14,7 @@ const AccordionButton = styled.button`
   background: transparent;
   cursor: pointer;
   margin-right: ${layout.grid}px;
-  transform: ${({isOpen}) => isOpen ? 'rotate(90deg)' : 'rotate(0deg)'};
+  transform: ${({ isOpen }) => (isOpen ? 'rotate(90deg)' : 'rotate(0deg)')};
 `;
 
 const AccordionItem = styled.div`
@@ -27,9 +27,9 @@ export const Accordion = ({ title, children }) => {
 
   return (
     <div>
-      <AccordionTitle isOpen={isOpen} >
+      <AccordionTitle isOpen={isOpen}>
         <AccordionButton
-          type='button'
+          type="button"
           isOpen={isOpen}
           onClick={() => setIsOpen(!isOpen)}
         >
@@ -37,12 +37,7 @@ export const Accordion = ({ title, children }) => {
         </AccordionButton>
         {title}
       </AccordionTitle>
-      <AccordionItem>
-        {
-          isOpen &&
-          <div>{children}</div>
-        }
-      </AccordionItem>
+      <AccordionItem>{isOpen && <div>{children}</div>}</AccordionItem>
     </div>
   );
 };
