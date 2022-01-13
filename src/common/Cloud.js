@@ -122,14 +122,42 @@ export class Cloud {
     let _username = null;
     let _idpClientId = null;
     let _cloudUrl = null;
-    let _connectionStatus = CONNECTION_STATUSES.DISCONNECTED;
     let _config = null;
     let _connectError = null;
+    let _connecting = false;
+
+
+    Object.defineProperty(this, 'status', {
+      enumerable: false,
+      configurable: true,
+      get() {
+        if (this.connecting) {
+          return CONNECTION_STATUSES.CONNECTING;
+        }
+        if (this.isValid()) {
+          return CONNECTION_STATUSES.CONNECTED;
+        }
+        return CONNECTION_STATUSES.DISCONNECTED;
+      },
+    });
 
     Object.defineProperty(this, 'statusListeners', {
       enumerable: false,
-      value: [],
       writable: true,
+      value: [],
+    });
+
+    Object.defineProperty(this, 'connecting', {
+      enumerable: false,
+      get() {
+        return _connecting;
+      },
+      set(newValue) {
+       _connecting = newValue;
+        if (this.statusListeners?.length) {
+          this.statusListeners.forEach((f) => f(this.status));
+        }
+      },
     });
 
     /** @member {string} connectError */
@@ -158,20 +186,6 @@ export class Cloud {
       },
       set(newValue) {
         _config = newValue;
-      },
-    });
-
-    /** @member {string} connectionStatus */
-    Object.defineProperty(this, 'connectionStatus', {
-      enumerable: false, // NOTE: we make this non-enumerable so it doesn't get persisted to JSON
-      get() {
-        return _connectionStatus;
-      },
-      set(newValue) {
-        _connectionStatus = newValue;
-        if (this.statusListeners?.length) {
-          this.statusListeners.forEach((f) => f(newValue));
-        }
       },
     });
 
@@ -285,7 +299,7 @@ export class Cloud {
       },
     });
 
-    /** @member {sting|null} username */
+    /** @member {string|null} username */
     Object.defineProperty(this, 'username', {
       enumerable: true,
       get() {
@@ -303,7 +317,7 @@ export class Cloud {
     });
 
     /**
-     * @member {sting|null} idpClientId Client ID of the IDP associated
+     * @member {string|null} idpClientId Client ID of the IDP associated
      *  with the tokens. `undefined` means not specified; `null` means the tokens
      *  are related to the default IDP, which is Keycloak; otherwise, it's a
      *  string that identifies a custom IDP.
@@ -411,7 +425,6 @@ export class Cloud {
     this.refreshTokenValidTill = null;
 
     this.idpClientId = null; // tokens are tied to the IDP so clear this too
-    this.connectionStatus = CONNECTION_STATUSES.DISCONNECTED;
   }
 
   /** Clears all data. */
@@ -443,9 +456,6 @@ export class Cloud {
       this.refreshTokenValidTill = new Date(
         Date.now() + this.refreshExpiresIn * 1000
       );
-    }
-    if (this.isValid()) {
-      this.connectionStatus = CONNECTION_STATUSES.CONNECTED;
     }
   }
 
@@ -486,11 +496,11 @@ export class Cloud {
   }
 
   async connect() {
-    if (this.connectionStatus === CONNECTION_STATUSES.CONNECTING) {
+    if (this.connecting) {
       return;
     }
     // set initial values
-    this.connectionStatus = CONNECTION_STATUSES.CONNECTING;
+    this.connecting = true;
     this.connectError = null;
     this.config = null;
 
@@ -516,7 +526,7 @@ export class Cloud {
             config: this.config,
             cloud: this,
           });
-          this.connectionStatus = CONNECTION_STATUSES.CONNECTED;
+          this.connecting = false;
         } catch (err) {
           logger.error(
             'Cloud.connect => ssoUtil.finishAuthorization',
@@ -524,15 +534,14 @@ export class Cloud {
           );
           this.connectError = err;
           this.resetTokens();
+          this.connecting = false;
         }
       }.bind(this);
 
       addExtEventHandler(EXT_EVENT_OAUTH_CODE, handler, state);
     } else {
-      this.connectionStatus = CONNECTION_STATUSES.DISCONNECTED;
+      this.connecting = false;
     }
-
-    return this.connectionStatus;
   }
 
   disconnect() {
