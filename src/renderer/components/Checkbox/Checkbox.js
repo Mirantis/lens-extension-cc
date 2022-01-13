@@ -26,8 +26,10 @@ const CheckboxControl = styled.div`
   border-width: 2px;
   border-radius: 2px;
   border-style: solid;
-  border-color: ${({isChecked}) => isChecked ? 'var(--primary)' : 'var(--textColorSecondary)'};
-  background-color: ${({isChecked}) => isChecked ? 'var(--primary)' : 'transparent'};
+  border-color: ${({ isChecked }) =>
+    isChecked ? 'var(--primary)' : 'var(--textColorSecondary)'};
+  background-color: ${({ isChecked }) =>
+    isChecked ? 'var(--primary)' : 'transparent'};
   cursor: pointer;
 `;
 
@@ -50,7 +52,6 @@ const CheckboxLabel = styled.span(() => ({
 }));
 
 export const Checkbox = ({ label, handleChildCheckbox, isAllChecked }) => {
-
   // @type {boolean} states of checkbox
   const [isChecked, setIsChecked] = useState(false);
 
@@ -65,7 +66,6 @@ export const Checkbox = ({ label, handleChildCheckbox, isAllChecked }) => {
     setIsChecked(isAllChecked);
   }, [isAllChecked]);
 
-
   return (
     <CheckboxItem>
       <CheckboxControlPart>
@@ -76,9 +76,7 @@ export const Checkbox = ({ label, handleChildCheckbox, isAllChecked }) => {
           tabIndex="0"
           isChecked={isChecked}
         >
-          {
-            isChecked && <CheckIcon />
-          }
+          {isChecked && <CheckIcon />}
         </CheckboxControl>
         <CheckboxLabel>
           <CheckboxField
