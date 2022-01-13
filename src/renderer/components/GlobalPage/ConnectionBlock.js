@@ -60,7 +60,7 @@ export const ConnectionBlock = () => {
       if (status === CONNECTION_STATUSES.CONNECTING) {
         setLoading(true);
       } else if (status === CONNECTION_STATUSES.CONNECTED) {
-        newCloud.cleanStatusListener('statusListener'); // it's not necessary to clean this. But just in case
+        newCloud.cleanStatusListener('statusListener');
         cloudStore.clouds[normUrl] = newCloud;
         setLoading(false);
       } else if (status === CONNECTION_STATUSES.DISCONNECTED) {
