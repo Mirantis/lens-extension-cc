@@ -121,6 +121,7 @@ export const connectionBlock: Dict = {
 };
 export const synchronizeBlock = {
   title: () => 'Select projects to synchronize',
+  synchronizeButtonLabel: () => 'Synchronize selected projects',
 };
 export const login: Dict = {
   title: () => 'Get clusters',
