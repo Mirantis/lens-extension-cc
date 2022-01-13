@@ -121,42 +121,6 @@ GET /activateCluster
 - `clusterName`: Name of the cluster to activate.
 - `clusterId`: ID of the cluster (in `namespace`) to activate.
 
-### Protocol - Add one cluster
-
-Adds a __single__ cluster to Lens (if it hasn't already been added) by providing a pre-configured kubeConfig JSON object for the cluster. As such, this endpoint does not require the extension to perform any authentication/authorization requests. It simply stores the kubeConfig on disk and tells Lens where to find it.
-
-```
-GET /kubeConfig
-  ?cloudUrl={string}
-  &namespace={string}
-  &clusterName={string}
-  &clusterId={string}
-  &kubeConfig={string}
-```
-
-- `cloudUrl`: URL to the instance, e.g. `https://container-cloud.my-company.com`
-- `namespace`: ID of the Container Cloud namespace containing the cluster to activate.
-- `clusterName`: Name of the cluster to activate.
-- `clusterId`: ID of the cluster (in `namespace`) to activate.
-- `kubeConfig`: JSON-stringified, Base64-encoded kubeConfig payload.
-
-### Protocol - Add multiple clusters
-
-Allows the user to add __one or more__ clusters to Lens by telling the extension where to find them. Unlike [adding one cluster](#add-one-cluster), it does not automatically add any clusters to Lens. It simply triggers the extension to immediately list all available clusters, and then lets the user choose which ones to add.
-
-```
-GET /addClusters
-  ?cloudUrl={string}
-  &username={string}
-  &tokens={string}
-  [ &namespaces={string} ]
-```
-
-- `cloudUrl`: URL to the instance, e.g. `https://container-cloud.my-company.com`
-- `username`: Username associated with the `tokens`.
-- `tokens`: JSON-stringified, Base64-encoded OAuth2 tokens for the user.
-- `namespaces` (Optional): Comma-delimited list of namespace IDs to restrict the list of clusters presented by the extension (i.e. a filter on namespaces). Only clusters in these namespaces will be listed.
-
 ### Protocol - SSO OAuth Code
 
 Allow the extension to use the system's default browser to broker an OAuth authorization code with a Keycloak client in a Container Cloud instance. This is used both for general access (to list clusters) as well as specific cluster access to generate kubeConfig files to add to Lens.
