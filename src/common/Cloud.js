@@ -126,7 +126,6 @@ export class Cloud {
     let _connectError = null;
     let _connecting = false;
 
-
     Object.defineProperty(this, 'status', {
       enumerable: false,
       configurable: true,
@@ -147,16 +146,19 @@ export class Cloud {
       value: [],
     });
 
+    Object.defineProperty(this, 'prevStatus', {
+      enumerable: false,
+      writable: true,
+      value: null,
+    });
+
     Object.defineProperty(this, 'connecting', {
       enumerable: false,
       get() {
         return _connecting;
       },
       set(newValue) {
-       _connecting = newValue;
-        if (this.statusListeners?.length) {
-          this.statusListeners.forEach((f) => f(this.status));
-        }
+        _connecting = newValue;
       },
     });
 
@@ -425,6 +427,20 @@ export class Cloud {
     this.refreshTokenValidTill = null;
 
     this.idpClientId = null; // tokens are tied to the IDP so clear this too
+    this.onCheckStatusChange();
+  }
+
+  notifyStatusChange() {
+    if (this.statusListeners?.length) {
+      this.statusListeners.forEach((f) => f(this.status));
+    }
+  }
+
+  onCheckStatusChange() {
+    if (this.status !== this.prevStatus) {
+      this.notifyStatusChange();
+    }
+    this.prevStatus = this.status;
   }
 
   /** Clears all data. */
@@ -457,6 +473,7 @@ export class Cloud {
         Date.now() + this.refreshExpiresIn * 1000
       );
     }
+    this.onCheckStatusChange();
   }
 
   /**
@@ -503,6 +520,7 @@ export class Cloud {
     this.connecting = true;
     this.connectError = null;
     this.config = null;
+    this.onCheckStatusChange();
 
     try {
       this.config = await _loadConfig(this.cloudUrl);
@@ -527,6 +545,7 @@ export class Cloud {
             cloud: this,
           });
           this.connecting = false;
+          this.onCheckStatusChange();
         } catch (err) {
           logger.error(
             'Cloud.connect => ssoUtil.finishAuthorization',
@@ -535,13 +554,16 @@ export class Cloud {
           this.connectError = err;
           this.resetTokens();
           this.connecting = false;
+          this.onCheckStatusChange();
         }
       }.bind(this);
 
       addExtEventHandler(EXT_EVENT_OAUTH_CODE, handler, state);
     } else {
       this.connecting = false;
+      this.onCheckStatusChange();
     }
+    this.onCheckStatusChange();
   }
 
   disconnect() {
