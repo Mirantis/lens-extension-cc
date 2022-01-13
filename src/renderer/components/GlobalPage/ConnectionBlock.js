@@ -6,7 +6,11 @@ import { layout } from '../styles';
 import { normalizeUrl } from '../../../util/netUtil';
 import { connectionBlock } from '../../../strings';
 import { cloudStore } from '../../../store/CloudStore';
-import { Cloud, CONNECTION_STATUSES } from '../../../common/Cloud';
+import {
+  Cloud,
+  CONNECTION_STATUSES,
+  CLOUD_EVENTS,
+} from '../../../common/Cloud';
 
 const {
   Component: { Input, Button, Notifications },
@@ -57,20 +61,23 @@ export const ConnectionBlock = () => {
     let newCloud = new Cloud();
     newCloud.cloudUrl = normUrl;
     newCloud.name = clusterName;
-    const statusListener = (status) => {
-      if (status === CONNECTION_STATUSES.CONNECTING) {
+    const statusListener = () => {
+      if (newCloud.status === CONNECTION_STATUSES.CONNECTING) {
         setLoading(true);
-      } else if (status === CONNECTION_STATUSES.CONNECTED) {
-        newCloud.cleanStatusListener('statusListener');
-        cloudStore.clouds[normUrl] = newCloud;
+      } else {
         setLoading(false);
-      } else if (status === CONNECTION_STATUSES.DISCONNECTED) {
-        checkError(newCloud);
-        newCloud.cleanStatusListener('statusListener');
-        setLoading(false);
+        newCloud.removeEventListener(
+          CLOUD_EVENTS.STATUS_CHANGE,
+          statusListener
+        );
+        if (newCloud.status === CONNECTION_STATUSES.CONNECTED) {
+          cloudStore.clouds[normUrl] = newCloud;
+        } else {
+          checkError(newCloud);
+        }
       }
     };
-    newCloud.statusListeners.push(statusListener);
+    newCloud.addEventListener(CLOUD_EVENTS.STATUS_CHANGE, statusListener);
     await newCloud.connect();
   };
 
