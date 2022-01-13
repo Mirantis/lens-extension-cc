@@ -224,7 +224,6 @@ export class Cloud {
       },
     });
 
-    let _changed = false; // true if any property has changed since the last time the flag was reset
     let _token = null;
     let _name = null;
     let _syncAll = false;
@@ -240,17 +239,6 @@ export class Cloud {
     let _connectError = null;
     let _connecting = false;
 
-    /** @member {boolean} changed */
-    Object.defineProperty(this, 'changed', {
-      enumerable: false, // NOTE: we make this non-enumerable so it doesn't get persisted to JSON
-      get() {
-        return _changed;
-      },
-      set(newValue) {
-        _changed = !!newValue;
-      },
-    });
-
     /** name is the "friendly name" given to the mgmt cluster by
      * the user when they will add new mgmt clusters to the extension
      */
@@ -264,7 +252,6 @@ export class Cloud {
           rtv.verify({ token: newValue }, { token: Cloud.specTs.name });
         if (_name !== newValue) {
           _name = newValue;
-          _changed = true;
         }
       },
     });
@@ -282,7 +269,6 @@ export class Cloud {
           rtv.verify({ token: newValue }, { token: Cloud.specTs.syncAll });
         if (_syncAll !== newValue) {
           _syncAll = newValue;
-          _changed = true;
         }
       },
     });
@@ -361,7 +347,6 @@ export class Cloud {
           rtv.verify({ token: newValue }, { token: Cloud.specTs.id_token });
         if (_token !== newValue) {
           _token = newValue || null; // normalize empty to null
-          _changed = true;
           this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
         }
       },
@@ -381,7 +366,6 @@ export class Cloud {
           );
         if (_expiresIn !== newValue) {
           _expiresIn = newValue;
-          _changed = true;
           this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
         }
       },
@@ -401,7 +385,6 @@ export class Cloud {
           );
         if (_tokenValidTill !== newValue) {
           _tokenValidTill = newValue;
-          _changed = true;
           this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
         }
       },
@@ -421,7 +404,6 @@ export class Cloud {
           );
         if (_refreshToken !== newValue) {
           _refreshToken = newValue || null; // normalize empty to null
-          _changed = true;
           this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
         }
       },
@@ -441,7 +423,6 @@ export class Cloud {
           );
         if (_refreshExpiresIn !== newValue) {
           _refreshExpiresIn = newValue;
-          _changed = true;
           this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
         }
       },
@@ -461,7 +442,6 @@ export class Cloud {
           );
         if (_refreshTokenValidTill !== newValue) {
           _refreshTokenValidTill = newValue;
-          _changed = true;
           this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
         }
       },
@@ -481,7 +461,6 @@ export class Cloud {
           );
         if (_username !== newValue) {
           _username = newValue || null; // normalize empty to null
-          _changed = true;
           this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
         }
       },
@@ -507,7 +486,6 @@ export class Cloud {
           );
         if (_idpClientId !== normalizedNewValue) {
           _idpClientId = normalizedNewValue;
-          _changed = true;
           this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
         }
       },
@@ -535,7 +513,6 @@ export class Cloud {
           }
 
           _cloudUrl = normalizedNewValue;
-          _changed = true;
           this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
         }
       },
@@ -558,7 +535,6 @@ export class Cloud {
       spec.syncNamespaces.forEach((ns) => this.syncNamespaces.push(ns));
     }
 
-    _changed = false; // make sure unchanged after initialization
     _eventQueue.length = 0; // remove any events generated from using setters to initialize
   }
 
