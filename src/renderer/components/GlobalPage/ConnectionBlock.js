@@ -56,6 +56,7 @@ export const ConnectionBlock = () => {
     setLoading(true);
     let newCloud = new Cloud();
     newCloud.cloudUrl = normUrl;
+    newCloud.name = clusterName;
     const statusListener = (status) => {
       if (status === CONNECTION_STATUSES.CONNECTING) {
         setLoading(true);

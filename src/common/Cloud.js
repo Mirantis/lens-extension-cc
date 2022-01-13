@@ -101,6 +101,10 @@ export class Cloud {
 
     // URL to the MCC instance
     cloudUrl: [rtv.EXPECTED, rtv.STRING],
+
+    syncNamespaces: [rtv.OPTIONAL, rtv.ARRAY],
+    name: [rtv.EXPECTED, rtv.STRING],
+    syncAll: [rtv.EXPECTED, rtv.BOOLEAN],
   };
 
   /**
@@ -114,6 +118,8 @@ export class Cloud {
 
     let _changed = false; // true if any property has changed since the last time the flag was reset
     let _token = null;
+    let _name = null;
+    let _syncAll = false;
     let _expiresIn = null;
     let _tokenValidTill = null;
     let _refreshToken = null;
@@ -126,6 +132,39 @@ export class Cloud {
     let _connectError = null;
     let _connecting = false;
 
+    /** name is the "friendly name" given to the mgmt cluster by
+     * the user when they will add new mgmt clusters to the extension
+     */
+    Object.defineProperty(this, 'name', {
+      enumerable: true,
+      get() {
+        return _name;
+      },
+      set(newValue) {
+        _name = newValue;
+      },
+    });
+    /** is true if the user chooses to sync all namespaces in a mgmt cluster,
+     * or false if they pick individual namespaces.
+     */
+    Object.defineProperty(this, 'syncAll', {
+      enumerable: true,
+      get() {
+        return _syncAll;
+      },
+      set(newValue) {
+        _syncAll = newValue;
+      },
+    });
+
+    /** is a list of namespace names in the mgmt cluster that should be synced.
+     *  If syncAll is true, this list is ignored and all existing/future namespaces are synced.
+     */
+    Object.defineProperty(this, 'syncNamespaces', {
+      enumerable: true,
+      writable: true,
+      value: [],
+    });
 
     Object.defineProperty(this, 'status', {
       enumerable: false,
@@ -153,7 +192,7 @@ export class Cloud {
         return _connecting;
       },
       set(newValue) {
-       _connecting = newValue;
+        _connecting = newValue;
         if (this.statusListeners?.length) {
           this.statusListeners.forEach((f) => f(this.status));
         }
@@ -369,6 +408,9 @@ export class Cloud {
     this.username = spec ? spec.username : null;
     this.idpClientId = spec ? spec.idpClientId : null;
     this.cloudUrl = spec ? spec.cloudUrl : null;
+    this.name = spec ? spec.name : null;
+    this.syncAll = spec ? spec.syncAll : false;
+    this.syncNamespaces = spec ? spec.syncNamespaces : [];
 
     _changed = false; // make sure unchanged after initialization
   }
@@ -482,6 +524,9 @@ export class Cloud {
 
       username: this.username,
       cloudUrl: this.cloudUrl,
+      name: this.name,
+      syncAll: this.syncAll,
+      syncNamespaces: this.syncNamespaces,
     };
   }
 
