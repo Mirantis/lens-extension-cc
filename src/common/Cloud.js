@@ -228,7 +228,6 @@ export class Cloud {
     let _token = null;
     let _name = null;
     let _syncAll = false;
-    let _syncNamespaces = null;
     let _expiresIn = null;
     let _tokenValidTill = null;
     let _refreshToken = null;
@@ -293,25 +292,11 @@ export class Cloud {
      */
     Object.defineProperty(this, 'syncNamespaces', {
       enumerable: true,
-      get() {
-        return _syncNamespaces;
-      },
-      set(newValue) {
-        DEV_ENV &&
-          rtv.verify(
-            { token: newValue },
-            { token: Cloud.specTs.syncNamespaces }
-          );
-        if (_syncNamespaces !== newValue) {
-          _syncNamespaces = newValue;
-          _changed = true;
-        }
-      },
+      value: [],
     });
 
     Object.defineProperty(this, 'status', {
       enumerable: false, // not persisted in JSON
-      configurable: true,
       get() {
         if (this.connecting) {
           return CONNECTION_STATUSES.CONNECTING;
@@ -568,9 +553,13 @@ export class Cloud {
     this.cloudUrl = spec ? spec.cloudUrl : null;
     this.name = spec ? spec.name : null;
     this.syncAll = spec ? spec.syncAll : false;
-    this.syncNamespaces = spec ? spec.syncNamespaces : [];
+
+    if (spec?.syncNamespaces) {
+      spec.syncNamespaces.forEach((ns) => this.syncNamespaces.push(ns));
+    }
 
     _changed = false; // make sure unchanged after initialization
+    _eventQueue.length = 0; // remove any events generated from using setters to initialize
   }
 
   /**
@@ -619,8 +608,6 @@ export class Cloud {
     // tokens are tied to the IDP and user, so clear these too
     this.idpClientId = null;
     this.username = null;
-
-    this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
   }
 
   /** Clears all data. */
@@ -652,8 +639,6 @@ export class Cloud {
         Date.now() + this.refreshExpiresIn * 1000
       );
     }
-
-    this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
   }
 
   /**
@@ -681,7 +666,7 @@ export class Cloud {
       cloudUrl: this.cloudUrl,
       name: this.name,
       syncAll: this.syncAll,
-      syncNamespaces: this.syncNamespaces,
+      syncNamespaces: this.syncNamespaces.concat(),
     };
   }
 
@@ -693,7 +678,6 @@ export class Cloud {
     this.connecting = true;
     this.connectError = null;
     this.config = null;
-    this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
 
     try {
       this.config = await _loadConfig(this.cloudUrl);
@@ -726,13 +710,11 @@ export class Cloud {
         }
 
         this.connecting = false;
-        this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
       }.bind(this);
 
       addExtEventHandler(EXT_EVENT_OAUTH_CODE, handler, state);
     } else {
       this.connecting = false;
-      this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
     }
   }
 
@@ -740,6 +722,5 @@ export class Cloud {
     this.config = null;
     this.connectError = null;
     this.resetTokens();
-    this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
   }
 }
