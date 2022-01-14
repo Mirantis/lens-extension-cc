@@ -3,7 +3,7 @@ import { useSsoAuth } from '../store/SsoAuthProvider';
 import { useClusterData } from '../store/ClusterDataProvider';
 import { useClusterActions } from '../store/ClusterActionsProvider';
 
-// TODO this hook need to be updated/removed when new components/logic will be added. Now this mostly an artifact
+// this hook need to be updated/removed when new components/logic will be added. Now this mostly an artifact
 /**
  * Custom hook that determines the current loading state for all things related
  *  to clusters.

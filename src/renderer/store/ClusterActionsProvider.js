@@ -160,7 +160,8 @@ const _getClusterAccess = async function ({
     );
     error = strings.clusterActionsProvider.error.sso.authCode(cluster.id);
   } else {
-    // TODO Do we need this in new realization? Ask Stefan
+    // This is to get cluster-specific tokens, but we're replacing that with the kube-login CLI.
+    // That's https://mirantis.jira.com/browse/PRODX-20046 and step 15 in the Google Doc.
     const jwt = extractJwtPayload(body.id_token);
     if (jwt.preferred_username) {
       cloud = new Cloud({
