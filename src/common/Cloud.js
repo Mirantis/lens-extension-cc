@@ -112,7 +112,7 @@ export class Cloud {
     // URL to the MCC instance
     cloudUrl: [rtv.EXPECTED, rtv.STRING],
 
-    syncNamespaces: [rtv.EXPECTED, rtv.ARRAY],
+    syncNamespaces: [rtv.EXPECTED, rtv.ARRAY, { $: rtv.STRING }],
     name: [rtv.EXPECTED, rtv.STRING],
     syncAll: [rtv.EXPECTED, rtv.BOOLEAN],
   };
@@ -227,6 +227,7 @@ export class Cloud {
     let _token = null;
     let _name = null;
     let _syncAll = false;
+    let _syncNamespaces = null;
     let _expiresIn = null;
     let _tokenValidTill = null;
     let _refreshToken = null;
@@ -278,7 +279,19 @@ export class Cloud {
      */
     Object.defineProperty(this, 'syncNamespaces', {
       enumerable: true,
-      value: [],
+      get() {
+        return _syncNamespaces;
+      },
+      set(newValue) {
+        DEV_ENV &&
+          rtv.verify(
+            { token: newValue },
+            { token: Cloud.specTs.syncNamespaces }
+          );
+        if (_syncNamespaces !== newValue) {
+          _syncNamespaces = newValue;
+        }
+      },
     });
 
     Object.defineProperty(this, 'status', {
@@ -530,10 +543,7 @@ export class Cloud {
     this.cloudUrl = spec ? spec.cloudUrl : null;
     this.name = spec ? spec.name : null;
     this.syncAll = spec ? spec.syncAll : false;
-
-    if (spec?.syncNamespaces) {
-      spec.syncNamespaces.forEach((ns) => this.syncNamespaces.push(ns));
-    }
+    this.syncNamespaces = spec ? spec.syncNamespaces : [];
 
     _eventQueue.length = 0; // remove any events generated from using setters to initialize
   }
