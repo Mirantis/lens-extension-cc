@@ -8,8 +8,9 @@ import {
 import * as strings from '../strings';
 import * as consts from '../constants';
 import { ROUTE_GLOBAL_PAGE, ROUTE_CLUSTER_PAGE } from '../routes';
-import { EXT_EVENT_OAUTH_CODE, dispatchExtEvent } from './eventBus';
+import { dispatchExtEvent } from './eventBus';
 import { prefStore } from '../store/PreferenceStore';
+import { cloudStore } from '../store/CloudStore';
 import { clusterStore } from '../store/ClusterStore';
 import { logger as loggerUtil } from '../util/logger';
 import { IpcRenderer } from './IpcRenderer';
@@ -31,6 +32,8 @@ const {
   Catalog,
   Component: { Notifications, DrawerTitle, DrawerItem },
 } = Renderer;
+
+const { EXT_EVENT_OAUTH_CODE } = consts;
 
 /** Activates an existing cluster in Lens */
 export const EXT_EVENT_ACTIVATE_CLUSTER = 'activateCluster';
@@ -178,6 +181,7 @@ export default class ExtensionRenderer extends LensExtension {
 
     dispatchExtEvent({
       type: EXT_EVENT_OAUTH_CODE,
+      state: search.state,
       data: search,
     });
   };
@@ -314,6 +318,7 @@ export default class ExtensionRenderer extends LensExtension {
     logger.log('ExtensionRenderer.onActivate()', 'extension activated');
 
     prefStore.loadExtension(this);
+    cloudStore.loadExtension(this);
     clusterStore.loadExtension(this);
     IpcRenderer.createInstance(this); // AFTER load stores
 

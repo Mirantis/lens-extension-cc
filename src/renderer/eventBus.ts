@@ -5,16 +5,24 @@
 //
 
 import * as rtv from 'rtvjs';
+import { EXT_EVENT_OAUTH_CODE } from '../constants';
 
 //
 // TYPES
 //
 
 type eventType = string;
+type stateType = string;
 
 export interface ExtensionEvent {
   type: eventType;
   data?: any;
+  state?: stateType;
+}
+
+interface buildKey {
+  type: eventType;
+  state?: stateType;
 }
 
 interface eventHandler {
@@ -46,11 +54,10 @@ type EventQueue = Array<ExtensionEvent>;
  * - [error] (string} Optional error message.
  * - [error_description] {string} Optional error description.
  */
-export const EXT_EVENT_OAUTH_CODE = 'oauth/code';
-
 /** RTV Typeset to validate the event object for an `EXT_EVENT_OAUTH_CODE` event. */
 export const extEventOauthCodeTs = {
   type: [rtv.STRING, { exact: EXT_EVENT_OAUTH_CODE }],
+  state: [rtv.OPTIONAL, rtv.STRING],
   data: {
     code: rtv.STRING,
     state: [rtv.OPTIONAL, rtv.STRING],
@@ -66,6 +73,10 @@ export const extEventOauthCodeTs = {
 const eventHandlers: HandlerMap = {};
 const eventQueue: EventQueue = [];
 
+/** Use state param (if exist) to build unique key */
+const getKey = ({ type, state }: buildKey): string =>
+  `${type}${state ? `@@${state}` : ''}`;
+
 /**
  * Dispatches events asynchronously IIF there are handlers and events in the queue.
  *  Otherwise, events are queued until there is at least one handler, regardless
@@ -80,7 +91,9 @@ const scheduleDispatch = function (): void {
   setTimeout(function () {
     if (Object.keys(eventHandlers).length > 0 && eventQueue.length > 0) {
       eventQueue.forEach((event: ExtensionEvent) => {
-        const handlers = eventHandlers[event.type] || [];
+        const { state, type } = event;
+        const key = getKey({ state, type });
+        const handlers = eventHandlers[key] || [];
         handlers.forEach((handler) => {
           try {
             handler(event);
@@ -89,7 +102,6 @@ const scheduleDispatch = function (): void {
           }
         });
       });
-
       eventQueue.length = 0; // remove all events
     }
   });
@@ -104,24 +116,28 @@ export const dispatchExtEvent = function (event: ExtensionEvent): void {
 /** Add an extension event handler for a specific event type and schedule dispatch. */
 export const addExtEventHandler = function (
   type: eventType,
-  handler: eventHandler
+  handler: eventHandler,
+  state?: stateType
 ): void {
-  eventHandlers[type] = eventHandlers[type] || [];
-  eventHandlers[type].push(handler);
+  const key = getKey({ type, state });
+  eventHandlers[key] = eventHandlers[key] || [];
+  eventHandlers[key].push(handler);
   scheduleDispatch();
 };
 
 /** Remove an extension event handler for a specific event type. */
 export const removeExtEventHandler = function (
   type: eventType,
-  handler: eventHandler
+  handler: eventHandler,
+  state?: stateType
 ): void {
-  if (eventHandlers[type]) {
-    const idx = eventHandlers[type].indexOf(handler);
+  const key = getKey({ type, state });
+  if (eventHandlers[key]) {
+    const idx = eventHandlers[key].indexOf(handler);
     if (idx >= 0) {
-      eventHandlers[type].splice(idx, 1);
-      if (eventHandlers[type].length <= 0) {
-        delete eventHandlers[type]; // no more handlers for this type
+      eventHandlers[key].splice(idx, 1);
+      if (eventHandlers[key].length <= 0) {
+        delete eventHandlers[key]; // no more handlers for this type
       }
     }
   }

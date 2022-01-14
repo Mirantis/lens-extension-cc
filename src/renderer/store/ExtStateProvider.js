@@ -7,7 +7,7 @@ import propTypes from 'prop-types';
 import * as rtv from 'rtvjs';
 import { cloneDeep, cloneDeepWith } from 'lodash';
 import { PreferenceStore, prefStore } from '../../store/PreferenceStore';
-import { Cloud } from '../auth/Cloud';
+import { Cloud } from '../../common/Cloud';
 import { ProviderStore } from './ProviderStore';
 import ExtensionRenderer from '../renderer';
 
@@ -123,12 +123,6 @@ export const useExtState = function () {
       setCloud(newValue) {
         pr.store.cloud = newValue;
         pr.store.prefs.username = newValue ? newValue.username : null;
-
-        if (pr.store.cloud) {
-          // mark it as no longer being changed if it was
-          pr.store.cloud.changed = false;
-        }
-
         pr.onChange();
       },
 

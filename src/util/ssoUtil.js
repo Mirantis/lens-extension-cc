@@ -11,12 +11,14 @@ const { Util } = Common;
  *  to Lens and ultimately call back into `finishAuthorization()`.
  * @param {Object} options
  * @param {Object} options.config MCC Config object.
+ * @param {string} [options.state] Any string that should be returned verbatim
+ *  in a `state` request parameter in the redirect request.
  */
-export const startAuthorization = function ({ config }) {
+export const startAuthorization = function ({ config, state }) {
   const authClient = new AuthClient({ config });
 
   if (config.keycloakLogin) {
-    const url = authClient.getSsoAuthUrl();
+    const url = authClient.getSsoAuthUrl({ state });
     Util.openExternal(url); // open in default browser
   } else {
     throw new Error('Cloud instance does not support SSO');

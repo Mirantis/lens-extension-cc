@@ -1,6 +1,7 @@
 import { Main } from '@k8slens/extensions';
 import { prefStore } from '../store/PreferenceStore';
 import { clusterStore } from '../store/ClusterStore';
+import { cloudStore } from '../store/CloudStore';
 import { IpcMain } from './IpcMain';
 import { logger as loggerUtil } from '../util/logger';
 
@@ -19,6 +20,7 @@ export default class ExtensionMain extends Main.LensExtension {
     logger.log('ExtensionMain.onActivate()', 'extension activated');
     prefStore.loadExtension(this);
     clusterStore.loadExtension(this);
+    cloudStore.loadExtension(this);
     IpcMain.createInstance(this); // AFTER load stores
 
     if (DEV_ENV) {

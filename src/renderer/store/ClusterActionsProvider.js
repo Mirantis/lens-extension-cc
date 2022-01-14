@@ -9,7 +9,7 @@ import path from 'path';
 import { Common, Renderer } from '@k8slens/extensions';
 import { AuthClient } from '../auth/clients/AuthClient';
 import { kubeConfigTemplate } from '../../util/templates';
-import { Cloud } from '../auth/Cloud';
+import { Cloud } from '../../common/Cloud';
 import { ProviderStore } from './ProviderStore';
 import { Cluster } from './Cluster';
 import { logger } from '../../util/logger';
@@ -160,6 +160,8 @@ const _getClusterAccess = async function ({
     );
     error = strings.clusterActionsProvider.error.sso.authCode(cluster.id);
   } else {
+    // This is to get cluster-specific tokens, but we're replacing that with the kube-login CLI.
+    // That's https://mirantis.jira.com/browse/PRODX-20046 and step 15 in the Google Doc.
     const jwt = extractJwtPayload(body.id_token);
     if (jwt.preferred_username) {
       cloud = new Cloud({

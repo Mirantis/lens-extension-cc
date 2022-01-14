@@ -93,7 +93,6 @@ export const Login = function () {
 
   const startLogin = useCallback(
     function () {
-      cloud.resetCredentials();
       cloud.resetTokens();
 
       // capture changes to auth details so far, and trigger SSO login in
@@ -136,7 +135,6 @@ export const Login = function () {
 
       // we're accessing a different instance, so nothing we may have already will
       //  work there
-      cloud.resetCredentials();
       cloud.resetTokens();
       extActions.setCloud(cloud);
 
