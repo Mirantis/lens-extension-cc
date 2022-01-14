@@ -123,12 +123,6 @@ export const useExtState = function () {
       setCloud(newValue) {
         pr.store.cloud = newValue;
         pr.store.prefs.username = newValue ? newValue.username : null;
-
-        if (pr.store.cloud) {
-          // mark it as no longer being changed if it was
-          pr.store.cloud.changed = false;
-        }
-
         pr.onChange();
       },
 

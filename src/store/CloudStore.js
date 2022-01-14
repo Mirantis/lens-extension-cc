@@ -52,14 +52,15 @@ export class CloudStore extends Common.Store.ExtensionStore {
         'CloudStore.fromStore()',
         `Invalid data found, error="${result.message}"`
       );
-      return;
     }
 
-    Object.keys(store).forEach((key) => {
+    const json = result.valid ? store : CloudStore.getDefaults();
+
+    Object.keys(json).forEach((key) => {
       if (key === 'clouds') {
         // restore from a map of cloudUrl to JSON object -> into a map of cloudUrl
         //  to Cloud instance
-        this[key] = Object.entries(store[key] || {}).reduce(
+        this[key] = Object.entries(json[key] || {}).reduce(
           (cloudMap, [cloudUrl, cloudJson]) => {
             cloudMap[cloudUrl] = new Cloud(cloudJson);
             return cloudMap;
@@ -67,7 +68,7 @@ export class CloudStore extends Common.Store.ExtensionStore {
           {}
         );
       } else {
-        this[key] = store[key];
+        this[key] = json[key];
       }
     });
 

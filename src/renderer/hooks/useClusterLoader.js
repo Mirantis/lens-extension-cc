@@ -28,7 +28,6 @@ export const useClusterLoader = function (
       cloud,
       prefs: { cloudUrl },
     },
-    actions: extActions,
   } = useExtState();
 
   const {
@@ -61,16 +60,6 @@ export const useClusterLoader = function (
   //
   // EFFECTS
   //
-
-  useEffect(
-    function () {
-      if (cloud.changed) {
-        // capture any changes after authenticating (steps 1a or 1b) or loading clusters
-        extActions.setCloud(cloud);
-      }
-    },
-    [cloud, extActions]
-  );
 
   useEffect(
     function () {
