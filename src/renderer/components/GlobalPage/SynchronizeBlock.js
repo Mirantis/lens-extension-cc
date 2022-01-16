@@ -9,7 +9,6 @@ import {
 import { Accordion } from '../Accordion/Accordion';
 import { layout } from '../styles';
 import { synchronizeBlock } from '../../../strings';
-import { CaretIcon } from './CaretIcon';
 
 const { Component } = Renderer;
 

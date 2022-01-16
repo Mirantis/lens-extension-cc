@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import PropTypes from 'prop-types';
 import styled from '@emotion/styled';
-import { CheckIcon } from './CheckIcon';
+import { Renderer } from '@k8slens/extensions';
 import { layout } from '../styles';
+
+const { Component } = Renderer;
 
 const CheckboxItem = styled.div(() => ({
   minWidth: 64,
@@ -51,20 +53,23 @@ const CheckboxLabel = styled.span(() => ({
   overflow: 'hidden',
 }));
 
-export const Checkbox = ({ label, handleChildCheckbox, isAllChecked }) => {
+export const Checkbox = ({
+  label,
+  onChange,
+  isCheckedFromParent,
+  isMinusIcon,
+}) => {
   // @type {boolean} states of checkbox
   const [isChecked, setIsChecked] = useState(false);
 
-  // pass checkbox state to parent component
-  // need to have handleChildCheckbox method in parent
-  useEffect(() => {
-    handleChildCheckbox && handleChildCheckbox(isChecked);
-  }, [isChecked, handleChildCheckbox]);
+  const isCheckboxControlled = typeof isCheckedFromParent === 'boolean';
+  const customIsChecked = isCheckboxControlled
+    ? isCheckedFromParent
+    : isChecked;
 
-  // control checkbox state from parent component
-  useEffect(() => {
-    setIsChecked(isAllChecked);
-  }, [isAllChecked]);
+  const handleOnChange = () => {
+    return isCheckboxControlled ? onChange() : setIsChecked(!isChecked);
+  };
 
   return (
     <CheckboxItem>
@@ -74,17 +79,34 @@ export const Checkbox = ({ label, handleChildCheckbox, isAllChecked }) => {
           aria-checked="false"
           aria-disabled="false"
           tabIndex="0"
-          isChecked={isChecked}
+          isChecked={customIsChecked}
         >
-          {isChecked && <CheckIcon />}
+          {isMinusIcon && customIsChecked && (
+            <Component.Icon
+              material="remove"
+              style={{
+                color: 'rgb(23, 34, 47)',
+                fontSize: 'calc(var(--font-size) * 1.14)',
+              }}
+            />
+          )}
+          {!isMinusIcon && customIsChecked && (
+            <Component.Icon
+              material="check"
+              style={{
+                color: 'rgb(23, 34, 47)',
+                fontSize: 'calc(var(--font-size) * 1.14)',
+              }}
+            />
+          )}
         </CheckboxControl>
         <CheckboxLabel>
           <CheckboxField
             type="checkbox"
             aria-hidden="true"
             tabIndex="-1"
-            checked={isChecked}
-            onChange={() => setIsChecked(!isChecked)}
+            checked={customIsChecked}
+            onChange={() => handleOnChange()}
           />
           {label}
         </CheckboxLabel>
@@ -95,6 +117,7 @@ export const Checkbox = ({ label, handleChildCheckbox, isAllChecked }) => {
 
 Checkbox.propTypes = {
   label: PropTypes.string,
-  handleChildCheckbox: PropTypes.func,
-  isAllChecked: PropTypes.bool,
+  onChange: PropTypes.func,
+  isCheckedFromParent: PropTypes.bool,
+  isMinusIcon: PropTypes.bool,
 };
