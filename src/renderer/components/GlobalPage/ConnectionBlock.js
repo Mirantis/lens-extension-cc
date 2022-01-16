@@ -1,18 +1,19 @@
 import { useState } from 'react';
-import { InlineNotice } from '../InlineNotice';
 import { Renderer } from '@k8slens/extensions';
+import { InlineNotice } from '../InlineNotice';
 import styled from '@emotion/styled';
 import { layout } from '../styles';
-import { useClusterLoadingState } from '../../hooks/useClusterLoadingState';
 import { normalizeUrl } from '../../../util/netUtil';
-import { useConfig } from '../../store/ConfigProvider';
-import { useSsoAuth } from '../../store/SsoAuthProvider';
-import { useExtState } from '../../store/ExtStateProvider';
-import { useClusterData } from '../../store/ClusterDataProvider';
 import { connectionBlock } from '../../../strings';
+import { cloudStore } from '../../../store/CloudStore';
+import {
+  Cloud,
+  CONNECTION_STATUSES,
+  CLOUD_EVENTS,
+} from '../../../common/Cloud';
 
 const {
-  Component: { Input, Button },
+  Component: { Input, Button, Notifications },
 } = Renderer;
 
 const Title = styled.h2(() => ({
@@ -43,48 +44,41 @@ const ButtonWrapper = styled.div(() => ({
 }));
 
 export const ConnectionBlock = () => {
-  const {
-    state: { loading: configLoading },
-    actions: configActions,
-  } = useConfig();
-
-  const {
-    state: { loading: ssoAuthLoading, loaded: ssoAuthLoaded },
-    actions: ssoAuthActions,
-  } = useSsoAuth();
-  const {
-    state: { cloud },
-    actions: extActions,
-  } = useExtState();
-  const { actions: clusterDataActions } = useClusterData();
-
   const [clusterName, setClusterName] = useState('');
+  const [loading, setLoading] = useState(false);
   const [clusterUrl, setClusterUrl] = useState('');
 
-  const loading = useClusterLoadingState();
+  const checkError = (cloud) => {
+    if (cloud?.connectError) {
+      Notifications.error(cloud.connectError);
+    }
+  };
 
-  // TODO this func should be changed when new CloudStore will be ready.
-  //  This is a temporary solution, with old logic
-  const handleConnectClick = function () {
+  const handleConnectClick = async function () {
     const normUrl = normalizeUrl(clusterUrl.trim());
     setClusterUrl(normUrl); // update to actual URL we'll use
-
-    ssoAuthActions.reset();
-    clusterDataActions.reset();
-
-    // we're accessing a different instance, so nothing we may have already will
-    //  work there
-    cloud.resetCredentials();
-    cloud.resetTokens();
-    extActions.setCloud(cloud);
-
-    // save URL as `cloudUrl` in preferences since the user claims it's valid
-    extActions.setCloudUrl(normUrl);
-
-    // NOTE: if the config loads successfully and we see that the instance is
-    //  set for SSO auth, our effect() below that checks for `configLoaded`
-    //  will auto-trigger onLogin(), which will then trigger SSO auth
-    configActions.load(normUrl); // implicit reset of current config, if any
+    setLoading(true);
+    let newCloud = new Cloud();
+    newCloud.cloudUrl = normUrl;
+    newCloud.name = clusterName;
+    const statusListener = () => {
+      if (newCloud.status === CONNECTION_STATUSES.CONNECTING) {
+        setLoading(true);
+      } else {
+        setLoading(false);
+        newCloud.removeEventListener(
+          CLOUD_EVENTS.STATUS_CHANGE,
+          statusListener
+        );
+        if (newCloud.status === CONNECTION_STATUSES.CONNECTED) {
+          cloudStore.clouds[normUrl] = newCloud;
+        } else {
+          checkError(newCloud);
+        }
+      }
+    };
+    newCloud.addEventListener(CLOUD_EVENTS.STATUS_CHANGE, statusListener);
+    await newCloud.connect();
   };
 
   return (
@@ -119,15 +113,15 @@ export const ConnectionBlock = () => {
         <ButtonWrapper>
           <Button
             primary
-            waiting={configLoading || ssoAuthLoading}
+            waiting={loading}
             label={connectionBlock.button.label()}
             onClick={handleConnectClick}
-            disabled={loading}
+            disabled={loading || !clusterUrl.trim().length}
           />
         </ButtonWrapper>
       </Field>
       <div>
-        {!ssoAuthLoaded && (
+        {!cloudStore?.clouds?.[clusterUrl] && (
           <InlineNotice>
             <p
               dangerouslySetInnerHTML={{
