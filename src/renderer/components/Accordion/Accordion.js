@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import styled from '@emotion/styled';
+import { Renderer } from '@k8slens/extensions';
 import { layout } from '../styles';
-import { ChevronIcon } from './ChevronIcon';
+
+const { Component } = Renderer;
 
 const AccordionTitle = styled.div`
   display: flex;
@@ -33,7 +35,13 @@ export const Accordion = ({ title, children }) => {
           isOpen={isOpen}
           onClick={() => setIsOpen(!isOpen)}
         >
-          <ChevronIcon />
+          <Component.Icon
+            material="chevron_right"
+            style={{
+              color: 'var(--textColorSecondary)',
+              fontSize: 'calc(var(--font-size) * 1.8)',
+            }}
+          />
         </AccordionButton>
         {title}
       </AccordionTitle>

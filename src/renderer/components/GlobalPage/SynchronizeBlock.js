@@ -5,7 +5,6 @@ import { Checkbox } from '../Checkbox/Checkbox';
 import { Accordion } from '../Accordion/Accordion';
 import { layout } from '../styles';
 import { synchronizeBlock } from '../../../strings';
-import { CaretIcon } from './CaretIcon';
 
 const { Component } = Renderer;
 
@@ -42,8 +41,8 @@ const ProjectsHead = styled.div(() => ({
 
 const ProjectsBody = styled.div(() => ({
   paddingTop: layout.grid * 1.5,
-  paddingLeft: layout.grid * 2.5,
-  paddingRight: layout.grid * 2.5,
+  paddingLeft: layout.grid * 3.25,
+  paddingRight: layout.grid * 3.25,
   paddingBottom: layout.grid * 4.5,
 }));
 
@@ -76,7 +75,7 @@ const SynchronizeProjectsButtonWrapper = styled.div(() => ({
 const SortButton = styled.button`
   display: flex;
   background: transparent;
-  margin-left: ${layout.grid * 2};
+  margin-left: ${layout.grid * 2}px;
   cursor: pointer;
   transform: ${({ isRotated }) =>
     isRotated ? 'rotate(180deg)' : 'rotate(0deg)'};
@@ -139,14 +138,17 @@ const mockedProjects = [
 ];
 
 export const SynchronizeBlock = () => {
-  // @type {boolean} states of all checkbox
-  const [isAllChecked, setIsAllChecked] = useState(false);
-
   // @type {object} sorted object of projects
   const [projectsList, setProjectsList] = useState(mockedProjects);
 
   // @type {string} sort by name order
   const [nextSortType, setNextSortType] = useState('');
+
+  // @type {object}
+  const [currentCheckboxState, setCurrentCheckboxState] = useState({
+    parent: false,
+    children: new Array(projectsList.length).fill(false),
+  });
 
   // sort by name initial array with projects
   const sortByName = () => {
@@ -162,9 +164,42 @@ export const SynchronizeBlock = () => {
     setProjectsList(sorted);
   };
 
-  // get state of child checkbox
-  const handleChildCheckbox = (value) => {
-    setIsAllChecked(value);
+  // set parent checkbox state based on changes of children checkboxes
+  const setParentCheckboxState = (childrenCheckboxes) => {
+    let result = currentCheckboxState.parent;
+    if (
+      childrenCheckboxes.every((el) => el === false) ||
+      childrenCheckboxes.every((el) => el === true)
+    ) {
+      result = childrenCheckboxes[0];
+    } else if (
+      childrenCheckboxes.some((el) => el === false) &&
+      childrenCheckboxes.some((el) => el === true)
+    ) {
+      result = true;
+    }
+    return result;
+  };
+
+  const onChangeHandler = (index) => {
+    if (isNaN(index)) {
+      setCurrentCheckboxState({
+        ...currentCheckboxState,
+        parent: !currentCheckboxState.parent,
+        children: currentCheckboxState.children.map(
+          (el) => (el = !currentCheckboxState.parent)
+        ),
+      });
+    } else {
+      const modifiedChildrenCheckboxes = currentCheckboxState.children.map(
+        (el, i) => (index === i ? (el = !el) : el)
+      );
+      setCurrentCheckboxState({
+        ...currentCheckboxState,
+        children: modifiedChildrenCheckboxes,
+        parent: setParentCheckboxState(modifiedChildrenCheckboxes),
+      });
+    }
   };
 
   return (
@@ -173,26 +208,39 @@ export const SynchronizeBlock = () => {
       <Projects>
         <ProjectsHead>
           <Checkbox
-            handleChildCheckbox={handleChildCheckbox}
-            label="Project name"
+            label={synchronizeBlock.checkAllCheckboxLabel()}
+            onChange={() => onChangeHandler()}
+            isCheckedFromParent={currentCheckboxState.parent}
+            isMinusIcon={
+              currentCheckboxState.children.some((el) => el === false) &&
+              currentCheckboxState.children.some((el) => el === true)
+            }
           />
           <SortButton
             type="button"
             onClick={sortByName}
             isRotated={nextSortType === 'DESC' ? true : false}
           >
-            <CaretIcon />
+            <Component.Icon
+              material="arrow_drop_up"
+              style={{
+                color: 'var(--textColorSecondary)',
+                fontSize: 'calc(var(--font-size) * 1.8)',
+                marginTop: layout.grid / 2,
+              }}
+            />
           </SortButton>
         </ProjectsHead>
         <ProjectsBody>
           <ProjectsList>
             {projectsList.map((project, index) => (
-              <li key={index}>
+              <li key={project.projectName}>
                 <Accordion
                   title={
                     <Checkbox
-                      isAllChecked={isAllChecked}
+                      isCheckedFromParent={currentCheckboxState.children[index]}
                       label={project.projectName}
+                      onChange={() => onChangeHandler(index)}
                     />
                   }
                 >
