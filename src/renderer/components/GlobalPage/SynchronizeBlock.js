@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { useState } from 'react';
 import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
@@ -137,7 +138,7 @@ const mockedProjects = [
   },
 ];
 
-export const SynchronizeBlock = () => {
+export const SynchronizeBlock = ({ extCloud }) => {
   // @type {object} sorted object of projects
   const [projectsList, setProjectsList] = useState(mockedProjects);
 
@@ -265,4 +266,12 @@ export const SynchronizeBlock = () => {
       </SynchronizeProjectsButtonWrapper>
     </Content>
   );
+};
+
+SynchronizeBlock.propTypes = {
+  extCloud: PropTypes.object,
+};
+
+SynchronizeBlock.defaultProps = {
+  extCloud: {},
 };

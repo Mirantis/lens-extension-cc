@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import PropTypes from 'prop-types';
 import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
@@ -59,25 +58,11 @@ export const Checkbox = ({
   isCheckedFromParent,
   isMinusIcon,
 }) => {
-  // @type {boolean} states of checkbox
-  const [isChecked, setIsChecked] = useState(false);
-
-  const isCheckboxControlled = typeof isCheckedFromParent === 'boolean';
-  const customIsChecked = isCheckboxControlled
-    ? isCheckedFromParent
-    : isChecked;
-
-  const handleOnChange = () => {
-    return isCheckboxControlled ? onChange() : setIsChecked(!isChecked);
-  };
-
   return (
     <CheckboxItem>
       <CheckboxControlPart>
-        <CheckboxControl
-          isChecked={customIsChecked}
-        >
-          {isMinusIcon && customIsChecked && (
+        <CheckboxControl isChecked={isCheckedFromParent}>
+          {isMinusIcon && isCheckedFromParent && (
             <Component.Icon
               material="remove"
               style={{
@@ -86,7 +71,7 @@ export const Checkbox = ({
               }}
             />
           )}
-          {!isMinusIcon && customIsChecked && (
+          {!isMinusIcon && isCheckedFromParent && (
             <Component.Icon
               material="check"
               style={{
@@ -99,8 +84,8 @@ export const Checkbox = ({
         <CheckboxLabel>
           <CheckboxField
             type="checkbox"
-            checked={customIsChecked}
-            onChange={() => handleOnChange()}
+            checked={isCheckedFromParent}
+            onChange={() => onChange()}
           />
           {label}
         </CheckboxLabel>
