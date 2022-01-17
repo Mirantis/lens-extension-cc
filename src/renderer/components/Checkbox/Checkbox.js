@@ -75,10 +75,6 @@ export const Checkbox = ({
     <CheckboxItem>
       <CheckboxControlPart>
         <CheckboxControl
-          role="checkbox"
-          aria-checked="false"
-          aria-disabled="false"
-          tabIndex="0"
           isChecked={customIsChecked}
         >
           {isMinusIcon && customIsChecked && (
@@ -103,8 +99,6 @@ export const Checkbox = ({
         <CheckboxLabel>
           <CheckboxField
             type="checkbox"
-            aria-hidden="true"
-            tabIndex="-1"
             checked={customIsChecked}
             onChange={() => handleOnChange()}
           />
