@@ -43,7 +43,7 @@ const ButtonWrapper = styled.div(() => ({
   marginTop: layout.gap,
 }));
 
-export const ConnectionBlock = () => {
+export const ConnectionBlock = ({ setCloud, extCloudloading }) => {
   const [clusterName, setClusterName] = useState('');
   const [loading, setLoading] = useState(false);
   const [clusterUrl, setClusterUrl] = useState('');
@@ -71,7 +71,8 @@ export const ConnectionBlock = () => {
           statusListener
         );
         if (newCloud.status === CONNECTION_STATUSES.CONNECTED) {
-          cloudStore.clouds[normUrl] = newCloud;
+          // cloudStore.clouds[normUrl] = newCloud;
+          setCloud(newCloud)
         } else {
           checkError(newCloud);
         }
@@ -95,7 +96,7 @@ export const ConnectionBlock = () => {
           id="lecc-cluster-name"
           value={clusterName}
           onChange={setClusterName}
-          disabled={loading}
+          disabled={loading || extCloudloading}
         />
       </Field>
       <Field>
@@ -108,15 +109,15 @@ export const ConnectionBlock = () => {
           id="lecc-cluster-url"
           value={clusterUrl}
           onChange={setClusterUrl}
-          disabled={loading}
+          disabled={loading || extCloudloading}
         />
         <ButtonWrapper>
           <Button
             primary
-            waiting={loading}
+            waiting={loading || extCloudloading}
             label={connectionBlock.button.label()}
             onClick={handleConnectClick}
-            disabled={loading || !clusterUrl.trim().length}
+            disabled={loading || extCloudloading || !clusterUrl.trim().length}
           />
         </ButtonWrapper>
       </Field>

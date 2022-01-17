@@ -1,9 +1,11 @@
 import styled from '@emotion/styled';
+import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { layout } from '../styles';
 import { ConnectionBlock } from './ConnectionBlock';
 import { SynchronizeBlock } from './SynchronizeBlock';
 import { CloseButton } from '../CloseButton/CloseButton';
+import { ExtendedCloud } from '../../../common/ExtendedCloud';
 
 const PageContainer = styled.div(function () {
   return {
@@ -36,11 +38,35 @@ const MainColumn = styled.div(function () {
 });
 
 export const AddCloudInstance = ({ onCancel }) => {
+  const [cloud, setCloud] = useState(null)
+  const [extCloud, setExtCloud] = useState(null)
+
+  const [loading, setLoading] = useState(false)
+
+  const makeExtCloud = async () => {
+    setLoading(true)
+    const extCl = new ExtendedCloud(cloud)
+    try {
+      const result = await extCl.init(true)
+      setExtCloud(result)
+      setLoading(false)
+    } catch (err) {
+      setLoading(false)
+      console.log(err)
+    }
+  }
+  if(cloud && !loading && !extCloud){
+    // loadCloudData(cloud).then(console.log)
+    makeExtCloud()
+  }
+  if(extCloud) {
+    console.log('extCloud', extCloud)
+  }
   return (
     <PageContainer>
       <MainColumn>
-        <ConnectionBlock />
-        <SynchronizeBlock />
+        <ConnectionBlock setCloud={setCloud} extCloudloading={loading}/>
+        <SynchronizeBlock cloud={cloud}/>
       </MainColumn>
       <EscColumn>
         <CloseButton onClick={onCancel} />
