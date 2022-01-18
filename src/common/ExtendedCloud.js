@@ -7,6 +7,16 @@ import { Namespace } from '../renderer/store/Namespace';
 import { logger } from '../util/logger';
 import { Cluster } from '../renderer/store/Cluster';
 
+export const EXTENDED_CLOUD_EVENTS = Object.freeze({
+  /**
+   * The Cloud object's connection status has changed.
+   * @param {Cloud} cloud The Cloud object.
+   */
+  LOADING_CHANGE: 'loadingChange',
+});
+
+const FIVE_MIN = 300 * 1000;
+
 const credentialTypes = [
   'awscredential',
   'byocredential',
@@ -16,8 +26,8 @@ const credentialTypes = [
 const _deserializeCredentialsList = function (body) {
   if (!body || !Array.isArray(body.items)) {
     return {
-      error: 'Failed to parse Credentials payload: Unexpected data format.',
-    }; // TODO move to string
+      error: strings.extendedCloud.error.credentials(),
+    };
   }
 
   return body.items;
@@ -75,8 +85,8 @@ const _fetchCredentials = async function (cloud, namespaces) {
 const _deserializeSshKeysList = function (body) {
   if (!body || !Array.isArray(body.items)) {
     return {
-      error: 'Failed to parse SSH Keys payload: Unexpected data format.',
-    }; // TODO move to string
+      error: strings.extendedCloud.error.sshKeys(),
+    };
   }
 
   return body.items;
@@ -261,6 +271,104 @@ const _fetchClusters = async function (cloud, namespaces) {
 
 export class ExtendedCloud {
   constructor(cloud) {
+    const _eventListeners = {}; // map of event name to array of functions that are handlers
+    const _eventQueue = []; // list of `{ name: string, params: Array }` objects to dispatch
+
+    // asynchronously dispatches queued events on the next frame
+    const _scheduleDispatch = () => {
+      setTimeout(function () {
+        if (Object.keys(_eventListeners).length > 0 && _eventQueue.length > 0) {
+          const events = _eventQueue.concat(); // shallow clone for local copy
+
+          // remove all events immediately in case more get added while we're
+          //  looping through this set
+          _eventQueue.length = 0;
+
+          events.forEach((event) => {
+            const { name, params } = event;
+            const handlers = _eventListeners[name] || [];
+            handlers.forEach((handler) => {
+              try {
+                handler(...params);
+              } catch {
+                // ignore
+              }
+            });
+          });
+
+          if (_eventQueue.length > 0) {
+            // received new events while processing previous batch
+            _scheduleDispatch();
+          }
+        }
+      });
+    };
+
+    Object.defineProperties(this, {
+      /**
+       * Adds an event listener to this Cloud instance.
+       * @method addEventListener
+       * @param {string} name Event name.
+       * @param {Function} handler Handler.
+       */
+      addEventListener: {
+        enumerable: false,
+        value(name, handler) {
+          _eventListeners[name] = _eventListeners[name] || [];
+          if (!_eventListeners[name].find(handler)) {
+            _eventListeners[name].push(handler);
+            _scheduleDispatch();
+          }
+        },
+      },
+
+      /**
+       * Removes an event listener from ExtendedCloud instance.
+       * @method removeEventListener
+       * @param {string} name Event name.
+       * @param {Function} handler Handler.
+       */
+      removeEventListener: {
+        enumerable: false,
+        value(name, handler) {
+          const idx =
+            _eventListeners[name]?.findIndex((h) => h === handler) ?? -1;
+          if (idx >= 0) {
+            _eventListeners[name].splice(idx, 1);
+            if (_eventListeners[name].length <= 0) {
+              delete _eventListeners[name];
+            }
+          }
+        },
+      },
+
+      /**
+       * Dispatches an event to all listeners on ExtendedCloud instance. If the
+       *  event is already scheduled, its parameters are updated with the new
+       *  ones given (even if none are given). This also serves as a way to
+       *  de-duplicate events if the same event is dispatched multiple times
+       *  in a row.
+       * @method dispatchEvent
+       * @param {string} name Event name.
+       * @param {Array} [params] Parameters to pass to each handler, if any.
+       */
+      dispatchEvent: {
+        enumerable: false,
+        value(name, ...params) {
+          const event = _eventQueue.find((e) => e.name === name);
+          if (event) {
+            event.params = params;
+            // don't schedule dispatch in this case because we wouldn't already
+            //  scheduled it when the event was first added to the queue; we
+            //  just haven't gotten to the next frame yet where we'll dispatch it
+          } else {
+            _eventQueue.push({ name, params });
+            _scheduleDispatch();
+          }
+        },
+      },
+    });
+
     DEV_ENV &&
       rtv.verify(
         { cloud },
@@ -284,6 +392,7 @@ export class ExtendedCloud {
       set(newValue) {
         if (newValue !== _loading) {
           _loading = newValue;
+          this.dispatchEvent(EXTENDED_CLOUD_EVENTS.LOADING_CHANGE, this);
         }
       },
     });
@@ -296,6 +405,18 @@ export class ExtendedCloud {
         _namespaces = newValue;
       },
     });
+  }
+
+  startUpdateCloudByTimeOut() {
+    this._updateTimeOut = setTimeout(() => {
+      this.init();
+    }, FIVE_MIN);
+  }
+
+  stopUpdateCloudByTimeOut() {
+    if (this._updateTimeOut) {
+      clearTimeout(this._updateTimeOut);
+    }
   }
 
   /**
@@ -348,6 +469,7 @@ export class ExtendedCloud {
             credentials: credentials[name],
           };
         });
+
         this.namespaces = nameSpaces;
         this.loading = false;
         return this;

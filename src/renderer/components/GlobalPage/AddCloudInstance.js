@@ -1,11 +1,19 @@
 import styled from '@emotion/styled';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { layout } from '../styles';
 import { ConnectionBlock } from './ConnectionBlock';
 import { SynchronizeBlock } from './SynchronizeBlock';
 import { CloseButton } from '../CloseButton/CloseButton';
-import { ExtendedCloud } from '../../../common/ExtendedCloud';
+import {
+  ExtendedCloud,
+  EXTENDED_CLOUD_EVENTS,
+} from '../../../common/ExtendedCloud';
+import { Renderer } from '@k8slens/extensions';
+
+const {
+  Component: { Notifications },
+} = Renderer;
 
 const PageContainer = styled.div(function () {
   return {
@@ -38,35 +46,57 @@ const MainColumn = styled.div(function () {
 });
 
 export const AddCloudInstance = ({ onCancel }) => {
-  const [cloud, setCloud] = useState(null)
-  const [extCloud, setExtCloud] = useState(null)
+  const [cloud, setCloud] = useState(null);
+  const [extCloud, setExtCloud] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const [loading, setLoading] = useState(false)
+  const makeExtCloud = useCallback(async () => {
+    setLoading(true);
+    const extCl = new ExtendedCloud(cloud);
 
-  const makeExtCloud = async () => {
-    setLoading(true)
-    const extCl = new ExtendedCloud(cloud)
+    const loadingListener = () => {
+      setLoading(extCl.loading);
+      if (extCloud && !extCloud.loading) {
+        extCl.removeEventListener(
+          EXTENDED_CLOUD_EVENTS.LOADING_CHANGE,
+          loadingListener
+        );
+      }
+    };
+
+    extCl.addEventListener(
+      EXTENDED_CLOUD_EVENTS.LOADING_CHANGE,
+      loadingListener
+    );
+
     try {
-      const result = await extCl.init(true)
-      setExtCloud(result)
-      setLoading(false)
+      const result = await extCl.init(true);
+      setExtCloud(result);
     } catch (err) {
-      setLoading(false)
-      console.log(err)
+      Notifications.error(err.message);
     }
-  }
-  if(cloud && !loading && !extCloud){
-    // loadCloudData(cloud).then(console.log)
-    makeExtCloud()
-  }
-  if(extCloud) {
-    console.log('extCloud', extCloud)
-  }
+  }, [extCloud, cloud]);
+
+  const cleanCloudsState = () => {
+    setCloud(null);
+    setExtCloud(null);
+  };
+
+  useEffect(() => {
+    if (cloud && !loading && !extCloud) {
+      makeExtCloud();
+    }
+  }, [cloud, loading, extCloud, makeExtCloud]);
+
   return (
     <PageContainer>
       <MainColumn>
-        <ConnectionBlock setCloud={setCloud} extCloudloading={loading}/>
-        <SynchronizeBlock cloud={cloud}/>
+        <ConnectionBlock
+          setCloud={setCloud}
+          extCloudLoading={loading}
+          cleanCloudsState={cleanCloudsState}
+        />
+        <SynchronizeBlock cloud={cloud} />
       </MainColumn>
       <EscColumn>
         <CloseButton onClick={onCancel} />

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 import { Renderer } from '@k8slens/extensions';
 import { InlineNotice } from '../InlineNotice';
 import styled from '@emotion/styled';
@@ -43,7 +44,11 @@ const ButtonWrapper = styled.div(() => ({
   marginTop: layout.gap,
 }));
 
-export const ConnectionBlock = ({ setCloud, extCloudloading }) => {
+export const ConnectionBlock = ({
+  setCloud,
+  extCloudLoading,
+  cleanCloudsState,
+}) => {
   const [clusterName, setClusterName] = useState('');
   const [loading, setLoading] = useState(false);
   const [clusterUrl, setClusterUrl] = useState('');
@@ -55,6 +60,7 @@ export const ConnectionBlock = ({ setCloud, extCloudloading }) => {
   };
 
   const handleConnectClick = async function () {
+    cleanCloudsState();
     const normUrl = normalizeUrl(clusterUrl.trim());
     setClusterUrl(normUrl); // update to actual URL we'll use
     setLoading(true);
@@ -72,7 +78,7 @@ export const ConnectionBlock = ({ setCloud, extCloudloading }) => {
         );
         if (newCloud.status === CONNECTION_STATUSES.CONNECTED) {
           // cloudStore.clouds[normUrl] = newCloud;
-          setCloud(newCloud)
+          setCloud(newCloud);
         } else {
           checkError(newCloud);
         }
@@ -96,7 +102,7 @@ export const ConnectionBlock = ({ setCloud, extCloudloading }) => {
           id="lecc-cluster-name"
           value={clusterName}
           onChange={setClusterName}
-          disabled={loading || extCloudloading}
+          disabled={loading || extCloudLoading}
         />
       </Field>
       <Field>
@@ -109,15 +115,15 @@ export const ConnectionBlock = ({ setCloud, extCloudloading }) => {
           id="lecc-cluster-url"
           value={clusterUrl}
           onChange={setClusterUrl}
-          disabled={loading || extCloudloading}
+          disabled={loading || extCloudLoading}
         />
         <ButtonWrapper>
           <Button
             primary
-            waiting={loading || extCloudloading}
+            waiting={loading || extCloudLoading}
             label={connectionBlock.button.label()}
             onClick={handleConnectClick}
-            disabled={loading || extCloudloading || !clusterUrl.trim().length}
+            disabled={loading || extCloudLoading || !clusterUrl.trim().length}
           />
         </ButtonWrapper>
       </Field>
@@ -134,4 +140,10 @@ export const ConnectionBlock = ({ setCloud, extCloudloading }) => {
       </div>
     </MainContent>
   );
+};
+
+ConnectionBlock.propTypes = {
+  setCloud: PropTypes.func.isRequired,
+  extCloudLoading: PropTypes.bool.isRequired,
+  cleanCloudsState: PropTypes.func.isRequired,
 };
