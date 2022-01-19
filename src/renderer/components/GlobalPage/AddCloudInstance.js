@@ -5,6 +5,8 @@ import { ConnectionBlock } from './ConnectionBlock';
 import { SynchronizeBlock } from './SynchronizeBlock';
 import { CloseButton } from '../CloseButton/CloseButton';
 
+// import { mockedProjects } from './mockedProjects';
+
 const PageContainer = styled.div(function () {
   return {
     position: 'absolute',
