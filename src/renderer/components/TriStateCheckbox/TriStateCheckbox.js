@@ -56,7 +56,7 @@ export const TriStateCheckbox = ({ label, onChange, value }) => {
   return (
     <CheckboxItem>
       <CheckboxControlPart>
-        <CheckboxControl isChecked={value !== 'UNCHECKED' ? true : false}>
+        <CheckboxControl isChecked={value !== 'UNCHECKED'}>
           {value === 'MIXED' && (
             <Component.Icon
               material="remove"
@@ -79,7 +79,7 @@ export const TriStateCheckbox = ({ label, onChange, value }) => {
         <CheckboxLabel>
           <CheckboxField
             type="checkbox"
-            checked={value !== 'UNCHECKED' ? true : false}
+            checked={value !== 'UNCHECKED'}
             onChange={() => onChange()}
           />
           {label}
