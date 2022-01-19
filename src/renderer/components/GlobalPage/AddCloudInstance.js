@@ -15,6 +15,8 @@ const {
   Component: { Notifications },
 } = Renderer;
 
+// import { mockedProjects } from './mockedProjects';
+
 const PageContainer = styled.div(function () {
   return {
     position: 'absolute',
