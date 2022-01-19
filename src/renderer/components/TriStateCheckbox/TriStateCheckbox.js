@@ -52,17 +52,12 @@ const CheckboxLabel = styled.span(() => ({
   overflow: 'hidden',
 }));
 
-export const TriStateCheckbox = ({
-  label,
-  onChange,
-  isChecked,
-  isMinusIcon,
-}) => {
+export const TriStateCheckbox = ({ label, onChange, value }) => {
   return (
     <CheckboxItem>
       <CheckboxControlPart>
-        <CheckboxControl isChecked={isChecked}>
-          {isMinusIcon && isChecked && (
+        <CheckboxControl isChecked={value !== 'UNCHECKED' ? true : false}>
+          {value === 'MIXED' && (
             <Component.Icon
               material="remove"
               style={{
@@ -71,7 +66,7 @@ export const TriStateCheckbox = ({
               }}
             />
           )}
-          {!isMinusIcon && isChecked && (
+          {value === 'CHECKED' && (
             <Component.Icon
               material="check"
               style={{
@@ -84,7 +79,7 @@ export const TriStateCheckbox = ({
         <CheckboxLabel>
           <CheckboxField
             type="checkbox"
-            checked={isChecked}
+            checked={value !== 'UNCHECKED' ? true : false}
             onChange={() => onChange()}
           />
           {label}
@@ -99,4 +94,5 @@ TriStateCheckbox.propTypes = {
   onChange: PropTypes.func,
   isChecked: PropTypes.bool,
   isMinusIcon: PropTypes.bool,
+  value: PropTypes.string,
 };

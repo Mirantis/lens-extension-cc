@@ -222,6 +222,12 @@ export const SynchronizeBlock = ({ extCloud }) => {
     return null;
   }
 
+  const values = {
+    CHECKED: 'CHECKED',
+    UNCHECKED: 'UNCHECKED',
+    MIXED: 'MIXED',
+  };
+
   // sort by name initial array with projects
   const sortByName = () => {
     const sorted = [...projectsList].sort((a, b) => {
@@ -271,6 +277,27 @@ export const SynchronizeBlock = ({ extCloud }) => {
     }
   };
 
+  const parentCheckboxValue = () => {
+    if (
+      currentCheckboxState.parent &&
+      currentCheckboxState.children.some((el) => el === false) &&
+      currentCheckboxState.children.some((el) => el === true)
+    ) {
+      return values.MIXED;
+    }
+    if (currentCheckboxState.parent) {
+      return values.CHECKED;
+    } else {
+      return values.UNCHECKED;
+    }
+  };
+
+  const childrenCheckboxValue = (index) => {
+    return currentCheckboxState.children[index]
+      ? values.CHECKED
+      : values.UNCHECKED;
+  };
+
   return (
     <Content>
       <Title>{synchronizeBlock.title()}</Title>
@@ -279,11 +306,7 @@ export const SynchronizeBlock = ({ extCloud }) => {
           <TriStateCheckbox
             label={synchronizeBlock.checkAllCheckboxLabel()}
             onChange={() => onChangeHandler()}
-            isChecked={currentCheckboxState.parent}
-            isMinusIcon={
-              currentCheckboxState.children.some((el) => el === false) &&
-              currentCheckboxState.children.some((el) => el === true)
-            }
+            value={parentCheckboxValue()}
           />
           <SortButton
             type="button"
@@ -307,7 +330,7 @@ export const SynchronizeBlock = ({ extCloud }) => {
                 <Accordion
                   title={
                     <TriStateCheckbox
-                      isChecked={currentCheckboxState.children[index]}
+                      value={childrenCheckboxValue(index)}
                       label={namespace.name}
                       onChange={() => onChangeHandler(index)}
                     />
