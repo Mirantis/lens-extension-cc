@@ -8,10 +8,6 @@ import { logger } from '../util/logger';
 import { Cluster } from '../renderer/store/Cluster';
 
 export const EXTENDED_CLOUD_EVENTS = Object.freeze({
-  /**
-   * The Cloud object's connection status has changed.
-   * @param {Cloud} cloud The Cloud object.
-   */
   LOADING_CHANGE: 'loadingChange',
 });
 
@@ -132,7 +128,7 @@ const _deserializeClustersList = function (body) {
           return new Cluster(item);
         } catch (err) {
           logger.error(
-            'ClusterDataProvider._deserializeClustersList()',
+            'ExtendedCloud._deserializeClustersList()',
             `Failed to deserialize cluster ${idx} (namespace/name="${
               item?.metadata?.namespace ?? '<unknown>'
             }/${item?.metadata?.name ?? '<unknown>'}"): ${err.message}`,
@@ -164,7 +160,7 @@ const _deserializeNamespacesList = function (body) {
           return new Namespace(item);
         } catch (err) {
           logger.error(
-            'store/ClusterDataProvider._deserializeNamespacesList()',
+            'ExtendedCloud._deserializeNamespacesList()',
             `Failed to deserialize namespace ${idx}: ${err.message}`,
             err
           );
@@ -408,14 +404,14 @@ export class ExtendedCloud {
   }
 
   startUpdateCloudByTimeOut() {
-    this._updateTimeOut = setTimeout(() => {
+    this._updateInterval = setInterval(() => {
       this.init();
     }, FIVE_MIN);
   }
 
   stopUpdateCloudByTimeOut() {
-    if (this._updateTimeOut) {
-      clearTimeout(this._updateTimeOut);
+    if (this._updateInterval) {
+      clearInterval(this._updateInterval);
     }
   }
 
@@ -431,8 +427,12 @@ export class ExtendedCloud {
       loadAll
     );
     if (nameSpaceError) {
-      logger.error(nameSpaceError?.error?.message);
-      throw new Error(nameSpaceError?.error?.message);
+      logger.error(
+        'extendedCloud.init()',
+        `_fetchNamespaces error: ${nameSpaceError.message}`,
+        nameSpaceError
+      );
+      throw new Error(nameSpaceError?.message);
     } else {
       const { error: clustersError, clusters } = await _fetchClusters(
         this.cloud,
@@ -450,8 +450,11 @@ export class ExtendedCloud {
       let error = clustersError || sshKeysError || credentialsError;
       if (error) {
         this.loading = false;
-        logger.error(error.message);
-        this.loading = false;
+        logger.error(
+          'extendedCloud.init()',
+          `Fetched data contains an error: ${error.message}`,
+          error
+        );
         throw new Error(error.message);
       } else {
         const nameSpaces = namespaces.map((name) => {

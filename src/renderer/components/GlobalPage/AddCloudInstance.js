@@ -52,6 +52,8 @@ export const AddCloudInstance = ({ onCancel }) => {
 
   const makeExtCloud = useCallback(async () => {
     setLoading(true);
+    // create extendedCloud. This `extCl` doesn't contain namespaces yep
+    // we need to fetch all additional data (namespaces, credentials, sshKeys) using extCloud.init() method
     const extCl = new ExtendedCloud(cloud);
 
     const loadingListener = () => {
@@ -70,8 +72,10 @@ export const AddCloudInstance = ({ onCancel }) => {
     );
 
     try {
-      const result = await extCl.init(true);
-      setExtCloud(result);
+      // update extendedCloud:   add namespaces and all needed data
+      // and set it to local state as `extCloud`
+      await extCl.init(true);
+      setExtCloud(extCl);
     } catch (err) {
       Notifications.error(err.message);
     }
