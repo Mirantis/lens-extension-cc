@@ -125,7 +125,7 @@ export const synchronizeBlock = {
   checkAllCheckboxLabel: () => 'Project name',
   checkboxesDropdownLabels: {
     clusters: () => 'clusters',
-    sshKeys: () => 'ssh keys',
+    sshKeys: () => 'SSH keys',
     credentials: () => 'credentials',
   },
 };
