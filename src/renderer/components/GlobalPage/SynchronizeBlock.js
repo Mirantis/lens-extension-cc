@@ -351,15 +351,21 @@ export const SynchronizeBlock = ({ extCloud }) => {
                 >
                   <AccordionChildrenList>
                     <li>
-                      <p>clusters ({namespace.clustersCount})</p>
-                    </li>
-                    <li>
-                      <p>ssh keys ({namespace.sshKeysCount})</p>
+                      <p>
+                        {synchronizeBlock.checkboxesDropdownLabels.clusters()} (
+                        {namespace.clustersCount})
+                      </p>
                     </li>
                     <li>
                       <p>
-                        credentials ({namespace.credentials.allCredentialsCount}
-                        )
+                        {synchronizeBlock.checkboxesDropdownLabels.sshKeys()} (
+                        {namespace.sshKeysCount})
+                      </p>
+                    </li>
+                    <li>
+                      <p>
+                        {synchronizeBlock.checkboxesDropdownLabels.credentials()}{' '}
+                        ({namespace.credentials.allCredentialsCount})
                       </p>
                     </li>
                   </AccordionChildrenList>
