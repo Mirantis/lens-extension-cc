@@ -113,12 +113,6 @@ export const SynchronizeBlock = ({ extCloud }) => {
     return null;
   }
 
-  const values = {
-    CHECKED: 'CHECKED',
-    UNCHECKED: 'UNCHECKED',
-    MIXED: 'MIXED',
-  };
-
   // sort by name initial array with projects
   const sortByName = () => {
     const sorted = [...projectsList].sort((a, b) => {
