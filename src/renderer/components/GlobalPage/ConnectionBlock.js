@@ -77,6 +77,7 @@ export const ConnectionBlock = ({
           statusListener
         );
         if (newCloud.status === CONNECTION_STATUSES.CONNECTED) {
+          // we haven't store cloud in CloudStore on this level. It should be done at SynchronizeBlock
           // cloudStore.clouds[normUrl] = newCloud;
           setCloud(newCloud);
         } else {

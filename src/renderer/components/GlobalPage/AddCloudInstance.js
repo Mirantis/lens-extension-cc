@@ -50,35 +50,32 @@ export const AddCloudInstance = ({ onCancel }) => {
   const [extCloud, setExtCloud] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const makeExtCloud = useCallback(async () => {
+  const makeExtCloud = useCallback(() => {
     setLoading(true);
-    // create extendedCloud. This `extCl` doesn't contain namespaces yep
-    // we need to fetch all additional data (namespaces, credentials, sshKeys) using extCloud.init() method
+
     const extCl = new ExtendedCloud(cloud);
 
     const loadingListener = () => {
-      setLoading(extCl.loading);
-      if (extCloud && !extCloud.loading) {
+      // when extCl loaded, it means extCl contains all needed data
+      // so we store it as extCloud in local state
+      if (extCl && !extCl.loading && !extCloud) {
+        if (extCl.error) {
+          Notifications.error(extCl.error);
+        }
+        setExtCloud(extCl);
+
         extCl.removeEventListener(
           EXTENDED_CLOUD_EVENTS.LOADING_CHANGE,
           loadingListener
         );
       }
+      setLoading(extCl.loading);
     };
 
     extCl.addEventListener(
       EXTENDED_CLOUD_EVENTS.LOADING_CHANGE,
       loadingListener
     );
-
-    try {
-      // update extendedCloud:   add namespaces and all needed data
-      // and set it to local state as `extCloud`
-      await extCl.init(true);
-      setExtCloud(extCl);
-    } catch (err) {
-      Notifications.error(err.message);
-    }
   }, [extCloud, cloud]);
 
   const cleanCloudsState = () => {

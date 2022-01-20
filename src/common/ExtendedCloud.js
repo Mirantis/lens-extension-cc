@@ -269,6 +269,7 @@ export class ExtendedCloud {
   constructor(cloud) {
     const _eventListeners = {}; // map of event name to array of functions that are handlers
     const _eventQueue = []; // list of `{ name: string, params: Array }` objects to dispatch
+    let _error = null;
 
     // asynchronously dispatches queued events on the next frame
     const _scheduleDispatch = () => {
@@ -401,6 +402,18 @@ export class ExtendedCloud {
         _namespaces = newValue;
       },
     });
+
+    Object.defineProperty(this, 'error', {
+      enumerable: true,
+      get() {
+        return _error;
+      },
+      set(newValue) {
+        _error = newValue;
+      },
+    });
+
+    setTimeout(() => this.init());
   }
 
   startUpdateCloudByTimeOut() {
@@ -422,6 +435,8 @@ export class ExtendedCloud {
    */
   async init(loadAll) {
     this.loading = true;
+    this.error = null;
+
     const { error: nameSpaceError, namespaces } = await _fetchNamespaces(
       this.cloud,
       loadAll
@@ -432,7 +447,8 @@ export class ExtendedCloud {
         `_fetchNamespaces error: ${nameSpaceError.message}`,
         nameSpaceError
       );
-      throw new Error(nameSpaceError?.message);
+      this.error = nameSpaceError.message;
+      this.loading = false;
     } else {
       const { error: clustersError, clusters } = await _fetchClusters(
         this.cloud,
@@ -442,27 +458,28 @@ export class ExtendedCloud {
         this.cloud,
         namespaces
       );
-      const { credentials, error: credentialsError } = await _fetchCredentials(
+      const { error: credentialsError, credentials } = await _fetchCredentials(
         this.cloud,
         namespaces
       );
 
-      let error = clustersError || sshKeysError || credentialsError;
+      const error = clustersError || sshKeysError || credentialsError;
       if (error) {
-        this.loading = false;
         logger.error(
           'extendedCloud.init()',
           `Fetched data contains an error: ${error.message}`,
           error
         );
-        throw new Error(error.message);
+        this.error = error.message;
+        this.loading = false;
       } else {
-        const nameSpaces = namespaces.map((name) => {
+        this.namespaces = namespaces.map((name) => {
           const nameSpaceClusters = clusters.filter(
             (c) => c.namespace === name
           );
           const nameSpaceSshKeys =
             sshKeys.find((key) => key.namespace === name)?.items || [];
+
           return {
             name,
             clusters: nameSpaceClusters,
@@ -473,7 +490,6 @@ export class ExtendedCloud {
           };
         });
 
-        this.namespaces = nameSpaces;
         this.loading = false;
         return this;
       }
