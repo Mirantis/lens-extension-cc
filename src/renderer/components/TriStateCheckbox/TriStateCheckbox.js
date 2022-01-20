@@ -52,35 +52,34 @@ const CheckboxLabel = styled.span(() => ({
   overflow: 'hidden',
 }));
 
+const iconStyles = {
+  color: 'var(--inputControlBackground)',
+  fontSize: 'calc(var(--font-size) * 1.14)',
+};
+
+export const checkValues = {
+  CHECKED: 'CHECKED',
+  UNCHECKED: 'UNCHECKED',
+  MIXED: 'MIXED',
+};
+
 export const TriStateCheckbox = ({ label, onChange, value }) => {
   return (
     <CheckboxItem>
       <CheckboxControlPart>
-        <CheckboxControl isChecked={value !== 'UNCHECKED'}>
-          {value === 'MIXED' && (
-            <Component.Icon
-              material="remove"
-              style={{
-                color: 'var(--inputControlBackground)',
-                fontSize: 'calc(var(--font-size) * 1.14)',
-              }}
-            />
+        <CheckboxControl isChecked={value !== checkValues.UNCHECKED}>
+          {value === checkValues.MIXED && (
+            <Component.Icon material="remove" style={iconStyles} />
           )}
-          {value === 'CHECKED' && (
-            <Component.Icon
-              material="check"
-              style={{
-                color: 'var(--inputControlBackground)',
-                fontSize: 'calc(var(--font-size) * 1.14)',
-              }}
-            />
+          {value === checkValues.CHECKED && (
+            <Component.Icon material="check" style={iconStyles} />
           )}
         </CheckboxControl>
         <CheckboxLabel>
           <CheckboxField
             type="checkbox"
-            checked={value !== 'UNCHECKED'}
-            onChange={() => onChange()}
+            checked={value !== checkValues.UNCHECKED}
+            onChange={onChange}
           />
           {label}
         </CheckboxLabel>
@@ -90,9 +89,7 @@ export const TriStateCheckbox = ({ label, onChange, value }) => {
 };
 
 TriStateCheckbox.propTypes = {
-  label: PropTypes.string,
-  onChange: PropTypes.func,
-  isChecked: PropTypes.bool,
-  isMinusIcon: PropTypes.bool,
-  value: PropTypes.string,
+  label: PropTypes.string.isRequired,
+  onChange: PropTypes.func.isRequired,
+  value: PropTypes.string.isRequired,
 };

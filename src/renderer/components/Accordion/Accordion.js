@@ -23,6 +23,11 @@ const AccordionItem = styled.div`
   overflow: hidden;
 `;
 
+const chevronIconStyles = {
+  color: 'var(--textColorSecondary)',
+  fontSize: 'calc(var(--font-size) * 1.8)',
+};
+
 export const Accordion = ({ title, children }) => {
   // @type {boolean} states of accordion
   const [isOpen, setIsOpen] = useState(false);
@@ -35,13 +40,7 @@ export const Accordion = ({ title, children }) => {
           isOpen={isOpen}
           onClick={() => setIsOpen(!isOpen)}
         >
-          <Component.Icon
-            material="chevron_right"
-            style={{
-              color: 'var(--textColorSecondary)',
-              fontSize: 'calc(var(--font-size) * 1.8)',
-            }}
-          />
+          <Component.Icon material="chevron_right" style={chevronIconStyles} />
         </AccordionButton>
         {title}
       </AccordionTitle>

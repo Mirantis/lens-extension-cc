@@ -2,7 +2,10 @@ import PropTypes from 'prop-types';
 import { useState } from 'react';
 import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
-import { TriStateCheckbox } from '../TriStateCheckbox/TriStateCheckbox';
+import {
+  TriStateCheckbox,
+  checkValues,
+} from '../TriStateCheckbox/TriStateCheckbox';
 import { Accordion } from '../Accordion/Accordion';
 import { layout } from '../styles';
 import { synchronizeBlock } from '../../../strings';
@@ -205,6 +208,13 @@ const mockedExtCloud = {
   ],
 };
 
+const checkboxesStateObj = (extCloud) => {
+  return extCloud.namespaces.reduce((acc, namespace) => {
+    acc[namespace.name] = false;
+    return acc;
+  }, {});
+};
+
 export const SynchronizeBlock = ({ extCloud }) => {
   // @type {object} sorted object of projects
   const [projectsList, setProjectsList] = useState(extCloud.namespaces);
@@ -212,21 +222,15 @@ export const SynchronizeBlock = ({ extCloud }) => {
   // @type {string} sort by name order
   const [nextSortType, setNextSortType] = useState('');
 
-  // @type {object}
-  const [currentCheckboxState, setCurrentCheckboxState] = useState({
+  // @type {object} checkboxes state
+  const [сheckboxesState, setCheckboxesState] = useState({
     parent: false,
-    children: new Array(projectsList.length).fill(false),
+    children: checkboxesStateObj(extCloud),
   });
 
   if (!projectsList) {
     return null;
   }
-
-  const values = {
-    CHECKED: 'CHECKED',
-    UNCHECKED: 'UNCHECKED',
-    MIXED: 'MIXED',
-  };
 
   // sort by name initial array with projects
   const sortByName = () => {
@@ -243,7 +247,9 @@ export const SynchronizeBlock = ({ extCloud }) => {
   };
 
   // set parent checkbox state based on changes of children checkboxes
-  const setParentCheckboxState = (childrenCheckboxes) => {
+  const setParentCheckboxState = (children) => {
+    const childrenCheckboxes = Object.values(children);
+
     if (
       childrenCheckboxes.every((el) => el === false) ||
       childrenCheckboxes.every((el) => el === true)
@@ -253,49 +259,56 @@ export const SynchronizeBlock = ({ extCloud }) => {
     if (childrenCheckboxes.some((el) => el === false)) {
       return true;
     }
-    return currentCheckboxState.parent;
+    return сheckboxesState.parent;
   };
 
-  const onChangeHandler = (index) => {
-    if (isNaN(index)) {
-      setCurrentCheckboxState({
-        ...currentCheckboxState,
-        parent: !currentCheckboxState.parent,
-        children: currentCheckboxState.children.map(
-          (el) => (el = !currentCheckboxState.parent)
-        ),
+  const getNewChildren = (parentCheckedStatus) => {
+    const newChildren = { ...сheckboxesState.children };
+
+    Object.keys(сheckboxesState.children).forEach((name) => {
+      newChildren[name] = parentCheckedStatus;
+    });
+    return newChildren;
+  };
+
+  const onChangeHandler = (name) => {
+    if (!name) {
+      setCheckboxesState({
+        parent: !сheckboxesState.parent,
+        children: getNewChildren(!сheckboxesState.parent),
       });
     } else {
-      const modifiedChildrenCheckboxes = currentCheckboxState.children.map(
-        (el, i) => (index === i ? (el = !el) : el)
-      );
-      setCurrentCheckboxState({
-        ...currentCheckboxState,
-        children: modifiedChildrenCheckboxes,
-        parent: setParentCheckboxState(modifiedChildrenCheckboxes),
+      const newChildren = { ...сheckboxesState.children };
+      newChildren[name] = !сheckboxesState.children[name];
+
+      setCheckboxesState({
+        children: newChildren,
+        parent: setParentCheckboxState(newChildren),
       });
     }
   };
 
   const parentCheckboxValue = () => {
+    const childrenCheckboxes = Object.values(сheckboxesState.children);
+
     if (
-      currentCheckboxState.parent &&
-      currentCheckboxState.children.some((el) => el === false) &&
-      currentCheckboxState.children.some((el) => el === true)
+      сheckboxesState.parent &&
+      childrenCheckboxes.some((el) => el === false) &&
+      childrenCheckboxes.some((el) => el === true)
     ) {
-      return values.MIXED;
+      return checkValues.MIXED;
     }
-    if (currentCheckboxState.parent) {
-      return values.CHECKED;
+    if (сheckboxesState.parent) {
+      return checkValues.CHECKED;
     } else {
-      return values.UNCHECKED;
+      return checkValues.UNCHECKED;
     }
   };
 
-  const childrenCheckboxValue = (index) => {
-    return currentCheckboxState.children[index]
-      ? values.CHECKED
-      : values.UNCHECKED;
+  const childrenCheckboxValue = (name) => {
+    return сheckboxesState.children[name]
+      ? checkValues.CHECKED
+      : checkValues.UNCHECKED;
   };
 
   return (
@@ -325,14 +338,14 @@ export const SynchronizeBlock = ({ extCloud }) => {
         </ProjectsHead>
         <ProjectsBody>
           <ProjectsList>
-            {projectsList.map((namespace, index) => (
+            {projectsList.map((namespace) => (
               <li key={namespace.name}>
                 <Accordion
                   title={
                     <TriStateCheckbox
-                      value={childrenCheckboxValue(index)}
+                      value={childrenCheckboxValue(namespace.name)}
                       label={namespace.name}
-                      onChange={() => onChangeHandler(index)}
+                      onChange={() => onChangeHandler(namespace.name)}
                     />
                   }
                 >
