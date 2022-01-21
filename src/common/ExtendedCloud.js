@@ -20,6 +20,16 @@ const credentialTypes = [
   'openstackcredential',
 ];
 
+const getErrorMessage = (error) => {
+  if (!error) {
+    return null;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  return error.message;
+};
+
 const _deserializeCredentialsList = function (body) {
   if (!body || !Array.isArray(body.items)) {
     return {
@@ -444,12 +454,12 @@ export class ExtendedCloud {
       loadAll
     );
     if (nameSpaceError) {
+      this.error = getErrorMessage(nameSpaceError);
       logger.error(
         'extendedCloud.init()',
-        `_fetchNamespaces error: ${nameSpaceError.message}`,
+        `_fetchNamespaces error: ${this.error}`,
         nameSpaceError
       );
-      this.error = nameSpaceError.message;
       this.loading = false;
     } else {
       const { error: clustersError, clusters } = await _fetchClusters(
@@ -467,12 +477,12 @@ export class ExtendedCloud {
 
       const error = clustersError || sshKeysError || credentialsError;
       if (error) {
+        this.error = getErrorMessage(error);
         logger.error(
           'extendedCloud.init()',
-          `Fetched data contains an error: ${error.message}`,
+          `Fetched data contains an error: ${this.error}`,
           error
         );
-        this.error = error.message;
         this.loading = false;
       } else {
         this.namespaces = namespaces.map((name) => {
