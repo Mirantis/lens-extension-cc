@@ -2,7 +2,10 @@ import { createContext, useContext, useMemo, useState } from 'react';
 import { ProviderStore } from './ProviderStore';
 import { cloneDeepWith, isEqual } from 'lodash';
 import { cloudStore } from '../../store/CloudStore';
-import { ExtendedCloud, EXTENDED_CLOUD_EVENTS } from '../../common/ExtendedCloud';
+import {
+  ExtendedCloud,
+  EXTENDED_CLOUD_EVENTS,
+} from '../../common/ExtendedCloud';
 import { autorun } from 'mobx';
 
 class ExtendedCloudProviderStore extends ProviderStore {
@@ -32,12 +35,12 @@ const pr = new ExtendedCloudProviderStore();
 const ExtendedCloudContext = createContext();
 
 const updateSingleCloud = (extendedCloud) => {
-  const { cloudUrl } = extendedCloud?.cloud || {}
-  if(cloudUrl) {
+  const { cloudUrl } = extendedCloud?.cloud || {};
+  if (cloudUrl) {
     pr.store.extendedClouds[cloudUrl] = extendedCloud;
     pr.onChange();
   }
-}
+};
 
 /**
  * @desc update extendedClouds
@@ -62,11 +65,17 @@ const _loadData = function (tokens, cloudsNeedToBeUpdated) {
 
     // if old cloud exist -> remove setInterval
     // remove eventListener
-    if(pr.store.extendedClouds[url]) {
-      pr.store.extendedClouds[url].stopUpdateCloudByTimeOut()
-      pr.store.extendedClouds[url].removeEventListener(EXTENDED_CLOUD_EVENTS.DATA_UPDATED, updateSingleCloud)
+    if (pr.store.extendedClouds[url]) {
+      pr.store.extendedClouds[url].stopUpdateCloudByTimeOut();
+      pr.store.extendedClouds[url].removeEventListener(
+        EXTENDED_CLOUD_EVENTS.DATA_UPDATED,
+        updateSingleCloud
+      );
     }
-    extCl.addEventListener(EXTENDED_CLOUD_EVENTS.DATA_UPDATED, updateSingleCloud)
+    extCl.addEventListener(
+      EXTENDED_CLOUD_EVENTS.DATA_UPDATED,
+      updateSingleCloud
+    );
     extCl.startUpdateCloudByTimeOut();
     pr.store.extendedClouds[url] = extCl;
     // we need to know when all async promises are finished
