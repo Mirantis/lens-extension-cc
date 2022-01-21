@@ -121,6 +121,13 @@ export const connectionBlock: Dict = {
 };
 export const synchronizeBlock = {
   title: () => 'Select projects to synchronize',
+  synchronizeButtonLabel: () => 'Synchronize selected projects',
+  checkAllCheckboxLabel: () => 'Project name',
+  checkboxesDropdownLabels: {
+    clusters: () => 'clusters',
+    sshKeys: () => 'SSH keys',
+    credentials: () => 'credentials',
+  },
 };
 export const login: Dict = {
   title: () => 'Get clusters',
