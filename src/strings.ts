@@ -452,3 +452,11 @@ export const welcome: Dict = {
     label: () => 'Add your first management cluster',
   },
 };
+
+export const extendedCloud: Dict = {
+  error: {
+    credentials: () =>
+      'Failed to parse Credentials payload: Unexpected data format.',
+    sshKeys: () => 'Failed to parse SSH Keys payload: Unexpected data format.',
+  },
+};
