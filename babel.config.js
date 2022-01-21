@@ -4,7 +4,7 @@ module.exports = {
     [
       // targets based on https://mirantis.jira.com/wiki/spaces/UIENG/pages/1995703215/Barracuda+Browser+Support+Matrix
       '@babel/preset-env',
-      { targets: { electron: '9' } },
+      { targets: { electron: '13' } },
     ],
 
     // what we care from this preset is JSX syntax support with
@@ -30,5 +30,7 @@ module.exports = {
 
     // @see https://babeljs.io/docs/en/babel-plugin-proposal-decorators.html
     ['@babel/plugin-proposal-decorators', { legacy: true }],
+
+    '@babel/plugin-proposal-class-properties',
   ],
 };
