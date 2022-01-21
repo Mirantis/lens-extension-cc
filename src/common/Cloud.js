@@ -4,11 +4,11 @@ import { logger } from '../util/logger';
 import * as strings from '../strings';
 import * as ssoUtil from '../util/ssoUtil';
 import {
+  EXT_EVENT_OAUTH_CODE,
   extEventOauthCodeTs,
   addExtEventHandler,
   removeExtEventHandler,
 } from '../renderer/eventBus';
-import { EXT_EVENT_OAUTH_CODE } from '../constants';
 
 /**
  * Determines if a date has passed.

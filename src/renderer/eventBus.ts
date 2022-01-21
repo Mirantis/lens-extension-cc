@@ -5,7 +5,6 @@
 //
 
 import * as rtv from 'rtvjs';
-import { EXT_EVENT_OAUTH_CODE } from '../constants';
 
 //
 // TYPES
@@ -46,6 +45,30 @@ type EventQueue = Array<ExtensionEvent>;
 //
 
 /**
+ * Activates an existing cluster in Lens.
+ *
+ * `event.data` is an object with the following properties:
+ * - cloudUrl {string} MCC instance base URL.
+ * - username {string} Username of a user with access to the cluster.
+ * - namespace {string} Name of the namespace that contains the cluster.
+ * - clusterName (string) Name of the cluster being activated.
+ * - clusterId {string} ID of the cluster being activated.
+ */
+export const EXT_EVENT_ACTIVATE_CLUSTER = 'activateCluster';
+
+/** RTV Typeset to validate the event object for an `EXT_EVENT_ACTIVATE_CLUSTER` event. */
+export const extEventActivateClusterTs = {
+  type: [rtv.STRING, { exact: EXT_EVENT_ACTIVATE_CLUSTER }],
+  data: {
+    cloudUrl: rtv.STRING,
+    username: rtv.STRING,
+    namespace: rtv.STRING,
+    clusterName: rtv.STRING,
+    clusterId: rtv.STRING,
+  },
+};
+
+/**
  * OAuth (SSO) redirect route after user gives Lens access permission.
  *
  * `event.data` is an object with the following properties:
@@ -54,6 +77,8 @@ type EventQueue = Array<ExtensionEvent>;
  * - [error] (string} Optional error message.
  * - [error_description] {string} Optional error description.
  */
+export const EXT_EVENT_OAUTH_CODE = 'oauth/code';
+
 /** RTV Typeset to validate the event object for an `EXT_EVENT_OAUTH_CODE` event. */
 export const extEventOauthCodeTs = {
   type: [rtv.STRING, { exact: EXT_EVENT_OAUTH_CODE }],

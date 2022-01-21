@@ -3,6 +3,19 @@
 //
 
 /**
+ * Generates a kubeconfig context name for a cluster in the same way that MCC does
+ *  when it generates cluster-specific kubeconfig files.
+ * @returns {string} Context name.
+ */
+export const mkClusterContextName = function ({
+  username,
+  namespace,
+  clusterName,
+}) {
+  return `${username}@${namespace}@${clusterName}`;
+};
+
+/**
  * Generates a KubeConfig for a specific cluster.
  * @param {Object} config Configuration parameters for the template.
  * @param {string} config.username Username for authentication.
@@ -34,10 +47,10 @@ export const kubeConfigTemplate = function ({
           cluster: cluster.name,
           user: username,
         },
-        name: `${username}@${cluster.name}`,
+        name: cluster.contextName,
       },
     ],
-    'current-context': `${username}@${cluster.name}`,
+    'current-context': cluster.contextName,
     kind: 'Config',
     preferences: {},
     users: [
