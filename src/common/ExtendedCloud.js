@@ -9,6 +9,7 @@ import { Cluster } from '../renderer/store/Cluster';
 
 export const EXTENDED_CLOUD_EVENTS = Object.freeze({
   LOADING_CHANGE: 'loadingChange',
+  DATA_UPDATED: 'dataUpdated',
 });
 
 const FIVE_MIN = 300 * 1000;
@@ -207,7 +208,7 @@ const _fetchNamespaces = async function (cloud, loadAll) {
     userRoles.includes(`m:kaas:${name}@reader`) ||
     userRoles.includes(`m:kaas:${name}@writer`);
 
-  const ignoredNamespaces = cloud.config.ignoredNamespaces || [];
+  const ignoredNamespaces = cloud?.config?.ignoredNamespaces || [];
   const namespaces = filter(
     data,
     (ns) => !ignoredNamespaces.includes(ns.name) && hasReadPermissions(ns.name)
@@ -400,6 +401,7 @@ export class ExtendedCloud {
       },
       set(newValue) {
         _namespaces = newValue;
+        this.dispatchEvent(EXTENDED_CLOUD_EVENTS.DATA_UPDATED, this);
       },
     });
 
