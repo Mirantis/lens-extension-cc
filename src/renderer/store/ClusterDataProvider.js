@@ -136,9 +136,10 @@ const _fetchNamespaces = async function (
 /**
  * Deserialize the raw list of cluster data from the API into Cluster objects.
  * @param {Object} body Data response from /list/cluster API.
+ * @param {AuthAccess} authAccess The AuthAccess object used to access the clusters.
  * @returns {Array<Cluster>} Array of Cluster objects.
  */
-const _deserializeClustersList = function (body) {
+const _deserializeClustersList = function (body, authAccess) {
   if (!body || !Array.isArray(body.items)) {
     return { error: strings.clusterDataProvider.error.invalidClusterPayload() };
   }
@@ -147,7 +148,7 @@ const _deserializeClustersList = function (body) {
     data: body.items
       .map((item, idx) => {
         try {
-          return new Cluster(item);
+          return new Cluster(item, authAccess.username);
         } catch (err) {
           logger.error(
             'ClusterDataProvider._deserializeClustersList()',
@@ -206,7 +207,7 @@ const _fetchClusters = async function (
   let dsError;
 
   results.every((result) => {
-    const { data, error } = _deserializeClustersList(result.body);
+    const { data, error } = _deserializeClustersList(result.body, authAccess);
     if (error) {
       dsError = { error };
       return false; // break
