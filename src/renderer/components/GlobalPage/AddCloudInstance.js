@@ -42,6 +42,8 @@ const MainColumn = styled.div(function () {
     justifyContent: 'start',
     flexDirection: 'column',
     alignItems: 'center',
+    maxHeight: '100%',
+    overflow: 'auto',
   };
 });
 
@@ -97,7 +99,7 @@ export const AddCloudInstance = ({ onCancel }) => {
           extCloudLoading={loading}
           cleanCloudsState={cleanCloudsState}
         />
-        <SynchronizeBlock extCloud={extCloud} />
+        <SynchronizeBlock />
       </MainColumn>
       <EscColumn>
         <CloseButton onClick={onCancel} />
