@@ -42,6 +42,8 @@ const MainColumn = styled.div(function () {
     justifyContent: 'start',
     flexDirection: 'column',
     alignItems: 'center',
+    maxHeight: '100%',
+    overflow: 'auto',
   };
 });
 
