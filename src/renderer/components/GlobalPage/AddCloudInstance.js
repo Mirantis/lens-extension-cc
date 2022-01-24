@@ -99,7 +99,7 @@ export const AddCloudInstance = ({ onCancel }) => {
           extCloudLoading={loading}
           cleanCloudsState={cleanCloudsState}
         />
-        <SynchronizeBlock />
+        <SynchronizeBlock extCloud={extCloud} />
       </MainColumn>
       <EscColumn>
         <CloseButton onClick={onCancel} />
