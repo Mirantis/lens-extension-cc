@@ -8,6 +8,8 @@ import {
 } from '../../common/ExtendedCloud';
 import { autorun } from 'mobx';
 
+const { DATA_UPDATED } = EXTENDED_CLOUD_EVENTS;
+
 class ExtendedCloudProviderStore extends ProviderStore {
   // @override
   makeNew() {
@@ -15,6 +17,8 @@ class ExtendedCloudProviderStore extends ProviderStore {
       ...super.makeNew(),
       extendedClouds: {},
       tokens: null,
+      loadFinishedCount: 0,
+      cloudsToUpdateCount: 0,
     };
   }
 
@@ -38,6 +42,15 @@ const updateSingleCloud = (extendedCloud) => {
   const { cloudUrl } = extendedCloud?.cloud || {};
   if (cloudUrl) {
     pr.store.extendedClouds[cloudUrl] = extendedCloud;
+    // update total loaded clouds number
+    if (!extendedCloud.loading) {
+      pr.store.loadFinishedCount += 1;
+    }
+    // when the last cloud is loaded we update general ExtendedCloudProvider loading state
+    if (pr.store.cloudsToUpdateCount === pr.store.loadFinishedCount) {
+      pr.loading = false;
+      pr.loaded = true;
+    }
     pr.onChange();
   }
 };
@@ -45,47 +58,40 @@ const updateSingleCloud = (extendedCloud) => {
 /**
  * @desc update extendedClouds
  * @param {Object} tokens, contains `[cloudUrl]: token` pairs
- * @param {Array<string>} cloudsNeedToBeUpdated, list of cloudUrls that has to be updated
+ * @param {Array<string>} cloudUrlsToUpdate, list of cloudUrls that has to be updated
  * @private
  */
-const _loadData = function (tokens, cloudsNeedToBeUpdated) {
-  let loadFinishedCount = 0;
+const _loadData = function (tokens, cloudUrlsToUpdate) {
+  const cloudUrls = cloudUrlsToUpdate?.length
+    ? cloudUrlsToUpdate
+    : Object.keys(cloudStore.clouds);
+
+  pr.store.loadFinishedCount = 0;
+  pr.store.cloudsToUpdateCount = cloudUrls.length;
   pr.loading = true;
   pr.loaded = false;
-  pr.error = null;
   pr.onChange();
-  const cloudUrls = cloudsNeedToBeUpdated?.length
-    ? cloudsNeedToBeUpdated
-    : Object.keys(cloudStore.clouds);
+
   pr.store.tokens = tokens;
   cloudUrls.forEach(async (url) => {
     const cloud = cloudStore.clouds[url];
     await cloud.loadConfig(); // we need to get config for getting namespaces and other at ExtendedCloud.init()
     const extCl = new ExtendedCloud(cloud);
 
+    extCl.addEventListener(DATA_UPDATED, updateSingleCloud);
+
     // if old cloud exist -> remove setInterval
     // remove eventListener
     if (pr.store.extendedClouds[url]) {
       pr.store.extendedClouds[url].stopUpdateCloudByTimeOut();
       pr.store.extendedClouds[url].removeEventListener(
-        EXTENDED_CLOUD_EVENTS.DATA_UPDATED,
+        DATA_UPDATED,
         updateSingleCloud
       );
     }
-    extCl.addEventListener(
-      EXTENDED_CLOUD_EVENTS.DATA_UPDATED,
-      updateSingleCloud
-    );
+
     extCl.startUpdateCloudByTimeOut();
     pr.store.extendedClouds[url] = extCl;
-    // we need to know when all async promises are finished
-    // so increase count and when it equal cloudUrls.length set valid loading/loader statuses
-    loadFinishedCount += 1;
-    if (cloudUrls.length === loadFinishedCount) {
-      pr.loading = false;
-      pr.loaded = true;
-    }
-    pr.onChange();
   });
 };
 
@@ -119,20 +125,20 @@ export const ExtendedCloudProvider = function (props) {
   pr.setState = setState;
   // autorun calls on any cloudStore update (to often)
   autorun(() => {
-    const cloudsNeedToBeUpdated = [];
+    const cloudUrlsToUpdate = [];
     // we need to take stable part to compare and observe
     // cloud.token, as I understand, is good for that
     // when we update cloud - we update its token (for now at least, this 'compare' part may be changed in the future)
     const tokens = Object.keys(cloudStore.clouds).reduce((acc, cloudUrl) => {
       acc[cloudUrl] = cloudStore.clouds[cloudUrl].token;
       if (cloudStore.clouds[cloudUrl].token !== pr?.store?.tokens?.[cloudUrl]) {
-        cloudsNeedToBeUpdated.push(cloudUrl);
+        cloudUrlsToUpdate.push(cloudUrl);
       }
       return acc;
     }, {});
     // compare tokens from cloudStore.clouds and tokens we store at previous change in context
     if (!isEqual(pr.store.tokens, tokens) && !pr.loading) {
-      _loadData(tokens, cloudsNeedToBeUpdated);
+      _loadData(tokens, cloudUrlsToUpdate);
     }
   });
 
