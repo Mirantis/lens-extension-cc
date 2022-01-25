@@ -32,6 +32,7 @@ export const CLOUD_EVENTS = Object.freeze({
    * @param {Cloud} cloud The Cloud object.
    */
   STATUS_CHANGE: 'statusChange',
+  DATA_UPDATED: 'dataUpdated',
 });
 
 const _loadConfig = async (url) => {
@@ -253,6 +254,7 @@ export class Cloud {
           rtv.verify({ token: newValue }, { token: Cloud.specTs.name });
         if (_name !== newValue) {
           _name = newValue;
+          this.dispatchEvent(CLOUD_EVENTS.DATA_UPDATED, this);
         }
       },
     });
@@ -270,6 +272,7 @@ export class Cloud {
           rtv.verify({ token: newValue }, { token: Cloud.specTs.syncAll });
         if (_syncAll !== newValue) {
           _syncAll = newValue;
+          this.dispatchEvent(CLOUD_EVENTS.DATA_UPDATED, this);
         }
       },
     });
@@ -290,6 +293,7 @@ export class Cloud {
           );
         if (_syncNamespaces !== newValue) {
           _syncNamespaces = newValue;
+          this.dispatchEvent(CLOUD_EVENTS.DATA_UPDATED, this);
         }
       },
     });
@@ -361,6 +365,7 @@ export class Cloud {
         if (_token !== newValue) {
           _token = newValue || null; // normalize empty to null
           this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
+          this.dispatchEvent(CLOUD_EVENTS.DATA_UPDATED, this);
         }
       },
     });
@@ -380,6 +385,7 @@ export class Cloud {
         if (_expiresIn !== newValue) {
           _expiresIn = newValue;
           this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
+          this.dispatchEvent(CLOUD_EVENTS.DATA_UPDATED, this);
         }
       },
     });
@@ -399,6 +405,7 @@ export class Cloud {
         if (_tokenValidTill !== newValue) {
           _tokenValidTill = newValue;
           this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
+          this.dispatchEvent(CLOUD_EVENTS.DATA_UPDATED, this);
         }
       },
     });
@@ -418,6 +425,7 @@ export class Cloud {
         if (_refreshToken !== newValue) {
           _refreshToken = newValue || null; // normalize empty to null
           this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
+          this.dispatchEvent(CLOUD_EVENTS.DATA_UPDATED, this);
         }
       },
     });
@@ -437,6 +445,7 @@ export class Cloud {
         if (_refreshExpiresIn !== newValue) {
           _refreshExpiresIn = newValue;
           this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
+          this.dispatchEvent(CLOUD_EVENTS.DATA_UPDATED, this);
         }
       },
     });
@@ -456,6 +465,7 @@ export class Cloud {
         if (_refreshTokenValidTill !== newValue) {
           _refreshTokenValidTill = newValue;
           this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
+          this.dispatchEvent(CLOUD_EVENTS.DATA_UPDATED, this);
         }
       },
     });
@@ -475,6 +485,7 @@ export class Cloud {
         if (_username !== newValue) {
           _username = newValue || null; // normalize empty to null
           this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
+          this.dispatchEvent(CLOUD_EVENTS.DATA_UPDATED, this);
         }
       },
     });
@@ -500,6 +511,7 @@ export class Cloud {
         if (_idpClientId !== normalizedNewValue) {
           _idpClientId = normalizedNewValue;
           this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
+          this.dispatchEvent(CLOUD_EVENTS.DATA_UPDATED, this);
         }
       },
     });
@@ -527,6 +539,7 @@ export class Cloud {
 
           _cloudUrl = normalizedNewValue;
           this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
+          this.dispatchEvent(CLOUD_EVENTS.DATA_UPDATED, this);
         }
       },
     });
@@ -656,6 +669,14 @@ export class Cloud {
     };
   }
 
+  async loadConfig() {
+    try {
+      this.config = await _loadConfig(this.cloudUrl);
+    } catch (error) {
+      this.connectError = error;
+    }
+  }
+
   async connect() {
     if (this.connecting) {
       return;
@@ -665,11 +686,7 @@ export class Cloud {
     this.connectError = null;
     this.config = null;
 
-    try {
-      this.config = await _loadConfig(this.cloudUrl);
-    } catch (error) {
-      this.connectError = error;
-    }
+    await this.loadConfig();
 
     if (this.config) {
       const state = this.cloudUrl;
