@@ -43,6 +43,7 @@ type EventQueue = Array<ExtensionEvent>;
  *
  * `event.data` is an object with the following properties:
  * - cloudUrl {string} MCC instance base URL.
+ * - username {string} Username of a user with access to the cluster.
  * - namespace {string} Name of the namespace that contains the cluster.
  * - clusterName (string) Name of the cluster being activated.
  * - clusterId {string} ID of the cluster being activated.
@@ -54,6 +55,7 @@ export const extEventActivateClusterTs = {
   type: [rtv.STRING, { exact: EXT_EVENT_ACTIVATE_CLUSTER }],
   data: {
     cloudUrl: rtv.STRING,
+    username: [rtv.OPTIONAL, rtv.STRING], // optional since older version of MCC will not send it, and we'll fallback to using clusterId in that case
     namespace: rtv.STRING,
     clusterName: rtv.STRING,
     clusterId: rtv.STRING,

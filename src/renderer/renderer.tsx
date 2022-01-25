@@ -95,6 +95,7 @@ export default class ExtensionRenderer extends LensExtension {
       type: EXT_EVENT_ACTIVATE_CLUSTER,
       data: {
         cloudUrl: search.cloudUrl,
+        username: search.username,
         namespace: search.namespace,
         clusterName: search.clusterName,
         clusterId: search.clusterId,
