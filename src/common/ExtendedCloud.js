@@ -186,13 +186,12 @@ const _deserializeNamespacesList = function (body) {
  * [ASYNC] Get all existing namespaces from the management cluster.
  * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
  *  if necessary.
- * @param {boolean} [loadAll] if true all namespaces will be loaded. Doesn't matter if we have something in syncNamespaces
  * @returns {Promise<Object>} On success `{ namespaces: Array<string> }`;
  *  on error `{error: string}`.
  */
-const _fetchNamespaces = async function (cloud, loadAll) {
+const _fetchNamespaces = async function (cloud) {
   // return syncNamespaces if we already define them
-  if (!loadAll && cloud?.syncNamespaces?.length) {
+  if (cloud?.syncNamespaces?.length) {
     return { namespaces: cloud.syncNamespaces };
   }
   const { error, body } = await authedRequest({
@@ -440,18 +439,23 @@ export class ExtendedCloud {
     }
   }
 
-  /**
-   *
-   * @param {boolean} [loadAll] fetch all namespaces, ignore syncNamespaces
-   * @return {Promise<ExtendedCloud>}
-   */
-  async init(loadAll) {
+  async init() {
     this.loading = true;
     this.error = null;
+    // if no config (eg when we restore cloud from disk) try to load it
+    if (!this.cloud?.config) {
+      await this.cloud.loadConfig();
+      // if loadConfig error we get it as connectError
+      // in this case stop init and return ExtendedCloud with that error
+      if (this.cloud.connectError) {
+        this.error = getErrorMessage(this.cloud.connectError);
+        this.loading = false;
+        return this;
+      }
+    }
 
     const { error: nameSpaceError, namespaces } = await _fetchNamespaces(
-      this.cloud,
-      loadAll
+      this.cloud
     );
     if (nameSpaceError) {
       this.error = getErrorMessage(nameSpaceError);
@@ -503,8 +507,8 @@ export class ExtendedCloud {
         });
 
         this.loading = false;
-        return this;
       }
     }
+    return this;
   }
 }

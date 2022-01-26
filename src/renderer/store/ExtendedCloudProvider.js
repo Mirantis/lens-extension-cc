@@ -8,17 +8,14 @@ import {
 } from '../../common/ExtendedCloud';
 import { autorun } from 'mobx';
 
-const { DATA_UPDATED } = EXTENDED_CLOUD_EVENTS;
+const { LOADING_CHANGE } = EXTENDED_CLOUD_EVENTS;
 
 class ExtendedCloudProviderStore extends ProviderStore {
   // @override
   makeNew() {
     return {
-      ...super.makeNew(),
       extendedClouds: {},
       tokens: null,
-      loadFinishedCount: 0,
-      cloudsToUpdateCount: 0,
     };
   }
 
@@ -42,15 +39,6 @@ const updateSingleCloud = (extendedCloud) => {
   const { cloudUrl } = extendedCloud?.cloud || {};
   if (cloudUrl) {
     pr.store.extendedClouds[cloudUrl] = extendedCloud;
-    // update total loaded clouds number
-    if (!extendedCloud.loading) {
-      pr.store.loadFinishedCount += 1;
-    }
-    // when the last cloud is loaded we update general ExtendedCloudProvider loading state
-    if (pr.store.cloudsToUpdateCount === pr.store.loadFinishedCount) {
-      pr.loading = false;
-      pr.loaded = true;
-    }
     pr.onChange();
   }
 };
@@ -66,32 +54,31 @@ const _loadData = function (tokens, cloudUrlsToUpdate) {
     ? cloudUrlsToUpdate
     : Object.keys(cloudStore.clouds);
 
-  pr.store.loadFinishedCount = 0;
-  pr.store.cloudsToUpdateCount = cloudUrls.length;
-  pr.loading = true;
-  pr.loaded = false;
-  pr.onChange();
-
   pr.store.tokens = tokens;
   cloudUrls.forEach(async (url) => {
     const cloud = cloudStore.clouds[url];
-    await cloud.loadConfig(); // we need to get config for getting namespaces and other at ExtendedCloud.init()
     const extCl = new ExtendedCloud(cloud);
+    // if token isn't valid we don't need to add listeners, etc
+    // because on next step it has to be reconnected and rewritten anyway
+    // but we gave to add it no store.extendedClouds all cases, to show in the table
+    if (!extCl.cloud.token || extCl.cloud.isRefreshTokenExpired()) {
+      pr.store.extendedClouds[url] = extCl;
+    } else {
+      extCl.addEventListener(LOADING_CHANGE, updateSingleCloud);
 
-    extCl.addEventListener(DATA_UPDATED, updateSingleCloud);
-
-    // if old cloud exist -> remove setInterval
-    // remove eventListener
-    if (pr.store.extendedClouds[url]) {
-      pr.store.extendedClouds[url].stopUpdateCloudByTimeOut();
-      pr.store.extendedClouds[url].removeEventListener(
-        DATA_UPDATED,
-        updateSingleCloud
-      );
+      // if old cloud exist -> remove setInterval
+      // remove eventListener
+      if (pr.store.extendedClouds[url]) {
+        pr.store.extendedClouds[url].stopUpdateCloudByTimeOut();
+        pr.store.extendedClouds[url].removeEventListener(
+          LOADING_CHANGE,
+          updateSingleCloud
+        );
+      }
+      extCl.startUpdateCloudByTimeOut();
+      pr.store.extendedClouds[url] = extCl;
     }
-
-    extCl.startUpdateCloudByTimeOut();
-    pr.store.extendedClouds[url] = extCl;
+    pr.onChange();
   });
 };
 
