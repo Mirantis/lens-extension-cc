@@ -1,10 +1,11 @@
 # ChangeLog
 
-## UNRELEASED
+## v3.1.0
 
 ### Minor
 
 - Added ability to open clusters from the MCC browser UI using kubeconfig context name so that even clusters added by downloading the kubeconfig from MCC and pasting into Lens can be opened from the browser by choosing the "Open in Lens" feature.
+    - This change is backward-compatible with older versions of MCC that still only send the cluster UID to Lens to use for finding a cluster and opening it. For these versions of MCC, manually-added clusters will not be found (as before). Only clusters added via the extension (whether by choosing "Add to Lens" in MCC, or by loading the extension and selecting a cluster from the list) will be found by cluster UID.
 
 ## v3.0.4
 
