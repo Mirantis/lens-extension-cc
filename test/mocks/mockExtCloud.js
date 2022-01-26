@@ -11,7 +11,7 @@ export const mockExtCloud = {
     idpClientId: null,
     username: 'user@test.com',
     cloudUrl: 'https://cloud-url.com',
-    name: '',
+    name: 'Container name',
     syncAll: false,
     syncNamespaces: [],
   },
@@ -100,3 +100,8 @@ export const mockExtCloud = {
     },
   ],
 };
+
+export const mockedExtendedClouds = {
+  'https://cloud-url.com': mockExtCloud,
+  'https://cloud-url-2.com': mockExtCloud,
+}

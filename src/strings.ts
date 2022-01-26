@@ -129,6 +129,11 @@ export const synchronizeBlock = {
     credentials: () => 'credentials',
   },
 };
+export const managementClusters = {
+  title: () => 'Mirantis Container Cloud management clusters',
+  syncButtonLabel: () => 'Selective sync...',
+  connectButtonLabel: () => 'Connect new Management Cluster',
+};
 export const login: Dict = {
   title: () => 'Get clusters',
   url: { label: () => 'Instance URL:' },
