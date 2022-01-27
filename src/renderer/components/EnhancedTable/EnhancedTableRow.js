@@ -58,7 +58,9 @@ const moreInfoIconStyles = {
 export const EnhancedTableRow = (props) => {
   const { row } = props;
   const [isOpenFirstLevel, setIsOpenFirstLevel] = useState(false);
-  const [openedSecondLevelListIndex, setOpenedSecondLevelListIndex] = useState([]);
+  const [openedSecondLevelListIndex, setOpenedSecondLevelListIndex] = useState(
+    []
+  );
 
   const setOpenedList = (index) => {
     if (openedSecondLevelListIndex.includes(index)) {
@@ -74,7 +76,9 @@ export const EnhancedTableRow = (props) => {
     <>
       <EnhTableRow isTopLevel>
         <EnhTableCell isBigger>
-          <EnhCollapseBtn onClick={() => setIsOpenFirstLevel(!isOpenFirstLevel)}>
+          <EnhCollapseBtn
+            onClick={() => setIsOpenFirstLevel(!isOpenFirstLevel)}
+          >
             {isOpenFirstLevel ? (
               <Component.Icon material="expand_more" style={expandIconStyles} />
             ) : (
