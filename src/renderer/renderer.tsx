@@ -19,6 +19,8 @@ import { CredentialEntity } from '../catalog/CredentialEntity';
 import { ProxyEntity } from '../catalog/ProxyEntity';
 import { CatalogEntityAddMenuContext } from '@k8slens/extensions/dist/src/common/catalog';
 import { getLensClusters } from './rendererUtil';
+import { mkClusterContextName } from '../util/templates';
+import { EXT_EVENT_OAUTH_CODE, EXT_EVENT_ACTIVATE_CLUSTER } from './eventBus';
 
 // NOTE: The following interface _should_ be exported by the Lens extension package
 //  as `Common.Types.CatalogEntityDetailsProps`, but it's not, which is a known bug
@@ -32,11 +34,6 @@ const {
   Catalog,
   Component: { Notifications, DrawerTitle, DrawerItem },
 } = Renderer;
-
-const { EXT_EVENT_OAUTH_CODE } = consts;
-
-/** Activates an existing cluster in Lens */
-export const EXT_EVENT_ACTIVATE_CLUSTER = 'activateCluster';
 
 const logger: any = loggerUtil; // get around TS compiler's complaining
 const statusItemColor = 'white'; // CSS color; Lens hard-codes the color of the workspace indicator item to 'white' also
@@ -158,14 +155,16 @@ export default class ExtensionRenderer extends LensExtension {
   ];
 
   protected handleProtocolActivateCluster = ({ search }) => {
-    const { clusterId, namespace, clusterName } = search;
+    const { username, namespace, clusterName } = search;
     const existingLensClusters = getLensClusters();
+    const context = mkClusterContextName({ username, namespace, clusterName });
 
     const lensCluster = existingLensClusters.find(
-      (cluster) => cluster.metadata.uid === clusterId
+      (cluster) => cluster.spec.kubeconfigContext === context
     );
+
     if (lensCluster) {
-      Renderer.Navigation.navigate(`/cluster/${clusterId}`);
+      Renderer.Navigation.navigate(`/cluster/${lensCluster.metadata.uid}`);
     } else {
       this.navigate(ROUTE_GLOBAL_PAGE);
       Notifications.error(
@@ -174,6 +173,11 @@ export default class ExtensionRenderer extends LensExtension {
         )
       );
     }
+
+    dispatchExtEvent({
+      type: EXT_EVENT_ACTIVATE_CLUSTER,
+      data: search,
+    });
   };
 
   protected handleProtocolOauthCode = ({ search }) => {

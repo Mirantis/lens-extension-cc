@@ -23,12 +23,10 @@ import { Loader } from '../Loader';
 import { ErrorPanel } from '../ErrorPanel';
 import { PreferencesPanel } from './PreferencesPanel';
 import * as strings from '../../../strings';
-import {
-  catalog as catalogConsts,
-  EXT_EVENT_OAUTH_CODE,
-} from '../../../constants';
+import { catalog as catalogConsts } from '../../../constants';
 import { layout, mixinColumnStyles, mixinPageStyles } from '../styles';
 import {
+  EXT_EVENT_OAUTH_CODE,
   addExtEventHandler,
   removeExtEventHandler,
   extEventOauthCodeTs,
