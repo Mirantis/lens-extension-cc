@@ -60,8 +60,8 @@ const _loadData = function (tokens, cloudUrlsToUpdate) {
     const extCl = new ExtendedCloud(cloud);
     // if token isn't valid we don't need to add listeners, etc
     // because on next step it has to be reconnected and rewritten anyway
-    // but we gave to add it no store.extendedClouds all cases, to show in the table
-    if (!extCl.cloud.token || extCl.cloud.isRefreshTokenExpired()) {
+    // but we have to add it to store.extendedClouds all cases, to show in the table
+    if (!extCl.cloud.isValid()) {
       pr.store.extendedClouds[url] = extCl;
     } else {
       extCl.addEventListener(LOADING_CHANGE, updateSingleCloud);
@@ -78,8 +78,8 @@ const _loadData = function (tokens, cloudUrlsToUpdate) {
       extCl.startUpdateCloudByTimeOut();
       pr.store.extendedClouds[url] = extCl;
     }
-    pr.onChange();
   });
+  pr.onChange();
 };
 
 export const useExtendedCloudData = function () {
