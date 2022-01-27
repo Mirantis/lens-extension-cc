@@ -32,7 +32,13 @@ const Title = styled.h2(() => ({
 }));
 
 const TableWrapper = styled.div(() => ({
+  // eslint-disable-next-line quotes
+  // need to calc height dynamicly
+  maxHeight: `calc(100vh - ${layout.grid * 57.5}px)`,
   marginBottom: layout.grid * 5,
+  border: '1px solid var(--inputControlBorder)',
+  borderRadius: 5,
+  overflow: 'auto',
 }));
 
 const ButtonWrapper = styled.div(() => ({

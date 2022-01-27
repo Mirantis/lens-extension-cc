@@ -133,6 +133,19 @@ export const managementClusters = {
   title: () => 'Mirantis Container Cloud management clusters',
   syncButtonLabel: () => 'Selective sync...',
   connectButtonLabel: () => 'Connect new Management Cluster',
+  table: {
+    thead: {
+      name: () => 'Name',
+      url: () => 'URL',
+      username: () => 'Username',
+      status: () => 'Status',
+    },
+    tbodyDetailedInfo: {
+      clusters: () => 'clusters',
+      sshKeys: () => 'SSH keys',
+      credentials: () => 'credentials',
+    },
+  },
 };
 export const login: Dict = {
   title: () => 'Get clusters',

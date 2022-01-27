@@ -1,56 +1,86 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
 import styled from '@emotion/styled';
-import TableCell from '@material-ui/core/TableCell';
-import TableRow from '@material-ui/core/TableRow';
 import { Renderer } from '@k8slens/extensions';
+import { layout } from '../styles';
+import { AdditionalInfoRows } from './AdditionalInfoRows';
 
 const { Component } = Renderer;
 
-const EnhTableRow = styled(TableRow)`
+const EnhTableRow = styled.tr`
   background-color: ${({ isTopLevel }) =>
     isTopLevel ? 'var(--layoutTabsBackground)' : 'var(--mainBackground)'};
 `;
 
-const EnhTableCell = styled(TableCell)`
+const EnhTableCell = styled.td`
+  width: ${({ isBigger }) => isBigger && '40%'};
   border: 0;
   font-size: var(--font-size);
   line-height: normal;
   color: var(--textColorPrimary);
-  padding: 6px 18px;
+  padding: ${layout.grid * 1.5}px ${layout.grid * 4.5}px;
+
+  ${({ isFirstLevel }) =>
+    isFirstLevel &&
+    `
+    padding-left: ${layout.grid * 11}px;
+  `}
+
+  ${({ isRightAligned }) =>
+    isRightAligned &&
+    `
+    text-align: right;
+  `}
 `;
 
 const EnhCollapseBtn = styled.button`
   background: transparent;
   cursor: pointer;
-  margin-right: 6px;
+  margin-right: ${layout.grid * 1.5}px;
   transform: translateY(-2px);
 `;
 
+const EnhMoreButton = styled.button`
+  background: transparent;
+  cursor: pointer;
+`;
+
+const expandIconStyles = {
+  color: 'var(--textColorPrimary)',
+  fontSize: 'calc(var(--font-size) * 1.8)',
+};
+
+const moreInfoIconStyles = {
+  color: 'var(--textColorPrimary)',
+  fontSize: 'calc(var(--font-size) * 1.5)',
+};
+
 export const EnhancedTableRow = (props) => {
   const { row } = props;
-  const [open, setOpen] = useState(false);
+  const [isOpenFirstLevel, setIsOpenFirstLevel] = useState(false);
+  const [openedSecondLevelListIndex, setOpenedSecondLevelListIndex] = useState([]);
+
+  const setOpenedList = (index) => {
+    if (openedSecondLevelListIndex.includes(index)) {
+      const someArray = [...openedSecondLevelListIndex];
+      someArray.splice(openedSecondLevelListIndex.indexOf(index), 1);
+      setOpenedSecondLevelListIndex(someArray);
+    } else {
+      setOpenedSecondLevelListIndex([...openedSecondLevelListIndex, index]);
+    }
+  };
 
   return (
     <>
-      <EnhTableRow isTopLevel={true}>
-        <EnhTableCell component="th" scope="row">
-          <EnhCollapseBtn onClick={() => setOpen(!open)}>
-            {open ? (
-              <Component.Icon
-                material="expand_more"
-                style={{
-                  color: 'var(--textColorPrimary)',
-                  fontSize: 'calc(var(--font-size) * 1.8)',
-                }}
-              />
+      <EnhTableRow isTopLevel>
+        <EnhTableCell isBigger>
+          <EnhCollapseBtn onClick={() => setIsOpenFirstLevel(!isOpenFirstLevel)}>
+            {isOpenFirstLevel ? (
+              <Component.Icon material="expand_more" style={expandIconStyles} />
             ) : (
               <Component.Icon
                 material="chevron_right"
-                style={{
-                  color: 'var(--textColorPrimary)',
-                  fontSize: 'calc(var(--font-size) * 1.8)',
-                }}
+                style={expandIconStyles}
               />
             )}
           </EnhCollapseBtn>
@@ -60,26 +90,50 @@ export const EnhancedTableRow = (props) => {
         <EnhTableCell>{row.cloud.username}</EnhTableCell>
         {/* NEED TO CHANGE STATUS DYNAMIC */}
         <EnhTableCell>STATUS</EnhTableCell>
-        <EnhTableCell align="right">
-          <Component.Icon
-            material="more_vert"
-            style={{
-              color: 'var(--textColorPrimary)',
-              fontSize: 'calc(var(--font-size) * 1.8)',
-            }}
-          />
+        <EnhTableCell isRightAligned>
+          <EnhMoreButton>
+            <Component.Icon material="more_vert" style={moreInfoIconStyles} />
+          </EnhMoreButton>
         </EnhTableCell>
       </EnhTableRow>
-      {open &&
-        row.namespaces.map(({ name }) => (
-          <EnhTableRow key={name}>
-            <EnhTableCell>{name}</EnhTableCell>
-            <EnhTableCell></EnhTableCell>
-            <EnhTableCell></EnhTableCell>
-            {/* NEED TO CHANGE STATUS DYNAMIC */}
-            <EnhTableCell>STATUS</EnhTableCell>
-            <EnhTableCell></EnhTableCell>
-          </EnhTableRow>
+      {isOpenFirstLevel &&
+        row.namespaces.map((namespace, index) => (
+          <div style={{ display: 'contents' }} key={namespace.name}>
+            <EnhTableRow>
+              <EnhTableCell isFirstLevel>
+                <EnhCollapseBtn onClick={() => setOpenedList(index)}>
+                  {openedSecondLevelListIndex.includes(index) ? (
+                    <Component.Icon
+                      material="expand_more"
+                      style={expandIconStyles}
+                    />
+                  ) : (
+                    <Component.Icon
+                      material="chevron_right"
+                      style={expandIconStyles}
+                    />
+                  )}
+                </EnhCollapseBtn>
+                {namespace.name}
+              </EnhTableCell>
+              <EnhTableCell></EnhTableCell>
+              <EnhTableCell></EnhTableCell>
+              {/* NEED TO CHANGE STATUS DYNAMIC */}
+              <EnhTableCell>STATUS</EnhTableCell>
+              <EnhTableCell isRightAligned>
+                <EnhMoreButton>
+                  <Component.Icon
+                    material="more_vert"
+                    style={moreInfoIconStyles}
+                  />
+                </EnhMoreButton>
+              </EnhTableCell>
+            </EnhTableRow>
+
+            {openedSecondLevelListIndex.includes(index) && (
+              <AdditionalInfoRows namespace={namespace} />
+            )}
+          </div>
         ))}
     </>
   );
