@@ -131,7 +131,7 @@ export const ClusterList = function ({
             cluster // list ALL clusters
           ) => {
             const inLens = lensClusters.find(
-              (lc) => lc.metadata.uid === cluster.id
+              (lc) => lc.spec.kubeconfigContext === cluster.contextName
             );
             return (
               <Component.Checkbox

@@ -1,8 +1,8 @@
-import { observable, toJS, makeObservable } from 'mobx';
+import { observable, toJS, makeObservable, extendObservable } from 'mobx';
 import { Common } from '@k8slens/extensions';
 import * as rtv from 'rtvjs';
 import { logger } from '../util/logger';
-import { Cloud } from '../common/Cloud';
+import { Cloud, CLOUD_EVENTS } from '../common/Cloud';
 
 export const storeTs = {
   clouds: [rtv.HASH_MAP, { $values: Cloud.specTs }],
@@ -32,12 +32,6 @@ export class CloudStore extends Common.Store.ExtensionStore {
     makeObservable(this);
   }
 
-  /**
-   * List of onUpdate handlers to be called whenever this store gets updated from disk.
-   * @type {Array<Function>}
-   */
-  updateHandlers = [];
-
   /** Reset clouds to default empty object */
   reset() {
     const defaults = CloudStore.getDefaults();
@@ -62,7 +56,12 @@ export class CloudStore extends Common.Store.ExtensionStore {
         //  to Cloud instance
         this[key] = Object.entries(json[key] || {}).reduce(
           (cloudMap, [cloudUrl, cloudJson]) => {
-            cloudMap[cloudUrl] = new Cloud(cloudJson);
+            const cloud = new Cloud(cloudJson);
+            cloud.addEventListener(
+              CLOUD_EVENTS.DATA_UPDATED,
+              this.onCloudUpdate
+            );
+            cloudMap[cloudUrl] = cloud;
             return cloudMap;
           },
           {}
@@ -71,9 +70,6 @@ export class CloudStore extends Common.Store.ExtensionStore {
         this[key] = json[key];
       }
     });
-
-    // call any onUpdate() handlers
-    this.updateHandlers.forEach((h) => h());
   }
 
   toJSON() {
@@ -99,25 +95,29 @@ export class CloudStore extends Common.Store.ExtensionStore {
   }
 
   /**
-   * Adds an onUpdate() handler if it hasn't already been added. This handler
-   *  will be called whenever this store is updated from disk.
-   * @param {Function} handler
+   * @param {Cloud} cloud
    */
-  addUpdateHandler(handler) {
-    if (!this.updateHandlers.find((h) => h === handler)) {
-      this.updateHandlers.push(handler);
-    }
-  }
+  onCloudUpdate = (cloud) => {
+    extendObservable(this.clouds, { [cloud.cloudUrl]: cloud });
+  };
 
   /**
-   * Removes an onUpdate() handler if it's currently in the list.
-   * @param {Function} handler
+   * @param {Cloud} cloud
    */
-  removeUpdateHandler(handler) {
-    const idx = this.updateHandlers.findIndex((h) => h === handler);
-    if (idx >= 0) {
-      this.updateHandlers.splice(idx, 1);
-    }
+  addCloud(cloud) {
+    const { cloudUrl } = cloud;
+    cloud.addEventListener(CLOUD_EVENTS.DATA_UPDATED, this.onCloudUpdate);
+    extendObservable(this.clouds, { [cloudUrl]: cloud });
+  }
+  /**
+   * @param {string} cloudUrl
+   */
+  removeCloud(cloudUrl) {
+    this.clouds[cloudUrl].removeEventListener(
+      CLOUD_EVENTS.DATA_UPDATED,
+      this.onCloudUpdate
+    );
+    delete this.clouds[cloudUrl];
   }
 }
 

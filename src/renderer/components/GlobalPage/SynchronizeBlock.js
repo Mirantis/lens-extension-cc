@@ -17,6 +17,7 @@ const { Component } = Renderer;
 
 const Content = styled.div(() => ({
   marginTop: layout.gap * 2,
+  paddingBottom: layout.gap * 3,
   maxWidth: '750px',
   display: 'flex',
   flexDirection: 'column',
