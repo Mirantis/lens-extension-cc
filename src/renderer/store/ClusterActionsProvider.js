@@ -8,7 +8,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { Common, Renderer } from '@k8slens/extensions';
 import { AuthClient } from '../auth/clients/AuthClient';
-import { kubeConfigTemplate } from '../../util/templates';
+import { kubeConfigTemplate, mkClusterContextName } from '../../util/templates';
 import { Cloud } from '../../common/Cloud';
 import { ProviderStore } from './ProviderStore';
 import { Cluster } from './Cluster';
@@ -72,16 +72,17 @@ const _postInfo = function (Message, options) {
 
 /**
  * Determines if a cluster is already in Lens and returns its Lens Cluster object.
- * @param {string|Cluster} cluster Cluster ID, or cluster object, to check.
+ * @param {string|Cluster} context Cluster context name, or cluster object, to check.
  * @returns {LensCluster|undefined} Lens Cluster if the cluster is already in Lens;
  *  `undefined` otherwise.
  */
-const _getLensCluster = function (cluster) {
+const _getLensCluster = function (context) {
   const existingLensClusters = getLensClusters();
-  const clusterId = cluster instanceof Cluster ? cluster.id : cluster;
+  const clusterContext =
+    context instanceof Cluster ? context.contextName : context;
 
   return existingLensClusters.find(
-    (lensCluster) => lensCluster.metadata.uid === clusterId
+    (lensCluster) => lensCluster.spec.kubeconfigContext === clusterContext
   );
 };
 
@@ -567,7 +568,8 @@ const _addKubeCluster = async function ({
 }) {
   pr.reset(true);
 
-  if (_getLensCluster(clusterId)) {
+  const clusterContext = kubeConfig['current-context'];
+  if (_getLensCluster(clusterContext)) {
     _postInfo(
       <p
         dangerouslySetInnerHTML={{
@@ -619,17 +621,19 @@ const _addKubeCluster = async function ({
 /**
  * [ASYNC] Activate the specified cluster in Lens if it already exists.
  * @param {Object} options
+ * @param {string} options.username Username of user with access to the cluster.
  * @param {string} options.namespace MCC namespace to which the cluster belongs.
  * @param {string} options.clusterName Name of the cluster.
- * @param {string} options.clusterId ID of the cluster.
  */
-const _activateCluster = function ({ namespace, clusterName, clusterId }) {
+const _activateCluster = function ({ username, namespace, clusterName }) {
   pr.reset(true);
 
-  const lensCluster = _getLensCluster(clusterId);
+  // NOTE: this mirrors how MCC generates kubeconfig context names
+  const context = mkClusterContextName({ username, namespace, clusterName });
+  const lensCluster = _getLensCluster(context);
 
   if (lensCluster) {
-    _switchToCluster(clusterId, lensCluster.workspace);
+    _switchToCluster(lensCluster.metadata.uid);
   } else {
     pr.error = strings.clusterActionsProvider.error.clusterNotFound(
       `${namespace}/${clusterName}`
@@ -777,9 +781,9 @@ export const useClusterActions = function () {
       /**
        * [ASYNC] Activate the specified cluster in Lens if it already exists.
        * @param {Object} options
+       * @param {string} options.username Username of a user with access to the cluster.
        * @param {string} options.namespace MCC namespace to which the cluster belongs.
        * @param {string} options.clusterName Name of the cluster.
-       * @param {string} options.clusterId ID of the cluster.
        */
       activateCluster(options) {
         if (!pr.loading) {

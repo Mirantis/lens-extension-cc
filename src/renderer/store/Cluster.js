@@ -15,13 +15,15 @@ const getServerUrl = function (data) {
  * MCC cluster.
  * @class Cluster
  * @param {Object} data Raw cluster data payload from the API.
+ * @param {string} username Username used to access the cluster.
  */
 export class Cluster {
-  constructor(data) {
+  constructor(data, username) {
     DEV_ENV &&
       rtv.verify(
-        { data },
+        { username, data },
         {
+          username: rtv.STRING,
           data: {
             metadata: {
               name: rtv.STRING,
@@ -75,6 +77,9 @@ export class Cluster {
       );
 
     // NOTE: regardless of `ready`, we assume `data.metadata` is always available
+
+    /** @member {string} */
+    this.username = username;
 
     /** @member {string} */
     this.id = data.metadata.uid;
@@ -155,5 +160,11 @@ export class Cluster {
 
     /** @member {sting|null} */
     this.awsRegion = this.ready ? data.spec.providerSpec.region : null;
+  }
+
+  /** @member {string} contextName Kubeconfig context name for this cluster. */
+  get contextName() {
+    // NOTE: this mirrors how MCC generates kubeconfig context names
+    return `${this.username}@${this.namespace}@${this.name}`;
   }
 }
