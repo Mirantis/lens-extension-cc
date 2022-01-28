@@ -125,9 +125,10 @@ const _fetchSshKeys = async function (cloud, namespaces) {
 /**
  * Deserialize the raw list of cluster data from the API into Cluster objects.
  * @param {Object} body Data response from /list/cluster API.
+ * @param {Cloud} cloud The Cloud object used to access the clusters.
  * @returns {Array<Cluster>} Array of Cluster objects.
  */
-const _deserializeClustersList = function (body) {
+const _deserializeClustersList = function (body, cloud) {
   if (!body || !Array.isArray(body.items)) {
     return { error: strings.clusterDataProvider.error.invalidClusterPayload() };
   }
@@ -136,7 +137,7 @@ const _deserializeClustersList = function (body) {
     data: body.items
       .map((item, idx) => {
         try {
-          return new Cluster(item);
+          return new Cluster(item, cloud.username);
         } catch (err) {
           logger.error(
             'ExtendedCloud._deserializeClustersList()',
@@ -262,7 +263,7 @@ const _fetchClusters = async function (cloud, namespaces) {
   let dsError;
 
   results.every((result) => {
-    const { data, error } = _deserializeClustersList(result.body);
+    const { data, error } = _deserializeClustersList(result.body, cloud);
     if (error) {
       dsError = { error };
       return false; // break
@@ -384,11 +385,16 @@ export class ExtendedCloud {
 
     let _loading = false;
     let _namespaces = null;
+    let _cloud = cloud;
 
     Object.defineProperty(this, 'cloud', {
       enumerable: true,
       get() {
-        return cloud;
+        return _cloud;
+      },
+      set(newValue) {
+          _cloud = newValue;
+          this.dispatchEvent(EXTENDED_CLOUD_EVENTS.DATA_UPDATED, this);
       },
     });
     Object.defineProperty(this, 'loading', {

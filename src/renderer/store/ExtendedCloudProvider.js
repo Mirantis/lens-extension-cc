@@ -2,13 +2,8 @@ import { createContext, useContext, useMemo, useState } from 'react';
 import { ProviderStore } from './ProviderStore';
 import { cloneDeepWith, isEqual } from 'lodash';
 import { cloudStore } from '../../store/CloudStore';
-import {
-  ExtendedCloud,
-  EXTENDED_CLOUD_EVENTS,
-} from '../../common/ExtendedCloud';
+import { ExtendedCloud } from '../../common/ExtendedCloud';
 import { autorun } from 'mobx';
-
-const { LOADING_CHANGE } = EXTENDED_CLOUD_EVENTS;
 
 class ExtendedCloudProviderStore extends ProviderStore {
   // @override
@@ -35,19 +30,6 @@ const pr = new ExtendedCloudProviderStore();
 
 const ExtendedCloudContext = createContext();
 
-const updateSingleCloud = (extendedCloud) => {
-  const { cloudUrl } = extendedCloud?.cloud || {};
-  if (cloudUrl) {
-    pr.store.extendedClouds[cloudUrl] = extendedCloud;
-    pr.onChange();
-  }
-};
-
-const _stopUpdateAndListenCloud = (cloud) => {
-  cloud.stopUpdateCloudByTimeOut();
-  cloud.removeEventListener(LOADING_CHANGE, updateSingleCloud);
-};
-
 /**
  * @param {Object} tokens {[cloudUrl]: [token]} pairs
  * @return {T[]|*[]} return empty array or cloudUrls that need to be removed
@@ -72,7 +54,8 @@ const _deleteCloudCheck = (tokens) => {
 const _loadData = function (tokens, cloudUrlsToUpdate, cloudsUrlsToDelete) {
   if (cloudsUrlsToDelete?.length) {
     cloudsUrlsToDelete.forEach((url) => {
-      _stopUpdateAndListenCloud(pr.store.extendedClouds[url]);
+      // stop setInterval, just in case and remove EC
+      pr.store.extendedClouds[url].stopUpdateCloudByTimeOut();
       delete pr.store.extendedClouds[url];
     });
   }
@@ -84,23 +67,18 @@ const _loadData = function (tokens, cloudUrlsToUpdate, cloudsUrlsToDelete) {
   pr.store.tokens = tokens;
   cloudUrls.forEach(async (url) => {
     const cloud = cloudStore.clouds[url];
-    const extCl = new ExtendedCloud(cloud);
-    // if token isn't valid we don't need to add listeners, etc
-    // because on next step it has to be reconnected and rewritten anyway
-    // but we have to add it to store.extendedClouds all cases, to show in the table
-    if (!extCl.cloud.isConnected()) {
-      pr.store.extendedClouds[url] = extCl;
+    // if extendedCloud exists - replace extendedCloud.cloud
+    if(pr.store.extendedClouds[url]) {
+      pr.store.extendedClouds[url].cloud = cloud;
     } else {
-      extCl.addEventListener(LOADING_CHANGE, updateSingleCloud);
-
-      // if old cloud exist -> remove setInterval
-      // remove eventListener
-      if (pr.store.extendedClouds[url]) {
-        _stopUpdateAndListenCloud(pr.store.extendedClouds[url]);
-      }
-
-      extCl.startUpdateCloudByTimeOut();
+      // otherwise create new ExtendedCloud
+      const extCl = new ExtendedCloud(cloud);
+      // add new EC to store
       pr.store.extendedClouds[url] = extCl;
+      // if it's connected - start fetch data by interval
+      if (extCl.cloud.isConnected()) {
+        extCl.startUpdateCloudByTimeOut();
+      }
     }
   });
   pr.onChange();
