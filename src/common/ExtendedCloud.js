@@ -393,8 +393,8 @@ export class ExtendedCloud {
         return _cloud;
       },
       set(newValue) {
-          _cloud = newValue;
-          this.dispatchEvent(EXTENDED_CLOUD_EVENTS.DATA_UPDATED, this);
+        _cloud = newValue;
+        this.dispatchEvent(EXTENDED_CLOUD_EVENTS.DATA_UPDATED, this);
       },
     });
     Object.defineProperty(this, 'loading', {

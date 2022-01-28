@@ -65,10 +65,10 @@ const _loadData = function (tokens, cloudUrlsToUpdate, cloudsUrlsToDelete) {
     : Object.keys(cloudStore.clouds);
 
   pr.store.tokens = tokens;
-  cloudUrls.forEach(async (url) => {
+  cloudUrls.forEach((url) => {
     const cloud = cloudStore.clouds[url];
     // if extendedCloud exists - replace extendedCloud.cloud
-    if(pr.store.extendedClouds[url]) {
+    if (pr.store.extendedClouds[url]) {
       pr.store.extendedClouds[url].cloud = cloud;
     } else {
       // otherwise create new ExtendedCloud
