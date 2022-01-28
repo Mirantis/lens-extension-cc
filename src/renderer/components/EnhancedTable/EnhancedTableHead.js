@@ -1,24 +1,11 @@
+import PropTypes from 'prop-types';
 import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
 import { layout } from '../styles';
+import { HEAD_CELL_VALUES } from './EnhancedTable';
 import { managementClusters } from '../../../strings';
 
 const { Component } = Renderer;
-
-const headCells = [
-  {
-    label: managementClusters.table.thead.name(),
-  },
-  {
-    label: managementClusters.table.thead.url(),
-  },
-  {
-    label: managementClusters.table.thead.username(),
-  },
-  {
-    label: managementClusters.table.thead.status(),
-  },
-];
 
 const EnhTableHead = styled.thead`
   background-color: var(--mainBackground);
@@ -47,14 +34,32 @@ const sortButtonStyles = {
   marginLeft: layout.grid,
 };
 
-export const EnhancedTableHead = () => {
+export const EnhancedTableHead = ({ sortBy }) => {
+  const headerCells = [
+    {
+      label: managementClusters.table.thead.name(),
+      key: HEAD_CELL_VALUES.NAME,
+    },
+    {
+      label: managementClusters.table.thead.url(),
+      key: HEAD_CELL_VALUES.URL,
+    },
+    {
+      label: managementClusters.table.thead.username(),
+      key: HEAD_CELL_VALUES.USERNAME,
+    },
+    {
+      label: managementClusters.table.thead.status(),
+      key: HEAD_CELL_VALUES.STATUS,
+    },
+  ];
   return (
     <EnhTableHead>
       <tr>
-        {headCells.map((headCell) => (
-          <EnhTableHeadCell key={headCell.label}>
-            <EnhSortButton>
-              {headCell.label}
+        {headerCells.map(({ label, key }) => (
+          <EnhTableHeadCell key={key}>
+            <EnhSortButton onClick={() => sortBy(key)}>
+              {label}
               <Component.Icon
                 material="arrow_drop_down"
                 style={sortButtonStyles}
@@ -66,4 +71,8 @@ export const EnhancedTableHead = () => {
       </tr>
     </EnhTableHead>
   );
+};
+
+EnhancedTableHead.propTypes = {
+  sortBy: PropTypes.func.isRequired,
 };

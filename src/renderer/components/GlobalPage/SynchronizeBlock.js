@@ -10,10 +10,10 @@ import { Accordion } from '../Accordion/Accordion';
 import { layout } from '../styles';
 import { synchronizeBlock } from '../../../strings';
 
+const { Component } = Renderer;
+
 // Mocked cloud data
 import { mockExtCloud } from '../../../../test/mocks/mockExtCloud';
-
-const { Component } = Renderer;
 
 const Content = styled.div(() => ({
   marginTop: layout.gap * 2,
