@@ -3,6 +3,7 @@ import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
 import { layout } from '../styles';
 import { HEAD_CELL_VALUES } from './EnhancedTable';
+import { managementClusters } from '../../../strings';
 
 const { Component } = Renderer;
 
@@ -34,12 +35,30 @@ const sortButtonStyles = {
 };
 
 export const EnhancedTableHead = ({ sortBy }) => {
+  const headerCells = [
+    {
+      label: managementClusters.table.thead.name(),
+      key: HEAD_CELL_VALUES.NAME,
+    },
+    {
+      label: managementClusters.table.thead.url(),
+      key: HEAD_CELL_VALUES.URL,
+    },
+    {
+      label: managementClusters.table.thead.username(),
+      key: HEAD_CELL_VALUES.USERNAME,
+    },
+    {
+      label: managementClusters.table.thead.status(),
+      key: HEAD_CELL_VALUES.STATUS,
+    },
+  ];
   return (
     <EnhTableHead>
       <tr>
-        {Object.values(HEAD_CELL_VALUES).map((label) => (
-          <EnhTableHeadCell key={label}>
-            <EnhSortButton onClick={() => sortBy(label)}>
+        {headerCells.map(({ label, key }) => (
+          <EnhTableHeadCell key={key}>
+            <EnhSortButton onClick={() => sortBy(key)}>
               {label}
               <Component.Icon
                 material="arrow_drop_down"

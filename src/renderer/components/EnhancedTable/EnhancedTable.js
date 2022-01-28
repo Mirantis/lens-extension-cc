@@ -5,7 +5,6 @@ import styled from '@emotion/styled';
 import { layout } from '../styles';
 import { EnhancedTableHead } from './EnhancedTableHead';
 import { EnhancedTableRow } from './EnhancedTableRow';
-import { managementClusters } from '../../../strings';
 
 const EnhTable = styled.table`
   width: 100%;
@@ -27,10 +26,10 @@ const emptyRowStyles = {
 };
 
 export const HEAD_CELL_VALUES = {
-  NAME: managementClusters.table.thead.name(),
-  URL: managementClusters.table.thead.url(),
-  USERNAME: managementClusters.table.thead.username(),
-  STATUS: managementClusters.table.thead.status(),
+  NAME: 'Name',
+  URL: 'URL',
+  USERNAME: 'Username',
+  STATUS: 'Status',
 };
 
 const pathToData = {
