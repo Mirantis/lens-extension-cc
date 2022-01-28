@@ -1,4 +1,6 @@
 import PropTypes from 'prop-types';
+import { useState } from 'react';
+import _ from 'lodash';
 import styled from '@emotion/styled';
 import { layout } from '../styles';
 import { EnhancedTableHead } from './EnhancedTableHead';
@@ -23,12 +25,52 @@ const emptyRowStyles = {
   backgroundColor: 'var(--mainBackground)',
 };
 
+export const HEAD_CELL_VALUES = {
+  NAME: 'Name',
+  URL: 'URL',
+  USERNAME: 'Username',
+  STATUS: 'Status',
+};
+
+const pathToData = {
+  [HEAD_CELL_VALUES.NAME]: ['cloud', 'name'],
+  [HEAD_CELL_VALUES.URL]: ['cloud', 'cloudUrl'],
+  [HEAD_CELL_VALUES.USERNAME]: ['cloud', 'username'],
+};
+
+const sortData = (obj, sortBy, orderBy) => {
+  const sortByValueArr = Object.keys(obj).map((key) => {
+    return { [key]: _.get(obj[key], pathToData[sortBy]) };
+  });
+
+  const sorted = _.orderBy(sortByValueArr, Object.keys(obj), [orderBy]);
+
+  return sorted.map((a) => Object.keys(a));
+};
+
 export const EnhancedTable = ({ extClouds }) => {
+  const [sortedBy, setSortedBy] = useState(HEAD_CELL_VALUES.NAME);
+  const [orderBy, setOrderBy] = useState('asc');
+
+  const sortBy = (value) => {
+    if (value === sortedBy && orderBy === 'asc') {
+      setOrderBy('desc');
+    } else if (value === sortedBy && orderBy === 'desc') {
+      setOrderBy('asc');
+    }
+
+    if (value !== sortedBy) {
+      setOrderBy('asc');
+    }
+
+    setSortedBy(value ? value : HEAD_CELL_VALUES.NAME);
+  };
+
   return (
     <EnhTable>
-      <EnhancedTableHead />
+      <EnhancedTableHead sortBy={sortBy} />
       <tbody>
-        {Object.keys(extClouds).map((url) => {
+        {sortData(extClouds, sortedBy, orderBy).map((url) => {
           return <EnhancedTableRow key={url} row={extClouds[url]} />;
         })}
         <tr style={emptyRowStyles}>
