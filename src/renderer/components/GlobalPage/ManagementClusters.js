@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
 import { layout } from '../styles';
@@ -7,46 +8,41 @@ import { mockedExtendedClouds } from '../../../../test/mocks/mockExtCloud.js';
 
 const { Component } = Renderer;
 
-const Content = styled.div(() => ({
-  position: 'relative',
-  display: 'flex',
-  flexDirection: 'column',
-  height: '100%',
-  margin: layout.grid * 5,
-  paddingTop: layout.grid * 4,
-  paddingBottom: layout.grid * 4,
-  paddingLeft: layout.grid * 5,
-  paddingRight: layout.grid * 5,
-  borderRadius: 5,
-  backgroundColor: 'var(--layoutBackground)',
-}));
+const Content = styled.div`
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  margin: ${layout.grid * 5}px;
+  padding: ${layout.grid * 4}px ${layout.grid * 5}px;
+  border-radius: 5px;
+  background-color: var(--layoutBackground);
+`;
 
-const ContentTop = styled.div(() => ({
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-}));
+const ContentTop = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
 
-const Title = styled.h2(() => ({
-  marginBottom: layout.grid * 5,
-}));
+const Title = styled.h2`
+  margin-bottom: ${layout.grid * 5}px;
+`;
 
-const TableWrapper = styled.div(() => ({
-  // eslint-disable-next-line quotes
-  // need to calc height dynamicly
-  maxHeight: `calc(100vh - ${layout.grid * 57.5}px)`,
-  marginBottom: layout.grid * 5,
-  border: '1px solid var(--inputControlBorder)',
-  borderRadius: 5,
-  overflow: 'auto',
-}));
+const TableWrapper = styled.div`
+  max-height: calc(100vh - ${layout.grid * 57.5}px);
+  margin-bottom: ${layout.grid * 5}px;
+  border: 1px solid var(--inputControlBorder);
+  border-radius: 5px;
+  overflow: auto;
+`;
 
-const ButtonWrapper = styled.div(() => ({
-  marginTop: 'auto',
-  textAlign: 'right',
-}));
+const ButtonWrapper = styled.div`
+  margin-top: auto;
+  text-align: right;
+`;
 
-export const ManagementClusters = () => {
+export const ManagementClusters = ({ extClouds }) => {
   return (
     <Content>
       <ContentTop>
@@ -58,7 +54,7 @@ export const ManagementClusters = () => {
       </ContentTop>
 
       <TableWrapper>
-        <EnhancedTable extClouds={mockedExtendedClouds} />
+        <EnhancedTable extClouds={extClouds} />
       </TableWrapper>
 
       <ButtonWrapper>
@@ -69,4 +65,12 @@ export const ManagementClusters = () => {
       </ButtonWrapper>
     </Content>
   );
+};
+
+ManagementClusters.propTypes = {
+  extClouds: PropTypes.object,
+};
+
+ManagementClusters.defaultProps = {
+  extClouds: mockedExtendedClouds,
 };

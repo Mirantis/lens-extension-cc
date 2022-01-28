@@ -1,9 +1,14 @@
 import PropTypes from 'prop-types';
+import _ from 'lodash';
 import styled from '@emotion/styled';
 import { layout } from '../styles';
 import { managementClusters } from '../../../strings';
 
-const EnhTableRow = styled.tr`
+const EnhInfoRowsWrapper = styled.div`
+  display: contents;
+`;
+
+const EnhTableInfoRow = styled.tr`
   &:nth-of-type(odd) {
     background-color: var(--layoutTabsBackground);
   }
@@ -13,7 +18,7 @@ const EnhTableRow = styled.tr`
   }
 `;
 
-const EnhTableCell = styled.td`
+const EnhTableInfoRowCell = styled.td`
   width: ${({ isBigger }) => isBigger && '40%'};
   border: 0;
   font-size: var(--font-size);
@@ -24,10 +29,8 @@ const EnhTableCell = styled.td`
 `;
 
 const generateTableCells = (amount) => {
-  const keysArr = Array(amount)
-    .fill(null)
-    .map((_, i) => i);
-  return keysArr.map((key) => <EnhTableCell key={key}></EnhTableCell>);
+  const keysArr = _.times(amount);
+  return keysArr.map((key) => <EnhTableInfoRowCell key={key} />);
 };
 
 export const AdditionalInfoRows = ({ namespace }) => {
@@ -46,16 +49,16 @@ export const AdditionalInfoRows = ({ namespace }) => {
     },
   ];
   return (
-    <div style={{ display: 'contents' }}>
+    <EnhInfoRowsWrapper>
       {listOfInfo.map(({ infoName, infoCount }) => (
-        <EnhTableRow key={infoName}>
-          <EnhTableCell isBigger>
+        <EnhTableInfoRow key={infoName}>
+          <EnhTableInfoRowCell isBigger>
             {infoName} ({infoCount})
-          </EnhTableCell>
+          </EnhTableInfoRowCell>
           {generateTableCells(4)}
-        </EnhTableRow>
+        </EnhTableInfoRow>
       ))}
-    </div>
+    </EnhInfoRowsWrapper>
   );
 };
 

@@ -24,7 +24,7 @@ const EnhTableHead = styled.thead`
   background-color: var(--mainBackground);
 `;
 
-const EnhTableCell = styled.th`
+const EnhTableHeadCell = styled.th`
   text-align: left;
   border: 0;
   font-size: var(--font-size);
@@ -52,7 +52,7 @@ export const EnhancedTableHead = () => {
     <EnhTableHead>
       <tr>
         {headCells.map((headCell) => (
-          <EnhTableCell key={headCell.label}>
+          <EnhTableHeadCell key={headCell.label}>
             <EnhSortButton>
               {headCell.label}
               <Component.Icon
@@ -60,9 +60,9 @@ export const EnhancedTableHead = () => {
                 style={sortButtonStyles}
               />
             </EnhSortButton>
-          </EnhTableCell>
+          </EnhTableHeadCell>
         ))}
-        <EnhTableCell></EnhTableCell>
+        <EnhTableHeadCell></EnhTableHeadCell>
       </tr>
     </EnhTableHead>
   );

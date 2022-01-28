@@ -7,12 +7,16 @@ import { AdditionalInfoRows } from './AdditionalInfoRows';
 
 const { Component } = Renderer;
 
+const EnhRowsWrapper = styled.div`
+  display: contents;
+`;
+
 const EnhTableRow = styled.tr`
   background-color: ${({ isTopLevel }) =>
     isTopLevel ? 'var(--layoutTabsBackground)' : 'var(--mainBackground)'};
 `;
 
-const EnhTableCell = styled.td`
+const EnhTableRowCell = styled.td`
   width: ${({ isBigger }) => isBigger && '40%'};
   border: 0;
   font-size: var(--font-size);
@@ -64,9 +68,9 @@ export const EnhancedTableRow = (props) => {
 
   const setOpenedList = (index) => {
     if (openedSecondLevelListIndex.includes(index)) {
-      const someArray = [...openedSecondLevelListIndex];
-      someArray.splice(openedSecondLevelListIndex.indexOf(index), 1);
-      setOpenedSecondLevelListIndex(someArray);
+      setOpenedSecondLevelListIndex(
+        openedSecondLevelListIndex.filter((rowIndex) => rowIndex !== index)
+      );
     } else {
       setOpenedSecondLevelListIndex([...openedSecondLevelListIndex, index]);
     }
@@ -75,7 +79,7 @@ export const EnhancedTableRow = (props) => {
   return (
     <>
       <EnhTableRow isTopLevel>
-        <EnhTableCell isBigger>
+        <EnhTableRowCell isBigger>
           <EnhCollapseBtn
             onClick={() => setIsOpenFirstLevel(!isOpenFirstLevel)}
           >
@@ -89,22 +93,23 @@ export const EnhancedTableRow = (props) => {
             )}
           </EnhCollapseBtn>
           {row.cloud.name}
-        </EnhTableCell>
-        <EnhTableCell>{row.cloud.cloudUrl}</EnhTableCell>
-        <EnhTableCell>{row.cloud.username}</EnhTableCell>
+        </EnhTableRowCell>
+        <EnhTableRowCell>{row.cloud.cloudUrl}</EnhTableRowCell>
+        <EnhTableRowCell>{row.cloud.username}</EnhTableRowCell>
         {/* NEED TO CHANGE STATUS DYNAMIC */}
-        <EnhTableCell>STATUS</EnhTableCell>
-        <EnhTableCell isRightAligned>
+        <EnhTableRowCell>STATUS</EnhTableRowCell>
+        <EnhTableRowCell isRightAligned>
           <EnhMoreButton>
             <Component.Icon material="more_vert" style={moreInfoIconStyles} />
           </EnhMoreButton>
-        </EnhTableCell>
+        </EnhTableRowCell>
       </EnhTableRow>
       {isOpenFirstLevel &&
+        (row?.namespaces || []) &&
         row.namespaces.map((namespace, index) => (
-          <div style={{ display: 'contents' }} key={namespace.name}>
+          <EnhRowsWrapper key={namespace.name}>
             <EnhTableRow>
-              <EnhTableCell isFirstLevel>
+              <EnhTableRowCell isFirstLevel>
                 <EnhCollapseBtn onClick={() => setOpenedList(index)}>
                   {openedSecondLevelListIndex.includes(index) ? (
                     <Component.Icon
@@ -119,25 +124,25 @@ export const EnhancedTableRow = (props) => {
                   )}
                 </EnhCollapseBtn>
                 {namespace.name}
-              </EnhTableCell>
-              <EnhTableCell></EnhTableCell>
-              <EnhTableCell></EnhTableCell>
+              </EnhTableRowCell>
+              <EnhTableRowCell />
+              <EnhTableRowCell />
               {/* NEED TO CHANGE STATUS DYNAMIC */}
-              <EnhTableCell>STATUS</EnhTableCell>
-              <EnhTableCell isRightAligned>
+              <EnhTableRowCell>STATUS</EnhTableRowCell>
+              <EnhTableRowCell isRightAligned>
                 <EnhMoreButton>
                   <Component.Icon
                     material="more_vert"
                     style={moreInfoIconStyles}
                   />
                 </EnhMoreButton>
-              </EnhTableCell>
+              </EnhTableRowCell>
             </EnhTableRow>
 
             {openedSecondLevelListIndex.includes(index) && (
               <AdditionalInfoRows namespace={namespace} />
             )}
-          </div>
+          </EnhRowsWrapper>
         ))}
     </>
   );
