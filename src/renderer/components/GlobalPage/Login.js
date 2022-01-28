@@ -109,7 +109,7 @@ export const Login = function () {
       clusterDataLoaded &&
       !clusterDataError &&
       url === cloudUrl &&
-      cloud.isValid()
+      cloud.isConnected()
     ) {
       // just do a cluster data refresh instead of going through auth again
       setRefreshing(true);

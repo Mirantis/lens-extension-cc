@@ -43,13 +43,40 @@ const updateSingleCloud = (extendedCloud) => {
   }
 };
 
+const _stopUpdateAndListenCloud = (cloud) => {
+  cloud.stopUpdateCloudByTimeOut();
+  cloud.removeEventListener(LOADING_CHANGE, updateSingleCloud);
+};
+
+/**
+ * @param {Object} tokens {[cloudUrl]: [token]} pairs
+ * @return {T[]|*[]} return empty array or cloudUrls that need to be removed
+ * @private
+ */
+const _deleteCloudCheck = (tokens) => {
+  const newCloudUrls = Object.keys(tokens || {});
+  const prevCloudUrls = Object.keys(pr.store.tokens || {});
+  if (newCloudUrls.length < prevCloudUrls.length) {
+    return prevCloudUrls.filter((v) => !newCloudUrls.includes(v));
+  }
+  return [];
+};
+
 /**
  * @desc update extendedClouds
  * @param {Object} tokens, contains `[cloudUrl]: token` pairs
  * @param {Array<string>} cloudUrlsToUpdate, list of cloudUrls that has to be updated
+ * @param {Array<string>} cloudsUrlsToDelete, list of cloudUrls that has to be updated
  * @private
  */
-const _loadData = function (tokens, cloudUrlsToUpdate) {
+const _loadData = function (tokens, cloudUrlsToUpdate, cloudsUrlsToDelete) {
+  if (cloudsUrlsToDelete?.length) {
+    cloudsUrlsToDelete.forEach((url) => {
+      _stopUpdateAndListenCloud(pr.store.extendedClouds[url]);
+      delete pr.store.extendedClouds[url];
+    });
+  }
+
   const cloudUrls = cloudUrlsToUpdate?.length
     ? cloudUrlsToUpdate
     : Object.keys(cloudStore.clouds);
@@ -61,7 +88,7 @@ const _loadData = function (tokens, cloudUrlsToUpdate) {
     // if token isn't valid we don't need to add listeners, etc
     // because on next step it has to be reconnected and rewritten anyway
     // but we have to add it to store.extendedClouds all cases, to show in the table
-    if (!extCl.cloud.isValid()) {
+    if (!extCl.cloud.isConnected()) {
       pr.store.extendedClouds[url] = extCl;
     } else {
       extCl.addEventListener(LOADING_CHANGE, updateSingleCloud);
@@ -69,12 +96,9 @@ const _loadData = function (tokens, cloudUrlsToUpdate) {
       // if old cloud exist -> remove setInterval
       // remove eventListener
       if (pr.store.extendedClouds[url]) {
-        pr.store.extendedClouds[url].stopUpdateCloudByTimeOut();
-        pr.store.extendedClouds[url].removeEventListener(
-          LOADING_CHANGE,
-          updateSingleCloud
-        );
+        _stopUpdateAndListenCloud(pr.store.extendedClouds[url]);
       }
+
       extCl.startUpdateCloudByTimeOut();
       pr.store.extendedClouds[url] = extCl;
     }
@@ -124,8 +148,9 @@ export const ExtendedCloudProvider = function (props) {
       return acc;
     }, {});
     // compare tokens from cloudStore.clouds and tokens we store at previous change in context
-    if (!isEqual(pr.store.tokens, tokens) && !pr.loading) {
-      _loadData(tokens, cloudUrlsToUpdate);
+    if (!isEqual(pr.store.tokens, tokens)) {
+      const cloudsUrlsToDelete = _deleteCloudCheck(tokens);
+      _loadData(tokens, cloudUrlsToUpdate, cloudsUrlsToDelete);
     }
   });
 

@@ -424,7 +424,9 @@ export class ExtendedCloud {
       },
     });
 
-    setTimeout(() => this.init());
+    if (cloud.isConnected()) {
+      setTimeout(() => this.init());
+    }
   }
 
   startUpdateCloudByTimeOut() {
