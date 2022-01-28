@@ -29,8 +29,7 @@ const EnhTableInfoRowCell = styled.td`
 `;
 
 const generateTableCells = (amount) => {
-  const keysArr = _.times(amount);
-  return keysArr.map((key) => <EnhTableInfoRowCell key={key} />);
+  return _.times(amount).map((key) => <EnhTableInfoRowCell key={key} />);
 };
 
 export const AdditionalInfoRows = ({ namespace }) => {

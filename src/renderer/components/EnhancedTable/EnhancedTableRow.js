@@ -59,8 +59,7 @@ const moreInfoIconStyles = {
   fontSize: 'calc(var(--font-size) * 1.5)',
 };
 
-export const EnhancedTableRow = (props) => {
-  const { row } = props;
+export const EnhancedTableRow = ({ row }) => {
   const [isOpenFirstLevel, setIsOpenFirstLevel] = useState(false);
   const [openedSecondLevelListIndex, setOpenedSecondLevelListIndex] = useState(
     []
@@ -105,8 +104,7 @@ export const EnhancedTableRow = (props) => {
         </EnhTableRowCell>
       </EnhTableRow>
       {isOpenFirstLevel &&
-        (row?.namespaces || []) &&
-        row.namespaces.map((namespace, index) => (
+        (row?.namespaces || []).map((namespace, index) => (
           <EnhRowsWrapper key={namespace.name}>
             <EnhTableRow>
               <EnhTableRowCell isFirstLevel>
