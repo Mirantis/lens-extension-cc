@@ -3,8 +3,6 @@ import { ThemeProvider, CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
 import { SyncView } from './SyncView.js';
 import { ExtStateProvider } from '../../store/ExtStateProvider.js';
-import { ConfigProvider } from '../../store/ConfigProvider.js';
-import { SsoAuthProvider } from '../../store/SsoAuthProvider.js';
 import { ClusterDataProvider } from '../../store/ClusterDataProvider.js';
 import { ClusterActionsProvider } from '../../store/ClusterActionsProvider.js';
 import { ExtendedCloudProvider } from '../../store/ExtendedCloudProvider.js';
@@ -78,8 +76,6 @@ export const GlobalPage = function ({ extension }: Props) {
     <CacheProvider value={createCache({ key: 'lens-extension-cc' })}>
       <ThemeProvider theme={theme}>
         <ExtStateProvider extension={extension}>
-          <ConfigProvider>
-            <SsoAuthProvider>
               <ClusterDataProvider>
                 <ClusterActionsProvider>
                   <ExtendedCloudProvider>
@@ -87,8 +83,6 @@ export const GlobalPage = function ({ extension }: Props) {
                   </ExtendedCloudProvider>
                 </ClusterActionsProvider>
               </ClusterDataProvider>
-            </SsoAuthProvider>
-          </ConfigProvider>
         </ExtStateProvider>
       </ThemeProvider>
     </CacheProvider>

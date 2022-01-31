@@ -98,7 +98,7 @@ export class Cloud {
 
       if (ts[key][0] === rtv.REQUIRED) {
         // each API property becomes optional, which means it can be `null`, which
-        //  supports cloning from an empty state in ExtStateProvider
+        //  supports cloning from an empty state in CloudStore
         ts[key][0] = rtv.EXPECTED;
       }
 
