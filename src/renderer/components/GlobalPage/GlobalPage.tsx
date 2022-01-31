@@ -7,6 +7,8 @@ import { ConfigProvider } from '../../store/ConfigProvider.js';
 import { SsoAuthProvider } from '../../store/SsoAuthProvider.js';
 import { ClusterDataProvider } from '../../store/ClusterDataProvider.js';
 import { ClusterActionsProvider } from '../../store/ClusterActionsProvider.js';
+import { ExtendedCloudProvider } from '../../store/ExtendedCloudProvider.js';
+
 import { lightThemeClassName, lightTheme, darkTheme } from '../theme';
 import ExtensionRenderer from '../../renderer';
 
@@ -80,7 +82,9 @@ export const GlobalPage = function ({ extension }: Props) {
             <SsoAuthProvider>
               <ClusterDataProvider>
                 <ClusterActionsProvider>
-                  <SyncView />
+                  <ExtendedCloudProvider>
+                    <SyncView />
+                  </ExtendedCloudProvider>
                 </ClusterActionsProvider>
               </ClusterDataProvider>
             </SsoAuthProvider>

@@ -48,7 +48,7 @@ const sortData = (obj, sortBy, order) => {
   return sorted.map((a) => Object.keys(a));
 };
 
-export const EnhancedTable = ({ extClouds }) => {
+export const EnhancedTable = ({ extendedClouds }) => {
   const [sortedBy, setSortedBy] = useState(HEAD_CELL_VALUES.NAME);
   const [order, setOrder] = useState('asc');
 
@@ -70,8 +70,8 @@ export const EnhancedTable = ({ extClouds }) => {
     <EnhTable>
       <EnhancedTableHead sortBy={sortBy} />
       <tbody>
-        {sortData(extClouds, sortedBy, order).map((url) => {
-          return <EnhancedTableRow key={url} row={extClouds[url]} />;
+        {sortData(extendedClouds, sortedBy, order).map((url) => {
+          return <EnhancedTableRow key={url} row={extendedClouds[url]} />;
         })}
         <tr style={emptyRowStyles}>
           <EnhTableCell colSpan={6} />
@@ -82,5 +82,5 @@ export const EnhancedTable = ({ extClouds }) => {
 };
 
 EnhancedTable.propTypes = {
-  extClouds: PropTypes.object.isRequired,
+  extendedClouds: PropTypes.object.isRequired,
 };

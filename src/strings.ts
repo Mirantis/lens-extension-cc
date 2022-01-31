@@ -117,6 +117,8 @@ export const connectionBlock: Dict = {
   notice: {
     info: () =>
       "You will be directed to your Management Cluster's login page through your web browser where you should enter your SSO credentials",
+    urlAlreadyUsed: () => 'Management Cluster URL is already used',
+    nameIsEmpty: () => 'Management Cluster name cannot be empty',
   },
 };
 export const synchronizeBlock = {
