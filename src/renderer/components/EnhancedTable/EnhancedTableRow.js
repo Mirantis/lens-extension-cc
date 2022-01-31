@@ -62,11 +62,11 @@ const moreInfoIconStyles = {
 };
 
 /**
- * @param {Cloud} cloud
+ * @param {boolean} isCloudConnected
  * @return {{cloudStatus: string, namespaceStatus: string}}
  */
-const getStatus = (cloud) => {
-  return cloud.isConnected()
+const getStatus = (isCloudConnected) => {
+  return isCloudConnected
     ? {
         cloudStatus: connectionStatuses.cloud.connected(),
         namespaceStatus: connectionStatuses.namespace.connected(),
@@ -108,7 +108,8 @@ export const EnhancedTableRow = ({ row }) => {
     }
   };
 
-  const { cloudStatus, namespaceStatus } = getStatus(row.cloud);
+  const isCloudConnected = row.cloud.isConnected();
+  const { cloudStatus, namespaceStatus } = getStatus(isCloudConnected);
 
   return (
     <>
