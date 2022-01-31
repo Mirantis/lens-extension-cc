@@ -1,10 +1,11 @@
 import PropTypes from 'prop-types';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
 import { layout } from '../styles';
 import { AdditionalInfoRows } from './AdditionalInfoRows';
 import { connectionStatuses } from '../../../strings';
+import { EXTENDED_CLOUD_EVENTS } from '../../../common/ExtendedCloud';
 
 const { Icon } = Renderer.Component;
 
@@ -78,9 +79,24 @@ const getStatus = (cloud) => {
 
 export const EnhancedTableRow = ({ row }) => {
   const [isOpenFirstLevel, setIsOpenFirstLevel] = useState(false);
+  const [actualNamespaces, setActualNamespaces] = useState(row.namespaces);
   const [openedSecondLevelListIndex, setOpenedSecondLevelListIndex] = useState(
     []
   );
+  const updateNamespaces = (updatedRow) => {
+    if (updatedRow) {
+      setActualNamespaces(updatedRow.namespaces);
+    }
+  };
+  useEffect(() => {
+    row.addEventListener(EXTENDED_CLOUD_EVENTS.DATA_UPDATED, updateNamespaces);
+    return () => {
+      row.removeEventListener(
+        EXTENDED_CLOUD_EVENTS.DATA_UPDATED,
+        updateNamespaces
+      );
+    };
+  });
 
   const setOpenedList = (index) => {
     if (openedSecondLevelListIndex.includes(index)) {
@@ -119,7 +135,7 @@ export const EnhancedTableRow = ({ row }) => {
         </EnhTableRowCell>
       </EnhTableRow>
       {isOpenFirstLevel &&
-        (row?.namespaces || []).map((namespace, index) => (
+        (actualNamespaces || []).map((namespace, index) => (
           <EnhRowsWrapper key={namespace.name}>
             <EnhTableRow>
               <EnhTableRowCell isFirstLevel>

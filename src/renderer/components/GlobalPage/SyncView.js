@@ -9,7 +9,9 @@ import { cloudStore } from '../../../store/CloudStore';
 import { managementClusters } from '../../../strings';
 import { EnhancedTable } from '../EnhancedTable/EnhancedTable';
 
-const { Component } = Renderer;
+const {
+  Component: { Button, Spinner },
+} = Renderer;
 
 const Content = styled.div`
   position: relative;
@@ -53,8 +55,6 @@ export const SyncView = () => {
   const openAddCloudBlock = () => setShowAddCloudComponent(true);
   const closeAddCloudBlock = () => setShowAddCloudComponent(false);
 
-  console.log({ extendedClouds });
-
   // we control this state and should check it first
   if (showAddCloudComponent) {
     return <AddCloudInstance closeAddCloudBlock={closeAddCloudBlock} />;
@@ -69,7 +69,7 @@ export const SyncView = () => {
       <Content>
         <ContentTop>
           <Title>{managementClusters.title()}</Title>
-          <Component.Button
+          <Button
             variant="outlined"
             label={managementClusters.syncButtonLabel()}
           />
@@ -80,7 +80,7 @@ export const SyncView = () => {
         </TableWrapper>
 
         <ButtonWrapper>
-          <Component.Button
+          <Button
             primary
             label={managementClusters.connectButtonLabel()}
             onClick={openAddCloudBlock}
@@ -90,7 +90,7 @@ export const SyncView = () => {
     );
   }
 
-  // Just in case. Show loader. Only while initial loading.
+  // Just in case. Show loader only while initial loading.
   // Eg when we have clouds on disk, but they are not transformed to extendedClouds yet
-  return <Component.Spinner />;
+  return <Spinner />;
 };
