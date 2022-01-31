@@ -63,14 +63,19 @@ export const ConnectionBlock = ({
 
   const validateCloud = (url) => {
     if (cloudStore?.clouds?.[url]) {
-      const errorMessage = connectionBlock.notice.urlAlreadyUsed();
-      setValidationError(errorMessage);
+      setValidationError(connectionBlock.notice.urlAlreadyUsed());
       return false;
     }
     const validName = clusterName.trim();
     if (!validName || validName.includes(' ')) {
-      const errorMessage = connectionBlock.notice.nameIsEmpty();
-      setValidationError(errorMessage);
+      setValidationError(connectionBlock.notice.nameIsEmpty());
+      return false;
+    }
+    const cloudNames = Object.keys(cloudStore.clouds).map(
+      (key) => cloudStore.clouds[key].name
+    );
+    if (cloudNames.includes(validName)) {
+      setValidationError(connectionBlock.notice.nameAlreadyUsed());
       return false;
     }
     return true;

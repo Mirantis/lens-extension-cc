@@ -56,6 +56,7 @@ export const connectionBlock: Dict = {
     urlAlreadyUsed: () => 'This Management Cluster is already being synced',
     nameIsEmpty: () =>
       'Management Cluster name cannot be empty or contain whitespaces',
+    nameAlreadyUsed: () => 'This Management Cluster name is already exists',
   },
 };
 export const synchronizeBlock = {
