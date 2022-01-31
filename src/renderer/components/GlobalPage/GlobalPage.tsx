@@ -76,13 +76,13 @@ export const GlobalPage = function ({ extension }: Props) {
     <CacheProvider value={createCache({ key: 'lens-extension-cc' })}>
       <ThemeProvider theme={theme}>
         <ExtStateProvider extension={extension}>
-              <ClusterDataProvider>
-                <ClusterActionsProvider>
-                  <ExtendedCloudProvider>
-                    <SyncView />
-                  </ExtendedCloudProvider>
-                </ClusterActionsProvider>
-              </ClusterDataProvider>
+          <ClusterDataProvider>
+            <ClusterActionsProvider>
+              <ExtendedCloudProvider>
+                <SyncView />
+              </ExtendedCloudProvider>
+            </ClusterActionsProvider>
+          </ClusterDataProvider>
         </ExtStateProvider>
       </ThemeProvider>
     </CacheProvider>
