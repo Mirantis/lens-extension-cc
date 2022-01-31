@@ -86,7 +86,7 @@ export const useClusterLoader = function (
             config ? '<set>' : '<none>'
           }, ssoAuthLoading=${ssoAuthLoading}, ssoAuthLoaded=${ssoAuthLoaded}, ssoAuthError=${
             ssoAuthError ? `"${ssoAuthError}"` : '<none>'
-          }, activeEventType=${activeEventType}, cloud.isValid()=${cloud.isValid()}`,
+          }, activeEventType=${activeEventType}, cloud.isConnected()=${cloud.isConnected()}`,
           { cloudUrl, config, cloud, ssoAuthLoading, ssoAuthLoaded }
         );
       }
@@ -98,7 +98,7 @@ export const useClusterLoader = function (
         !ssoAuthLoading &&
         !ssoAuthLoaded
       ) {
-        if (cloud.isValid()) {
+        if (cloud.isConnected()) {
           // skip authentication, go straight for the clusters
           DEV_ENV &&
             logger.log(
@@ -141,7 +141,7 @@ export const useClusterLoader = function (
           'hooks/useClusterLoader#getClusterData',
           `=== config=${
             config ? '<set>' : '<none>'
-          }, cloud.isValid()=${cloud.isValid()}, clusterDataLoading=${clusterDataLoading}, clusterDataLoaded=${clusterDataLoaded}, clusterDataError=${
+          }, cloud.isConnected()=${cloud.isConnected()}, clusterDataLoading=${clusterDataLoading}, clusterDataLoaded=${clusterDataLoaded}, clusterDataError=${
             clusterDataError ? `"${clusterDataError}"` : '<none>'
           }, onlyNamespaces=${onlyNamespaces?.join(',')}`,
           {
@@ -159,7 +159,7 @@ export const useClusterLoader = function (
         cloudUrl && // MCC instance is known
         config && // config loaded
         ssoAuthLoaded && // must be authenticated at this point
-        cloud.isValid() && // must have valid tokens (they may have expired)
+        cloud.isConnected() && // must have valid tokens (they may have expired)
         !clusterDataLoading &&
         !clusterDataLoaded
       ) {
