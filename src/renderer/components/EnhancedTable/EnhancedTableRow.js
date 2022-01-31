@@ -61,6 +61,14 @@ const moreInfoIconStyles = {
   fontSize: 'calc(var(--font-size) * 1.5)',
 };
 
+const colorGreen = {
+  color: 'var(--colorSuccess)',
+};
+
+const colorRed = {
+  color: 'var(--colorError)',
+};
+
 /**
  * @param {boolean} isCloudConnected
  * @return {{cloudStatus: string, namespaceStatus: string}}
@@ -133,7 +141,9 @@ export const EnhancedTableRow = ({ extendedCloud }) => {
         </EnhTableRowCell>
         <EnhTableRowCell>{extendedCloud.cloud.cloudUrl}</EnhTableRowCell>
         <EnhTableRowCell>{extendedCloud.cloud.username}</EnhTableRowCell>
-        <EnhTableRowCell>{cloudStatus}</EnhTableRowCell>
+        <EnhTableRowCell style={isCloudConnected ? colorGreen : colorRed}>
+          {cloudStatus}
+        </EnhTableRowCell>
         <EnhTableRowCell isRightAligned>
           <EnhMoreButton>
             <Icon material="more_vert" style={moreInfoIconStyles} />
