@@ -4,6 +4,7 @@ import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
 import { layout } from '../styles';
 import { AdditionalInfoRows } from './AdditionalInfoRows';
+import { TriStateCheckbox, checkValues } from '../TriStateCheckbox/TriStateCheckbox';
 
 const { Component } = Renderer;
 
@@ -35,13 +36,27 @@ const EnhTableRowCell = styled.td`
     `
     text-align: right;
   `}
+
+  ${({ withCheckboxes }) =>
+    withCheckboxes &&
+    `
+    width: 100%;
+    display: flex;
+    align-items: center;
+  `}
 `;
 
 const EnhCollapseBtn = styled.button`
   background: transparent;
   cursor: pointer;
   margin-right: ${layout.grid * 1.5}px;
-  transform: translateY(-2px);
+  transform: translateY(-1px);
+
+  ${({ withCheckboxes }) =>
+    withCheckboxes &&
+    `
+    transform: translateY(0);
+  `}
 `;
 
 const EnhMoreButton = styled.button`
@@ -59,11 +74,23 @@ const moreInfoIconStyles = {
   fontSize: 'calc(var(--font-size) * 1.5)',
 };
 
-export const EnhancedTableRow = ({ row }) => {
+const checkboxesStateObj = (extCloud) => {
+  return extCloud.namespaces.reduce((acc, namespace) => {
+    acc[namespace.name] = false;
+    return acc;
+  }, {});
+};
+
+export const EnhancedTableRow = ({ row, withCheckboxes }) => {
   const [isOpenFirstLevel, setIsOpenFirstLevel] = useState(false);
   const [openedSecondLevelListIndex, setOpenedSecondLevelListIndex] = useState(
     []
   );
+  // @type {object} checkboxes state
+  const [сheckboxesState, setCheckboxesState] = useState({
+    parent: false,
+    children: checkboxesStateObj(row),
+  });
 
   const setOpenedList = (index) => {
     if (openedSecondLevelListIndex.includes(index)) {
@@ -75,11 +102,77 @@ export const EnhancedTableRow = ({ row }) => {
     }
   };
 
+  // set parent checkbox state based on changes of children checkboxes
+  const setParentCheckboxState = (children) => {
+    const childrenCheckboxes = Object.values(children);
+
+    if (
+      childrenCheckboxes.every((el) => el === false) ||
+      childrenCheckboxes.every((el) => el === true)
+    ) {
+      return childrenCheckboxes[0];
+    }
+    if (childrenCheckboxes.some((el) => el === false)) {
+      return true;
+    }
+    return сheckboxesState.parent;
+  };
+
+  const getNewChildren = (parentCheckedStatus) => {
+    const newChildren = { ...сheckboxesState.children };
+
+    Object.keys(сheckboxesState.children).forEach((name) => {
+      newChildren[name] = parentCheckedStatus;
+    });
+    return newChildren;
+  };
+
+  const onChangeHandler = (name) => {
+    if (!name) {
+      setCheckboxesState({
+        parent: !сheckboxesState.parent,
+        children: getNewChildren(!сheckboxesState.parent),
+      });
+    } else {
+      const newChildren = { ...сheckboxesState.children };
+      newChildren[name] = !сheckboxesState.children[name];
+
+      setCheckboxesState({
+        children: newChildren,
+        parent: setParentCheckboxState(newChildren),
+      });
+    }
+  };
+
+  const parentCheckboxValue = () => {
+    const childrenCheckboxes = Object.values(сheckboxesState.children);
+
+    if (
+      сheckboxesState.parent &&
+      childrenCheckboxes.some((el) => el === false) &&
+      childrenCheckboxes.some((el) => el === true)
+    ) {
+      return checkValues.MIXED;
+    }
+    if (сheckboxesState.parent) {
+      return checkValues.CHECKED;
+    } else {
+      return checkValues.UNCHECKED;
+    }
+  };
+
+  const childrenCheckboxValue = (name) => {
+    return сheckboxesState.children[name]
+      ? checkValues.CHECKED
+      : checkValues.UNCHECKED;
+  };
+
   return (
     <>
       <EnhTableRow isTopLevel>
-        <EnhTableRowCell isBigger>
+        <EnhTableRowCell isBigger withCheckboxes={withCheckboxes}>
           <EnhCollapseBtn
+            withCheckboxes={withCheckboxes}
             onClick={() => setIsOpenFirstLevel(!isOpenFirstLevel)}
           >
             {isOpenFirstLevel ? (
@@ -91,7 +184,18 @@ export const EnhancedTableRow = ({ row }) => {
               />
             )}
           </EnhCollapseBtn>
-          {row.cloud.name}
+          {
+            withCheckboxes &&
+            <TriStateCheckbox
+              label={row.cloud.name}
+              onChange={() => onChangeHandler()}
+              value={parentCheckboxValue()}
+            />
+          }
+          {
+            !withCheckboxes &&
+            row.cloud.name
+          }
         </EnhTableRowCell>
         <EnhTableRowCell>{row.cloud.cloudUrl}</EnhTableRowCell>
         <EnhTableRowCell>{row.cloud.username}</EnhTableRowCell>
@@ -107,7 +211,7 @@ export const EnhancedTableRow = ({ row }) => {
         (row?.namespaces || []).map((namespace, index) => (
           <EnhRowsWrapper key={namespace.name}>
             <EnhTableRow>
-              <EnhTableRowCell isFirstLevel>
+              <EnhTableRowCell isFirstLevel withCheckboxes={withCheckboxes}>
                 <EnhCollapseBtn onClick={() => setOpenedList(index)}>
                   {openedSecondLevelListIndex.includes(index) ? (
                     <Component.Icon
@@ -121,7 +225,18 @@ export const EnhancedTableRow = ({ row }) => {
                     />
                   )}
                 </EnhCollapseBtn>
-                {namespace.name}
+                {
+                  withCheckboxes &&
+                  <TriStateCheckbox
+                    label={namespace.name}
+                    value={childrenCheckboxValue(namespace.name)}
+                    onChange={() => onChangeHandler(namespace.name)}
+                  />
+                }
+                {
+                  !withCheckboxes &&
+                  namespace.name
+                }
               </EnhTableRowCell>
               <EnhTableRowCell />
               <EnhTableRowCell />
@@ -148,4 +263,5 @@ export const EnhancedTableRow = ({ row }) => {
 
 EnhancedTableRow.propTypes = {
   row: PropTypes.object.isRequired,
+  withCheckboxes: PropTypes.bool.isRequired,
 };
