@@ -71,7 +71,9 @@ export const EnhancedTable = ({ extendedClouds }) => {
       <EnhancedTableHead sortBy={sortBy} />
       <tbody>
         {sortData(extendedClouds, sortedBy, order).map((url) => {
-          return <EnhancedTableRow key={url} row={extendedClouds[url]} />;
+          return (
+            <EnhancedTableRow key={url} extendedCloud={extendedClouds[url]} />
+          );
         })}
         <tr style={emptyRowStyles}>
           <EnhTableCell colSpan={6} />

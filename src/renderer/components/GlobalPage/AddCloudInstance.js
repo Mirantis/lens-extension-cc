@@ -47,7 +47,7 @@ const MainColumn = styled.div(function () {
   };
 });
 
-export const AddCloudInstance = ({ closeAddCloudBlock }) => {
+export const AddCloudInstance = ({ onAdd, onCancel }) => {
   const [cloud, setCloud] = useState(null);
   const [extCloud, setExtCloud] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -100,19 +100,17 @@ export const AddCloudInstance = ({ closeAddCloudBlock }) => {
           cleanCloudsState={cleanCloudsState}
         />
         {extCloud && !extCloud.error ? (
-          <SynchronizeBlock
-            extCloud={extCloud}
-            closeAddCloudBlock={closeAddCloudBlock}
-          />
+          <SynchronizeBlock extCloud={extCloud} onAdd={onAdd} />
         ) : null}
       </MainColumn>
       <EscColumn>
-        <CloseButton onClick={closeAddCloudBlock} />
+        <CloseButton onClick={onCancel} />
       </EscColumn>
     </PageContainer>
   );
 };
 
 AddCloudInstance.propTypes = {
-  closeAddCloudBlock: PropTypes.func.isRequired,
+  onCancel: PropTypes.func.isRequired,
+  onAdd: PropTypes.func.isRequired,
 };

@@ -77,9 +77,11 @@ const getStatus = (isCloudConnected) => {
       };
 };
 
-export const EnhancedTableRow = ({ row }) => {
+export const EnhancedTableRow = ({ extendedCloud }) => {
   const [isOpenFirstLevel, setIsOpenFirstLevel] = useState(false);
-  const [actualNamespaces, setActualNamespaces] = useState(row.namespaces);
+  const [actualNamespaces, setActualNamespaces] = useState(
+    extendedCloud.namespaces
+  );
   const [openedSecondLevelListIndex, setOpenedSecondLevelListIndex] = useState(
     []
   );
@@ -89,9 +91,12 @@ export const EnhancedTableRow = ({ row }) => {
     }
   };
   useEffect(() => {
-    row.addEventListener(EXTENDED_CLOUD_EVENTS.DATA_UPDATED, updateNamespaces);
+    extendedCloud.addEventListener(
+      EXTENDED_CLOUD_EVENTS.DATA_UPDATED,
+      updateNamespaces
+    );
     return () => {
-      row.removeEventListener(
+      extendedCloud.removeEventListener(
         EXTENDED_CLOUD_EVENTS.DATA_UPDATED,
         updateNamespaces
       );
@@ -108,7 +113,7 @@ export const EnhancedTableRow = ({ row }) => {
     }
   };
 
-  const isCloudConnected = row.cloud.isConnected();
+  const isCloudConnected = extendedCloud.cloud.isConnected();
   const { cloudStatus, namespaceStatus } = getStatus(isCloudConnected);
 
   return (
@@ -124,10 +129,10 @@ export const EnhancedTableRow = ({ row }) => {
               <Icon material="chevron_right" style={expandIconStyles} />
             )}
           </EnhCollapseBtn>
-          {row.cloud.name}
+          {extendedCloud.cloud.name}
         </EnhTableRowCell>
-        <EnhTableRowCell>{row.cloud.cloudUrl}</EnhTableRowCell>
-        <EnhTableRowCell>{row.cloud.username}</EnhTableRowCell>
+        <EnhTableRowCell>{extendedCloud.cloud.cloudUrl}</EnhTableRowCell>
+        <EnhTableRowCell>{extendedCloud.cloud.username}</EnhTableRowCell>
         <EnhTableRowCell>{cloudStatus}</EnhTableRowCell>
         <EnhTableRowCell isRightAligned>
           <EnhMoreButton>
@@ -169,5 +174,5 @@ export const EnhancedTableRow = ({ row }) => {
 };
 
 EnhancedTableRow.propTypes = {
-  row: PropTypes.object.isRequired,
+  extendedCloud: PropTypes.object.isRequired,
 };

@@ -65,13 +65,12 @@ export const ConnectionBlock = ({
     if (cloudStore?.clouds?.[url]) {
       const errorMessage = connectionBlock.notice.urlAlreadyUsed();
       setValidationError(errorMessage);
-      Notifications.error(errorMessage);
       return false;
     }
-    if (!clusterName.trim()) {
+    const validName = clusterName.trim();
+    if (!validName || validName.includes(' ')) {
       const errorMessage = connectionBlock.notice.nameIsEmpty();
       setValidationError(errorMessage);
-      Notifications.error(errorMessage);
       return false;
     }
     return true;
@@ -109,7 +108,7 @@ export const ConnectionBlock = ({
     await newCloud.connect();
   };
 
-  const seName = (value) => {
+  const setName = (value) => {
     if (validationError) {
       setValidationError(null);
     }
@@ -140,7 +139,7 @@ export const ConnectionBlock = ({
           placeholder={connectionBlock.clusterName.placeholder()}
           id="lecc-cluster-name"
           value={clusterName}
-          onChange={seName}
+          onChange={setName}
           disabled={loading || extCloudLoading}
         />
       </Field>

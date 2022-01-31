@@ -53,8 +53,9 @@ export const connectionBlock: Dict = {
   notice: {
     info: () =>
       "You will be directed to your Management Cluster's login page through your web browser where you should enter your SSO credentials",
-    urlAlreadyUsed: () => 'Management Cluster URL is already used',
-    nameIsEmpty: () => 'Management Cluster name cannot be empty',
+    urlAlreadyUsed: () => 'This Management Cluster is already being synced',
+    nameIsEmpty: () =>
+      'Management Cluster name cannot be empty or contain whitespaces',
   },
 };
 export const synchronizeBlock = {
@@ -67,7 +68,7 @@ export const synchronizeBlock = {
     credentials: () => 'credentials',
   },
   error: {
-    noProjects: () => 'You have to select at least one project',
+    noProjects: () => 'Select at least one project to sync',
   },
 };
 export const managementClusters = {
@@ -106,53 +107,6 @@ export const addClusters: Dict = {
     label: () => 'Add selected clusters',
     disabledTip: () => 'Select at least one cluster to add',
     ssoCancel: () => 'Cancel',
-  },
-};
-
-export const clusterDataProvider: Dict = {
-  error: {
-    invalidNamespacePayload: () =>
-      'Failed to parse namespace payload: Unexpected data format.',
-    invalidClusterPayload: () =>
-      'Failed to parse cluster payload: Unexpected data format.',
-  },
-};
-
-export const clusterActionsProvider: Dict = {
-  error: {
-    kubeConfigCreate: (clusterId = 'unknown') =>
-      `Failed to create kubeConfig for cluster ${clusterId}`,
-    kubeConfigSave: (clusterId = 'unknown') =>
-      `Failed to save kubeConfig file to disk for cluster ${clusterId}`,
-    clusterNotFound: (name) =>
-      `The ${name} cluster was not found in Lens. Try adding it first.`,
-    catalogAddFailed: () =>
-      'Failed to add some clusters to the Lens Catalog. See logs for more details.',
-    sso: {
-      addClustersUserCanceled: () =>
-        'The operation to add clusters was canceled by the user during the SSO authorization process.',
-      authCode: (clusterId) =>
-        `Authorization for cluster ${clusterId} with the ${mccShortName} instance failed. Try again, and be sure to use the correct SSO account.`,
-    },
-  },
-  workspaces: {
-    description: () => `${mccFullName} workspace`,
-  },
-  notifications: {
-    newWorkspacesHtml: (names = []) =>
-      `New workspaces created: ${names
-        .map((name) => `<strong>${name}</strong>`)
-        .join(', ')} <em>${noteOwner}</em>`,
-    newClustersHtml: (names = []) =>
-      `New clusters added: ${names
-        .map((name) => `<strong>${name}</strong>`)
-        .join(', ')} <em>${noteOwner}</em>`,
-    workspaceActivatedHtml: (name = '') =>
-      `Activated the <strong>${name}</strong> workspace. <em>${noteOwner}</em>`,
-    skippedClusters: (names = []) =>
-      `Some clusters were <strong>skipped</strong> because they were already in Lens: ${names
-        .map((name) => `<strong>${name}</strong>`)
-        .join(', ')} <em>${noteOwner}</em>`,
   },
 };
 

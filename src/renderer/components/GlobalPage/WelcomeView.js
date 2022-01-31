@@ -101,7 +101,7 @@ const WelcomeButtonWrapper = styled.div(function () {
   };
 });
 
-export const WelcomeView = ({ openAddCloudBlock }) => (
+export const WelcomeView = ({ openAddCloud }) => (
   <WelcomeContainer>
     <WelcomeWrapper>
       <WelcomeInner>
@@ -129,7 +129,7 @@ export const WelcomeView = ({ openAddCloudBlock }) => (
           <Component.Button
             primary
             label={strings.welcome.button.label()}
-            onClick={openAddCloudBlock}
+            onClick={openAddCloud}
           />
         </WelcomeButtonWrapper>
       </WelcomeInner>
@@ -138,5 +138,5 @@ export const WelcomeView = ({ openAddCloudBlock }) => (
 );
 
 WelcomeView.propTypes = {
-  openAddCloudBlock: PropTypes.func.isRequired,
+  openAddCloud: PropTypes.func.isRequired,
 };

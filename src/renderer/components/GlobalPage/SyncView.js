@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Renderer } from '@k8slens/extensions';
 import styled from '@emotion/styled';
 import { layout } from '../styles';
@@ -51,17 +51,23 @@ export const SyncView = () => {
   const {
     state: { extendedClouds },
   } = useExtendedCloudData();
-  const [showAddCloudComponent, setShowAddCloudComponent] = useState(false);
-  const openAddCloudBlock = () => setShowAddCloudComponent(true);
-  const closeAddCloudBlock = () => setShowAddCloudComponent(false);
+  const [showAddCloudComponent, setShowAddCloudComponent] = useState();
+
+  const handleAddCloud = useCallback(function (cloud) {
+    cloudStore.addCloud(cloud);
+    setShowAddCloudComponent(false);
+  }, []);
+
+  const onCancel = () => setShowAddCloudComponent(false);
+  const openAddCloud = () => setShowAddCloudComponent(true);
 
   // we control this state and should check it first
   if (showAddCloudComponent) {
-    return <AddCloudInstance closeAddCloudBlock={closeAddCloudBlock} />;
+    return <AddCloudInstance onAdd={handleAddCloud} onCancel={onCancel} />;
   }
   // in no clouds => show Welcome page
   if (!Object.keys(cloudStore.clouds).length) {
-    return <WelcomeView openAddCloudBlock={openAddCloudBlock} />;
+    return <WelcomeView openAddCloud={openAddCloud} />;
   }
   // otherwise show extendedClouds table
   if (Object.keys(extendedClouds).length) {
@@ -83,7 +89,7 @@ export const SyncView = () => {
           <Button
             primary
             label={managementClusters.connectButtonLabel()}
-            onClick={openAddCloudBlock}
+            onClick={openAddCloud}
           />
         </ButtonWrapper>
       </Content>

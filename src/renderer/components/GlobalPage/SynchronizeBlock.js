@@ -9,7 +9,6 @@ import {
 import { Accordion } from '../Accordion/Accordion';
 import { layout } from '../styles';
 import { synchronizeBlock } from '../../../strings';
-import { cloudStore } from '../../../store/CloudStore';
 
 const { Notifications, Button, Icon } = Renderer.Component;
 
@@ -97,7 +96,7 @@ const checkboxesStateObj = (extCloud) => {
   }, {});
 };
 
-export const SynchronizeBlock = ({ extCloud, closeAddCloudBlock }) => {
+export const SynchronizeBlock = ({ extCloud, onAdd }) => {
   // @type {object} sorted object of projects
   const [projectsList, setProjectsList] = useState(extCloud.namespaces);
 
@@ -212,8 +211,7 @@ export const SynchronizeBlock = ({ extCloud, closeAddCloudBlock }) => {
       cloud.syncNamespaces = namespaces;
     }
 
-    cloudStore.addCloud(cloud);
-    closeAddCloudBlock();
+    onAdd(cloud);
   };
 
   return (
@@ -293,7 +291,7 @@ export const SynchronizeBlock = ({ extCloud, closeAddCloudBlock }) => {
 
 SynchronizeBlock.propTypes = {
   extCloud: PropTypes.object,
-  closeAddCloudBlock: PropTypes.func.isRequired,
+  onAdd: PropTypes.func.isRequired,
 };
 
 SynchronizeBlock.defaultProps = {

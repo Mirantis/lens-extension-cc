@@ -3,8 +3,6 @@ import { ThemeProvider, CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
 import { SyncView } from './SyncView.js';
 import { ExtStateProvider } from '../../store/ExtStateProvider.js';
-import { ClusterDataProvider } from '../../store/ClusterDataProvider.js';
-import { ClusterActionsProvider } from '../../store/ClusterActionsProvider.js';
 import { ExtendedCloudProvider } from '../../store/ExtendedCloudProvider.js';
 
 import { lightThemeClassName, lightTheme, darkTheme } from '../theme';
@@ -76,13 +74,9 @@ export const GlobalPage = function ({ extension }: Props) {
     <CacheProvider value={createCache({ key: 'lens-extension-cc' })}>
       <ThemeProvider theme={theme}>
         <ExtStateProvider extension={extension}>
-          <ClusterDataProvider>
-            <ClusterActionsProvider>
-              <ExtendedCloudProvider>
-                <SyncView />
-              </ExtendedCloudProvider>
-            </ClusterActionsProvider>
-          </ClusterDataProvider>
+          <ExtendedCloudProvider>
+            <SyncView />
+          </ExtendedCloudProvider>
         </ExtStateProvider>
       </ThemeProvider>
     </CacheProvider>
