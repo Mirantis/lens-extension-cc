@@ -130,6 +130,9 @@ export const synchronizeBlock = {
     sshKeys: () => 'SSH keys',
     credentials: () => 'credentials',
   },
+  error: {
+    noProjects: () => 'You have to select at least one project',
+  },
 };
 export const managementClusters = {
   title: () => 'Mirantis Container Cloud management clusters',
@@ -478,5 +481,15 @@ export const extendedCloud: Dict = {
     credentials: () =>
       'Failed to parse Credentials payload: Unexpected data format.',
     sshKeys: () => 'Failed to parse SSH Keys payload: Unexpected data format.',
+  },
+};
+export const connectionStatuses = {
+  cloud: {
+    connected: () => 'Connected',
+    disconnected: () => 'Disconnected',
+  },
+  namespace: {
+    connected: () => 'Synced',
+    disconnected: () => 'Not synced',
   },
 };

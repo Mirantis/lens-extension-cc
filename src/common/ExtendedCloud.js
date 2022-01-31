@@ -192,7 +192,7 @@ const _deserializeNamespacesList = function (body) {
  */
 const _fetchNamespaces = async function (cloud) {
   // return syncNamespaces if we already define them
-  if (cloud?.syncNamespaces?.length) {
+  if (cloud?.syncNamespaces?.length && !cloud.syncAll) {
     return { namespaces: cloud.syncNamespaces };
   }
   const { error, body } = await authedRequest({
@@ -430,13 +430,13 @@ export class ExtendedCloud {
     });
 
     if (cloud.isConnected()) {
-      setTimeout(() => this.init());
+      setTimeout(() => this.fetchData());
     }
   }
 
   startUpdateCloudByTimeOut() {
     this._updateInterval = setInterval(() => {
-      this.init();
+      this.fetchData();
     }, FIVE_MIN);
   }
 
@@ -446,14 +446,14 @@ export class ExtendedCloud {
     }
   }
 
-  async init() {
+  async fetchData() {
     this.loading = true;
     this.error = null;
     // if no config (eg when we restore cloud from disk) try to load it
     if (!this.cloud?.config) {
       await this.cloud.loadConfig();
       // if loadConfig error we get it as connectError
-      // in this case stop init and return ExtendedCloud with that error
+      // in this case stop fetchData and return ExtendedCloud with that error
       if (this.cloud.connectError) {
         this.error = getErrorMessage(this.cloud.connectError);
         this.loading = false;
@@ -467,7 +467,7 @@ export class ExtendedCloud {
     if (nameSpaceError) {
       this.error = getErrorMessage(nameSpaceError);
       logger.error(
-        'extendedCloud.init()',
+        'extendedCloud.fetchData()',
         `_fetchNamespaces error: ${this.error}`,
         nameSpaceError
       );
@@ -490,7 +490,7 @@ export class ExtendedCloud {
       if (error) {
         this.error = getErrorMessage(error);
         logger.error(
-          'extendedCloud.init()',
+          'extendedCloud.fetchData()',
           `Fetched data contains an error: ${this.error}`,
           error
         );

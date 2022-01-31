@@ -4,8 +4,9 @@ import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
 import { layout } from '../styles';
 import { AdditionalInfoRows } from './AdditionalInfoRows';
+import { connectionStatuses } from '../../../strings';
 
-const { Component } = Renderer;
+const { Icon } = Renderer.Component;
 
 const EnhRowsWrapper = styled.div`
   display: contents;
@@ -59,6 +60,22 @@ const moreInfoIconStyles = {
   fontSize: 'calc(var(--font-size) * 1.5)',
 };
 
+/**
+ * @param {Cloud} cloud
+ * @return {{cloudStatus: string, namespaceStatus: string}}
+ */
+const getStatus = (cloud) => {
+  return cloud.isConnected()
+    ? {
+        cloudStatus: connectionStatuses.cloud.connected(),
+        namespaceStatus: connectionStatuses.namespace.connected(),
+      }
+    : {
+        cloudStatus: connectionStatuses.cloud.disconnected(),
+        namespaceStatus: connectionStatuses.namespace.disconnected(),
+      };
+};
+
 export const EnhancedTableRow = ({ row }) => {
   const [isOpenFirstLevel, setIsOpenFirstLevel] = useState(false);
   const [openedSecondLevelListIndex, setOpenedSecondLevelListIndex] = useState(
@@ -75,6 +92,8 @@ export const EnhancedTableRow = ({ row }) => {
     }
   };
 
+  const { cloudStatus, namespaceStatus } = getStatus(row.cloud);
+
   return (
     <>
       <EnhTableRow isTopLevel>
@@ -83,23 +102,19 @@ export const EnhancedTableRow = ({ row }) => {
             onClick={() => setIsOpenFirstLevel(!isOpenFirstLevel)}
           >
             {isOpenFirstLevel ? (
-              <Component.Icon material="expand_more" style={expandIconStyles} />
+              <Icon material="expand_more" style={expandIconStyles} />
             ) : (
-              <Component.Icon
-                material="chevron_right"
-                style={expandIconStyles}
-              />
+              <Icon material="chevron_right" style={expandIconStyles} />
             )}
           </EnhCollapseBtn>
           {row.cloud.name}
         </EnhTableRowCell>
         <EnhTableRowCell>{row.cloud.cloudUrl}</EnhTableRowCell>
         <EnhTableRowCell>{row.cloud.username}</EnhTableRowCell>
-        {/* NEED TO CHANGE STATUS DYNAMIC */}
-        <EnhTableRowCell>STATUS</EnhTableRowCell>
+        <EnhTableRowCell>{cloudStatus}</EnhTableRowCell>
         <EnhTableRowCell isRightAligned>
           <EnhMoreButton>
-            <Component.Icon material="more_vert" style={moreInfoIconStyles} />
+            <Icon material="more_vert" style={moreInfoIconStyles} />
           </EnhMoreButton>
         </EnhTableRowCell>
       </EnhTableRow>
@@ -110,29 +125,19 @@ export const EnhancedTableRow = ({ row }) => {
               <EnhTableRowCell isFirstLevel>
                 <EnhCollapseBtn onClick={() => setOpenedList(index)}>
                   {openedSecondLevelListIndex.includes(index) ? (
-                    <Component.Icon
-                      material="expand_more"
-                      style={expandIconStyles}
-                    />
+                    <Icon material="expand_more" style={expandIconStyles} />
                   ) : (
-                    <Component.Icon
-                      material="chevron_right"
-                      style={expandIconStyles}
-                    />
+                    <Icon material="chevron_right" style={expandIconStyles} />
                   )}
                 </EnhCollapseBtn>
                 {namespace.name}
               </EnhTableRowCell>
               <EnhTableRowCell />
               <EnhTableRowCell />
-              {/* NEED TO CHANGE STATUS DYNAMIC */}
-              <EnhTableRowCell>STATUS</EnhTableRowCell>
+              <EnhTableRowCell>{namespaceStatus}</EnhTableRowCell>
               <EnhTableRowCell isRightAligned>
                 <EnhMoreButton>
-                  <Component.Icon
-                    material="more_vert"
-                    style={moreInfoIconStyles}
-                  />
+                  <Icon material="more_vert" style={moreInfoIconStyles} />
                 </EnhMoreButton>
               </EnhTableRowCell>
             </EnhTableRow>
