@@ -304,7 +304,7 @@ export class Cloud {
         if (this.connecting) {
           return CONNECTION_STATUSES.CONNECTING;
         }
-        if (this.isValid()) {
+        if (this.isConnected()) {
           return CONNECTION_STATUSES.CONNECTED;
         }
         return CONNECTION_STATUSES.DISCONNECTED;
@@ -573,10 +573,8 @@ export class Cloud {
    * @returns {boolean} True if there are credentials, a token, and a valid way
    *  to refresh it if it expires; false otherwise.
    */
-  isValid() {
-    return (
-      this.hasCredentials() && !!this.token && !this.isRefreshTokenExpired()
-    );
+  isConnected() {
+    return !!this.token && !this.isRefreshTokenExpired();
   }
 
   /** @returns {boolean} True if the `token` has expired; false otherwise. */

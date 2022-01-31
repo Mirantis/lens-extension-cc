@@ -9,6 +9,7 @@ import { Cluster } from '../renderer/store/Cluster';
 
 export const EXTENDED_CLOUD_EVENTS = Object.freeze({
   LOADING_CHANGE: 'loadingChange',
+  DATA_UPDATED: 'dataUpdated',
 });
 
 const FIVE_MIN = 300 * 1000;
@@ -18,6 +19,16 @@ const credentialTypes = [
   'byocredential',
   'openstackcredential',
 ];
+
+const getErrorMessage = (error) => {
+  if (!error) {
+    return null;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  return error.message;
+};
 
 const _deserializeCredentialsList = function (body) {
   if (!body || !Array.isArray(body.items)) {
@@ -114,9 +125,10 @@ const _fetchSshKeys = async function (cloud, namespaces) {
 /**
  * Deserialize the raw list of cluster data from the API into Cluster objects.
  * @param {Object} body Data response from /list/cluster API.
+ * @param {Cloud} cloud The Cloud object used to access the clusters.
  * @returns {Array<Cluster>} Array of Cluster objects.
  */
-const _deserializeClustersList = function (body) {
+const _deserializeClustersList = function (body, cloud) {
   if (!body || !Array.isArray(body.items)) {
     return { error: strings.clusterDataProvider.error.invalidClusterPayload() };
   }
@@ -125,7 +137,7 @@ const _deserializeClustersList = function (body) {
     data: body.items
       .map((item, idx) => {
         try {
-          return new Cluster(item);
+          return new Cluster(item, cloud.username);
         } catch (err) {
           logger.error(
             'ExtendedCloud._deserializeClustersList()',
@@ -175,13 +187,12 @@ const _deserializeNamespacesList = function (body) {
  * [ASYNC] Get all existing namespaces from the management cluster.
  * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
  *  if necessary.
- * @param {boolean} [loadAll] if true all namespaces will be loaded. Doesn't matter if we have something in syncNamespaces
  * @returns {Promise<Object>} On success `{ namespaces: Array<string> }`;
  *  on error `{error: string}`.
  */
-const _fetchNamespaces = async function (cloud, loadAll) {
+const _fetchNamespaces = async function (cloud) {
   // return syncNamespaces if we already define them
-  if (!loadAll && cloud?.syncNamespaces?.length) {
+  if (cloud?.syncNamespaces?.length) {
     return { namespaces: cloud.syncNamespaces };
   }
   const { error, body } = await authedRequest({
@@ -207,7 +218,7 @@ const _fetchNamespaces = async function (cloud, loadAll) {
     userRoles.includes(`m:kaas:${name}@reader`) ||
     userRoles.includes(`m:kaas:${name}@writer`);
 
-  const ignoredNamespaces = cloud.config.ignoredNamespaces || [];
+  const ignoredNamespaces = cloud?.config?.ignoredNamespaces || [];
   const namespaces = filter(
     data,
     (ns) => !ignoredNamespaces.includes(ns.name) && hasReadPermissions(ns.name)
@@ -252,7 +263,7 @@ const _fetchClusters = async function (cloud, namespaces) {
   let dsError;
 
   results.every((result) => {
-    const { data, error } = _deserializeClustersList(result.body);
+    const { data, error } = _deserializeClustersList(result.body, cloud);
     if (error) {
       dsError = { error };
       return false; // break
@@ -374,11 +385,15 @@ export class ExtendedCloud {
 
     let _loading = false;
     let _namespaces = null;
+    let _cloud = cloud;
 
     Object.defineProperty(this, 'cloud', {
       enumerable: true,
       get() {
-        return cloud;
+        return _cloud;
+      },
+      set(newValue) {
+        _cloud = newValue;
       },
     });
     Object.defineProperty(this, 'loading', {
@@ -400,6 +415,7 @@ export class ExtendedCloud {
       },
       set(newValue) {
         _namespaces = newValue;
+        this.dispatchEvent(EXTENDED_CLOUD_EVENTS.DATA_UPDATED, this);
       },
     });
 
@@ -413,7 +429,9 @@ export class ExtendedCloud {
       },
     });
 
-    setTimeout(() => this.init());
+    if (cloud.isConnected()) {
+      setTimeout(() => this.init());
+    }
   }
 
   startUpdateCloudByTimeOut() {
@@ -428,26 +446,31 @@ export class ExtendedCloud {
     }
   }
 
-  /**
-   *
-   * @param {boolean} [loadAll] fetch all namespaces, ignore syncNamespaces
-   * @return {Promise<ExtendedCloud>}
-   */
-  async init(loadAll) {
+  async init() {
     this.loading = true;
     this.error = null;
+    // if no config (eg when we restore cloud from disk) try to load it
+    if (!this.cloud?.config) {
+      await this.cloud.loadConfig();
+      // if loadConfig error we get it as connectError
+      // in this case stop init and return ExtendedCloud with that error
+      if (this.cloud.connectError) {
+        this.error = getErrorMessage(this.cloud.connectError);
+        this.loading = false;
+        return this;
+      }
+    }
 
     const { error: nameSpaceError, namespaces } = await _fetchNamespaces(
-      this.cloud,
-      loadAll
+      this.cloud
     );
     if (nameSpaceError) {
+      this.error = getErrorMessage(nameSpaceError);
       logger.error(
         'extendedCloud.init()',
-        `_fetchNamespaces error: ${nameSpaceError.message}`,
+        `_fetchNamespaces error: ${this.error}`,
         nameSpaceError
       );
-      this.error = nameSpaceError.message;
       this.loading = false;
     } else {
       const { error: clustersError, clusters } = await _fetchClusters(
@@ -465,12 +488,12 @@ export class ExtendedCloud {
 
       const error = clustersError || sshKeysError || credentialsError;
       if (error) {
+        this.error = getErrorMessage(error);
         logger.error(
           'extendedCloud.init()',
-          `Fetched data contains an error: ${error.message}`,
+          `Fetched data contains an error: ${this.error}`,
           error
         );
-        this.error = error.message;
         this.loading = false;
       } else {
         this.namespaces = namespaces.map((name) => {
@@ -491,8 +514,8 @@ export class ExtendedCloud {
         });
 
         this.loading = false;
-        return this;
       }
     }
+    return this;
   }
 }
