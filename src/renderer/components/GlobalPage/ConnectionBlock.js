@@ -67,7 +67,7 @@ export const ConnectionBlock = ({
       return false;
     }
     const validName = clusterName.trim();
-    if (!validName || validName.includes(' ')) {
+    if (!validName || /\s/g.test(validName)) {
       setValidationError(connectionBlock.notice.nameIsEmpty());
       return false;
     }

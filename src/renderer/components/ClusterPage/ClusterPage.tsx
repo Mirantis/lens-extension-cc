@@ -2,17 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { ThemeProvider, CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
 import { ClusterView } from './ClusterView';
-import { ExtStateProvider } from '../../store/ExtStateProvider';
 import { lightThemeClassName, lightTheme, darkTheme } from '../theme';
-import ExtensionRenderer from '../../renderer';
 
 export { ContainerCloudIcon as ClusterPageIcon } from '../ContainerCloudIcon';
 
-interface Props {
-  extension: ExtensionRenderer;
-}
-
-export const ClusterPage = function ({ extension }: Props) {
+export const ClusterPage = function () {
   //
   // STATE
   //
@@ -71,9 +65,7 @@ export const ClusterPage = function ({ extension }: Props) {
   return (
     <CacheProvider value={createCache({ key: 'lens-extension-cc' })}>
       <ThemeProvider theme={theme}>
-        <ExtStateProvider extension={extension}>
-          <ClusterView />
-        </ExtStateProvider>
+        <ClusterView />
       </ThemeProvider>
     </CacheProvider>
   );

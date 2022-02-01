@@ -55,8 +55,9 @@ export const connectionBlock: Dict = {
       "You will be directed to your Management Cluster's login page through your web browser where you should enter your SSO credentials",
     urlAlreadyUsed: () => 'This Management Cluster is already being synced',
     nameIsEmpty: () =>
-      'Management Cluster name cannot be empty or contain whitespaces',
-    nameAlreadyUsed: () => 'This Management Cluster name is already exists',
+      'Management Cluster name cannot be empty or contain whitespace',
+    nameAlreadyUsed: () =>
+      'A Management Cluster with this name is already being synced',
   },
 };
 export const synchronizeBlock = {
@@ -95,19 +96,6 @@ export const configProvider: Dict = {
   error: {
     unexpectedToken: () =>
       "A problem occurred while retrieving the instance's configuration details. Make sure the instance URL is correct.",
-  },
-};
-
-export const addClusters: Dict = {
-  title: () => 'Add to Lens',
-  sso: {
-    messageHtml: () =>
-      `<strong>This instance uses SSO:</strong> Your default browser should open to the ${mccShortName} sign in page, if you aren't already signed in. Once you have signed-in, your browser will prompt you to open Lens. Be sure to accept in order to complete the process. Once you have opted to open Lens, the browser window can be closed.`,
-  },
-  action: {
-    label: () => 'Add selected clusters',
-    disabledTip: () => 'Select at least one cluster to add',
-    ssoCancel: () => 'Cancel',
   },
 };
 
