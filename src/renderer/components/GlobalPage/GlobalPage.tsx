@@ -2,21 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { ThemeProvider, CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
 import { SyncView } from './SyncView.js';
-import { ExtStateProvider } from '../../store/ExtStateProvider.js';
-import { ConfigProvider } from '../../store/ConfigProvider.js';
-import { SsoAuthProvider } from '../../store/SsoAuthProvider.js';
-import { ClusterDataProvider } from '../../store/ClusterDataProvider.js';
-import { ClusterActionsProvider } from '../../store/ClusterActionsProvider.js';
+import { ExtendedCloudProvider } from '../../store/ExtendedCloudProvider.js';
+
 import { lightThemeClassName, lightTheme, darkTheme } from '../theme';
-import ExtensionRenderer from '../../renderer';
 
 export { ContainerCloudIcon as GlobalPageIcon } from '../ContainerCloudIcon';
 
-interface Props {
-  extension: ExtensionRenderer;
-}
-
-export const GlobalPage = function ({ extension }: Props) {
+export const GlobalPage = function () {
   //
   // STATE
   //
@@ -75,17 +67,9 @@ export const GlobalPage = function ({ extension }: Props) {
   return (
     <CacheProvider value={createCache({ key: 'lens-extension-cc' })}>
       <ThemeProvider theme={theme}>
-        <ExtStateProvider extension={extension}>
-          <ConfigProvider>
-            <SsoAuthProvider>
-              <ClusterDataProvider>
-                <ClusterActionsProvider>
-                  <SyncView />
-                </ClusterActionsProvider>
-              </ClusterDataProvider>
-            </SsoAuthProvider>
-          </ConfigProvider>
-        </ExtStateProvider>
+        <ExtendedCloudProvider>
+          <SyncView />
+        </ExtendedCloudProvider>
       </ThemeProvider>
     </CacheProvider>
   );

@@ -52,21 +52,47 @@ export const ConnectionBlock = ({
   const [clusterName, setClusterName] = useState('');
   const [loading, setLoading] = useState(false);
   const [clusterUrl, setClusterUrl] = useState('');
+  const [validationError, setValidationError] = useState(null);
+  const [showInfoBox, setShowInfoBox] = useState(true);
 
-  const checkError = (cloud) => {
+  const checkConnectionError = (cloud) => {
     if (cloud?.connectError) {
       Notifications.error(cloud.connectError);
     }
+  };
+
+  const validateCloud = (url) => {
+    if (cloudStore?.clouds?.[url]) {
+      setValidationError(connectionBlock.notice.urlAlreadyUsed());
+      return false;
+    }
+    const validName = clusterName.trim();
+    if (!validName || /\s/g.test(validName)) {
+      setValidationError(connectionBlock.notice.nameIsEmpty());
+      return false;
+    }
+    const cloudNames = Object.keys(cloudStore.clouds).map(
+      (key) => cloudStore.clouds[key].name
+    );
+    if (cloudNames.includes(validName)) {
+      setValidationError(connectionBlock.notice.nameAlreadyUsed());
+      return false;
+    }
+    return true;
   };
 
   const handleConnectClick = async function () {
     cleanCloudsState();
     const normUrl = normalizeUrl(clusterUrl.trim());
     setClusterUrl(normUrl); // update to actual URL we'll use
+    if (!validateCloud(normUrl)) {
+      return;
+    }
     setLoading(true);
     let newCloud = new Cloud();
     newCloud.cloudUrl = normUrl;
     newCloud.name = clusterName;
+    setShowInfoBox(false);
     const statusListener = () => {
       if (newCloud.status === CONNECTION_STATUSES.CONNECTING) {
         setLoading(true);
@@ -77,16 +103,32 @@ export const ConnectionBlock = ({
           statusListener
         );
         if (newCloud.status === CONNECTION_STATUSES.CONNECTED) {
-          // we haven't store cloud in CloudStore on this level. It should be done at SynchronizeBlock
-          // cloudStore.clouds[normUrl] = newCloud;
           setCloud(newCloud);
         } else {
-          checkError(newCloud);
+          checkConnectionError(newCloud);
         }
       }
     };
     newCloud.addEventListener(CLOUD_EVENTS.STATUS_CHANGE, statusListener);
     await newCloud.connect();
+  };
+
+  const setName = (value) => {
+    if (validationError) {
+      setValidationError(null);
+    }
+    setClusterName(value);
+  };
+
+  const setUrl = (value) => {
+    // if error => clean up error
+    if (validationError) {
+      setValidationError(null);
+    }
+    if (!showInfoBox) {
+      setShowInfoBox(true);
+    }
+    setClusterUrl(value);
   };
 
   return (
@@ -102,7 +144,7 @@ export const ConnectionBlock = ({
           placeholder={connectionBlock.clusterName.placeholder()}
           id="lecc-cluster-name"
           value={clusterName}
-          onChange={setClusterName}
+          onChange={setName}
           disabled={loading || extCloudLoading}
         />
       </Field>
@@ -115,7 +157,7 @@ export const ConnectionBlock = ({
           theme="round-black" // borders on all sides, rounded corners
           id="lecc-cluster-url"
           value={clusterUrl}
-          onChange={setClusterUrl}
+          onChange={setUrl}
           disabled={loading || extCloudLoading}
         />
         <ButtonWrapper>
@@ -129,7 +171,16 @@ export const ConnectionBlock = ({
         </ButtonWrapper>
       </Field>
       <div>
-        {!cloudStore?.clouds?.[clusterUrl] && (
+        {validationError && (
+          <InlineNotice type="error">
+            <p
+              dangerouslySetInnerHTML={{
+                __html: validationError,
+              }}
+            />
+          </InlineNotice>
+        )}
+        {showInfoBox && !validationError && (
           <InlineNotice>
             <p
               dangerouslySetInnerHTML={{

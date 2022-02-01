@@ -1,8 +1,5 @@
-//
-// Main view for the WelcomePage
-//
-
 import styled from '@emotion/styled';
+import PropTypes from 'prop-types';
 import { Renderer } from '@k8slens/extensions';
 import { layout, mixinPageStyles } from '../styles';
 import { ContainerCloudIcon } from '../ContainerCloudIcon';
@@ -104,46 +101,42 @@ const WelcomeButtonWrapper = styled.div(function () {
   };
 });
 
-//
-// MAIN COMPONENT
-//
-
-export const WelcomeView = function () {
-  //
-  // RENDER
-  //
-
-  return (
-    <WelcomeContainer>
-      <WelcomeWrapper>
-        <WelcomeInner>
-          <WelcomeIconWrapper>
-            <ContainerCloudIcon size={100} fill="var(--textColorAccent)" />
-          </WelcomeIconWrapper>
-          <WelcomeTitle
-            dangerouslySetInnerHTML={{
-              __html: strings.welcome.titleHtml(),
-            }}
+export const WelcomeView = ({ openAddCloud }) => (
+  <WelcomeContainer>
+    <WelcomeWrapper>
+      <WelcomeInner>
+        <WelcomeIconWrapper>
+          <ContainerCloudIcon size={100} fill="var(--textColorAccent)" />
+        </WelcomeIconWrapper>
+        <WelcomeTitle
+          dangerouslySetInnerHTML={{
+            __html: strings.welcome.titleHtml(),
+          }}
+        />
+        <WelcomeDescription>{strings.welcome.description()}</WelcomeDescription>
+        <WelcomeList
+          dangerouslySetInnerHTML={{
+            __html: strings.welcome.listItemsHtml(),
+          }}
+        />
+        <WelcomeLink
+          href={constants.welcomePage.andMoreButton.url}
+          target={constants.welcomePage.andMoreButton.target}
+        >
+          {strings.welcome.link.label()}
+        </WelcomeLink>
+        <WelcomeButtonWrapper>
+          <Component.Button
+            primary
+            label={strings.welcome.button.label()}
+            onClick={openAddCloud}
           />
-          <WelcomeDescription>
-            {strings.welcome.description()}
-          </WelcomeDescription>
-          <WelcomeList
-            dangerouslySetInnerHTML={{
-              __html: strings.welcome.listItemsHtml(),
-            }}
-          />
-          <WelcomeLink
-            href={constants.welcomePage.andMoreButton.url}
-            target={constants.welcomePage.andMoreButton.target}
-          >
-            {strings.welcome.link.label()}
-          </WelcomeLink>
-          <WelcomeButtonWrapper>
-            <Component.Button primary label={strings.welcome.button.label()} />
-          </WelcomeButtonWrapper>
-        </WelcomeInner>
-      </WelcomeWrapper>
-    </WelcomeContainer>
-  );
+        </WelcomeButtonWrapper>
+      </WelcomeInner>
+    </WelcomeWrapper>
+  </WelcomeContainer>
+);
+
+WelcomeView.propTypes = {
+  openAddCloud: PropTypes.func.isRequired,
 };

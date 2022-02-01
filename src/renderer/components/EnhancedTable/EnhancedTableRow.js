@@ -1,15 +1,13 @@
 import PropTypes from 'prop-types';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
 import { layout } from '../styles';
 import { AdditionalInfoRows } from './AdditionalInfoRows';
-import {
-  TriStateCheckbox,
-  checkValues,
-} from '../TriStateCheckbox/TriStateCheckbox';
+import { connectionStatuses } from '../../../strings';
+import { EXTENDED_CLOUD_EVENTS } from '../../../common/ExtendedCloud';
 
-const { Component } = Renderer;
+const { Icon } = Renderer.Component;
 
 const EnhRowsWrapper = styled.div`
   display: contents;
@@ -77,22 +75,54 @@ const moreInfoIconStyles = {
   fontSize: 'calc(var(--font-size) * 1.5)',
 };
 
-const checkboxesStateObj = (extCloud) => {
-  return extCloud.namespaces.reduce((acc, namespace) => {
-    acc[namespace.name] = false;
-    return acc;
-  }, {});
+const colorGreen = {
+  color: 'var(--colorSuccess)',
 };
 
-export const EnhancedTableRow = ({ row, withCheckboxes }) => {
+const colorRed = {
+  color: 'var(--colorError)',
+};
+
+/**
+ * @param {boolean} isCloudConnected
+ * @return {{cloudStatus: string, namespaceStatus: string}}
+ */
+const getStatus = (isCloudConnected) => {
+  return isCloudConnected
+    ? {
+        cloudStatus: connectionStatuses.cloud.connected(),
+        namespaceStatus: connectionStatuses.namespace.connected(),
+      }
+    : {
+        cloudStatus: connectionStatuses.cloud.disconnected(),
+        namespaceStatus: connectionStatuses.namespace.disconnected(),
+      };
+};
+
+export const EnhancedTableRow = ({ extendedCloud }) => {
   const [isOpenFirstLevel, setIsOpenFirstLevel] = useState(false);
+  const [actualNamespaces, setActualNamespaces] = useState(
+    extendedCloud.namespaces
+  );
   const [openedSecondLevelListIndex, setOpenedSecondLevelListIndex] = useState(
     []
   );
-  // @type {object} checkboxes state
-  const [сheckboxesState, setCheckboxesState] = useState({
-    parent: false,
-    children: checkboxesStateObj(row),
+  const updateNamespaces = (updatedRow) => {
+    if (updatedRow) {
+      setActualNamespaces(updatedRow.namespaces);
+    }
+  };
+  useEffect(() => {
+    extendedCloud.addEventListener(
+      EXTENDED_CLOUD_EVENTS.DATA_UPDATED,
+      updateNamespaces
+    );
+    return () => {
+      extendedCloud.removeEventListener(
+        EXTENDED_CLOUD_EVENTS.DATA_UPDATED,
+        updateNamespaces
+      );
+    };
   });
 
   const setOpenedList = (index) => {
@@ -105,70 +135,8 @@ export const EnhancedTableRow = ({ row, withCheckboxes }) => {
     }
   };
 
-  // set parent checkbox state based on changes of children checkboxes
-  const setParentCheckboxState = (children) => {
-    const childrenCheckboxes = Object.values(children);
-
-    if (
-      childrenCheckboxes.every((el) => el === false) ||
-      childrenCheckboxes.every((el) => el === true)
-    ) {
-      return childrenCheckboxes[0];
-    }
-    if (childrenCheckboxes.some((el) => el === false)) {
-      return true;
-    }
-    return сheckboxesState.parent;
-  };
-
-  const getNewChildren = (parentCheckedStatus) => {
-    const newChildren = { ...сheckboxesState.children };
-
-    Object.keys(сheckboxesState.children).forEach((name) => {
-      newChildren[name] = parentCheckedStatus;
-    });
-    return newChildren;
-  };
-
-  const onChangeHandler = (name) => {
-    if (!name) {
-      setCheckboxesState({
-        parent: !сheckboxesState.parent,
-        children: getNewChildren(!сheckboxesState.parent),
-      });
-    } else {
-      const newChildren = { ...сheckboxesState.children };
-      newChildren[name] = !сheckboxesState.children[name];
-
-      setCheckboxesState({
-        children: newChildren,
-        parent: setParentCheckboxState(newChildren),
-      });
-    }
-  };
-
-  const parentCheckboxValue = () => {
-    const childrenCheckboxes = Object.values(сheckboxesState.children);
-
-    if (
-      сheckboxesState.parent &&
-      childrenCheckboxes.some((el) => el === false) &&
-      childrenCheckboxes.some((el) => el === true)
-    ) {
-      return checkValues.MIXED;
-    }
-    if (сheckboxesState.parent) {
-      return checkValues.CHECKED;
-    } else {
-      return checkValues.UNCHECKED;
-    }
-  };
-
-  const childrenCheckboxValue = (name) => {
-    return сheckboxesState.children[name]
-      ? checkValues.CHECKED
-      : checkValues.UNCHECKED;
-  };
+  const isCloudConnected = extendedCloud.cloud.isConnected();
+  const { cloudStatus, namespaceStatus } = getStatus(isCloudConnected);
 
   return (
     <>
@@ -179,49 +147,34 @@ export const EnhancedTableRow = ({ row, withCheckboxes }) => {
             onClick={() => setIsOpenFirstLevel(!isOpenFirstLevel)}
           >
             {isOpenFirstLevel ? (
-              <Component.Icon material="expand_more" style={expandIconStyles} />
+              <Icon material="expand_more" style={expandIconStyles} />
             ) : (
-              <Component.Icon
-                material="chevron_right"
-                style={expandIconStyles}
-              />
+              <Icon material="chevron_right" style={expandIconStyles} />
             )}
           </EnhCollapseBtn>
-          {withCheckboxes && (
-            <TriStateCheckbox
-              label={row.cloud.name}
-              onChange={() => onChangeHandler()}
-              value={parentCheckboxValue()}
-            />
-          )}
-          {!withCheckboxes && row.cloud.name}
+          {extendedCloud.cloud.name}
         </EnhTableRowCell>
-        <EnhTableRowCell>{row.cloud.cloudUrl}</EnhTableRowCell>
-        <EnhTableRowCell>{row.cloud.username}</EnhTableRowCell>
-        {/* NEED TO CHANGE STATUS DYNAMIC */}
-        <EnhTableRowCell>STATUS</EnhTableRowCell>
+        <EnhTableRowCell>{extendedCloud.cloud.cloudUrl}</EnhTableRowCell>
+        <EnhTableRowCell>{extendedCloud.cloud.username}</EnhTableRowCell>
+        <EnhTableRowCell style={isCloudConnected ? colorGreen : colorRed}>
+          {cloudStatus}
+        </EnhTableRowCell>
         <EnhTableRowCell isRightAligned>
           <EnhMoreButton>
-            <Component.Icon material="more_vert" style={moreInfoIconStyles} />
+            <Icon material="more_vert" style={moreInfoIconStyles} />
           </EnhMoreButton>
         </EnhTableRowCell>
       </EnhTableRow>
       {isOpenFirstLevel &&
-        (row?.namespaces || []).map((namespace, index) => (
+        (actualNamespaces || []).map((namespace, index) => (
           <EnhRowsWrapper key={namespace.name}>
             <EnhTableRow>
               <EnhTableRowCell isFirstLevel withCheckboxes={withCheckboxes}>
                 <EnhCollapseBtn onClick={() => setOpenedList(index)}>
                   {openedSecondLevelListIndex.includes(index) ? (
-                    <Component.Icon
-                      material="expand_more"
-                      style={expandIconStyles}
-                    />
+                    <Icon material="expand_more" style={expandIconStyles} />
                   ) : (
-                    <Component.Icon
-                      material="chevron_right"
-                      style={expandIconStyles}
-                    />
+                    <Icon material="chevron_right" style={expandIconStyles} />
                   )}
                 </EnhCollapseBtn>
                 {withCheckboxes && (
@@ -235,14 +188,10 @@ export const EnhancedTableRow = ({ row, withCheckboxes }) => {
               </EnhTableRowCell>
               <EnhTableRowCell />
               <EnhTableRowCell />
-              {/* NEED TO CHANGE STATUS DYNAMIC */}
-              <EnhTableRowCell>STATUS</EnhTableRowCell>
+              <EnhTableRowCell>{namespaceStatus}</EnhTableRowCell>
               <EnhTableRowCell isRightAligned>
                 <EnhMoreButton>
-                  <Component.Icon
-                    material="more_vert"
-                    style={moreInfoIconStyles}
-                  />
+                  <Icon material="more_vert" style={moreInfoIconStyles} />
                 </EnhMoreButton>
               </EnhTableRowCell>
             </EnhTableRow>
@@ -257,6 +206,5 @@ export const EnhancedTableRow = ({ row, withCheckboxes }) => {
 };
 
 EnhancedTableRow.propTypes = {
-  row: PropTypes.object.isRequired,
-  withCheckboxes: PropTypes.bool.isRequired,
+  extendedCloud: PropTypes.object.isRequired,
 };
