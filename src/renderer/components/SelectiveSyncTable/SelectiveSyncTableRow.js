@@ -3,7 +3,7 @@ import { useState } from 'react';
 import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
 import { layout } from '../styles';
-import { AdditionalInfoRows } from './AdditionalInfoRows';
+import { SelectiveSyncTableInfoRows } from './SelectiveSyncTableInfoRows';
 import {
   TriStateCheckbox,
   checkValues,
@@ -21,7 +21,7 @@ const EnhTableRow = styled.tr`
 `;
 
 const EnhTableRowCell = styled.td`
-  width: ${({ isBigger }) => isBigger && '40%'};
+  width: 50% !important;
   border: 0;
   font-size: var(--font-size);
   line-height: normal;
@@ -43,7 +43,6 @@ const EnhTableRowCell = styled.td`
   ${({ withCheckboxes }) =>
     withCheckboxes &&
     `
-    width: 100%;
     display: flex;
     align-items: center;
   `}
@@ -62,19 +61,9 @@ const EnhCollapseBtn = styled.button`
   `}
 `;
 
-const EnhMoreButton = styled.button`
-  background: transparent;
-  cursor: pointer;
-`;
-
 const expandIconStyles = {
   color: 'var(--textColorPrimary)',
   fontSize: 'calc(var(--font-size) * 1.8)',
-};
-
-const moreInfoIconStyles = {
-  color: 'var(--textColorPrimary)',
-  fontSize: 'calc(var(--font-size) * 1.5)',
 };
 
 const checkboxesStateObj = (extCloud) => {
@@ -84,7 +73,7 @@ const checkboxesStateObj = (extCloud) => {
   }, {});
 };
 
-export const EnhancedTableRow = ({ row, withCheckboxes }) => {
+export const SelectiveSyncTableRow = ({ row, withCheckboxes }) => {
   const [isOpenFirstLevel, setIsOpenFirstLevel] = useState(false);
   const [openedSecondLevelListIndex, setOpenedSecondLevelListIndex] = useState(
     []
@@ -197,14 +186,6 @@ export const EnhancedTableRow = ({ row, withCheckboxes }) => {
           {!withCheckboxes && row.cloud.name}
         </EnhTableRowCell>
         <EnhTableRowCell>{row.cloud.cloudUrl}</EnhTableRowCell>
-        <EnhTableRowCell>{row.cloud.username}</EnhTableRowCell>
-        {/* NEED TO CHANGE STATUS DYNAMIC */}
-        <EnhTableRowCell>STATUS</EnhTableRowCell>
-        <EnhTableRowCell isRightAligned>
-          <EnhMoreButton>
-            <Component.Icon material="more_vert" style={moreInfoIconStyles} />
-          </EnhMoreButton>
-        </EnhTableRowCell>
       </EnhTableRow>
       {isOpenFirstLevel &&
         (row?.namespaces || []).map((namespace, index) => (
@@ -234,21 +215,10 @@ export const EnhancedTableRow = ({ row, withCheckboxes }) => {
                 {!withCheckboxes && namespace.name}
               </EnhTableRowCell>
               <EnhTableRowCell />
-              <EnhTableRowCell />
-              {/* NEED TO CHANGE STATUS DYNAMIC */}
-              <EnhTableRowCell>STATUS</EnhTableRowCell>
-              <EnhTableRowCell isRightAligned>
-                <EnhMoreButton>
-                  <Component.Icon
-                    material="more_vert"
-                    style={moreInfoIconStyles}
-                  />
-                </EnhMoreButton>
-              </EnhTableRowCell>
             </EnhTableRow>
 
             {openedSecondLevelListIndex.includes(index) && (
-              <AdditionalInfoRows namespace={namespace} />
+              <SelectiveSyncTableInfoRows namespace={namespace} />
             )}
           </EnhRowsWrapper>
         ))}
@@ -256,7 +226,7 @@ export const EnhancedTableRow = ({ row, withCheckboxes }) => {
   );
 };
 
-EnhancedTableRow.propTypes = {
+SelectiveSyncTableRow.propTypes = {
   row: PropTypes.object.isRequired,
   withCheckboxes: PropTypes.bool.isRequired,
 };

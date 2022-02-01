@@ -132,6 +132,8 @@ export const synchronizeBlock = {
 export const managementClusters = {
   title: () => 'Mirantis Container Cloud management clusters',
   syncButtonLabel: () => 'Selective sync...',
+  cancelButtonLabel: () => 'Cancel',
+  synchroniseProjectsButtonLabel: () => 'Synchronise selected projects',
   connectButtonLabel: () => 'Connect new Management Cluster',
   table: {
     thead: {

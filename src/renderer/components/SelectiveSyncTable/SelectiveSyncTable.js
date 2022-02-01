@@ -3,16 +3,16 @@ import { useState } from 'react';
 import { get, orderBy } from 'lodash';
 import styled from '@emotion/styled';
 import { layout } from '../styles';
-import { EnhancedTableHead } from './EnhancedTableHead';
-import { EnhancedTableRow } from './EnhancedTableRow';
+import { SelectiveSyncTableHead } from './SelectiveSyncTableHead';
+import { SelectiveSyncTableRow } from './SelectiveSyncTableRow';
 
-const EnhTable = styled.table`
+const SelectiveSyncTableItem = styled.table`
   width: 100%;
   border-collapse: inherit;
   border-spacing: unset;
 `;
 
-const EnhTableCell = styled.td`
+const SelectiveSyncTableCell = styled.td`
   border: 0;
   font-size: var(--font-size);
   line-height: normal;
@@ -28,14 +28,11 @@ const emptyRowStyles = {
 export const HEAD_CELL_VALUES = {
   NAME: 'Name',
   URL: 'URL',
-  USERNAME: 'Username',
-  STATUS: 'Status',
 };
 
 const pathToData = {
   [HEAD_CELL_VALUES.NAME]: ['cloud', 'name'],
   [HEAD_CELL_VALUES.URL]: ['cloud', 'cloudUrl'],
-  [HEAD_CELL_VALUES.USERNAME]: ['cloud', 'username'],
 };
 
 const sortData = (obj, sortBy, order) => {
@@ -48,7 +45,7 @@ const sortData = (obj, sortBy, order) => {
   return sorted.map((a) => Object.keys(a));
 };
 
-export const EnhancedTable = ({ extClouds, withCheckboxes }) => {
+export const SelectiveSyncTable = ({ extClouds, withCheckboxes }) => {
   const [sortedBy, setSortedBy] = useState(HEAD_CELL_VALUES.NAME);
   const [order, setOrder] = useState('asc');
 
@@ -67,12 +64,12 @@ export const EnhancedTable = ({ extClouds, withCheckboxes }) => {
   };
 
   return (
-    <EnhTable>
-      <EnhancedTableHead sortBy={sortBy} />
+    <SelectiveSyncTableItem>
+      <SelectiveSyncTableHead sortBy={sortBy} />
       <tbody>
         {sortData(extClouds, sortedBy, order).map((url) => {
           return (
-            <EnhancedTableRow
+            <SelectiveSyncTableRow
               key={url}
               row={extClouds[url]}
               withCheckboxes={withCheckboxes}
@@ -80,18 +77,18 @@ export const EnhancedTable = ({ extClouds, withCheckboxes }) => {
           );
         })}
         <tr style={emptyRowStyles}>
-          <EnhTableCell colSpan={6} />
+          <SelectiveSyncTableCell colSpan={6} />
         </tr>
       </tbody>
-    </EnhTable>
+    </SelectiveSyncTableItem>
   );
 };
 
-EnhancedTable.propTypes = {
+SelectiveSyncTable.propTypes = {
   extClouds: PropTypes.object.isRequired,
   withCheckboxes: PropTypes.bool,
 };
 
-EnhancedTable.defaultProps = {
+SelectiveSyncTable.defaultProps = {
   withCheckboxes: false,
 };
