@@ -1,11 +1,13 @@
 import PropTypes from 'prop-types';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
 import { layout } from '../styles';
 import { AdditionalInfoRows } from './AdditionalInfoRows';
+import { connectionStatuses } from '../../../strings';
+import { EXTENDED_CLOUD_EVENTS } from '../../../common/ExtendedCloud';
 
-const { Component } = Renderer;
+const { Icon } = Renderer.Component;
 
 const EnhRowsWrapper = styled.div`
   display: contents;
@@ -59,11 +61,55 @@ const moreInfoIconStyles = {
   fontSize: 'calc(var(--font-size) * 1.5)',
 };
 
-export const EnhancedTableRow = ({ row }) => {
+const colorGreen = {
+  color: 'var(--colorSuccess)',
+};
+
+const colorRed = {
+  color: 'var(--colorError)',
+};
+
+/**
+ * @param {boolean} isCloudConnected
+ * @return {{cloudStatus: string, namespaceStatus: string}}
+ */
+const getStatus = (isCloudConnected) => {
+  return isCloudConnected
+    ? {
+        cloudStatus: connectionStatuses.cloud.connected(),
+        namespaceStatus: connectionStatuses.namespace.connected(),
+      }
+    : {
+        cloudStatus: connectionStatuses.cloud.disconnected(),
+        namespaceStatus: connectionStatuses.namespace.disconnected(),
+      };
+};
+
+export const EnhancedTableRow = ({ extendedCloud }) => {
   const [isOpenFirstLevel, setIsOpenFirstLevel] = useState(false);
+  const [actualNamespaces, setActualNamespaces] = useState(
+    extendedCloud.namespaces
+  );
   const [openedSecondLevelListIndex, setOpenedSecondLevelListIndex] = useState(
     []
   );
+  const updateNamespaces = (updatedRow) => {
+    if (updatedRow) {
+      setActualNamespaces(updatedRow.namespaces);
+    }
+  };
+  useEffect(() => {
+    extendedCloud.addEventListener(
+      EXTENDED_CLOUD_EVENTS.DATA_UPDATED,
+      updateNamespaces
+    );
+    return () => {
+      extendedCloud.removeEventListener(
+        EXTENDED_CLOUD_EVENTS.DATA_UPDATED,
+        updateNamespaces
+      );
+    };
+  });
 
   const setOpenedList = (index) => {
     if (openedSecondLevelListIndex.includes(index)) {
@@ -75,6 +121,9 @@ export const EnhancedTableRow = ({ row }) => {
     }
   };
 
+  const isCloudConnected = extendedCloud.cloud.isConnected();
+  const { cloudStatus, namespaceStatus } = getStatus(isCloudConnected);
+
   return (
     <>
       <EnhTableRow isTopLevel>
@@ -83,56 +132,44 @@ export const EnhancedTableRow = ({ row }) => {
             onClick={() => setIsOpenFirstLevel(!isOpenFirstLevel)}
           >
             {isOpenFirstLevel ? (
-              <Component.Icon material="expand_more" style={expandIconStyles} />
+              <Icon material="expand_more" style={expandIconStyles} />
             ) : (
-              <Component.Icon
-                material="chevron_right"
-                style={expandIconStyles}
-              />
+              <Icon material="chevron_right" style={expandIconStyles} />
             )}
           </EnhCollapseBtn>
-          {row.cloud.name}
+          {extendedCloud.cloud.name}
         </EnhTableRowCell>
-        <EnhTableRowCell>{row.cloud.cloudUrl}</EnhTableRowCell>
-        <EnhTableRowCell>{row.cloud.username}</EnhTableRowCell>
-        {/* NEED TO CHANGE STATUS DYNAMIC */}
-        <EnhTableRowCell>STATUS</EnhTableRowCell>
+        <EnhTableRowCell>{extendedCloud.cloud.cloudUrl}</EnhTableRowCell>
+        <EnhTableRowCell>{extendedCloud.cloud.username}</EnhTableRowCell>
+        <EnhTableRowCell style={isCloudConnected ? colorGreen : colorRed}>
+          {cloudStatus}
+        </EnhTableRowCell>
         <EnhTableRowCell isRightAligned>
           <EnhMoreButton>
-            <Component.Icon material="more_vert" style={moreInfoIconStyles} />
+            <Icon material="more_vert" style={moreInfoIconStyles} />
           </EnhMoreButton>
         </EnhTableRowCell>
       </EnhTableRow>
       {isOpenFirstLevel &&
-        (row?.namespaces || []).map((namespace, index) => (
+        (actualNamespaces || []).map((namespace, index) => (
           <EnhRowsWrapper key={namespace.name}>
             <EnhTableRow>
               <EnhTableRowCell isFirstLevel>
                 <EnhCollapseBtn onClick={() => setOpenedList(index)}>
                   {openedSecondLevelListIndex.includes(index) ? (
-                    <Component.Icon
-                      material="expand_more"
-                      style={expandIconStyles}
-                    />
+                    <Icon material="expand_more" style={expandIconStyles} />
                   ) : (
-                    <Component.Icon
-                      material="chevron_right"
-                      style={expandIconStyles}
-                    />
+                    <Icon material="chevron_right" style={expandIconStyles} />
                   )}
                 </EnhCollapseBtn>
                 {namespace.name}
               </EnhTableRowCell>
               <EnhTableRowCell />
               <EnhTableRowCell />
-              {/* NEED TO CHANGE STATUS DYNAMIC */}
-              <EnhTableRowCell>STATUS</EnhTableRowCell>
+              <EnhTableRowCell>{namespaceStatus}</EnhTableRowCell>
               <EnhTableRowCell isRightAligned>
                 <EnhMoreButton>
-                  <Component.Icon
-                    material="more_vert"
-                    style={moreInfoIconStyles}
-                  />
+                  <Icon material="more_vert" style={moreInfoIconStyles} />
                 </EnhMoreButton>
               </EnhTableRowCell>
             </EnhTableRow>
@@ -147,5 +184,5 @@ export const EnhancedTableRow = ({ row }) => {
 };
 
 EnhancedTableRow.propTypes = {
-  row: PropTypes.object.isRequired,
+  extendedCloud: PropTypes.object.isRequired,
 };

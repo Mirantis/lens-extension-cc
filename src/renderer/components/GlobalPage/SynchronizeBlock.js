@@ -10,7 +10,7 @@ import { Accordion } from '../Accordion/Accordion';
 import { layout } from '../styles';
 import { synchronizeBlock } from '../../../strings';
 
-const { Component } = Renderer;
+const { Notifications, Button, Icon } = Renderer.Component;
 
 // Mocked cloud data
 import { mockExtCloud } from '../../../../test/mocks/mockExtCloud';
@@ -96,7 +96,7 @@ const checkboxesStateObj = (extCloud) => {
   }, {});
 };
 
-export const SynchronizeBlock = ({ extCloud }) => {
+export const SynchronizeBlock = ({ extCloud, onAdd }) => {
   // @type {object} sorted object of projects
   const [projectsList, setProjectsList] = useState(extCloud.namespaces);
 
@@ -104,7 +104,7 @@ export const SynchronizeBlock = ({ extCloud }) => {
   const [nextSortType, setNextSortType] = useState('');
 
   // @type {object} checkboxes state
-  const [сheckboxesState, setCheckboxesState] = useState({
+  const [checkboxesState, setCheckboxesState] = useState({
     parent: false,
     children: checkboxesStateObj(extCloud),
   });
@@ -140,13 +140,13 @@ export const SynchronizeBlock = ({ extCloud }) => {
     if (childrenCheckboxes.some((el) => el === false)) {
       return true;
     }
-    return сheckboxesState.parent;
+    return checkboxesState.parent;
   };
 
   const getNewChildren = (parentCheckedStatus) => {
-    const newChildren = { ...сheckboxesState.children };
+    const newChildren = { ...checkboxesState.children };
 
-    Object.keys(сheckboxesState.children).forEach((name) => {
+    Object.keys(checkboxesState.children).forEach((name) => {
       newChildren[name] = parentCheckedStatus;
     });
     return newChildren;
@@ -155,12 +155,12 @@ export const SynchronizeBlock = ({ extCloud }) => {
   const onChangeHandler = (name) => {
     if (!name) {
       setCheckboxesState({
-        parent: !сheckboxesState.parent,
-        children: getNewChildren(!сheckboxesState.parent),
+        parent: !checkboxesState.parent,
+        children: getNewChildren(!checkboxesState.parent),
       });
     } else {
-      const newChildren = { ...сheckboxesState.children };
-      newChildren[name] = !сheckboxesState.children[name];
+      const newChildren = { ...checkboxesState.children };
+      newChildren[name] = !checkboxesState.children[name];
 
       setCheckboxesState({
         children: newChildren,
@@ -170,26 +170,48 @@ export const SynchronizeBlock = ({ extCloud }) => {
   };
 
   const parentCheckboxValue = () => {
-    const childrenCheckboxes = Object.values(сheckboxesState.children);
+    const childrenCheckboxes = Object.values(checkboxesState.children);
 
     if (
-      сheckboxesState.parent &&
+      checkboxesState.parent &&
       childrenCheckboxes.some((el) => el === false) &&
       childrenCheckboxes.some((el) => el === true)
     ) {
       return checkValues.MIXED;
     }
-    if (сheckboxesState.parent) {
+    if (checkboxesState.parent) {
       return checkValues.CHECKED;
-    } else {
-      return checkValues.UNCHECKED;
     }
+    return checkValues.UNCHECKED;
   };
 
   const childrenCheckboxValue = (name) => {
-    return сheckboxesState.children[name]
+    return checkboxesState.children[name]
       ? checkValues.CHECKED
       : checkValues.UNCHECKED;
+  };
+
+  const onSynchronize = () => {
+    const { cloud } = extCloud;
+    const allNamespaces = Object.keys(checkboxesState.children);
+    const namespaces = allNamespaces.filter(
+      (name) => checkboxesState.children[name]
+    );
+
+    if (!namespaces.length) {
+      Notifications.error(synchronizeBlock.error.noProjects());
+      return;
+    }
+
+    if (allNamespaces.length === namespaces.length) {
+      cloud.syncNamespaces = [];
+      cloud.syncAll = true;
+    } else {
+      cloud.syncAll = false;
+      cloud.syncNamespaces = namespaces;
+    }
+
+    onAdd(cloud);
   };
 
   return (
@@ -205,9 +227,9 @@ export const SynchronizeBlock = ({ extCloud }) => {
           <SortButton
             type="button"
             onClick={sortByName}
-            isRotated={nextSortType === 'DESC' ? true : false}
+            isRotated={nextSortType === 'DESC'}
           >
-            <Component.Icon
+            <Icon
               material="arrow_drop_up"
               style={{
                 color: 'var(--textColorSecondary)',
@@ -257,9 +279,10 @@ export const SynchronizeBlock = ({ extCloud }) => {
         </ProjectsBody>
       </Projects>
       <SynchronizeProjectsButtonWrapper>
-        <Component.Button
+        <Button
           primary
           label={synchronizeBlock.synchronizeButtonLabel()}
+          onClick={onSynchronize}
         />
       </SynchronizeProjectsButtonWrapper>
     </Content>
@@ -268,6 +291,7 @@ export const SynchronizeBlock = ({ extCloud }) => {
 
 SynchronizeBlock.propTypes = {
   extCloud: PropTypes.object,
+  onAdd: PropTypes.func.isRequired,
 };
 
 SynchronizeBlock.defaultProps = {

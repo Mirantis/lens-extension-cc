@@ -49,7 +49,7 @@ export default class ExtensionRenderer extends LensExtension {
     {
       id: ROUTE_GLOBAL_PAGE,
       components: {
-        Page: () => <GlobalPage extension={this} />,
+        Page: () => <GlobalPage />,
       },
     },
   ];
@@ -60,7 +60,7 @@ export default class ExtensionRenderer extends LensExtension {
     {
       id: ROUTE_CLUSTER_PAGE,
       components: {
-        Page: () => <ClusterPage extension={this} />,
+        Page: () => <ClusterPage />,
       },
     },
   ];
