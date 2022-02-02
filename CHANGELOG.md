@@ -1,5 +1,17 @@
 # ChangeLog
 
+## v4.0.0-alpha.0
+
+This is an early alpha build and is not fully functional. Use at your own risk.
+
+- Main Cluster view is replaced with the new SyncView
+- User is prompted to add their first magament cluster
+- User can choose which projects to sync, seeing metadata from each project (cluster, ssh key, proxy counts)
+- SyncView then shows the management clusters being synced, and projects selected for sync under each one, including same metadata for each project
+- Synced mamagenemt clusters are restored after quitting and re-opening Lens
+- No syncing actually takes place yet
+- Selective Sync button is not functional
+
 ## v3.0.4
 
 ### Patch
