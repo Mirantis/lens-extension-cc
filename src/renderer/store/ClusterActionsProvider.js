@@ -6,7 +6,7 @@ import { createContext, useContext, useState, useMemo } from 'react';
 import * as rtv from 'rtvjs';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { Common, Renderer } from '@k8slens/extensions';
+import { Renderer } from '@k8slens/extensions';
 import { AuthClient } from '../auth/clients/AuthClient';
 import { kubeConfigTemplate, mkClusterContextName } from '../../util/templates';
 import { AuthAccess } from '../auth/AuthAccess';
@@ -17,10 +17,10 @@ import { clusterModelTs } from '../../typesets';
 import { extractJwtPayload } from '../auth/authUtil';
 import { IpcRenderer } from '../IpcRenderer';
 import { getLensClusters } from '../rendererUtil';
+import { openBrowser } from '../../util/netUtil';
 import * as strings from '../../strings';
 import * as consts from '../../constants';
 
-const { Util } = Common;
 const {
   Component: { Notifications },
 } = Renderer;
@@ -447,9 +447,18 @@ const _addClusters = async function ({ clusters, config, offline = false }) {
       state: SSO_STATE_ADD_CLUSTERS,
     });
 
-    // NOTE: at this point, the event loop slice ends and we wait for the user to
-    //  respond in the browser
-    Util.openExternal(url); // open in default browser
+    try {
+      // NOTE: at this point, the event loop slice ends and we wait for the user to
+      //  respond in the browser
+      openBrowser(url); // open in default browser
+    } catch (err) {
+      pr.loading = false;
+      pr.loaded = true;
+      pr.error =
+        strings.clusterActionsProvider.error.sso.cannotOpenBrowser(url);
+      pr.notifyIfError();
+      pr.onChange();
+    }
   } else if (existingClusters.length > 0) {
     _postInfo(
       <p

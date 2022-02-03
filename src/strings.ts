@@ -138,6 +138,8 @@ export const ssoAuthProvider: Dict = {
     authCode: () =>
       `Authorization with the ${mccShortName} instance failed. Try again, and be sure to use the correct SSO account.`,
     userCanceled: () => 'User canceled SSO authorization process.',
+    cannotOpenBrowser: (url) =>
+      `The specified ${mccShortName} instance does not have a valid Keycloak SSO URL: ${url}`,
   },
 };
 
@@ -214,6 +216,8 @@ export const clusterActionsProvider: Dict = {
         'The operation to add clusters was canceled by the user during the SSO authorization process.',
       authCode: (clusterId) =>
         `Authorization for cluster ${clusterId} with the ${mccShortName} instance failed. Try again, and be sure to use the correct SSO account.`,
+      cannotOpenBrowser: (url) =>
+        `The specified ${mccShortName} instance does not have a valid Keycloak SSO URL: ${url}`,
     },
   },
   workspaces: {

@@ -1,5 +1,12 @@
 # ChangeLog
 
+## UNRELEASED
+
+### Patch
+
+- Fix `CVE-2022-0484` security issue allowing remote code execution by an attacker providing a spoofed MCC management cluster URL that has a `config.js` with a malicious value for the Keycloak URL (e.g. `file:/...` which could run code on the local system).
+    - Going forward, only `http/s:` Keycloak URLs are permitted.
+
 ## v3.1.0
 
 ### Minor

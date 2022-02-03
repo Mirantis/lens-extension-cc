@@ -3,14 +3,12 @@
 //
 
 import { createContext, useContext, useState, useMemo } from 'react';
-import { Common } from '@k8slens/extensions';
 import { ProviderStore } from './ProviderStore';
 import * as strings from '../../strings';
 import { logger } from '../../util/logger';
 import { extractJwtPayload } from '../auth/authUtil';
 import { AuthClient } from '../auth/clients/AuthClient';
-
-const { Util } = Common;
+import { openBrowser } from '../../util/netUtil';
 
 //
 // Store
@@ -40,7 +38,13 @@ const _startAuthorization = async function ({ config }) {
 
   if (config.keycloakLogin) {
     const url = authClient.getSsoAuthUrl();
-    Util.openExternal(url); // open in default browser
+    try {
+      openBrowser(url); // open in default browser
+    } catch (err) {
+      pr.loading = false;
+      pr.loaded = true;
+      pr.error = strings.ssoAuthProvider.error.cannotOpenBrowser(url);
+    }
   } else {
     pr.loading = false;
     pr.loaded = true;
