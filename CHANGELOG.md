@@ -1,6 +1,6 @@
 # ChangeLog
 
-## UNRELEASED
+## v3.1.1
 
 ### Patch
 
