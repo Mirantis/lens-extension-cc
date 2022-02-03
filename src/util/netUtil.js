@@ -1,7 +1,10 @@
 import { get } from 'lodash';
 import nodeFetch from 'node-fetch';
 import https from 'https';
+import { Common } from '@k8slens/extensions';
 import * as strings from '../strings';
+
+const { Util } = Common;
 
 // SECURITY: get around any MCC instance certificate issues
 const httpsAgent = DEV_UNSAFE_NO_CERT
@@ -36,6 +39,23 @@ function splitOnWords(key) {
  */
 export function normalizeUrl(url) {
   return url.replace(/\/$/, ''); // remove end slash if any
+}
+
+/**
+ * Opens the given URL in the native operating system. Permits only http/s URLs.
+ * @param {string} url Must be http/s.
+ * @throws {Error} If `url` does not use a permitted protocol: http or https.
+ */
+export function openBrowser(url) {
+  // SECURITY: This addresses CVE-2022-0484 where `openExternal()` provided by
+  //  Lens is designed to open _anything_, which means even file: protocols
+  //  that would result in local code execution (if MCC URL is spoofed and has
+  //  a config.js that provides a file: URL for Keycloak, for example)
+  if (!url.match(/^https?:/)) {
+    throw new Error(strings.netUtil.error.invalidBrowserUrl(url));
+  }
+
+  Util.openExternal(url); // open in default browser
 }
 
 /**
