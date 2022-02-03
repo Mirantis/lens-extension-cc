@@ -6,8 +6,6 @@ export const mockExtCloud = {
     refresh_token:
       'refresh-token-1',
     refresh_expires_in: 200,
-    expiresAt: 1234,
-    refreshExpiresAt: 5678,
     idpClientId: null,
     username: 'user@test.com',
     cloudUrl: 'https://cloud-url.com',
@@ -109,8 +107,6 @@ export const mockExtCloud2 = {
     refresh_token:
       'refresh-token-1',
     refresh_expires_in: 200,
-    expiresAt: 1234,
-    refreshExpiresAt: 5678,
     idpClientId: null,
     username: 'anotheruser@test.com',
     cloudUrl: 'https://cloud-url-2.com',

@@ -62,6 +62,9 @@ export const finishAuthorization = async function ({ oAuth, config, cloud }) {
   } else {
     const jwt = extractJwtPayload(body.id_token);
     if (jwt.preferred_username) {
+      console.log(
+        `^^^^^^^ ssoUtil.finishAuthorization(): updating tokens and username on cloud=${cloud}`
+      ); // DEBUG LOG
       cloud.updateTokens(body);
       cloud.username = jwt.preferred_username;
     } else {

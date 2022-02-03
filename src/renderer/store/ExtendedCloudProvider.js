@@ -31,57 +31,100 @@ const pr = new ExtendedCloudProviderStore();
 const ExtendedCloudContext = createContext();
 
 /**
- * @param {Object} tokens {[cloudUrl]: [token]} pairs
- * @return {T[]|*[]} return empty array or cloudUrls that need to be removed
+ * Triages current Cloud URLs into 3 lists: new, updated, and deleted.
+ * @param {{ [index: string]: string }} currentTokens Map of Cloud URL to token for
+ *  the current set of known Clouds stored on disk.
+ * @return {{ newUrls: Array<string>, updatedUrls: Array<string>, oldUrls: Array<string> }}
+ *  An object with `newUrls` being a list of new Cloud URLs to add, `oldUrls` a list
+ *  of old Clouds to remove (deleted), and `updatedUrls` a list of Clouds that have
+ *  changed but are still in use. Any of these lists could be empty.
  * @private
  */
-const _deleteCloudCheck = (tokens) => {
-  const newCloudUrls = Object.keys(tokens || {});
-  const prevCloudUrls = Object.keys(pr.store.tokens || {});
-  if (newCloudUrls.length < prevCloudUrls.length) {
-    return prevCloudUrls.filter((v) => !newCloudUrls.includes(v));
-  }
-  return [];
-};
+const _triageCloudUrls = (currentTokens) => {
+  const newUrls = [];
+  const updatedUrls = [];
+  const oldUrls = [];
+  const storeTokens = pr.store.tokens || {};
 
-/**
- * @desc update extendedClouds
- * @param {Object} tokens, contains `[cloudUrl]: token` pairs
- * @param {Array<string>} cloudUrlsToUpdate, list of cloudUrls that has to be updated
- * @param {Array<string>} cloudsUrlsToDelete, list of cloudUrls that has to be updated
- * @private
- */
-const _loadData = function (tokens, cloudUrlsToUpdate, cloudsUrlsToDelete) {
-  if (cloudsUrlsToDelete?.length) {
-    cloudsUrlsToDelete.forEach((url) => {
-      // stop setInterval, just in case and remove EC
-      pr.store.extendedClouds[url].stopUpdateCloudByTimeOut();
-      delete pr.store.extendedClouds[url];
+  Object.keys(storeTokens).forEach((storeUrl) => {
+    if (currentTokens[storeUrl]) {
+      // stored URL is also in new set of URLs: updated
+      updatedUrls.push(storeUrl);
+    } else {
+      // stored URL is not in new set: deleted
+      oldUrls.push(storeUrl);
+    }
+  });
+
+  const curCount = Object.keys(currentTokens).length;
+  if (updatedUrls.length !== curCount && oldUrls.length !== curCount) {
+    // there's at least one new URL (or none) in `currentTokens`
+    Object.keys(currentTokens).forEach((curUrl) => {
+      if (!storeTokens[curUrl]) {
+        // not a stored/known URL: must be new
+        newUrls.push(curUrl);
+      }
     });
   }
 
-  const cloudUrls = cloudUrlsToUpdate?.length
-    ? cloudUrlsToUpdate
-    : Object.keys(cloudStore.clouds);
+  return { newUrls, updatedUrls, oldUrls };
+};
 
+/**
+ * Update extended clouds in the store.
+ * @param {{ [index: string]: string }} tokens Map of Cloud URL to token for
+ *  the current set of known Clouds stored on disk.
+ * @param {Array<string>} cloudUrlsToAdd List of new cloudUrls to be added
+ * @param {Array<string>} cloudUrlsToUpdate List of cloudUrls that have to be updated
+ * @param {Array<string>} cloudsUrlsToDelete List of cloudUrls that must be removed
+ * @private
+ */
+const _updateStore = function (
+  tokens,
+  cloudUrlsToAdd,
+  cloudUrlsToUpdate,
+  cloudsUrlsToDelete
+) {
   pr.store.tokens = tokens;
-  cloudUrls.forEach((url) => {
+
+  cloudsUrlsToDelete.forEach((url) => {
+    // destroy and remove EC
+    pr.store.extendedClouds[url].destroy();
+    delete pr.store.extendedClouds[url];
+  });
+
+  cloudUrlsToAdd.concat(cloudUrlsToUpdate).forEach((url) => {
     const cloud = cloudStore.clouds[url];
-    // if extendedCloud exists - replace extendedCloud.cloud
+
+    // if extendedCloud exists - update extendedCloud.cloud
     if (pr.store.extendedClouds[url]) {
+      console.log(
+        `******* ExtendedCloudProvider._updateStore(): updating cloud on ${
+          pr.store.extendedClouds[url]
+        }, (${
+          pr.store.extendedClouds[url].cloud === cloud ? 'same' : 'new'
+        }) cloud=${cloud}`
+      ); // DEBUG LOG
+      // NOTE: updating the EC's Cloud instance will cause the EC to fetch new data,
+      //  IIF the `cloud` is actually new; it's not always new as the CloudStore listens
+      //  for changes on each Cloud and triggers the `autorun()` Mobx binding whenever
+      //  that happens, but we still make the assignment just in case it's new
       pr.store.extendedClouds[url].cloud = cloud;
     } else {
       // otherwise create new ExtendedCloud
       const extCl = new ExtendedCloud(cloud);
       // add new EC to store
       pr.store.extendedClouds[url] = extCl;
-      // if it's connected - start fetch data by interval
-      if (extCl.cloud.isConnected()) {
-        extCl.startUpdateCloudByTimeOut();
-      }
     }
   });
-  pr.onChange();
+
+  // NOTE: there's no need to cause a Provider context update if all we did was
+  //  update some ExtendedCloud instances because the store hasn't changed in that
+  //  case -- components using these instances should already be listening for its
+  //  various events to get notified when its data changes
+  if (cloudUrlsToAdd.length > 0 || cloudsUrlsToDelete.length > 0) {
+    pr.onChange();
+  }
 };
 
 export const useExtendedCloudData = function () {
@@ -115,6 +158,7 @@ export const ExtendedCloudProvider = function (props) {
   // autorun calls on any cloudStore update (to often)
   autorun(() => {
     const cloudUrlsToUpdate = [];
+
     // we need to take stable part to compare and observe
     // cloud.token, as I understand, is good for that
     // when we update cloud - we update its token (for now at least, this 'compare' part may be changed in the future)
@@ -125,10 +169,17 @@ export const ExtendedCloudProvider = function (props) {
       }
       return acc;
     }, {});
+
     // compare tokens from cloudStore.clouds and tokens we store at previous change in context
     if (!isEqual(pr.store.tokens, tokens)) {
-      const cloudsUrlsToDelete = _deleteCloudCheck(tokens);
-      _loadData(tokens, cloudUrlsToUpdate, cloudsUrlsToDelete);
+      const { newUrls, updatedUrls, oldUrls } = _triageCloudUrls(tokens);
+      console.log(
+        '******* ExtendedCloudProvider.autorun(): newUrls=[%s], updatedUrls=[%s], oldUrls=[%s]',
+        newUrls.join(', '),
+        updatedUrls.join(', '),
+        oldUrls.join(', ')
+      ); // DEBUG LOG
+      _updateStore(tokens, newUrls, updatedUrls, oldUrls);
     }
   });
 

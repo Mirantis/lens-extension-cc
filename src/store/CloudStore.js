@@ -50,22 +50,27 @@ export class CloudStore extends Common.Store.ExtensionStore {
 
     const json = result.valid ? store : CloudStore.getDefaults();
 
+    console.log('+++++++ CloudStore.fromStore()'); // DEBUG LOG
+
     Object.keys(json).forEach((key) => {
       if (key === 'clouds') {
         // restore from a map of cloudUrl to JSON object -> into a map of cloudUrl
         //  to Cloud instance
-        this[key] = Object.entries(json[key] || {}).reduce(
-          (cloudMap, [cloudUrl, cloudJson]) => {
-            const cloud = new Cloud(cloudJson);
-            cloud.addEventListener(
-              CLOUD_EVENTS.DATA_UPDATED,
-              this.onCloudUpdate
-            );
-            cloudMap[cloudUrl] = cloud;
-            return cloudMap;
-          },
-          {}
-        );
+        if (!this.clouds) {
+          this.clouds = Object.entries(json[key] || {}).reduce(
+            (cloudMap, [cloudUrl, cloudJson]) => {
+              const cloud = new Cloud(cloudJson);
+              this.listenForChanges(cloud);
+              cloudMap[cloudUrl] = cloud;
+              return cloudMap;
+            },
+            {}
+          );
+        }
+        // else, `fromStore()` is being called as a result of Lens' periodic sync process with
+        //  the file system -- but we don't support updating Clouds this way; if the user
+        //  makes a change on disk, it'll be overwritten by this Store when Lens serializes
+        //  it, or the user will need to close Lens, make the edit, and re-open it
       } else {
         this[key] = json[key];
       }
@@ -75,6 +80,8 @@ export class CloudStore extends Common.Store.ExtensionStore {
   toJSON() {
     // throw-away: just to get keys we care about on this
     const defaults = CloudStore.getDefaults();
+
+    console.log('+++++++ CloudStore.toJSON()'); // DEBUG LOG
 
     const observableThis = Object.keys(defaults).reduce((obj, key) => {
       if (key === 'clouds') {
@@ -95,29 +102,63 @@ export class CloudStore extends Common.Store.ExtensionStore {
   }
 
   /**
+   * Handles a change to any of the Cloud's properties (e.g. tokens were refreshed and now Cloud
+   *  has a new set of tokens, synced namespaces changed, name changed, etc.).
    * @param {Cloud} cloud
    */
   onCloudUpdate = (cloud) => {
+    // NOTE: this event doesn't mean we have a new Cloud instance; it just means
+    //  one or more properties of the Cloud object were changed, and by using
+    //  `extendObservable()` here, we'll trigger the Store to persist to disk,
+    //  thereby capturing the Cloud's latest data in case the user quits Lens
+    console.log(
+      '+++++++ CloudStore.onCloudUpdate(): cloud=%s',
+      cloud.toString()
+    ); // DEBUG LOG
     extendObservable(this.clouds, { [cloud.cloudUrl]: cloud });
   };
 
   /**
+   * Adds a Cloud to this store, notifying listeners bound to the `clouds` observable.
    * @param {Cloud} cloud
+   * @throws {Error} If the cloud already exists in this store (based on URL).
    */
   addCloud(cloud) {
     const { cloudUrl } = cloud;
-    cloud.addEventListener(CLOUD_EVENTS.DATA_UPDATED, this.onCloudUpdate);
+    if (this.clouds[cloudUrl]) {
+      throw new Error(
+        `Store already has an entry for url="${cloudUrl}", existing=${this.clouds[cloudUrl]}, new=${cloud}`
+      );
+    }
+
+    this.listenForChanges(cloud);
     extendObservable(this.clouds, { [cloudUrl]: cloud });
   }
+
   /**
+   * Subscribes to a Cloud's change events to know when it gets updated and should
+   *  be written to disk via this store.
+   * @param {Cloud} cloud
+   */
+  listenForChanges(cloud) {
+    Object.values(CLOUD_EVENTS).forEach((eventName) =>
+      cloud.addEventListener(eventName, this.onCloudUpdate)
+    );
+  }
+
+  /**
+   * Removes a Cloud from this store. Does nothing if this store doesn't have a Cloud
+   *  for this URL.
    * @param {string} cloudUrl
    */
   removeCloud(cloudUrl) {
-    this.clouds[cloudUrl].removeEventListener(
-      CLOUD_EVENTS.DATA_UPDATED,
-      this.onCloudUpdate
-    );
-    delete this.clouds[cloudUrl];
+    const cloud = this.clouds[cloudUrl];
+    if (cloud) {
+      Object.values(CLOUD_EVENTS).forEach((eventName) =>
+        cloud.removeEventListener(eventName, this.onCloudUpdate)
+      );
+      delete this.clouds[cloudUrl];
+    }
   }
 }
 
