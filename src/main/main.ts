@@ -17,16 +17,6 @@ const logger: any = loggerUtil; // get around TS compiler's complaining
 // For instance, you may want to hook into onActivate() or onDeactivate().
 
 export default class ExtensionMain extends Main.LensExtension {
-  appMenus = [
-    {
-      parentId: 'file',
-      label: strings.extension.appMenu['label'](),
-      click: () => {
-        this.navigate(ROUTE_GLOBAL_PAGE);
-      },
-    },
-  ];
-
   onActivate() {
     logger.log('ExtensionMain.onActivate()', 'extension activated');
     prefStore.loadExtension(this);
