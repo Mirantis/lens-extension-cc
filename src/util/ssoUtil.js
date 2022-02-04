@@ -1,9 +1,8 @@
-import { Common } from '@k8slens/extensions';
 import { logger } from './logger';
 import { extractJwtPayload } from '../renderer/auth/authUtil';
 import { AuthClient } from '../renderer/auth/clients/AuthClient';
-
-const { Util } = Common;
+import { openBrowser } from '../util/netUtil';
+import * as strings from '../strings';
 
 /**
  *  Start authorization with MCC to get the temp access code via the
@@ -13,15 +12,21 @@ const { Util } = Common;
  * @param {Object} options.config MCC Config object.
  * @param {string} [options.state] Any string that should be returned verbatim
  *  in a `state` request parameter in the redirect request.
+ * @throws {Error} If the MCC instance doesn't support SSO.
+ * @throws {Error} If the MCC instance has an illegal Keycloak URL.
  */
 export const startAuthorization = function ({ config, state }) {
   const authClient = new AuthClient({ config });
 
   if (config.keycloakLogin) {
     const url = authClient.getSsoAuthUrl({ state });
-    Util.openExternal(url); // open in default browser
+    try {
+      openBrowser(url); // open in default browser (will throw if `url` is blacklisted)
+    } catch (err) {
+      throw new Error(strings.ssoUtil.error.invalidSsoUrl(url));
+    }
   } else {
-    throw new Error('Cloud instance does not support SSO');
+    throw new Error(strings.ssoUtil.error.ssoNotSupported());
   }
 };
 

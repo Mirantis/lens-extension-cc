@@ -92,13 +92,6 @@ export const managementClusters = {
   },
 };
 
-export const configProvider: Dict = {
-  error: {
-    unexpectedToken: () =>
-      "A problem occurred while retrieving the instance's configuration details. Make sure the instance URL is correct.",
-  },
-};
-
 export const authUtil: Dict = {
   error: {
     sessionExpired: () => 'Session expired',
@@ -114,6 +107,8 @@ export const netUtil: Dict = {
     reason: (message = '') => `Reason: "${message}"`,
     serverResponse: (statusText = '') => `Server response: "${statusText}".`,
     responseCode: (status = -1) => `Server response code: ${status}`,
+    invalidBrowserUrl: (url) =>
+      `Cannot open URL in browser (must be http/s): "${url}"`,
   },
 };
 
@@ -292,6 +287,22 @@ export const welcome: Dict = {
   },
 };
 
+export const ssoUtil: Dict = {
+  error: {
+    ssoNotSupported: () =>
+      'The management cluster does not support SSO authorization.',
+    invalidSsoUrl: (url) =>
+      `The management cluster's Keycloak URL cannot be opened in a browser (must be http/s): "${url}"`,
+  },
+};
+
+export const cloud: Dict = {
+  error: {
+    unexpectedToken: () =>
+      "A problem occurred while retrieving the management cluster's configuration details. Make sure the management cluster URL is correct.",
+  },
+};
+
 export const extendedCloud: Dict = {
   error: {
     credentials: () =>
@@ -299,6 +310,7 @@ export const extendedCloud: Dict = {
     sshKeys: () => 'Failed to parse SSH Keys payload: Unexpected data format.',
   },
 };
+
 export const connectionStatuses = {
   cloud: {
     connected: () => 'Connected',

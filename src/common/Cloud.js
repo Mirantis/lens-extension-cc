@@ -56,7 +56,7 @@ const _loadConfig = async (url) => {
         `Failed to parse config, error="${err.message}"`
       );
       if (err.message.match(/^unexpected token/i)) {
-        throw new Error(strings.configProvider.error.unexpectedToken());
+        throw new Error(strings.cloud.error.unexpectedToken());
       } else {
         throw new Error(err.message);
       }
@@ -688,7 +688,18 @@ export class Cloud {
 
     if (this.config) {
       const state = this.cloudUrl;
-      ssoUtil.startAuthorization({ config: this.config, state });
+
+      try {
+        ssoUtil.startAuthorization({ config: this.config, state });
+      } catch (err) {
+        logger.error(
+          'Cloud.connect()',
+          `Failed to start SSO authorization, error="${err.message}"`
+        );
+        this.connectError = err;
+        this.connecting = false;
+        return;
+      }
 
       const handler = async function (event) {
         DEV_ENV && rtv.verify({ event }, { event: extEventOauthCodeTs });
@@ -703,8 +714,8 @@ export class Cloud {
           });
         } catch (err) {
           logger.error(
-            'Cloud.connect => ssoUtil.finishAuthorization',
-            `Failed to finishAuthorization, error="${err.message}"`
+            'Cloud.connect()',
+            `Failed to finish SSO authorization, error="${err.message}"`
           );
           this.connectError = err;
           this.resetTokens();
