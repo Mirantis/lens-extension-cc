@@ -161,7 +161,7 @@ export const ConnectionBlock = ({
             waiting={loading || extCloudLoading}
             label={connectionBlock.button.label()}
             onClick={handleConnectClick}
-            disabled={loading || extCloudLoading || !clusterUrl.length}
+            disabled={loading || extCloudLoading}
           />
         </ButtonWrapper>
       </Field>
