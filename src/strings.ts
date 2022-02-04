@@ -55,7 +55,7 @@ export const connectionBlock: Dict = {
       "You will be directed to your Management Cluster's login page through your web browser where you should enter your SSO credentials",
     urlAlreadyUsed: () => 'This Management Cluster is already being synced',
     nameSymbolsAreNotValid: () =>
-      'Management Cluster name cannot contain whitespace or special characters',
+      'The name cannot contain whitespace or special characters, except for hyphens (-) and underscores (_)',
     nameAlreadyUsed: () =>
       'A Management Cluster with this name is already being synced',
   },
