@@ -83,7 +83,7 @@ export const ConnectionBlock = ({
 
   const handleConnectClick = async function () {
     cleanCloudsState();
-    const normUrl = normalizeUrl(clusterUrl);
+    const normUrl = normalizeUrl(clusterUrl.trim());
     setClusterUrl(normUrl); // update to actual URL we'll use
     setLoading(true);
     let newCloud = new Cloud();
