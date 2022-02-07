@@ -4,10 +4,10 @@ import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
 import { layout } from '../styles';
 import { AdditionalInfoRows } from './AdditionalInfoRows';
-import { connectionStatuses } from '../../../strings';
+import { connectionStatuses, contentMenus } from '../../../strings';
 import { EXTENDED_CLOUD_EVENTS } from '../../../common/ExtendedCloud';
 
-const { Icon } = Renderer.Component;
+const { Icon, MenuItem, MenuActions } = Renderer.Component;
 
 const EnhRowsWrapper = styled.div`
   display: contents;
@@ -46,7 +46,7 @@ const EnhCollapseBtn = styled.button`
   transform: translateY(-2px);
 `;
 
-const EnhMoreButton = styled.button`
+const EnhMoreButton = styled.div`
   background: transparent;
   cursor: pointer;
 `;
@@ -54,11 +54,6 @@ const EnhMoreButton = styled.button`
 const expandIconStyles = {
   color: 'var(--textColorPrimary)',
   fontSize: 'calc(var(--font-size) * 1.8)',
-};
-
-const moreInfoIconStyles = {
-  color: 'var(--textColorPrimary)',
-  fontSize: 'calc(var(--font-size) * 1.5)',
 };
 
 const colorGreen = {
@@ -85,7 +80,68 @@ const getStatus = (isCloudConnected) => {
       };
 };
 
+const cloudMenuItems = [
+  {
+    title: `(WIP) ${contentMenus.cloud.reconnect()}`,
+    name: 'reconnect',
+    onClick: () => {},
+  },
+  {
+    title: `(WIP) ${contentMenus.cloud.remove()}`,
+    name: 'remove',
+    onClick: () => {},
+  },
+  {
+    title: `(WIP) ${contentMenus.cloud.sync()}`,
+    name: 'sync',
+    onClick: () => {},
+  },
+  {
+    title: `(WIP) ${contentMenus.cloud.openInBrowser()}`,
+    name: 'openInBrowser',
+    onClick: () => {},
+  },
+];
+const namespaceMenuItems = [
+  {
+    title: `(WIP) ${contentMenus.namespace.sync()}`,
+    name: 'sync',
+    onClick: () => {},
+  },
+  {
+    title: `(WIP) ${contentMenus.namespace.openInBrowser()}`,
+    name: 'openInBrowser',
+    onClick: () => {},
+  },
+  {
+    title: `(WIP) ${contentMenus.namespace.createCluster()}`,
+    name: 'createCluster',
+    onClick: () => {},
+  },
+  {
+    title: `(WIP) ${contentMenus.namespace.createSHHKey()}`,
+    name: 'createSHHKey',
+    onClick: () => {},
+  },
+  {
+    title: `(WIP) ${contentMenus.namespace.createCredential()}`,
+    name: 'createCredential',
+    onClick: () => {},
+  },
+  {
+    title: `(WIP) ${contentMenus.namespace.createLicense()}`,
+    name: 'createLicense',
+    onClick: () => {},
+  },
+  {
+    title: `(WIP) ${contentMenus.namespace.createProxy()}`,
+    name: 'createProxy',
+    onClick: () => {},
+  },
+];
+
 export const EnhancedTableRow = ({ extendedCloud }) => {
+  const [onOpen, toggleMenu] = useState(false);
   const [isOpenFirstLevel, setIsOpenFirstLevel] = useState(false);
   const [actualNamespaces, setActualNamespaces] = useState(
     extendedCloud.namespaces
@@ -146,7 +202,15 @@ export const EnhancedTableRow = ({ extendedCloud }) => {
         </EnhTableRowCell>
         <EnhTableRowCell isRightAligned>
           <EnhMoreButton>
-            <Icon material="more_vert" style={moreInfoIconStyles} />
+            <MenuActions onOpen={onOpen}>
+              {cloudMenuItems.map((item) => {
+                return (
+                  <MenuItem key={`cloud-${item.name}`} onClick={item.onClick}>
+                    {item.title}
+                  </MenuItem>
+                );
+              })}
+            </MenuActions>
           </EnhMoreButton>
         </EnhTableRowCell>
       </EnhTableRow>
@@ -168,8 +232,19 @@ export const EnhancedTableRow = ({ extendedCloud }) => {
               <EnhTableRowCell />
               <EnhTableRowCell>{namespaceStatus}</EnhTableRowCell>
               <EnhTableRowCell isRightAligned>
-                <EnhMoreButton>
-                  <Icon material="more_vert" style={moreInfoIconStyles} />
+                <EnhMoreButton onClick={() => toggleMenu(!onOpen)}>
+                  <MenuActions onOpen={onOpen}>
+                    {namespaceMenuItems.map((item) => {
+                      return (
+                        <MenuItem
+                          key={`${namespace.name}-${item.name}`}
+                          onClick={item.onClick}
+                        >
+                          {item.title}
+                        </MenuItem>
+                      );
+                    })}
+                  </MenuActions>
                 </EnhMoreButton>
               </EnhTableRowCell>
             </EnhTableRow>
