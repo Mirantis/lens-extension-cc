@@ -178,11 +178,13 @@ const _deserializeClustersList = function (body, cloud) {
         try {
           return new Cluster(item, cloud.username);
         } catch (err) {
-          logger.error(
+          logger.warn(
             'ExtendedCloud._deserializeClustersList()',
-            `Failed to deserialize cluster ${idx} (namespace/name="${
+            `Ignoring cluster ${idx} (namespace/name="${
               item?.metadata?.namespace ?? '<unknown>'
-            }/${item?.metadata?.name ?? '<unknown>'}"): ${err.message}`,
+            }/${
+              item?.metadata?.name ?? '<unknown>'
+            }") because it could not be deserialized: ${err.message}`,
             err
           );
           return undefined;
@@ -210,9 +212,9 @@ const _deserializeNamespacesList = function (body) {
         try {
           return new Namespace(item);
         } catch (err) {
-          logger.error(
+          logger.warn(
             'ExtendedCloud._deserializeNamespacesList()',
-            `Failed to deserialize namespace ${idx}: ${err.message}`,
+            `Ignoring namespace ${idx} because it could not be deserialized: ${err.message}`,
             err
           );
           return undefined;

@@ -2,7 +2,7 @@
 // Cluster storage to persist clusters added to the Catalog by this extension
 //
 
-import { observable, toJS, makeObservable } from 'mobx';
+import { observable, action, toJS, makeObservable } from 'mobx';
 import { Common } from '@k8slens/extensions';
 import * as rtv from 'rtvjs';
 import { logger } from '../util/logger';
@@ -52,6 +52,10 @@ export class ClusterStore extends Common.Store.ExtensionStore {
     Object.keys(this).forEach((key) => (this[key] = defaults[key]));
   }
 
+  // NOTE: this method is not just called when reading from disk; it's also called in the
+  //  sync process between the Main and Renderer threads should code on either thread
+  //  update any of the store's properties
+  @action // prevent mobx from emitting a change event until the function returns
   fromStore(store) {
     const result = rtv.check({ store }, { store: storeTs });
 

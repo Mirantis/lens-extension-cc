@@ -1,4 +1,10 @@
-import { observable, toJS, makeObservable, extendObservable } from 'mobx';
+import {
+  observable,
+  action,
+  toJS,
+  makeObservable,
+  extendObservable,
+} from 'mobx';
 import { Common } from '@k8slens/extensions';
 import * as rtv from 'rtvjs';
 import { logger } from '../util/logger';
@@ -38,6 +44,10 @@ export class CloudStore extends Common.Store.ExtensionStore {
     Object.keys(this).forEach((key) => (this[key] = defaults[key]));
   }
 
+  // NOTE: this method is not just called when reading from disk; it's also called in the
+  //  sync process between the Main and Renderer threads should code on either thread
+  //  update any of the store's properties
+  @action // prevent mobx from emitting a change event until the function returns
   fromStore(store) {
     const result = rtv.check({ store }, { store: storeTs });
 
@@ -56,21 +66,45 @@ export class CloudStore extends Common.Store.ExtensionStore {
       if (key === 'clouds') {
         // restore from a map of cloudUrl to JSON object -> into a map of cloudUrl
         //  to Cloud instance
-        if (!this.clouds) {
-          this.clouds = Object.entries(json[key] || {}).reduce(
-            (cloudMap, [cloudUrl, cloudJson]) => {
-              const cloud = new Cloud(cloudJson);
+        const existingClouds = this.clouds || {};
+        const newClouds = Object.entries(json[key] || {}).reduce(
+          (cloudMap, [cloudUrl, cloudJson]) => {
+            let cloud;
+            if (existingClouds[cloudUrl]) {
+              // update existing Cloud with new data instead of creating a new instance
+              //  so that currently-bound objects don't leak
+              console.log(
+                `+++++++ CloudStore.fromStore(): Updating existing cloud=${existingClouds[cloudUrl]}`
+              ); // DEBUG LOG
+              cloud = existingClouds[cloudUrl].update(cloudJson);
+            } else {
+              // add new Cloud we don't know about yet
+              console.log(
+                `+++++++ CloudStore.fromStore(): Adding new cloud for cloudUrl=${cloudUrl}`
+              ); // DEBUG LOG
+              cloud = new Cloud(cloudJson);
               this.listenForChanges(cloud);
               cloudMap[cloudUrl] = cloud;
-              return cloudMap;
-            },
-            {}
-          );
-        }
-        // else, `fromStore()` is being called as a result of Lens' periodic sync process with
-        //  the file system -- but we don't support updating Clouds this way; if the user
-        //  makes a change on disk, it'll be overwritten by this Store when Lens serializes
-        //  it, or the user will need to close Lens, make the edit, and re-open it
+            }
+            cloudMap[cloudUrl] = cloud;
+            return cloudMap;
+          },
+          {}
+        );
+
+        // make sure we properly remove any old/deleted Clouds
+        Object.keys(existingClouds).forEach((cloudUrl) => {
+          if (!newClouds[cloudUrl]) {
+            console.log(
+              `+++++++ CloudStore.fromStore(): Removing old cloud=${existingClouds[cloudUrl]}`
+            ); // DEBUG LOG
+            this.stopListeningForChanges(existingClouds[cloudUrl]);
+          }
+        });
+
+        // this assignment will implicitly remove any old clouds from the map
+        //  they won't be included in `newClouds`
+        this.clouds = newClouds;
       } else {
         this[key] = json[key];
       }
@@ -80,8 +114,6 @@ export class CloudStore extends Common.Store.ExtensionStore {
   toJSON() {
     // throw-away: just to get keys we care about on this
     const defaults = CloudStore.getDefaults();
-
-    console.log('+++++++ CloudStore.toJSON()'); // DEBUG LOG
 
     const observableThis = Object.keys(defaults).reduce((obj, key) => {
       if (key === 'clouds') {
@@ -96,6 +128,8 @@ export class CloudStore extends Common.Store.ExtensionStore {
       }
       return obj;
     }, {});
+
+    console.log('+++++++ CloudStore.toJSON()'); // DEBUG LOG
 
     // return a deep-clone that is no longer observable
     return toJS(observableThis);
@@ -147,6 +181,16 @@ export class CloudStore extends Common.Store.ExtensionStore {
   }
 
   /**
+   * Unsubscribes from a Cloud's change events.
+   * @param {Cloud} cloud
+   */
+  stopListeningForChanges(cloud) {
+    Object.values(CLOUD_EVENTS).forEach((eventName) =>
+      cloud.removeEventListener(eventName, this.onCloudUpdate)
+    );
+  }
+
+  /**
    * Removes a Cloud from this store. Does nothing if this store doesn't have a Cloud
    *  for this URL.
    * @param {string} cloudUrl
@@ -154,9 +198,7 @@ export class CloudStore extends Common.Store.ExtensionStore {
   removeCloud(cloudUrl) {
     const cloud = this.clouds[cloudUrl];
     if (cloud) {
-      Object.values(CLOUD_EVENTS).forEach((eventName) =>
-        cloud.removeEventListener(eventName, this.onCloudUpdate)
-      );
+      this.stopListeningForChanges(cloud);
       delete this.clouds[cloudUrl];
     }
   }

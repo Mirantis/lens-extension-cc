@@ -165,13 +165,11 @@ export class Cloud {
 
   /**
    * @constructor
-   * @param {Object|null|undefined} [spec] API token response. See `specTs` for expected shape.
-   *  If falsy, a new instance is created, but its state is invalid until `updateTokens()`
-   *  is called to set token properties, and `username` is updated to a valid string.
+   * @param {Object|null|undefined} [spec] A serialized (from `toJSON()`) Cloud. See `specTs`
+   *  for expected shape. If falsy, a new instance is created, but all properties are `null`
+   *  or `undefined` and need to be set.
    */
   constructor(spec) {
-    DEV_ENV && rtv.verify({ spec }, { spec: [rtv.OPTIONAL, Cloud.specTs] });
-
     const _eventListeners = {}; // map of event name to array of functions that are handlers
     const _eventQueue = []; // list of `{ name: string, params: Array }` objects to dispatch
     let _dispatchTimerId; // ID of the scheduled dispatch timer if a dispatch is scheduled, or undefined
@@ -297,10 +295,10 @@ export class Cloud {
       },
     });
 
-    let _token = null;
     let _name = null;
     let _syncAll = false;
-    let _syncNamespaces = null;
+    let _syncNamespaces = [];
+    let _token = null;
     let _expiresIn = null;
     let _tokenValidTill = null;
     let _refreshToken = null;
@@ -622,16 +620,7 @@ export class Cloud {
 
     //// initialize
 
-    // set all token-related members if they're specified
-    if (spec && spec.id_token && spec.refresh_token) {
-      this.updateTokens(spec);
-    }
-
-    this.username = spec ? spec.username : null;
-    this.cloudUrl = spec ? spec.cloudUrl : null;
-    this.name = spec ? spec.name : null;
-    this.syncAll = spec ? spec.syncAll : false;
-    this.syncNamespaces = spec ? spec.syncNamespaces : [];
+    this.update(spec);
 
     // since we assign properties when initializing, and this may cause some events
     //  to get dispatched, make sure we start with a clean slate for any listeners
@@ -684,7 +673,7 @@ export class Cloud {
   }
 
   /**
-   * Update tokens and expiries from API response.
+   * Update only tokens and expiries from an API response.
    * @param {Object} tokens API token payload. See `tokensTs` for expected shape.
    */
   updateTokens(tokens) {
@@ -707,6 +696,32 @@ export class Cloud {
     this.refreshTokenValidTill = new Date(
       now + this.refreshExpiresIn * 1000 + EXPIRY_ADJUST
     );
+  }
+
+  /**
+   * Updates this Cloud given a JSON model produced by `toJSON()` at some earlier
+   *  point in time. This is basically like calling the constructor, just that it
+   *  updates this instance's properties (if changes have occurred) rather than
+   *  creating a new instance.
+   * @param {Object|null|undefined} spec JSON object.
+   * @returns {Cloud} This instance, for chaining/convenience.
+   */
+  update(spec) {
+    DEV_ENV && rtv.verify({ spec }, { spec: [rtv.OPTIONAL, Cloud.specTs] });
+
+    if (spec) {
+      this.cloudUrl = spec.cloudUrl;
+      this.name = spec.name;
+      this.syncAll = spec.syncAll;
+      this.syncNamespaces = spec.syncNamespaces;
+      this.username = spec.username;
+
+      if (spec.id_token && spec.refresh_token) {
+        this.updateTokens(spec);
+      }
+    }
+
+    return this;
   }
 
   /**
