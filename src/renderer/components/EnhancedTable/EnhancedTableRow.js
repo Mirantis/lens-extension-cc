@@ -46,7 +46,7 @@ const EnhCollapseBtn = styled.button`
   transform: translateY(-2px);
 `;
 
-const EnhMoreButton = styled.div`
+const EnhMore = styled.div`
   background: transparent;
   cursor: pointer;
 `;
@@ -201,7 +201,7 @@ export const EnhancedTableRow = ({ extendedCloud }) => {
           {cloudStatus}
         </EnhTableRowCell>
         <EnhTableRowCell isRightAligned>
-          <EnhMoreButton>
+          <EnhMore>
             <MenuActions onOpen={onOpen}>
               {cloudMenuItems.map((item) => {
                 return (
@@ -211,7 +211,7 @@ export const EnhancedTableRow = ({ extendedCloud }) => {
                 );
               })}
             </MenuActions>
-          </EnhMoreButton>
+          </EnhMore>
         </EnhTableRowCell>
       </EnhTableRow>
       {isOpenFirstLevel &&
@@ -232,7 +232,7 @@ export const EnhancedTableRow = ({ extendedCloud }) => {
               <EnhTableRowCell />
               <EnhTableRowCell>{namespaceStatus}</EnhTableRowCell>
               <EnhTableRowCell isRightAligned>
-                <EnhMoreButton onClick={() => toggleMenu(!onOpen)}>
+                <EnhMore onClick={() => toggleMenu(!onOpen)}>
                   <MenuActions onOpen={onOpen}>
                     {namespaceMenuItems.map((item) => {
                       return (
@@ -245,7 +245,7 @@ export const EnhancedTableRow = ({ extendedCloud }) => {
                       );
                     })}
                   </MenuActions>
-                </EnhMoreButton>
+                </EnhMore>
               </EnhTableRowCell>
             </EnhTableRow>
 
