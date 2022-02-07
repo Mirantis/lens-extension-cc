@@ -2,7 +2,6 @@ import PropTypes from 'prop-types';
 import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
 import { layout } from '../styles';
-import { HEAD_CELL_VALUES } from './EnhancedTable';
 import { managementClusters } from '../../../strings';
 
 const { Component } = Renderer;
@@ -34,25 +33,14 @@ const sortButtonStyles = {
   marginLeft: layout.grid,
 };
 
-export const EnhancedTableHead = ({ sortBy }) => {
-  const headerCells = [
+export const EnhancedTableHead = ({ sortBy, values }) => {
+  const headerCells = Object.keys(values).map((key) => (
     {
-      label: managementClusters.table.thead.name(),
-      key: HEAD_CELL_VALUES.NAME,
-    },
-    {
-      label: managementClusters.table.thead.url(),
-      key: HEAD_CELL_VALUES.URL,
-    },
-    {
-      label: managementClusters.table.thead.username(),
-      key: HEAD_CELL_VALUES.USERNAME,
-    },
-    {
-      label: managementClusters.table.thead.status(),
-      key: HEAD_CELL_VALUES.STATUS,
-    },
-  ];
+      label: managementClusters.table.thead[key.toLowerCase()](),
+      key: key,
+    }
+  ));
+
   return (
     <EnhTableHead>
       <tr>
@@ -67,7 +55,6 @@ export const EnhancedTableHead = ({ sortBy }) => {
             </EnhSortButton>
           </EnhTableHeadCell>
         ))}
-        <EnhTableHeadCell></EnhTableHeadCell>
       </tr>
     </EnhTableHead>
   );
@@ -75,4 +62,5 @@ export const EnhancedTableHead = ({ sortBy }) => {
 
 EnhancedTableHead.propTypes = {
   sortBy: PropTypes.func.isRequired,
+  values: PropTypes.object.isRequired,
 };

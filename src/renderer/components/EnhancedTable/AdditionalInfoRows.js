@@ -19,20 +19,22 @@ const EnhTableInfoRow = styled.tr`
 `;
 
 const EnhTableInfoRowCell = styled.td`
-  width: ${({ isBigger }) => isBigger && '40%'};
   border: 0;
   font-size: var(--font-size);
   line-height: normal;
   color: var(--textColorPrimary);
-  padding: ${layout.grid * 1.5}px ${layout.grid * 4.5}px ${layout.grid * 1.5}px
-    ${layout.grid * 24}px;
+  padding: ${layout.grid * 1.5}px ${layout.grid * 4.5}px;
+  padding-left: ${({ isFirst }) => isFirst ? `${layout.grid * 24}px` : `${layout.grid * 4.5}px`};
 `;
 
 const generateTableCells = (amount) => {
+  if (!amount) {
+    return;
+  }
   return _.times(amount).map((key) => <EnhTableInfoRowCell key={key} />);
 };
 
-export const AdditionalInfoRows = ({ namespace }) => {
+export const AdditionalInfoRows = ({ namespace, emptyCellsCount }) => {
   const listOfInfo = [
     {
       infoName: managementClusters.table.tbodyDetailedInfo.clusters(),
@@ -51,10 +53,10 @@ export const AdditionalInfoRows = ({ namespace }) => {
     <EnhInfoRowsWrapper>
       {listOfInfo.map(({ infoName, infoCount }) => (
         <EnhTableInfoRow key={infoName}>
-          <EnhTableInfoRowCell isBigger>
+          <EnhTableInfoRowCell isFirst>
             {infoName} ({infoCount})
           </EnhTableInfoRowCell>
-          {generateTableCells(4)}
+          {generateTableCells(emptyCellsCount)}
         </EnhTableInfoRow>
       ))}
     </EnhInfoRowsWrapper>
@@ -63,4 +65,9 @@ export const AdditionalInfoRows = ({ namespace }) => {
 
 AdditionalInfoRows.propTypes = {
   namespace: PropTypes.object.isRequired,
+  emptyCellsCount: PropTypes.number,
+};
+
+AdditionalInfoRows.defaultProps = {
+  emptyCellsCount: 0,
 };

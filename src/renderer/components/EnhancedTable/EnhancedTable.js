@@ -10,6 +10,7 @@ const EnhTable = styled.table`
   width: 100%;
   border-collapse: inherit;
   border-spacing: unset;
+  background-color: var(--mainBackground);
 `;
 
 const EnhTableCell = styled.td`
@@ -25,7 +26,7 @@ const emptyRowStyles = {
   backgroundColor: 'var(--mainBackground)',
 };
 
-export const HEAD_CELL_VALUES = {
+const HEAD_CELL_VALUES = {
   NAME: 'Name',
   URL: 'URL',
   USERNAME: 'Username',
@@ -68,7 +69,7 @@ export const EnhancedTable = ({ extendedClouds }) => {
 
   return (
     <EnhTable>
-      <EnhancedTableHead sortBy={sortBy} />
+      <EnhancedTableHead sortBy={sortBy} values={HEAD_CELL_VALUES} />
       <tbody>
         {sortData(extendedClouds, sortedBy, order).map((url) => {
           return (

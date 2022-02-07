@@ -257,7 +257,7 @@ export const EnhancedTableRow = ({ extendedCloud }) => {
             </EnhTableRow>
 
             {openedSecondLevelListIndex.includes(index) && (
-              <AdditionalInfoRows namespace={namespace} />
+              <AdditionalInfoRows namespace={namespace} emptyCellsCount={4} />
             )}
           </EnhRowsWrapper>
         ))}

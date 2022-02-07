@@ -3,13 +3,14 @@ import { useState } from 'react';
 import { get, orderBy } from 'lodash';
 import styled from '@emotion/styled';
 import { layout } from '../styles';
-import { SelectiveSyncTableHead } from './SelectiveSyncTableHead';
+import { EnhancedTableHead } from './EnhancedTableHead';
 import { SelectiveSyncTableRow } from './SelectiveSyncTableRow';
 
 const SelectiveSyncTableItem = styled.table`
   width: 100%;
   border-collapse: inherit;
   border-spacing: unset;
+  background-color: var(--mainBackground);
 `;
 
 const SelectiveSyncTableCell = styled.td`
@@ -25,7 +26,7 @@ const emptyRowStyles = {
   backgroundColor: 'var(--mainBackground)',
 };
 
-export const HEAD_CELL_VALUES = {
+const HEAD_CELL_VALUES = {
   NAME: 'Name',
   URL: 'URL',
 };
@@ -35,19 +36,28 @@ const pathToData = {
   [HEAD_CELL_VALUES.URL]: ['cloud', 'cloudUrl'],
 };
 
-const sortData = (obj, sortBy, order) => {
-  const sortByValueArr = Object.keys(obj).map((key) => {
-    return { [key]: get(obj[key], pathToData[sortBy]) };
-  });
+// const sortData = (obj, sortBy, order) => {
+//   const sortByValueArr = Object.keys(obj).map((key) => {
+//     return { [key]: get(obj[key], pathToData[sortBy]) };
+//   });
 
-  const sorted = orderBy(sortByValueArr, Object.keys(obj), [order]);
+//   const sorted = orderBy(sortByValueArr, Object.keys(obj), [order]);
 
-  return sorted.map((a) => Object.keys(a));
-};
+//   return sorted.map((a) => Object.keys(a));
+// };
 
-export const SelectiveSyncTable = ({ extClouds, withCheckboxes }) => {
+export const SelectiveSyncTable = ({
+  mockedExtendedClouds,
+  checkboxesStateObj,
+  onChangeHandler,
+  parentCheckboxValue,
+  childrenCheckboxValue,
+  sortData,
+}) => {
   const [sortedBy, setSortedBy] = useState(HEAD_CELL_VALUES.NAME);
   const [order, setOrder] = useState('asc');
+
+  const extendedClouds = mockedExtendedClouds;
 
   const sortBy = (value) => {
     if (value === sortedBy && order === 'asc') {
@@ -65,16 +75,17 @@ export const SelectiveSyncTable = ({ extClouds, withCheckboxes }) => {
 
   return (
     <SelectiveSyncTableItem>
-      <SelectiveSyncTableHead sortBy={sortBy} />
+      <EnhancedTableHead sortBy={sortBy} values={HEAD_CELL_VALUES} />
       <tbody>
-        {sortData(extClouds, sortedBy, order).map((url) => {
-          return (
-            <SelectiveSyncTableRow
-              key={url}
-              row={extClouds[url]}
-              withCheckboxes={withCheckboxes}
-            />
-          );
+        {sortData(extendedClouds, sortedBy, order, pathToData).map((url) => {
+          return <SelectiveSyncTableRow
+            key={url}
+            extendedCloud={extendedClouds[url]}
+            checkboxesStateObj={checkboxesStateObj}
+            onChangeHandler={onChangeHandler}
+            parentCheckboxValue={parentCheckboxValue}
+            childrenCheckboxValue={childrenCheckboxValue}
+          />;
         })}
         <tr style={emptyRowStyles}>
           <SelectiveSyncTableCell colSpan={6} />
@@ -85,10 +96,18 @@ export const SelectiveSyncTable = ({ extClouds, withCheckboxes }) => {
 };
 
 SelectiveSyncTable.propTypes = {
-  extClouds: PropTypes.object.isRequired,
-  withCheckboxes: PropTypes.bool,
+  mockedExtendedClouds: PropTypes.object.isRequired,
+  checkboxesStateObj: PropTypes.func,
+  onChangeHandler: PropTypes.func,
+  parentCheckboxValue: PropTypes.func,
+  childrenCheckboxValue: PropTypes.func,
+  sortData: PropTypes.func,
 };
 
 SelectiveSyncTable.defaultProps = {
-  withCheckboxes: false,
+  checkboxesStateObj: null,
+  onChangeHandler: null,
+  parentCheckboxValue: null,
+  childrenCheckboxValue: null,
+  sortData: null,
 };
