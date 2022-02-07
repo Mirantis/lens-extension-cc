@@ -18,9 +18,7 @@ export const mockExtCloud = {
     {
       name: 'namespaces-1',
       clusters: [],
-      clustersCount: 0,
       sshKeys: [],
-      sshKeysCount: 0,
       credentials: {
         awscredential: [],
         allCredentialsCount: 1,
@@ -52,9 +50,7 @@ export const mockExtCloud = {
           region: 'region-eu',
         },
       ],
-      clustersCount: 1,
       sshKeys: [],
-      sshKeysCount: 0,
       credentials: {
         awscredential: [],
         allCredentialsCount: 1,
@@ -86,9 +82,7 @@ export const mockExtCloud = {
           region: 'region-eu',
         },
       ],
-      clustersCount: 1,
       sshKeys: [],
-      sshKeysCount: 0,
       credentials: {
         awscredential: [],
         allCredentialsCount: 1,
@@ -119,9 +113,7 @@ export const mockExtCloud2 = {
     {
       name: 'namespaces-1',
       clusters: [],
-      clustersCount: 0,
       sshKeys: [],
-      sshKeysCount: 0,
       credentials: {
         awscredential: [],
         allCredentialsCount: 1,
@@ -153,9 +145,7 @@ export const mockExtCloud2 = {
           region: 'region-eu',
         },
       ],
-      clustersCount: 1,
       sshKeys: [],
-      sshKeysCount: 0,
       credentials: {
         awscredential: [],
         allCredentialsCount: 1,
@@ -187,9 +177,7 @@ export const mockExtCloud2 = {
           region: 'region-eu',
         },
       ],
-      clustersCount: 1,
       sshKeys: [],
-      sshKeysCount: 0,
       credentials: {
         awscredential: [],
         allCredentialsCount: 1,

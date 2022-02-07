@@ -1,6 +1,6 @@
 import * as rtv from 'rtvjs';
 import { Cloud, CLOUD_EVENTS } from './Cloud';
-import { filter, find, flatten } from 'lodash';
+import { filter, flatten } from 'lodash';
 import { cloudRequest, extractJwtPayload } from '../renderer/auth/authUtil';
 import * as strings from '../strings';
 import { Namespace } from '../renderer/store/Namespace';
@@ -82,12 +82,24 @@ const _deserializeCredentialsList = function (body) {
   return body.items;
 };
 
+/**
+ * [ASYNC] Get all existing Credentials from the management cluster, for each namespace
+ *  specified.
+ * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
+ *  if necessary.
+ * @param {Array<Namespace>} namespaces List of namespaces.
+ * @returns {Promise<Object>} On success
+ *  `{ credentials: { [index: string]: { allCredentialsCount: number, [index: string]: Array<ApiCluster> } }, tokensRefreshed: boolean }`,
+ *  where `credentials` is a map of namespace name to credential type, to a raw credential
+ *  API object; or `{error: string}` on error. The error will be the first-found error out of
+ *  all namespaces on which SSH Key retrieval was attempted.
+ */
 const _fetchCredentials = async function (cloud, namespaces) {
   let tokensRefreshed = false;
   const results = await Promise.all(
     credentialTypes.map(async (entity) => {
       return await Promise.all(
-        namespaces.map(async (namespaceName) => {
+        namespaces.map(async (namespace) => {
           const {
             body,
             tokensRefreshed: refreshed,
@@ -96,7 +108,7 @@ const _fetchCredentials = async function (cloud, namespaces) {
             cloud,
             method: 'list',
             entity,
-            args: { namespaceName }, // extra args
+            args: { namespaceName: namespace.name }, // extra args
           });
 
           tokensRefreshed = tokensRefreshed || refreshed;
@@ -105,28 +117,34 @@ const _fetchCredentials = async function (cloud, namespaces) {
           return {
             items,
             error: error || items.error,
-            namespace: namespaceName,
+            namespace,
             credentialType: entity,
           };
         })
       );
     })
   );
+
+  // `results` will be an array of arrays because of each credential type that was
+  //  retrieved for each namespace
   const flattenCreds = flatten(results);
 
   const error = flattenCreds.find((c) => c.error);
-
   if (error) {
     return { error };
   }
 
   const credentials = flattenCreds.reduce((acc, val) => {
-    const { namespace, credentialType, items } = val;
-    if (acc[namespace]) {
-      acc[namespace][credentialType] = items;
-      acc[namespace].allCredentialsCount += items.length;
+    const {
+      namespace: { name: nsName },
+      credentialType,
+      items,
+    } = val;
+    if (acc[nsName]) {
+      acc[nsName][credentialType] = items;
+      acc[nsName].allCredentialsCount += items.length;
     } else {
-      acc[namespace] = {
+      acc[nsName] = {
         [credentialType]: items,
         allCredentialsCount: items.length,
       };
@@ -147,10 +165,21 @@ const _deserializeSshKeysList = function (body) {
   return body.items;
 };
 
+/**
+ * [ASYNC] Get all existing SSH Keys from the management cluster, for each namespace
+ *  specified.
+ * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
+ *  if necessary.
+ * @param {Array<Namespace>} namespaces List of namespaces.
+ * @returns {Promise<Object>} On success `{ sshKeys: { [index: string]: Array<ApiSshKey> }, tokensRefreshed: boolean }`,
+ *  where `sshKeys` is a map of namespace name to list of SSH keys; or `{error: string}` on error.
+ *  The error will be the first-found error out of all namespaces on which SSH Key retrieval
+ *  was attempted.
+ */
 const _fetchSshKeys = async function (cloud, namespaces) {
   let tokensRefreshed = false;
-  const sshKeys = await Promise.all(
-    namespaces.map(async (namespaceName) => {
+  const results = await Promise.all(
+    namespaces.map(async (namespace) => {
       const {
         body,
         tokensRefreshed: refreshed,
@@ -159,20 +188,29 @@ const _fetchSshKeys = async function (cloud, namespaces) {
         cloud,
         method: 'list',
         entity: 'publickey',
-        args: { namespaceName }, // extra args
+        args: { namespaceName: namespace.name }, // extra args
       });
 
       tokensRefreshed = tokensRefreshed || refreshed;
 
       const items = _deserializeSshKeysList(body);
-      return { items, error: error || items.error, namespace: namespaceName };
+      return { items, error: error || items.error, namespace };
     })
   );
 
-  const errResult = find(sshKeys, (r) => !!r.error);
-  if (errResult) {
-    return { error: errResult.error };
+  const error = results.find((sk) => sk.error);
+  if (error) {
+    return { error };
   }
+
+  const sshKeys = results.reduce((acc, val) => {
+    const {
+      namespace: { name: nsName },
+      items,
+    } = val;
+    acc[nsName] = items;
+    return acc;
+  }, {});
 
   return { sshKeys, tokensRefreshed };
 };
@@ -244,15 +282,13 @@ const _deserializeNamespacesList = function (body) {
  * [ASYNC] Get all existing namespaces from the management cluster.
  * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
  *  if necessary.
- * @returns {Promise<Object>} On success `{ namespaces: Array<string>, tokensRefreshed: boolean }`;
+ * @returns {Promise<Object>} On success `{ namespaces: Array<Namespace>, tokensRefreshed: boolean }`;
  *  on error `{error: string}`.
  */
 const _fetchNamespaces = async function (cloud) {
-  // return syncNamespaces if we already define them
-  if (cloud?.syncNamespaces?.length && !cloud.syncAll) {
-    return { namespaces: cloud.syncNamespaces, tokensRefreshed: false };
-  }
-
+  // NOTE: we always fetch ALL known namespaces because when we display metadata
+  //  about this ExtendedCloud, we always need to show the actual total, not just
+  //  what we're syncing
   const { error, body, tokensRefreshed } = await cloudRequest({
     cloud,
     method: 'list',
@@ -278,7 +314,7 @@ const _fetchNamespaces = async function (cloud) {
   const namespaces = filter(
     data,
     (ns) => !ignoredNamespaces.includes(ns.name) && hasReadPermissions(ns.name)
-  ).map(({ name }) => name);
+  );
 
   return { namespaces, tokensRefreshed };
 };
@@ -288,8 +324,7 @@ const _fetchNamespaces = async function (cloud) {
  *  specified.
  * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
  *  if necessary.
- * @param {Array<string>} namespaces List of namespace NAMES for which to retrieve
- *  clusters.
+ * @param {Array<Namespace>} namespaces List of namespaces.
  * @returns {Promise<Object>} On success `{ clusters: Array<Cluster>, tokensRefreshed: boolean }`
  *  where the list of clusters is flat and in the order of the specified namespaces (use
  *  `Cluster.namespace` to identify which cluster belongs to which namespace);
@@ -298,7 +333,7 @@ const _fetchNamespaces = async function (cloud) {
  */
 const _fetchClusters = async function (cloud, namespaces) {
   const results = await Promise.all(
-    namespaces.map((namespaceName) =>
+    namespaces.map(({ name: namespaceName }) =>
       cloudRequest({
         cloud,
         method: 'list',
@@ -352,6 +387,9 @@ export class ExtendedCloud extends EventDispatcher {
     let _cloud = null; // starts null, but once set, can never be null/undefined again
     let _error = null;
 
+    /**
+     * @member {Cloud} cloud The Cloud instance providing data.
+     */
     Object.defineProperty(this, 'cloud', {
       enumerable: true,
       get() {
@@ -388,6 +426,9 @@ export class ExtendedCloud extends EventDispatcher {
       },
     });
 
+    /**
+     * @member {boolean} loading True if we're fetching new data from the Cloud for the first time.
+     */
     Object.defineProperty(this, 'loading', {
       enumerable: true,
       get() {
@@ -401,6 +442,9 @@ export class ExtendedCloud extends EventDispatcher {
       },
     });
 
+    /**
+     * @member {boolean} fetching True if we're currently fetching new data from the Cloud.
+     */
     Object.defineProperty(this, 'fetching', {
       enumerable: true,
       get() {
@@ -414,6 +458,11 @@ export class ExtendedCloud extends EventDispatcher {
       },
     });
 
+    /**
+     * @member {Array<Namespace>|null} namespaces __ALL__ namespaces in the Cloud, regardless
+     *  of which specific ones the Cloud may be syncing. `null` if never fetched. Empty if none.
+     * @see {@link syncedNamespaces}
+     */
     Object.defineProperty(this, 'namespaces', {
       enumerable: true,
       get() {
@@ -427,6 +476,10 @@ export class ExtendedCloud extends EventDispatcher {
       },
     });
 
+    /**
+     * @member {string|null} error The error encountered during the most recent data fetch.
+     *  `null` if none.
+     */
     Object.defineProperty(this, 'error', {
       enumerable: true,
       get() {
@@ -466,6 +519,20 @@ export class ExtendedCloud extends EventDispatcher {
 
     // schedule the initial data load/fetch
     this.dispatchEvent(EXTENDED_CLOUD_EVENTS.FETCH_DATA, this);
+  }
+
+  /**
+   * @member {Array<Namespace>} syncedNamespaces List of namespaces the Cloud is syncing;
+   *  empty if none or the namespaces haven't been successfully fetched at least once yet.
+   */
+  get syncedNamespaces() {
+    return (
+      this.namespaces?.filter(
+        (namespace) =>
+          this.cloud.syncAll ||
+          this.cloud.syncNamespaces.includes(namespace.name)
+      ) || []
+    );
   }
 
   /** Called when this instance is being deleted/destroyed. */
@@ -591,21 +658,13 @@ export class ExtendedCloud extends EventDispatcher {
       }
     } else {
       this.error = null;
-      this.namespaces = nsResults.namespaces.map((name) => {
-        const nameSpaceClusters = clusterResults.clusters.filter(
-          (c) => c.namespace === name
+      this.namespaces = nsResults.namespaces.map((namespace) => {
+        namespace.clusters = clusterResults.clusters.filter(
+          (c) => c.namespace === namespace.name
         );
-        const nameSpaceSshKeys =
-          keyResults.sshKeys.find((key) => key.namespace === name)?.items || [];
-
-        return {
-          name,
-          clusters: nameSpaceClusters,
-          clustersCount: nameSpaceClusters.length,
-          sshKeys: nameSpaceSshKeys,
-          sshKeysCount: nameSpaceSshKeys.length,
-          credentials: credResults.credentials[name],
-        };
+        namespace.sshKeys = keyResults.sshKeys[namespace.name];
+        namespace.credentials = credResults.credentials[namespace.name];
+        return namespace;
       });
     }
 
