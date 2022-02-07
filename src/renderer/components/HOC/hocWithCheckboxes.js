@@ -1,15 +1,24 @@
 import { checkValues } from '../TriStateCheckbox/TriStateCheckbox';
+import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 
-export const hocWithCheckboxes = (Component, extraProps={}) => {
-  const checkboxesStateObj = (extCloud) => {
-    return (extCloud?.namespaces || []).reduce((acc, namespace) => {
-      acc[namespace.name] = false;
-      return acc;
-    }, {});
-  };
+
+const checkboxesStateObj = (extCloud) => {
+  return (extCloud?.namespaces || []).reduce((acc, namespace) => {
+    acc[namespace.name] = false;
+    return acc;
+  }, {});
+};
+
+export const HOCWithCheckboxes = ({Component}) => {
+  const { extendedCloud } = Component.props
+  const [checkboxesState, setCheckboxesState] = useState({
+    parent: false,
+    children: checkboxesStateObj(extendedCloud),
+  });
 
   // set parent checkbox state based on changes of children checkboxes
-  const setParentCheckboxState = (children, сheckboxesState) => {
+  const setParentCheckboxState = (children) => {
     const childrenCheckboxes = Object.values(children);
 
     if (
@@ -21,66 +30,67 @@ export const hocWithCheckboxes = (Component, extraProps={}) => {
     if (childrenCheckboxes.some((el) => el === false)) {
       return true;
     }
-    return сheckboxesState.parent;
+    return checkboxesState.parent;
   };
 
-  const getNewChildren = (parentCheckedStatus, сheckboxesState) => {
-    const newChildren = { ...сheckboxesState.children };
+  const getNewChildren = (parentCheckedStatus) => {
+    const newChildren = { ...checkboxesState.children };
 
-    Object.keys(сheckboxesState.children).forEach((name) => {
+    Object.keys(checkboxesState.children).forEach((name) => {
       newChildren[name] = parentCheckedStatus;
     });
     return newChildren;
   };
 
-  const onChangeHandler = (name, сheckboxesState, setCheckboxesState) => {
+  const checkBoxChangeHandler = (name) => {
     if (!name) {
       setCheckboxesState({
-        parent: !сheckboxesState.parent,
-        children: getNewChildren(!сheckboxesState.parent, сheckboxesState),
+        parent: !checkboxesState.parent,
+        children: getNewChildren(!checkboxesState.parent, checkboxesState),
       });
     } else {
-      const newChildren = { ...сheckboxesState.children };
-      newChildren[name] = !сheckboxesState.children[name];
+      const newChildren = { ...checkboxesState.children };
+      newChildren[name] = !checkboxesState.children[name];
 
       setCheckboxesState({
         children: newChildren,
-        parent: setParentCheckboxState(newChildren, сheckboxesState),
+        parent: setParentCheckboxState(newChildren, checkboxesState),
       });
     }
   };
 
-  const parentCheckboxValue = (сheckboxesState) => {
-    const childrenCheckboxes = Object.values(сheckboxesState.children);
+  const getParentCheckboxValue = () => {
+    const childrenCheckboxes = Object.values(checkboxesState.children);
 
     if (
-      сheckboxesState.parent &&
+      checkboxesState.parent &&
       childrenCheckboxes.some((el) => el === false) &&
       childrenCheckboxes.some((el) => el === true)
     ) {
       return checkValues.MIXED;
     }
-    if (сheckboxesState.parent) {
+    if (checkboxesState.parent) {
       return checkValues.CHECKED;
     } else {
       return checkValues.UNCHECKED;
     }
   };
 
-  const childrenCheckboxValue = (name, сheckboxesState) => {
-    return сheckboxesState.children[name]
+  const childrenCheckboxValue = (name) => {
+    return checkboxesState.children[name]
       ? checkValues.CHECKED
       : checkValues.UNCHECKED;
   };
 
-  return (
-    <Component
-      {...Component.props}
-      {...extraProps}
-      checkboxesStateObj={checkboxesStateObj}
-      onChangeHandler={onChangeHandler}
-      parentCheckboxValue={parentCheckboxValue}
-      childrenCheckboxValue={childrenCheckboxValue}
-    />
-  );
+  return React.cloneElement(Component, {
+    ...Component.props,
+    checkBoxChangeHandler,
+    parentCheckboxValue: getParentCheckboxValue(),
+    childrenCheckboxValue,
+    withCheckboxes: true,
+  });
+}
+
+HOCWithCheckboxes.propTypes = {
+  Component: PropTypes.node.isRequired,
 }

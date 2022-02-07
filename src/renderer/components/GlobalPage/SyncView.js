@@ -8,12 +8,6 @@ import { WelcomeView } from './WelcomeView';
 import { cloudStore } from '../../../store/CloudStore';
 import { managementClusters } from '../../../strings';
 import { EnhancedTable } from '../EnhancedTable/EnhancedTable';
-import { SelectiveSyncTable } from '../EnhancedTable/SelectiveSyncTable';
-import { hocWithCheckboxes } from '../HOC/hocWithCheckboxes';
-import { hocWithTableSorting } from '../HOC/hocWithTableSorting';
-
-// Mocked cloud data
-import { mockedExtendedClouds } from '../../../../test/mocks/mockExtCloud';
 
 const {
   Component: { Button, Spinner },
@@ -114,11 +108,10 @@ export const SyncView = () => {
         </ContentTop>
 
         <TableWrapper>
-          {isSelectiveSyncView ?
-            hocWithTableSorting(hocWithCheckboxes(SelectiveSyncTable, {mockedExtendedClouds}))
-           : (
-            <EnhancedTable extendedClouds={extendedClouds} />
-          )}
+          <EnhancedTable
+            extendedClouds={extendedClouds}
+            isSelectiveSyncView={isSelectiveSyncView}
+          />
         </TableWrapper>
 
         {!isSelectiveSyncView && (
