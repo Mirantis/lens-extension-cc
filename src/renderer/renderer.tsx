@@ -9,7 +9,6 @@ import * as strings from '../strings';
 import * as consts from '../constants';
 import { ROUTE_GLOBAL_PAGE, ROUTE_CLUSTER_PAGE } from '../routes';
 import { dispatchExtEvent } from './eventBus';
-import { prefStore } from '../store/PreferenceStore';
 import { cloudStore } from '../store/CloudStore';
 import { clusterStore } from '../store/ClusterStore';
 import { logger as loggerUtil } from '../util/logger';
@@ -321,7 +320,6 @@ export default class ExtensionRenderer extends LensExtension {
   onActivate() {
     logger.log('ExtensionRenderer.onActivate()', 'extension activated');
 
-    prefStore.loadExtension(this);
     cloudStore.loadExtension(this);
     clusterStore.loadExtension(this);
     IpcRenderer.createInstance(this); // AFTER load stores

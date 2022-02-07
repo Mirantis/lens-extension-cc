@@ -1,5 +1,4 @@
 import { Main } from '@k8slens/extensions';
-import { prefStore } from '../store/PreferenceStore';
 import { clusterStore } from '../store/ClusterStore';
 import { cloudStore } from '../store/CloudStore';
 import { IpcMain } from './IpcMain';
@@ -18,7 +17,6 @@ const logger: any = loggerUtil; // get around TS compiler's complaining
 export default class ExtensionMain extends Main.LensExtension {
   onActivate() {
     logger.log('ExtensionMain.onActivate()', 'extension activated');
-    prefStore.loadExtension(this);
     clusterStore.loadExtension(this);
     cloudStore.loadExtension(this);
     IpcMain.createInstance(this); // AFTER load stores
