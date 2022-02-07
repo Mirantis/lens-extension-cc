@@ -10,7 +10,7 @@ import {
   EXTENDED_CLOUD_EVENTS,
 } from '../../../common/ExtendedCloud';
 import { Renderer } from '@k8slens/extensions';
-import {HOCWithCheckboxes} from "../HOC/hocWithCheckboxes";
+import { HOCWithCheckboxes } from '../HOC/hocWithCheckboxes';
 
 const {
   Component: { Notifications },
@@ -110,7 +110,11 @@ export const AddCloudInstance = ({ onAdd, onCancel }) => {
           cleanCloudsState={cleanCloudsState}
         />
         {extCloud && !extCloud.error ? (
-          <HOCWithCheckboxes Component={<SynchronizeBlock extendedCloud={extCloud} onAdd={onAdd} />} />
+          <HOCWithCheckboxes
+            Component={
+              <SynchronizeBlock extendedCloud={extCloud} onAdd={onAdd} />
+            }
+          />
         ) : null}
       </MainColumn>
       <EscColumn>

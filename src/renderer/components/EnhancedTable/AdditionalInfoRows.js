@@ -24,7 +24,8 @@ const EnhTableInfoRowCell = styled.td`
   line-height: normal;
   color: var(--textColorPrimary);
   padding: ${layout.grid * 1.5}px ${layout.grid * 4.5}px;
-  padding-left: ${({ isFirst }) => isFirst ? `${layout.grid * 24}px` : `${layout.grid * 4.5}px`};
+  padding-left: ${({ isFirst }) =>
+    isFirst ? `${layout.grid * 24}px` : `${layout.grid * 4.5}px`};
 `;
 
 const generateTableCells = (amount) => {

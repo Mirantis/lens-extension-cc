@@ -34,12 +34,10 @@ const sortButtonStyles = {
 };
 
 export const EnhancedTableHead = ({ sortBy, values }) => {
-  const headerCells = Object.keys(values).map((key) => (
-    {
-      label: managementClusters.table.thead[key.toLowerCase()](),
-      key: key,
-    }
-  ));
+  const headerCells = Object.keys(values).map((key) => ({
+    label: managementClusters.table.thead[key.toLowerCase()](),
+    key: key,
+  }));
 
   return (
     <EnhTableHead>

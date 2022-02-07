@@ -35,7 +35,7 @@ export const getTableData = (isSelectiveSyncView) => {
       };
 };
 
-export  const sortData = (obj, sortBy, order, path) => {
+export const sortData = (obj, sortBy, order, path) => {
   const sortByValueArr = Object.keys(obj).map((key) => {
     return { [key]: get(obj[key], path[sortBy]) };
   });

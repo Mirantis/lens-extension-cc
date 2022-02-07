@@ -89,8 +89,13 @@ const SortButton = styled.button`
     isRotated ? 'rotate(180deg)' : 'rotate(0deg)'};
 `;
 
-
-export const SynchronizeBlock = ({ extendedCloud, onAdd, checkBoxChangeHandler, parentCheckboxValue, childrenCheckboxValue }) => {
+export const SynchronizeBlock = ({
+  extendedCloud,
+  onAdd,
+  checkBoxChangeHandler,
+  parentCheckboxValue,
+  childrenCheckboxValue,
+}) => {
   // @type {object} sorted object of projects
   const [projectsList, setProjectsList] = useState(extendedCloud.namespaces);
 
@@ -117,7 +122,7 @@ export const SynchronizeBlock = ({ extendedCloud, onAdd, checkBoxChangeHandler, 
 
   const onSynchronize = () => {
     const { cloud } = extendedCloud;
-    const allNamespaces = extendedCloud.namespaces.map(({name}) => name)
+    const allNamespaces = extendedCloud.namespaces.map(({ name }) => name);
     const namespaces = allNamespaces.filter(
       (name) => childrenCheckboxValue(name) === checkValues.CHECKED
     );
