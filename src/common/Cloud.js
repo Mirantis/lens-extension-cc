@@ -19,6 +19,32 @@ const hasPassed = function (date) {
   return date.getTime() - Date.now() < 0;
 };
 
+/**
+ * Formats a date for debugging/logging purposes.
+ * @param {Date} date
+ * @returns {string} Formatted date, or 'undefined' or 'null' if it's not defined.
+ */
+const logDate = function (date) {
+  if (date) {
+    const offset = date.getTimezoneOffset() / 60;
+    return `${date.getFullYear()}/${`${date.getMonth() + 1}`.padStart(
+      2,
+      '0'
+    )}/${`${date.getDate()}`.padStart(2, '0')} ${`${date.getHours()}`.padStart(
+      2,
+      '0'
+    )}:${`${date.getMinutes()}`.padStart(
+      2,
+      '0'
+    )}:${`${date.getSeconds()}`.padStart(
+      2,
+      '0'
+    )}.${date.getMilliseconds()} UTC${offset > 0 ? '-' : '+'}${offset}`;
+  }
+
+  return `${date}`;
+};
+
 export const CONNECTION_STATUSES = Object.freeze({
   CONNECTED: 'connected',
   DISCONNECTED: 'disconnected',
@@ -28,11 +54,35 @@ export const CONNECTION_STATUSES = Object.freeze({
 // Events dispatched by Cloud instances.
 export const CLOUD_EVENTS = Object.freeze({
   /**
-   * The Cloud object's connection status has changed.
-   * @param {Cloud} cloud The Cloud object.
+   * At least one of the Cloud's status-related properties has changed.
+   *
+   * Expected signature: `(cloud: Cloud) => void`
    */
   STATUS_CHANGE: 'statusChange',
-  DATA_UPDATED: 'dataUpdated',
+
+  /**
+   * At least one of the Cloud's token-related properties has changed, likely because
+   *  the token expired and had to be refreshed, or because the Cloud had no tokens,
+   *  connected to MCC, and obtained a new set.
+   *
+   * Expected signature: `(cloud: Cloud) => void`
+   */
+  TOKEN_CHANGE: 'tokenChange',
+
+  /**
+   * At least one of the Cloud's sync-related properties has changed.
+   *
+   * Expected signature: `(cloud: Cloud) => void`
+   */
+  SYNC_CHANGE: 'syncChange',
+
+  /**
+   * At least one of the Cloud's other properties has changed (not related to
+   *  status, tokens, or sync). For example, its user-specified name.
+   *
+   * Expected signature: `(cloud: Cloud) => void`
+   */
+  PROP_CHANGE: 'propChange',
 });
 
 const _loadConfig = async (url) => {
@@ -77,14 +127,12 @@ export class Cloud {
     refresh_token: [rtv.REQUIRED, rtv.STRING],
     refresh_expires_in: [rtv.REQUIRED, rtv.SAFE_INT], // SECONDS valid from now
 
-    // NOTE: this is not an API-provided property
-    // SECONDS in epoch when token expires
-    // if this is included (typically when restoring from storage), it overrides expires_in
-    expiresAt: [rtv.OPTIONAL, rtv.SAFE_INT],
-
-    // NOTE: this is not an API-provided property
-    // SECONDS in epoch when refresh token expires
-    // if this is included (typically when restoring from storage), it overrides refresh_expires_in
+    // NOTE: These properties are important because `expires_in` and `refresh_expires_in`
+    //  are just offsets from when the tokens were obtained, and on disk, that tells us
+    //  nothing; we need the actual expiry date/time so that if Lens is quit and opened
+    //  at a later time, we can know if the tokens are still valid. They are marked OPTIONAL
+    //  because they don't come from the server, only from JSON
+    tokenExpiresAt: [rtv.OPTIONAL, rtv.SAFE_INT],
     refreshExpiresAt: [rtv.OPTIONAL, rtv.SAFE_INT],
   };
 
@@ -97,8 +145,9 @@ export class Cloud {
       ts[key] = Cloud.tokensTs[key].concat(); // shallow clone of property typeset
 
       if (ts[key][0] === rtv.REQUIRED) {
-        // each API property becomes optional, which means it can be `null`, which
-        //  supports cloning from an empty state in CloudStore
+        // each API property becomes expected, which means it can be `null`, which
+        //  supports restoring from disk in CloudStore and creating new Cloud instances
+        //  prior to having tokens
         ts[key][0] = rtv.EXPECTED;
       }
 
@@ -106,9 +155,6 @@ export class Cloud {
     }, {}),
 
     username: [rtv.EXPECTED, rtv.STRING],
-
-    // IDP client associated with current tokens; undefined if unknown; null if not specified
-    idpClientId: [rtv.OPTIONAL, rtv.STRING],
 
     // URL to the MCC instance
     cloudUrl: [rtv.EXPECTED, rtv.STRING],
@@ -120,44 +166,52 @@ export class Cloud {
 
   /**
    * @constructor
-   * @param {Object|null|undefined} [spec] API token response. See `specTs` for expected shape.
-   *  If falsy, a new instance is created, but its state is invalid until `updateTokens()`
-   *  is called to set token properties, and `username` is updated to a valid string.
+   * @param {Object|null|undefined} [spec] A serialized (from `toJSON()`) Cloud. See `specTs`
+   *  for expected shape. If falsy, a new instance is created, but all properties are `null`
+   *  or `undefined` and need to be set.
    */
   constructor(spec) {
-    DEV_ENV && rtv.verify({ spec }, { spec: [rtv.OPTIONAL, Cloud.specTs] });
-
     const _eventListeners = {}; // map of event name to array of functions that are handlers
     const _eventQueue = []; // list of `{ name: string, params: Array }` objects to dispatch
+    let _dispatchTimerId; // ID of the scheduled dispatch timer if a dispatch is scheduled, or undefined
 
     // asynchronously dispatches queued events on the next frame
     const _scheduleDispatch = () => {
-      setTimeout(function () {
-        if (Object.keys(_eventListeners).length > 0 && _eventQueue.length > 0) {
-          const events = _eventQueue.concat(); // shallow clone for local copy
+      if (_dispatchTimerId === undefined) {
+        _dispatchTimerId = setTimeout(function () {
+          _dispatchTimerId = undefined;
+          if (
+            Object.keys(_eventListeners).length > 0 &&
+            _eventQueue.length > 0
+          ) {
+            const events = _eventQueue.concat(); // shallow clone for local copy
 
-          // remove all events immediately in case more get added while we're
-          //  looping through this set
-          _eventQueue.length = 0;
+            // remove all events immediately in case more get added while we're
+            //  looping through this set
+            _eventQueue.length = 0;
 
-          events.forEach((event) => {
-            const { name, params } = event;
-            const handlers = _eventListeners[name] || [];
-            handlers.forEach((handler) => {
-              try {
-                handler(...params);
-              } catch {
-                // ignore
-              }
+            // NOTE: somehow, though this code appers synchronous, there's something
+            //  in `Array.forEach()` that appears to loop over multiple execution frames,
+            //  so it's possible that while we're looping, new events are dispatched
+            events.forEach((event) => {
+              const { name, params } = event;
+              const handlers = _eventListeners[name] || [];
+              handlers.forEach((handler) => {
+                try {
+                  handler(...params);
+                } catch {
+                  // ignore
+                }
+              });
             });
-          });
 
-          if (_eventQueue.length > 0) {
-            // received new events while processing previous batch
-            _scheduleDispatch();
+            if (_eventQueue.length > 0) {
+              // received new events while processing previous batch
+              _scheduleDispatch();
+            }
           }
-        }
-      });
+        });
+      }
     };
 
     Object.defineProperties(this, {
@@ -168,10 +222,10 @@ export class Cloud {
        * @param {Function} handler Handler.
        */
       addEventListener: {
-        enumerable: false,
+        enumerable: true,
         value(name, handler) {
           _eventListeners[name] = _eventListeners[name] || [];
-          if (!_eventListeners[name].find(handler)) {
+          if (!_eventListeners[name].find((h) => h === handler)) {
             _eventListeners[name].push(handler);
             _scheduleDispatch();
           }
@@ -185,7 +239,7 @@ export class Cloud {
        * @param {Function} handler Handler.
        */
       removeEventListener: {
-        enumerable: false,
+        enumerable: true,
         value(name, handler) {
           const idx =
             _eventListeners[name]?.findIndex((h) => h === handler) ?? -1;
@@ -204,6 +258,7 @@ export class Cloud {
        *  ones given (even if none are given). This also serves as a way to
        *  de-duplicate events if the same event is dispatched multiple times
        *  in a row.
+       * @private
        * @method dispatchEvent
        * @param {string} name Event name.
        * @param {Array} [params] Parameters to pass to each handler, if any.
@@ -223,19 +278,28 @@ export class Cloud {
           }
         },
       },
+
+      /**
+       * Removes all events in the queue without notifying listeners.
+       */
+      emptyEventQueue: {
+        enumerable: false,
+        value() {
+          _eventQueue.length = 0;
+        },
+      },
     });
 
-    let _token = null;
     let _name = null;
     let _syncAll = false;
-    let _syncNamespaces = null;
+    let _syncNamespaces = [];
+    let _token = null;
     let _expiresIn = null;
     let _tokenValidTill = null;
     let _refreshToken = null;
     let _refreshExpiresIn = null;
     let _refreshTokenValidTill = null;
     let _username = null;
-    let _idpClientId = null;
     let _cloudUrl = null;
     let _config = null;
     let _connectError = null;
@@ -254,7 +318,7 @@ export class Cloud {
           rtv.verify({ token: newValue }, { token: Cloud.specTs.name });
         if (_name !== newValue) {
           _name = newValue;
-          this.dispatchEvent(CLOUD_EVENTS.DATA_UPDATED, this);
+          this.dispatchEvent(CLOUD_EVENTS.PROP_CHANGE, this);
         }
       },
     });
@@ -272,7 +336,7 @@ export class Cloud {
           rtv.verify({ token: newValue }, { token: Cloud.specTs.syncAll });
         if (_syncAll !== newValue) {
           _syncAll = newValue;
-          this.dispatchEvent(CLOUD_EVENTS.DATA_UPDATED, this);
+          this.dispatchEvent(CLOUD_EVENTS.SYNC_CHANGE, this);
         }
       },
     });
@@ -293,7 +357,7 @@ export class Cloud {
           );
         if (_syncNamespaces !== newValue) {
           _syncNamespaces = newValue;
-          this.dispatchEvent(CLOUD_EVENTS.DATA_UPDATED, this);
+          this.dispatchEvent(CLOUD_EVENTS.SYNC_CHANGE, this);
         }
       },
     });
@@ -318,7 +382,7 @@ export class Cloud {
       },
       set(newValue) {
         if (_connecting !== !!newValue) {
-          _connecting = newValue;
+          _connecting = !!newValue;
           this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
         }
       },
@@ -338,7 +402,10 @@ export class Cloud {
             { validValue },
             { validValue: [rtv.EXPECTED, rtv.STRING] }
           );
-        _connectError = validValue;
+        if (validValue !== _connectError) {
+          _connectError = validValue || null;
+          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
+        }
       },
     });
 
@@ -349,7 +416,11 @@ export class Cloud {
         return _config;
       },
       set(newValue) {
-        _config = newValue;
+        if (newValue !== _config) {
+          _config = newValue || null;
+          // NOTE: the config is only used internally, so we don't notify listeners
+          //  when it changes
+        }
       },
     });
 
@@ -364,13 +435,13 @@ export class Cloud {
           rtv.verify({ token: newValue }, { token: Cloud.specTs.id_token });
         if (_token !== newValue) {
           _token = newValue || null; // normalize empty to null
-          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
-          this.dispatchEvent(CLOUD_EVENTS.DATA_UPDATED, this);
+          this.dispatchEvent(CLOUD_EVENTS.TOKEN_CHANGE, this);
+          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this); // tokens affect status
         }
       },
     });
 
-    /** @member {number|null} expiresIn */
+    /** @member {number|null} expiresIn __Seconds__ until expiry from time acquired. */
     Object.defineProperty(this, 'expiresIn', {
       enumerable: true,
       get() {
@@ -384,8 +455,8 @@ export class Cloud {
           );
         if (_expiresIn !== newValue) {
           _expiresIn = newValue;
-          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
-          this.dispatchEvent(CLOUD_EVENTS.DATA_UPDATED, this);
+          this.dispatchEvent(CLOUD_EVENTS.TOKEN_CHANGE, this);
+          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this); // tokens affect status
         }
       },
     });
@@ -404,8 +475,8 @@ export class Cloud {
           );
         if (_tokenValidTill !== newValue) {
           _tokenValidTill = newValue;
-          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
-          this.dispatchEvent(CLOUD_EVENTS.DATA_UPDATED, this);
+          this.dispatchEvent(CLOUD_EVENTS.TOKEN_CHANGE, this);
+          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this); // tokens affect status
         }
       },
     });
@@ -424,13 +495,13 @@ export class Cloud {
           );
         if (_refreshToken !== newValue) {
           _refreshToken = newValue || null; // normalize empty to null
-          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
-          this.dispatchEvent(CLOUD_EVENTS.DATA_UPDATED, this);
+          this.dispatchEvent(CLOUD_EVENTS.TOKEN_CHANGE, this);
+          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this); // tokens affect status
         }
       },
     });
 
-    /** @member {number|null} refreshExpiresIn */
+    /** @member {number|null} refreshExpiresIn __Seconds__ until expiry from time acquired. */
     Object.defineProperty(this, 'refreshExpiresIn', {
       enumerable: true,
       get() {
@@ -444,8 +515,8 @@ export class Cloud {
           );
         if (_refreshExpiresIn !== newValue) {
           _refreshExpiresIn = newValue;
-          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
-          this.dispatchEvent(CLOUD_EVENTS.DATA_UPDATED, this);
+          this.dispatchEvent(CLOUD_EVENTS.TOKEN_CHANGE, this);
+          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this); // tokens affect status
         }
       },
     });
@@ -464,8 +535,8 @@ export class Cloud {
           );
         if (_refreshTokenValidTill !== newValue) {
           _refreshTokenValidTill = newValue;
-          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
-          this.dispatchEvent(CLOUD_EVENTS.DATA_UPDATED, this);
+          this.dispatchEvent(CLOUD_EVENTS.TOKEN_CHANGE, this);
+          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this); // tokens affect status
         }
       },
     });
@@ -484,34 +555,7 @@ export class Cloud {
           );
         if (_username !== newValue) {
           _username = newValue || null; // normalize empty to null
-          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
-          this.dispatchEvent(CLOUD_EVENTS.DATA_UPDATED, this);
-        }
-      },
-    });
-
-    /**
-     * @member {string|null} idpClientId Client ID of the IDP associated
-     *  with the tokens. `undefined` means not specified; `null` means the tokens
-     *  are related to the default IDP, which is Keycloak; otherwise, it's a
-     *  string that identifies a custom IDP.
-     */
-    Object.defineProperty(this, 'idpClientId', {
-      enumerable: true,
-      get() {
-        return _idpClientId;
-      },
-      set(newValue) {
-        const normalizedNewValue = newValue || null; // '' or undefined -> null
-        DEV_ENV &&
-          rtv.verify(
-            { idpClientId: normalizedNewValue },
-            { idpClientId: Cloud.specTs.idpClientId }
-          );
-        if (_idpClientId !== normalizedNewValue) {
-          _idpClientId = normalizedNewValue;
-          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
-          this.dispatchEvent(CLOUD_EVENTS.DATA_UPDATED, this);
+          this.dispatchEvent(CLOUD_EVENTS.TOKEN_CHANGE, this); // related to tokens but not status
         }
       },
     });
@@ -538,35 +582,19 @@ export class Cloud {
           }
 
           _cloudUrl = normalizedNewValue;
-          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
-          this.dispatchEvent(CLOUD_EVENTS.DATA_UPDATED, this);
+          this.dispatchEvent(CLOUD_EVENTS.PROP_CHANGE, this);
         }
       },
     });
 
     //// initialize
 
-    // set all token-related members if they're specified
-    if (spec && spec.id_token && spec.refresh_token) {
-      this.updateTokens(spec);
-    }
+    this.update(spec);
 
-    this.username = spec ? spec.username : null;
-    this.idpClientId = spec ? spec.idpClientId : null;
-    this.cloudUrl = spec ? spec.cloudUrl : null;
-    this.name = spec ? spec.name : null;
-    this.syncAll = spec ? spec.syncAll : false;
-    this.syncNamespaces = spec ? spec.syncNamespaces : [];
-
-    _eventQueue.length = 0; // remove any events generated from using setters to initialize
-  }
-
-  /**
-   * @returns {boolean} True if the username is defined and `usesSso=true` (that is,
-   *  it's boolean and it's known to be SSO, not just a truthy/falsy value).
-   */
-  hasCredentials() {
-    return !!this.username;
+    // since we assign properties when initializing, and this may cause some events
+    //  to get dispatched, make sure we start with a clean slate for any listeners
+    //  that get added to this new instance we just constructed
+    this.emptyEventQueue();
   }
 
   /**
@@ -602,8 +630,7 @@ export class Cloud {
     this.refreshExpiresIn = null;
     this.refreshTokenValidTill = null;
 
-    // tokens are tied to the IDP and user, so clear these too
-    this.idpClientId = null;
+    // tokens are tied to the user, so clear that too
     this.username = null;
   }
 
@@ -613,29 +640,63 @@ export class Cloud {
   }
 
   /**
-   * Update tokens and expiries from API response.
+   * Update only tokens and expiries from an API response.
    * @param {Object} tokens API token payload. See `tokensTs` for expected shape.
    */
   updateTokens(tokens) {
     DEV_ENV && rtv.verify({ tokens }, { tokens: Cloud.tokensTs });
 
+    const now = Date.now();
+
     this.token = tokens.id_token;
-    this.expiresIn = tokens.expires_in;
-    if (tokens.expiresAt) {
-      this.tokenValidTill = new Date(tokens.expiresAt * 1000);
+    this.expiresIn = tokens.expires_in; // SECONDS
+
+    if (typeof tokens.tokenExpiresAt === 'number') {
+      // since we have this, we're likely restoring from JSON (from disk) after a long
+      //  time: use this to calculate until when tokens are valid instead of just using
+      //  the relative offset in `this.expiresIn` without a reference time
+      this.tokenValidTill = new Date(tokens.tokenExpiresAt);
     } else {
-      this.tokenValidTill = new Date(Date.now() + this.expiresIn * 1000);
+      this.tokenValidTill = new Date(now + this.expiresIn * 1000);
     }
 
     this.refreshToken = tokens.refresh_token;
-    this.refreshExpiresIn = tokens.refresh_expires_in;
-    if (tokens.refreshExpiresAt) {
-      this.refreshTokenValidTill = new Date(tokens.refreshExpiresAt * 1000);
+    this.refreshExpiresIn = tokens.refresh_expires_in; // SECONDS
+
+    if (typeof tokens.refreshExpiresAt === 'number') {
+      // since we have this, we're likely restoring from JSON (from disk) after a long
+      //  time: use this to calculate until when tokens are valid instead of just using
+      //  the relative offset in `this.refreshExpiresIn` without a reference time
+      this.refreshTokenValidTill = new Date(tokens.refreshExpiresAt);
     } else {
-      this.refreshTokenValidTill = new Date(
-        Date.now() + this.refreshExpiresIn * 1000
-      );
+      this.refreshTokenValidTill = new Date(now + this.refreshExpiresIn * 1000);
     }
+  }
+
+  /**
+   * Updates this Cloud given a JSON model produced by `toJSON()` at some earlier
+   *  point in time. This is basically like calling the constructor, just that it
+   *  updates this instance's properties (if changes have occurred) rather than
+   *  creating a new instance.
+   * @param {Object|null|undefined} spec JSON object.
+   * @returns {Cloud} This instance, for chaining/convenience.
+   */
+  update(spec) {
+    DEV_ENV && rtv.verify({ spec }, { spec: [rtv.OPTIONAL, Cloud.specTs] });
+
+    if (spec) {
+      this.cloudUrl = spec.cloudUrl;
+      this.name = spec.name;
+      this.syncAll = spec.syncAll;
+      this.syncNamespaces = spec.syncNamespaces;
+      this.username = spec.username;
+
+      if (spec.id_token && spec.refresh_token) {
+        this.updateTokens(spec);
+      }
+    }
+
+    return this;
   }
 
   /**
@@ -646,25 +707,45 @@ export class Cloud {
    */
   toJSON() {
     return {
-      id_token: this.token,
-      expires_in: this.expiresIn,
-      refresh_token: this.refreshToken,
-      refresh_expires_in: this.refreshExpiresIn,
-
-      expiresAt: this.tokenValidTill
-        ? Math.floor(this.tokenValidTill.getTime() / 1000)
-        : null,
-      refreshExpiresAt: this.refreshTokenValidTill
-        ? Math.floor(this.refreshTokenValidTill.getTime() / 1000)
-        : null,
-      idpClientId: this.idpClientId,
-
-      username: this.username,
       cloudUrl: this.cloudUrl,
       name: this.name,
       syncAll: this.syncAll,
       syncNamespaces: this.syncNamespaces.concat(),
+      username: this.username,
+
+      // NOTE: the API-related properties have underscores in them since they do
+      //  when they're coming from the MCC API
+
+      // NOTE: the properties that __begin__ with an underscore are only written
+      //  to JSON (never read); this is for easier debugging when looking at the
+      //  data written on disk by the CloudStore; we don't actually use these
+      //  properties anywhere (it's just easier to see a timestamp in local time
+      //  than to just see the expiry in milliseconds)
+
+      id_token: this.token,
+      expires_in: this.expiresIn,
+      tokenExpiresAt: this.tokenValidTill?.getTime() ?? null,
+      _tokenExpiresAtTime: this.tokenValidTill?.toString() || null,
+
+      refresh_token: this.refreshToken,
+      refresh_expires_in: this.refreshExpiresIn,
+      refreshExpiresAt: this.refreshTokenValidTill?.getTime() ?? null,
+      _refreshExpiresAtTime: this.refreshTokenValidTill?.toString() || null,
     };
+  }
+
+  /** @returns {string} String representation of this Cloud for logging/debugging. */
+  toString() {
+    const validTillStr = logDate(this.tokenValidTill);
+    return `{Cloud url: "${this.cloudUrl}", token: ${
+      this.token
+        ? `"${this.token.slice(0, 15)}..${this.token.slice(-15)}"`
+        : this.token
+    }, validTill: ${
+      validTillStr ? `"${validTillStr}"` : validTillStr
+    }, expired: ${this.isTokenExpired()}, refreshExpired: ${this.isRefreshTokenExpired()}, connected: ${this.isConnected()}, connectError: ${
+      this.connectError ? `"${this.connectError}"` : this.connectError
+    }}`;
   }
 
   async loadConfig() {
@@ -714,7 +795,7 @@ export class Cloud {
           });
         } catch (err) {
           logger.error(
-            'Cloud.connect()',
+            'Cloud.connect => ssoUtil.finishAuthorization',
             `Failed to finish SSO authorization, error="${err.message}"`
           );
           this.connectError = err;

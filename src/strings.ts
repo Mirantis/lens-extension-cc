@@ -305,9 +305,14 @@ export const cloud: Dict = {
 
 export const extendedCloud: Dict = {
   error: {
-    credentials: () =>
+    invalidClusterPayload: () =>
+      'Failed to parse Clusters payload: Unexpected data format.',
+    invalidNamespacePayload: () =>
+      'Failed to parse Namespaces payload: Unexpected data format.',
+    invalidCredentialsPayload: () =>
       'Failed to parse Credentials payload: Unexpected data format.',
-    sshKeys: () => 'Failed to parse SSH Keys payload: Unexpected data format.',
+    invalidSshKeysPayload: () =>
+      'Failed to parse SSH Keys payload: Unexpected data format.',
   },
 };
 
