@@ -38,7 +38,22 @@ export const EXTENDED_CLOUD_EVENTS = Object.freeze({
   FETCH_DATA: 'fetchData',
 });
 
-const FIVE_MIN = 300 * 1000;
+/**
+ * Milliseconds at which new data will be fetched from the Cloud.
+ *
+ * __AVOID__ exactly 5 minutes because API tokens expire after 5 minutes and need to be
+ *  refreshed. This will still work, but because we execute many parallel requests when
+ *  fetching data (e.g. for each namespace synced, multiple types of credentials), it'll
+ *  cause a lot of churn because each one of those will trigger a token refresh.
+ *
+ * Since fetching starts with getting all namespaces, and this is a single request, we
+ *  set this interval such that it's most likely this will be the request that causes
+ *  tokens to be refreshed, and then subsequent requests for remaining data (clusters,
+ *  SSH keys, etc.) will proceed with new, valid tokens.
+ *
+ * @type {number}
+ */
+const FETCH_INTERVAL = 4.85 * 60 * 1000; // 4:51 minutes (AVOID exactly 5 minutes)
 
 const credentialTypes = [
   'awscredential',
@@ -326,18 +341,8 @@ const _fetchClusters = async function (cloud, namespaces) {
   return dsError || { clusters, tokensRefreshed };
 };
 
-const getId = (function () {
-  let nextId = 0;
-  return () => {
-    nextId++;
-    return nextId;
-  };
-})(); // DEBUG REMOVE
-
 export class ExtendedCloud {
   constructor(cloud) {
-    this.INSTANCE_ID = getId(); // DEBUG REMOVE
-
     const _eventListeners = {}; // map of event name to array of functions that are handlers
     const _eventQueue = []; // list of `{ name: string, params: Array }` objects to dispatch
     let _dispatchTimerId; // ID of the scheduled dispatch timer if a dispatch is scheduled, or undefined
@@ -363,10 +368,6 @@ export class ExtendedCloud {
             events.forEach((event) => {
               const { name, params } = event;
               const handlers = _eventListeners[name] || [];
-              console.log(
-                '####### ExtendedCloud._scheduleDispatch(): DISPATCHING event=%s',
-                name
-              ); // DEBUG LOG
               handlers.forEach((handler) => {
                 try {
                   handler(...params);
@@ -382,10 +383,6 @@ export class ExtendedCloud {
             }
           }
         });
-      } else {
-        console.log(
-          '####### ExtendedCloud._scheduleDispatch(): already scheduled'
-        ); // DEBUG LOG
       }
     };
 
@@ -503,10 +500,6 @@ export class ExtendedCloud {
             `Received new Cloud: Scheduling new data fetch; extCloud=${this}`
           );
           this.dispatchEvent(EXTENDED_CLOUD_EVENTS.FETCH_DATA, this);
-        } else {
-          console.log(
-            `####### ExtendedCloud.[set]cloud: NO CHANGE in cloud object`
-          ); // DEBUG LOG
         }
       },
     });
@@ -545,10 +538,6 @@ export class ExtendedCloud {
       set(newValue) {
         if (newValue !== _namespaces) {
           _namespaces = newValue || null;
-          console.log(
-            `####### ExtendedCloud.[set]namespaces: Set new namespaces data for extCloud=${this}, namespaces=`,
-            _namespaces
-          ); // DEBUG LOG
           this.dispatchEvent(EXTENDED_CLOUD_EVENTS.DATA_UPDATED, this);
         }
       },
@@ -589,7 +578,7 @@ export class ExtendedCloud {
       //  we don't duplicate an existing request to fetch the data if one has
       //  just been scheduled
       this.dispatchEvent(EXTENDED_CLOUD_EVENTS.FETCH_DATA, this);
-    }, FIVE_MIN);
+    }, FETCH_INTERVAL);
 
     // schedule the initial data load/fetch
     this.dispatchEvent(EXTENDED_CLOUD_EVENTS.FETCH_DATA, this);
@@ -597,8 +586,6 @@ export class ExtendedCloud {
 
   /** Called when this instance is being deleted/destroyed. */
   destroy() {
-    console.log(`####### ExtendedCloud.destroy(): DESTROYING extCloud=${this}`); // DEBUG LOG
-
     this.removeEventListener(
       EXTENDED_CLOUD_EVENTS.FETCH_DATA,
       this.onFetchData
@@ -744,10 +731,10 @@ export class ExtendedCloud {
 
   /** @returns {string} String representation of this ExtendedCloud for logging/debugging. */
   toString() {
-    return `{ExtendedCloud INSTANCE_ID: ${this.INSTANCE_ID}, cloud: ${
-      this.cloud
-    }, loading: ${this.loading}, fetching: ${this.fetching}, namespaces: ${
-      this.namespaces ? '<set>' : 'undefined'
-    }, error: ${this.error}}`;
+    return `{ExtendedCloud loading: ${this.loading}, fetching: ${
+      this.fetching
+    }, namespaces: ${this.namespaces?.length ?? '<unknown>'}, error: ${
+      this.error
+    }, cloud: ${this.cloud}}`;
   }
 }

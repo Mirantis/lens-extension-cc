@@ -1,8 +1,9 @@
+import * as strings from '../../strings';
+import { AuthClient } from './clients/AuthClient';
+import { KubernetesAuthorizationClient } from './clients/KubernetesAuthorizationClient';
 import { KubernetesClient } from './clients/KubernetesClient';
 import { KubernetesEntityClient } from './clients/KubernetesEntityClient';
-import { KubernetesAuthorizationClient } from './clients/KubernetesAuthorizationClient';
-import { AuthClient } from './clients/AuthClient';
-import * as strings from '../../strings';
+import { logger } from '../../util/logger';
 
 const entityToClient = {
   cluster: KubernetesEntityClient,
@@ -58,10 +59,6 @@ export function extractJwtPayload(token) {
  *  and `false` is returned.
  */
 export async function cloudRefresh(cloud) {
-  console.log(
-    `@@@@@@@ authUtil.cloudRefresh(): refreshing tokens for cloud=${cloud}`
-  ); // DEBUG LOG
-
   const authClient = new AuthClient({
     baseUrl: cloud.cloudUrl,
     config: cloud.config,
@@ -77,17 +74,12 @@ export async function cloudRefresh(cloud) {
   }
 
   if (cloud.connectError) {
-    console.error(
-      `@@@@@@@ authUtil.cloudRefresh(): ERROR refreshing tokens for cloud=${cloud}`
-    ); // DEBUG LOG
     return false;
   }
 
-  console.log(
-    `@@@@@@@ authUtil.cloudRefresh(): updating tokens on cloud=${cloud}`
-  ); // DEBUG LOG
   // token was refreshed
   cloud.updateTokens(body);
+  logger.log('authUtil.cloudRefresh()', `Refreshed tokens of cloud=${cloud}`);
 
   return true;
 }
@@ -141,20 +133,10 @@ export async function cloudRequest({ cloud, method, entity, args }) {
   let tokensRefreshed = false;
 
   // the first attempt to fetch
-  const now = Date.now();
-  console.log(
-    `@@@@@@@ authUtil.cloudRequest(): method=${method}, entity=${entity}, args=${JSON.stringify(
-      args
-    )}, ID=${now}, cloud=${cloud}`
-  ); // DEBUG LOG
   let k8sClient = new Client(cloud.cloudUrl, cloud.token, entity);
   let { response, error, body } = await k8sClient[method](entity, args);
 
   if (response && response.status === 401) {
-    console.log(
-      `@@@@@@@ authUtil.cloudRequest(): got 401 response, refreshing tokens, ID=${now}, cloud=${cloud}`
-    ); // DEBUG LOG
-
     // assume token is expired, try to refresh
     tokensRefreshed = await cloudRefresh(cloud);
     if (!tokensRefreshed) {
@@ -162,11 +144,6 @@ export async function cloudRequest({ cloud, method, entity, args }) {
     }
 
     // try to fetch again with updated token
-    console.log(
-      `@@@@@@@ authUtil.cloudRequest(): TOKENS REFRESHED, retrying: method=${method}, entity=${entity}, args=${JSON.stringify(
-        args
-      )}, ID=${now}, cloud=${cloud}`
-    ); // DEBUG LOG
     k8sClient = new Client(cloud.cloudUrl, cloud.token, entity);
     ({ response, error, body } = await k8sClient[method](entity, args));
   }

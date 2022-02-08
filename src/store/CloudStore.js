@@ -60,8 +60,6 @@ export class CloudStore extends Common.Store.ExtensionStore {
 
     const json = result.valid ? store : CloudStore.getDefaults();
 
-    console.log('+++++++ CloudStore.fromStore()'); // DEBUG LOG
-
     Object.keys(json).forEach((key) => {
       if (key === 'clouds') {
         // restore from a map of cloudUrl to JSON object -> into a map of cloudUrl
@@ -73,15 +71,9 @@ export class CloudStore extends Common.Store.ExtensionStore {
             if (existingClouds[cloudUrl]) {
               // update existing Cloud with new data instead of creating a new instance
               //  so that currently-bound objects don't leak
-              console.log(
-                `+++++++ CloudStore.fromStore(): Updating existing cloud=${existingClouds[cloudUrl]}`
-              ); // DEBUG LOG
               cloud = existingClouds[cloudUrl].update(cloudJson);
             } else {
               // add new Cloud we don't know about yet
-              console.log(
-                `+++++++ CloudStore.fromStore(): Adding new cloud for cloudUrl=${cloudUrl}`
-              ); // DEBUG LOG
               cloud = new Cloud(cloudJson);
               this.listenForChanges(cloud);
               cloudMap[cloudUrl] = cloud;
@@ -95,9 +87,6 @@ export class CloudStore extends Common.Store.ExtensionStore {
         // make sure we properly remove any old/deleted Clouds
         Object.keys(existingClouds).forEach((cloudUrl) => {
           if (!newClouds[cloudUrl]) {
-            console.log(
-              `+++++++ CloudStore.fromStore(): Removing old cloud=${existingClouds[cloudUrl]}`
-            ); // DEBUG LOG
             this.stopListeningForChanges(existingClouds[cloudUrl]);
           }
         });
@@ -129,8 +118,6 @@ export class CloudStore extends Common.Store.ExtensionStore {
       return obj;
     }, {});
 
-    console.log('+++++++ CloudStore.toJSON()'); // DEBUG LOG
-
     // return a deep-clone that is no longer observable
     return toJS(observableThis);
   }
@@ -145,10 +132,6 @@ export class CloudStore extends Common.Store.ExtensionStore {
     //  one or more properties of the Cloud object were changed, and by using
     //  `extendObservable()` here, we'll trigger the Store to persist to disk,
     //  thereby capturing the Cloud's latest data in case the user quits Lens
-    console.log(
-      '+++++++ CloudStore.onCloudUpdate(): cloud=%s',
-      cloud.toString()
-    ); // DEBUG LOG
     extendObservable(this.clouds, { [cloud.cloudUrl]: cloud });
   };
 

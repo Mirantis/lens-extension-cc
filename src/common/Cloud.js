@@ -11,14 +11,6 @@ import {
 } from '../renderer/eventBus';
 
 /**
- * Number of __milliseconds__ to remove from the future token expiry time obtained
- *  from the server, considering there's a network delay from the timestamp on the
- *  server to when we receive it client-side.
- * @type {number}
- */
-const EXPIRY_ADJUST = -500;
-
-/**
  * Determines if a date has passed.
  * @param {Date} date
  * @returns {boolean} true if the date has passed; false otherwise.
@@ -134,6 +126,14 @@ export class Cloud {
     expires_in: [rtv.REQUIRED, rtv.SAFE_INT], // SECONDS valid from now
     refresh_token: [rtv.REQUIRED, rtv.STRING],
     refresh_expires_in: [rtv.REQUIRED, rtv.SAFE_INT], // SECONDS valid from now
+
+    // NOTE: These properties are important because `expires_in` and `refresh_expires_in`
+    //  are just offsets from when the tokens were obtained, and on disk, that tells us
+    //  nothing; we need the actual expiry date/time so that if Lens is quit and opened
+    //  at a later time, we can know if the tokens are still valid. They are marked OPTIONAL
+    //  because they don't come from the server, only from JSON
+    tokenExpiresAt: [rtv.OPTIONAL, rtv.SAFE_INT],
+    refreshExpiresAt: [rtv.OPTIONAL, rtv.SAFE_INT],
   };
 
   /**
@@ -145,8 +145,9 @@ export class Cloud {
       ts[key] = Cloud.tokensTs[key].concat(); // shallow clone of property typeset
 
       if (ts[key][0] === rtv.REQUIRED) {
-        // each API property becomes optional, which means it can be `null`, which
-        //  supports cloning from an empty state in CloudStore
+        // each API property becomes expected, which means it can be `null`, which
+        //  supports restoring from disk in CloudStore and creating new Cloud instances
+        //  prior to having tokens
         ts[key][0] = rtv.EXPECTED;
       }
 
@@ -195,10 +196,6 @@ export class Cloud {
             events.forEach((event) => {
               const { name, params } = event;
               const handlers = _eventListeners[name] || [];
-              console.log(
-                '------- Cloud._scheduleDispatch(): DISPATCHING event=%s',
-                name
-              ); // DEBUG LOG
               handlers.forEach((handler) => {
                 try {
                   handler(...params);
@@ -214,8 +211,6 @@ export class Cloud {
             }
           }
         });
-      } else {
-        console.log('------- Cloud._scheduleDispatch(): already scheduled'); // DEBUG LOG
       }
     };
 
@@ -323,7 +318,6 @@ export class Cloud {
           rtv.verify({ token: newValue }, { token: Cloud.specTs.name });
         if (_name !== newValue) {
           _name = newValue;
-          console.log('------- Cloud.[set]name: PROP_CHANGE'); // DEBUG LOG
           this.dispatchEvent(CLOUD_EVENTS.PROP_CHANGE, this);
         }
       },
@@ -342,7 +336,6 @@ export class Cloud {
           rtv.verify({ token: newValue }, { token: Cloud.specTs.syncAll });
         if (_syncAll !== newValue) {
           _syncAll = newValue;
-          console.log('------- Cloud.[set]syncAll: SYNC_CHANGE'); // DEBUG LOG
           this.dispatchEvent(CLOUD_EVENTS.SYNC_CHANGE, this);
         }
       },
@@ -364,7 +357,6 @@ export class Cloud {
           );
         if (_syncNamespaces !== newValue) {
           _syncNamespaces = newValue;
-          console.log('------- Cloud.[set]syncNamespaces: SYNC_CHANGE'); // DEBUG LOG
           this.dispatchEvent(CLOUD_EVENTS.SYNC_CHANGE, this);
         }
       },
@@ -391,7 +383,6 @@ export class Cloud {
       set(newValue) {
         if (_connecting !== !!newValue) {
           _connecting = !!newValue;
-          console.log('------- Cloud.[set]connecting: STATUS_CHANGE'); // DEBUG LOG
           this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
         }
       },
@@ -413,7 +404,6 @@ export class Cloud {
           );
         if (validValue !== _connectError) {
           _connectError = validValue || null;
-          console.log('------- Cloud.[set]connectError: STATUS_CHANGE'); // DEBUG LOG
           this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
         }
       },
@@ -445,10 +435,6 @@ export class Cloud {
           rtv.verify({ token: newValue }, { token: Cloud.specTs.id_token });
         if (_token !== newValue) {
           _token = newValue || null; // normalize empty to null
-          console.log(
-            '------- Cloud.[set]token: TOKEN_CHANGE, STATUS_CHANGE, newValue=%s',
-            `${newValue.slice(0, 15)}~${newValue.slice(-15)}`
-          ); // DEBUG LOG
           this.dispatchEvent(CLOUD_EVENTS.TOKEN_CHANGE, this);
           this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this); // tokens affect status
         }
@@ -469,9 +455,6 @@ export class Cloud {
           );
         if (_expiresIn !== newValue) {
           _expiresIn = newValue;
-          console.log(
-            '------- Cloud.[set]expiresIn: TOKEN_CHANGE, STATUS_CHANGE'
-          ); // DEBUG LOG
           this.dispatchEvent(CLOUD_EVENTS.TOKEN_CHANGE, this);
           this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this); // tokens affect status
         }
@@ -492,9 +475,6 @@ export class Cloud {
           );
         if (_tokenValidTill !== newValue) {
           _tokenValidTill = newValue;
-          console.log(
-            '------- Cloud.[set]tokenValidTill: TOKEN_CHANGE, STATUS_CHANGE'
-          ); // DEBUG LOG
           this.dispatchEvent(CLOUD_EVENTS.TOKEN_CHANGE, this);
           this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this); // tokens affect status
         }
@@ -515,9 +495,6 @@ export class Cloud {
           );
         if (_refreshToken !== newValue) {
           _refreshToken = newValue || null; // normalize empty to null
-          console.log(
-            '------- Cloud.[set]refreshToken: TOKEN_CHANGE, STATUS_CHANGE'
-          ); // DEBUG LOG
           this.dispatchEvent(CLOUD_EVENTS.TOKEN_CHANGE, this);
           this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this); // tokens affect status
         }
@@ -538,9 +515,6 @@ export class Cloud {
           );
         if (_refreshExpiresIn !== newValue) {
           _refreshExpiresIn = newValue;
-          console.log(
-            '------- Cloud.[set]refreshExpiresIn: TOKEN_CHANGE, STATUS_CHANGE'
-          ); // DEBUG LOG
           this.dispatchEvent(CLOUD_EVENTS.TOKEN_CHANGE, this);
           this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this); // tokens affect status
         }
@@ -561,9 +535,6 @@ export class Cloud {
           );
         if (_refreshTokenValidTill !== newValue) {
           _refreshTokenValidTill = newValue;
-          console.log(
-            '------- Cloud.[set]refreshTokenValidTill: TOKEN_CHANGE, STATUS_CHANGE'
-          ); // DEBUG LOG
           this.dispatchEvent(CLOUD_EVENTS.TOKEN_CHANGE, this);
           this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this); // tokens affect status
         }
@@ -584,7 +555,6 @@ export class Cloud {
           );
         if (_username !== newValue) {
           _username = newValue || null; // normalize empty to null
-          console.log('------- Cloud.[set]username: TOKEN_CHANGE'); // DEBUG LOG
           this.dispatchEvent(CLOUD_EVENTS.TOKEN_CHANGE, this); // related to tokens but not status
         }
       },
@@ -612,7 +582,6 @@ export class Cloud {
           }
 
           _cloudUrl = normalizedNewValue;
-          console.log('------- Cloud.[set]cloudUrl: PROP_CHANGE'); // DEBUG LOG
           this.dispatchEvent(CLOUD_EVENTS.PROP_CHANGE, this);
         }
       },
@@ -653,8 +622,6 @@ export class Cloud {
    *  for example.
    */
   resetTokens() {
-    console.log('------- Cloud.resetTokens()'); // DEBUG LOG
-
     this.token = null;
     this.expiresIn = null;
     this.tokenValidTill = null;
@@ -679,23 +646,31 @@ export class Cloud {
   updateTokens(tokens) {
     DEV_ENV && rtv.verify({ tokens }, { tokens: Cloud.tokensTs });
 
-    console.log(
-      '------- Cloud.updateTokens(), token=%s, tokens=',
-      `${tokens.id_token.slice(0, 15)}~${tokens.id_token.slice(-15)}`,
-      tokens
-    ); // DEBUG LOG
-
     const now = Date.now();
 
     this.token = tokens.id_token;
     this.expiresIn = tokens.expires_in; // SECONDS
-    this.tokenValidTill = new Date(now + this.expiresIn * 1000 + EXPIRY_ADJUST);
+
+    if (typeof tokens.tokenExpiresAt === 'number') {
+      // since we have this, we're likely restoring from JSON (from disk) after a long
+      //  time: use this to calculate until when tokens are valid instead of just using
+      //  the relative offset in `this.expiresIn` without a reference time
+      this.tokenValidTill = new Date(tokens.tokenExpiresAt);
+    } else {
+      this.tokenValidTill = new Date(now + this.expiresIn * 1000);
+    }
 
     this.refreshToken = tokens.refresh_token;
     this.refreshExpiresIn = tokens.refresh_expires_in; // SECONDS
-    this.refreshTokenValidTill = new Date(
-      now + this.refreshExpiresIn * 1000 + EXPIRY_ADJUST
-    );
+
+    if (typeof tokens.refreshExpiresAt === 'number') {
+      // since we have this, we're likely restoring from JSON (from disk) after a long
+      //  time: use this to calculate until when tokens are valid instead of just using
+      //  the relative offset in `this.refreshExpiresIn` without a reference time
+      this.refreshTokenValidTill = new Date(tokens.refreshExpiresAt);
+    } else {
+      this.refreshTokenValidTill = new Date(now + this.refreshExpiresIn * 1000);
+    }
   }
 
   /**
@@ -738,19 +713,24 @@ export class Cloud {
       syncNamespaces: this.syncNamespaces.concat(),
       username: this.username,
 
-      // NOTE: these property names contain underscores so they match the names
-      //  we get in `updateTokens()`, which come from the MCC API
-      id_token: this.token,
-      expires_in: this.expiresIn,
-      refresh_token: this.refreshToken,
-      refresh_expires_in: this.refreshExpiresIn,
+      // NOTE: the API-related properties have underscores in them since they do
+      //  when they're coming from the MCC API
 
-      // NOTE: we just write this to JSON for easier debugging when looking at the
+      // NOTE: the properties that __begin__ with an underscore are only written
+      //  to JSON (never read); this is for easier debugging when looking at the
       //  data written on disk by the CloudStore; we don't actually use these
       //  properties anywhere (it's just easier to see a timestamp in local time
-      //  than to just see the expiry in minutes without a point of reference)
-      tokenExpiresAt: this.tokenValidTill?.toString() || null,
-      refreshExpiresAt: this.refreshTokenValidTill?.toString() || null,
+      //  than to just see the expiry in milliseconds)
+
+      id_token: this.token,
+      expires_in: this.expiresIn,
+      tokenExpiresAt: this.tokenValidTill?.getTime() ?? null,
+      _tokenExpiresAtTime: this.tokenValidTill?.toString() || null,
+
+      refresh_token: this.refreshToken,
+      refresh_expires_in: this.refreshExpiresIn,
+      refreshExpiresAt: this.refreshTokenValidTill?.getTime() ?? null,
+      _refreshExpiresAtTime: this.refreshTokenValidTill?.toString() || null,
     };
   }
 
@@ -759,7 +739,7 @@ export class Cloud {
     const validTillStr = logDate(this.tokenValidTill);
     return `{Cloud url: "${this.cloudUrl}", token: ${
       this.token
-        ? `${this.token.slice(0, 15)}..${this.token.slice(-15)}`
+        ? `"${this.token.slice(0, 15)}..${this.token.slice(-15)}"`
         : this.token
     }, validTill: ${
       validTillStr ? `"${validTillStr}"` : validTillStr
