@@ -36,11 +36,11 @@ export const AdditionalInfoRows = ({ namespace }) => {
   const listOfInfo = [
     {
       infoName: managementClusters.table.tbodyDetailedInfo.clusters(),
-      infoCount: namespace.clustersCount,
+      infoCount: namespace.clusterCount,
     },
     {
       infoName: managementClusters.table.tbodyDetailedInfo.sshKeys(),
-      infoCount: namespace.sshKeysCount,
+      infoCount: namespace.sshKeyCount,
     },
     {
       infoName: managementClusters.table.tbodyDetailedInfo.credentials(),

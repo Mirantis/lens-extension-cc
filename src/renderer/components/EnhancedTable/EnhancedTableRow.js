@@ -147,14 +147,14 @@ export const EnhancedTableRow = ({ extendedCloud }) => {
   const [onOpen, toggleMenu] = useState(false);
   const [isOpenFirstLevel, setIsOpenFirstLevel] = useState(false);
   const [actualNamespaces, setActualNamespaces] = useState(
-    extendedCloud.namespaces
+    extendedCloud.syncedNamespaces
   );
   const [openedSecondLevelListIndex, setOpenedSecondLevelListIndex] = useState(
     []
   );
   const updateNamespaces = (updatedRow) => {
     if (updatedRow) {
-      setActualNamespaces(updatedRow.namespaces);
+      setActualNamespaces(updatedRow.syncedNamespaces);
     }
   };
   useEffect(() => {

@@ -256,13 +256,13 @@ export const SynchronizeBlock = ({ extCloud, onAdd }) => {
                     <li>
                       <p>
                         {synchronizeBlock.checkboxesDropdownLabels.clusters()} (
-                        {namespace.clustersCount})
+                        {namespace.clusterCount})
                       </p>
                     </li>
                     <li>
                       <p>
                         {synchronizeBlock.checkboxesDropdownLabels.sshKeys()} (
-                        {namespace.sshKeysCount})
+                        {namespace.sshKeyCount})
                       </p>
                     </li>
                     <li>
