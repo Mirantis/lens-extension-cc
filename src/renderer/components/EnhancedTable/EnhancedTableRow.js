@@ -4,7 +4,7 @@ import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
 import { layout } from '../styles';
 import { AdditionalInfoRows } from './AdditionalInfoRows';
-import { connectionStatuses, contentMenus } from '../../../strings';
+import { connectionStatuses, contextMenus } from '../../../strings';
 import { EXTENDED_CLOUD_EVENTS } from '../../../common/ExtendedCloud';
 
 const { Icon, MenuItem, MenuActions } = Renderer.Component;
@@ -82,59 +82,59 @@ const getStatus = (isCloudConnected) => {
 
 const cloudMenuItems = [
   {
-    title: `(WIP) ${contentMenus.cloud.reconnect()}`,
+    title: `(WIP) ${contextMenus.cloud.reconnect()}`,
     name: 'reconnect',
     onClick: () => {},
   },
   {
-    title: `(WIP) ${contentMenus.cloud.remove()}`,
+    title: `(WIP) ${contextMenus.cloud.remove()}`,
     name: 'remove',
     onClick: () => {},
   },
   {
-    title: `(WIP) ${contentMenus.cloud.sync()}`,
+    title: `(WIP) ${contextMenus.cloud.sync()}`,
     name: 'sync',
     onClick: () => {},
   },
   {
-    title: `(WIP) ${contentMenus.cloud.openInBrowser()}`,
+    title: `(WIP) ${contextMenus.cloud.openInBrowser()}`,
     name: 'openInBrowser',
     onClick: () => {},
   },
 ];
 const namespaceMenuItems = [
   {
-    title: `(WIP) ${contentMenus.namespace.sync()}`,
+    title: `(WIP) ${contextMenus.namespace.sync()}`,
     name: 'sync',
     onClick: () => {},
   },
   {
-    title: `(WIP) ${contentMenus.namespace.openInBrowser()}`,
+    title: `(WIP) ${contextMenus.namespace.openInBrowser()}`,
     name: 'openInBrowser',
     onClick: () => {},
   },
   {
-    title: `(WIP) ${contentMenus.namespace.createCluster()}`,
+    title: `(WIP) ${contextMenus.namespace.createCluster()}`,
     name: 'createCluster',
     onClick: () => {},
   },
   {
-    title: `(WIP) ${contentMenus.namespace.createSHHKey()}`,
+    title: `(WIP) ${contextMenus.namespace.createSHHKey()}`,
     name: 'createSHHKey',
     onClick: () => {},
   },
   {
-    title: `(WIP) ${contentMenus.namespace.createCredential()}`,
+    title: `(WIP) ${contextMenus.namespace.createCredential()}`,
     name: 'createCredential',
     onClick: () => {},
   },
   {
-    title: `(WIP) ${contentMenus.namespace.createLicense()}`,
+    title: `(WIP) ${contextMenus.namespace.createLicense()}`,
     name: 'createLicense',
     onClick: () => {},
   },
   {
-    title: `(WIP) ${contentMenus.namespace.createProxy()}`,
+    title: `(WIP) ${contextMenus.namespace.createProxy()}`,
     name: 'createProxy',
     onClick: () => {},
   },

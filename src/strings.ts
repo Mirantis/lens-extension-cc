@@ -322,7 +322,7 @@ export const connectionStatuses: Dict = {
   },
 };
 
-export const contentMenus: Dict = {
+export const contextMenus: Dict = {
   cloud: {
     reconnect: () => 'Reconnect',
     remove: () => 'Remove',
