@@ -1,6 +1,5 @@
 import { checkValues } from '../TriStateCheckbox/TriStateCheckbox';
-import React, { useState } from 'react';
-import PropTypes from 'prop-types';
+import { useState } from 'react';
 
 const checkboxesStateObj = (extCloud) => {
   return (extCloud?.namespaces || []).reduce((acc, namespace) => {
@@ -9,8 +8,7 @@ const checkboxesStateObj = (extCloud) => {
   }, {});
 };
 
-export const HOCWithCheckboxes = ({ Component }) => {
-  const { extendedCloud } = Component.props;
+export function useCheckboxes(extendedCloud) {
   const [checkboxesState, setCheckboxesState] = useState({
     parent: false,
     children: checkboxesStateObj(extendedCloud),
@@ -75,21 +73,15 @@ export const HOCWithCheckboxes = ({ Component }) => {
     }
   };
 
-  const childrenCheckboxValue = (name) => {
+  const getChildrenCheckboxValue = (name) => {
     return checkboxesState.children[name]
       ? checkValues.CHECKED
       : checkValues.UNCHECKED;
   };
 
-  return React.cloneElement(Component, {
-    ...Component.props,
-    checkBoxChangeHandler,
+  return {
+    getChildrenCheckboxValue,
     parentCheckboxValue: getParentCheckboxValue(),
-    childrenCheckboxValue,
-    withCheckboxes: true,
-  });
-};
-
-HOCWithCheckboxes.propTypes = {
-  Component: PropTypes.node.isRequired,
-};
+    checkBoxChangeHandler,
+  };
+}

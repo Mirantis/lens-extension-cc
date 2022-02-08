@@ -33,10 +33,15 @@ const sortButtonStyles = {
   marginLeft: layout.grid,
 };
 
-export const EnhancedTableHead = ({ sortBy, values }) => {
-  const headerCells = Object.keys(values).map((key) => ({
+/**
+ * @param {function} sortBy sorting func
+ * @param {Object} headerValues  'enum' with header values (HEAD_CELL_VALUES or SELECTIVE_HEAD_CELL_VALUES in tableUtil.js)
+ * @return {JSX.Element}
+ */
+export const EnhancedTableHead = ({ sortBy, headerValues }) => {
+  const headerCells = Object.keys(headerValues).map((key) => ({
     label: managementClusters.table.thead[key.toLowerCase()](),
-    key: key,
+    key,
   }));
 
   return (
@@ -60,5 +65,5 @@ export const EnhancedTableHead = ({ sortBy, values }) => {
 
 EnhancedTableHead.propTypes = {
   sortBy: PropTypes.func.isRequired,
-  values: PropTypes.object.isRequired,
+  headerValues: PropTypes.object.isRequired,
 };

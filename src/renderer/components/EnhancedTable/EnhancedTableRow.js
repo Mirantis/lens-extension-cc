@@ -6,11 +6,9 @@ import { layout } from '../styles';
 import { AdditionalInfoRows } from './AdditionalInfoRows';
 import { connectionStatuses, contextMenus } from '../../../strings';
 import { EXTENDED_CLOUD_EVENTS } from '../../../common/ExtendedCloud';
+import { TriStateCheckbox } from '../TriStateCheckbox/TriStateCheckbox';
+import { useCheckboxes } from '../hooks/useCheckboxes';
 import { openBrowser } from '../../../util/netUtil';
-import {
-  checkValues,
-  TriStateCheckbox,
-} from '../TriStateCheckbox/TriStateCheckbox';
 
 const { Icon, MenuItem, MenuActions } = Renderer.Component;
 
@@ -46,7 +44,6 @@ const EnhTableRowCell = styled.td`
   ${({ withCheckboxes }) =>
     withCheckboxes &&
     `
-    width: 50% !important;
     display: flex;
     align-items: center;
   `}
@@ -155,13 +152,13 @@ const namespaceMenuItems = [
   },
 ];
 
-export const EnhancedTableRow = ({
-  extendedCloud,
-  withCheckboxes,
-  checkBoxChangeHandler,
-  parentCheckboxValue,
-  childrenCheckboxValue,
-}) => {
+export const EnhancedTableRow = ({ extendedCloud, withCheckboxes }) => {
+  const {
+    checkBoxChangeHandler,
+    getChildrenCheckboxValue,
+    parentCheckboxValue,
+  } = useCheckboxes(extendedCloud);
+
   const [onOpen, toggleMenu] = useState(false);
   const [isOpenFirstLevel, setIsOpenFirstLevel] = useState(false);
   const [actualNamespaces, setActualNamespaces] = useState(
@@ -201,31 +198,53 @@ export const EnhancedTableRow = ({
   const isCloudConnected = extendedCloud.cloud.isConnected();
   const { cloudStatus, namespaceStatus } = getStatus(isCloudConnected);
 
-  const renderRestOfRows = (namespace) => withCheckboxes ? (
-    <EnhTableRowCell />
-  ) : (
-    <>
+  const renderRestOfRows = (namespace) =>
+    withCheckboxes ? (
       <EnhTableRowCell />
-      <EnhTableRowCell />
-      <EnhTableRowCell>{namespaceStatus}</EnhTableRowCell>
-      <EnhTableRowCell isRightAligned>
-        <EnhMore onClick={() => toggleMenu(!onOpen)}>
-          <MenuActions onOpen={onOpen}>
-            {namespaceMenuItems.map((item) => {
-              return (
-                <MenuItem
-                  key={`${namespace.name}-${item.name}`}
-                  onClick={item.onClick}
-                >
-                  {item.title}
-                </MenuItem>
-              );
-            })}
-          </MenuActions>
-        </EnhMore>
-      </EnhTableRowCell>
-    </>
-  );
+    ) : (
+      <>
+        <EnhTableRowCell />
+        <EnhTableRowCell />
+        <EnhTableRowCell>{namespaceStatus}</EnhTableRowCell>
+        <EnhTableRowCell isRightAligned>
+          <EnhMore onClick={() => toggleMenu(!onOpen)}>
+            <MenuActions onOpen={onOpen}>
+              {namespaceMenuItems.map((item) => {
+                return (
+                  <MenuItem
+                    key={`${namespace.name}-${item.name}`}
+                    onClick={item.onClick}
+                  >
+                    {item.title}
+                  </MenuItem>
+                );
+              })}
+            </MenuActions>
+          </EnhMore>
+        </EnhTableRowCell>
+      </>
+    );
+
+  /**
+   * @param {string} name cloud or namespace name
+   * @param {boolean?} isParent if true - then it's a main, cloud checkbox
+   * @return {JSX.Element|*}
+   */
+  const makeCell = (name, isParent) => {
+    if (withCheckboxes) {
+      const handlerValue = isParent ? null : name;
+      return (
+        <TriStateCheckbox
+          label={name}
+          onChange={() => checkBoxChangeHandler(handlerValue)}
+          value={
+            isParent ? parentCheckboxValue : getChildrenCheckboxValue(name)
+          }
+        />
+      );
+    }
+    return name;
+  };
 
   return (
     <>
@@ -240,15 +259,7 @@ export const EnhancedTableRow = ({
               <Icon material="chevron_right" style={expandIconStyles} />
             )}
           </EnhCollapseBtn>
-          {withCheckboxes ? (
-            <TriStateCheckbox
-              label={extendedCloud.cloud.name}
-              onChange={() => checkBoxChangeHandler(false)}
-              value={parentCheckboxValue}
-            />
-          ) : (
-            extendedCloud.cloud.name
-          )}
+          {makeCell(extendedCloud.cloud.name, true)}
         </EnhTableRowCell>
         <EnhTableRowCell>{extendedCloud.cloud.cloudUrl}</EnhTableRowCell>
         {withCheckboxes ? null : (
@@ -262,7 +273,10 @@ export const EnhancedTableRow = ({
                 <MenuActions onOpen={onOpen}>
                   {cloudMenuItems.map((item) => {
                     return (
-                      <MenuItem key={`cloud-${item.name}`} onClick={item.onClick}>
+                      <MenuItem
+                        key={`cloud-${item.name}`}
+                        onClick={item.onClick}
+                      >
                         {item.title}
                       </MenuItem>
                     );
@@ -285,15 +299,7 @@ export const EnhancedTableRow = ({
                     <Icon material="chevron_right" style={expandIconStyles} />
                   )}
                 </EnhCollapseBtn>
-                {withCheckboxes ? (
-                  <TriStateCheckbox
-                    label={namespace.name}
-                    value={childrenCheckboxValue(namespace.name)}
-                    onChange={() => checkBoxChangeHandler(namespace.name)}
-                  />
-                ) : (
-                  namespace.name
-                )}
+                {makeCell(namespace.name)}
               </EnhTableRowCell>
               {renderRestOfRows(namespace)}
             </EnhTableRow>
@@ -312,15 +318,9 @@ export const EnhancedTableRow = ({
 
 EnhancedTableRow.propTypes = {
   extendedCloud: PropTypes.object.isRequired,
-  checkBoxChangeHandler: PropTypes.func,
-  parentCheckboxValue: PropTypes.string,
-  childrenCheckboxValue: PropTypes.func,
   withCheckboxes: PropTypes.bool,
 };
 
 EnhancedTableRow.defaultProps = {
-  checkBoxChangeHandler: () => {},
-  parentCheckboxValue: checkValues.UNCHECKED,
-  childrenCheckboxValue: () => {},
   withCheckboxes: false,
 };

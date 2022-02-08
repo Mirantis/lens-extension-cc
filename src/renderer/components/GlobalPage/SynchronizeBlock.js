@@ -9,11 +9,9 @@ import {
 import { Accordion } from '../Accordion/Accordion';
 import { layout } from '../styles';
 import { synchronizeBlock } from '../../../strings';
+import { useCheckboxes } from '../hooks/useCheckboxes';
 
 const { Notifications, Button, Icon } = Renderer.Component;
-
-// Mocked cloud data
-import { mockExtCloud } from '../../../../test/mocks/mockExtCloud';
 
 const Content = styled.div(() => ({
   marginTop: layout.gap * 2,
@@ -89,13 +87,13 @@ const SortButton = styled.button`
     isRotated ? 'rotate(180deg)' : 'rotate(0deg)'};
 `;
 
-export const SynchronizeBlock = ({
-  extendedCloud,
-  onAdd,
-  checkBoxChangeHandler,
-  parentCheckboxValue,
-  childrenCheckboxValue,
-}) => {
+export const SynchronizeBlock = ({ extendedCloud, onAdd }) => {
+  const {
+    checkBoxChangeHandler,
+    getChildrenCheckboxValue,
+    parentCheckboxValue,
+  } = useCheckboxes(extendedCloud);
+
   // @type {object} sorted object of projects
   const [projectsList, setProjectsList] = useState(extendedCloud.namespaces);
 
@@ -124,7 +122,7 @@ export const SynchronizeBlock = ({
     const { cloud } = extendedCloud;
     const allNamespaces = extendedCloud.namespaces.map(({ name }) => name);
     const namespaces = allNamespaces.filter(
-      (name) => childrenCheckboxValue(name) === checkValues.CHECKED
+      (name) => getChildrenCheckboxValue(name) === checkValues.CHECKED
     );
 
     if (!namespaces.length) {
@@ -175,7 +173,7 @@ export const SynchronizeBlock = ({
                 <Accordion
                   title={
                     <TriStateCheckbox
-                      value={childrenCheckboxValue(namespace.name)}
+                      value={getChildrenCheckboxValue(namespace.name)}
                       label={namespace.name}
                       onChange={() => checkBoxChangeHandler(namespace.name)}
                     />
@@ -219,16 +217,6 @@ export const SynchronizeBlock = ({
 };
 
 SynchronizeBlock.propTypes = {
-  extendedCloud: PropTypes.object,
+  extendedCloud: PropTypes.object.isRequired,
   onAdd: PropTypes.func.isRequired,
-  checkBoxChangeHandler: PropTypes.func,
-  parentCheckboxValue: PropTypes.string,
-  childrenCheckboxValue: PropTypes.func,
-};
-
-SynchronizeBlock.defaultProps = {
-  extCloud: mockExtCloud,
-  checkBoxChangeHandler: () => {},
-  parentCheckboxValue: '',
-  childrenCheckboxValue: () => {},
 };

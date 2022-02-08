@@ -3,8 +3,7 @@ import { useState } from 'react';
 import styled from '@emotion/styled';
 import { layout } from '../styles';
 import { EnhancedTableHead } from './EnhancedTableHead';
-import { HOCWithCheckboxes } from '../HOC/hocWithCheckboxes';
-import { getTableData, sortData } from './utils';
+import { getTableData, sortData } from './tableUtil';
 import { EnhancedTableRow } from './EnhancedTableRow';
 
 const SelectiveSyncTableItem = styled.table`
@@ -46,27 +45,19 @@ export const EnhancedTable = ({ extendedClouds, isSelectiveSyncView }) => {
     setSortedBy(value ? value : headCellValue.NAME);
   };
 
-  const getComponent = (url) => {
-    const key = `${url}-${isSelectiveSyncView ? 'selective' : ''}`;
-    const comp = (
-      <EnhancedTableRow
-        key={key}
-        extendedCloud={extendedClouds[url]}
-        withCheckboxes={isSelectiveSyncView}
-      />
-    );
-    return isSelectiveSyncView ? (
-      <HOCWithCheckboxes key={`${key}-hoc`} Component={comp} />
-    ) : (
-      comp
-    );
-  };
-
   return (
     <SelectiveSyncTableItem>
-      <EnhancedTableHead sortBy={sortBy} values={headCellValue} />
+      <EnhancedTableHead sortBy={sortBy} headerValues={headCellValue} />
       <tbody>
-        {sortData(extendedClouds, sortedBy, order, path).map(getComponent)}
+        {sortData(extendedClouds, sortedBy, order, path).map((url) => {
+          return (
+            <EnhancedTableRow
+              key={url}
+              extendedCloud={extendedClouds[url]}
+              withCheckboxes={isSelectiveSyncView}
+            />
+          );
+        })}
         <tr style={emptyRowStyles}>
           <SelectiveSyncTableCell colSpan={6} />
         </tr>
