@@ -54,7 +54,7 @@ const CheckboxLabel = styled.span(() => ({
 
 const iconStyles = {
   color: 'var(--inputControlBackground)',
-  fontSize: 'calc(var(--font-size) * 1.14)',
+  fontSize: '16px',
 };
 
 export const checkValues = {
