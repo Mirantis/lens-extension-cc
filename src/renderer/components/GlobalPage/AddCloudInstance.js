@@ -82,6 +82,8 @@ export const AddCloudInstance = ({ onAdd, onCancel }) => {
 
   const cleanCloudsState = () => {
     setCloud(null);
+
+    extCloud?.destroy();
     setExtCloud(null);
   };
 
@@ -90,6 +92,11 @@ export const AddCloudInstance = ({ onAdd, onCancel }) => {
       makeExtCloud();
     }
   }, [cloud, loading, extCloud, makeExtCloud]);
+
+  // propertly destroy the ExtendedCloud object on unmount
+  useEffect(() => {
+    return () => extCloud?.destroy();
+  }, [extCloud]);
 
   return (
     <PageContainer>

@@ -1,4 +1,5 @@
 import { createContext, useContext, useMemo, useState } from 'react';
+import * as rtv from 'rtvjs';
 import { ProviderStore } from './ProviderStore';
 import { cloneDeepWith, isEqual } from 'lodash';
 import { cloudStore } from '../../store/CloudStore';
@@ -10,8 +11,26 @@ class ExtendedCloudProviderStore extends ProviderStore {
   makeNew() {
     return {
       extendedClouds: {},
-      tokens: null,
+      tokens: {},
     };
+  }
+
+  // @override
+  validate() {
+    rtv.verify(
+      { 'ExtendedCloudProvider.store': this.store },
+      {
+        'ExtendedCloudProvider.store': {
+          // map of cloudUrl -> ExtendedCloud instance
+          extendedClouds: [
+            rtv.HASH_MAP,
+            { $values: [rtv.CLASS_OBJECT, { ctor: ExtendedCloud }] },
+          ],
+          // map of cloudUrl -> Cloud access token
+          tokens: [rtv.HASH_MAP, { $values: rtv.STRING }],
+        },
+      }
+    );
   }
 
   // @override
@@ -31,57 +50,104 @@ const pr = new ExtendedCloudProviderStore();
 const ExtendedCloudContext = createContext();
 
 /**
- * @param {Object} tokens {[cloudUrl]: [token]} pairs
- * @return {T[]|*[]} return empty array or cloudUrls that need to be removed
+ * Triages current Cloud URLs into 3 lists: new, updated, and deleted.
+ * @param {{ [index: string]: string }} cloudStoreTokens Map of Cloud URL to token for
+ *  the current set of known Clouds stored on disk.
+ * @return {{ cloudUrlsToAdd: Array<string>, cloudUrlsToUpdate: Array<string>, cloudUrlsToRemove: Array<string> }}
+ *  An object with `cloudUrlsToAdd` being a list of new Cloud URLs to add, `cloudUrlsToRemove` a list
+ *  of old Clouds to remove (deleted), and `cloudUrlsToUpdate` a list of Clouds that have
+ *  changed but are still in use. Any of these lists could be empty.
  * @private
  */
-const _deleteCloudCheck = (tokens) => {
-  const newCloudUrls = Object.keys(tokens || {});
-  const prevCloudUrls = Object.keys(pr.store.tokens || {});
-  if (newCloudUrls.length < prevCloudUrls.length) {
-    return prevCloudUrls.filter((v) => !newCloudUrls.includes(v));
-  }
-  return [];
-};
+const _triageCloudUrls = (cloudStoreTokens) => {
+  const cloudUrlsToAdd = [];
+  const cloudUrlsToUpdate = [];
+  const cloudUrlsToRemove = [];
+  const providerTokens = pr.store.tokens;
 
-/**
- * @desc update extendedClouds
- * @param {Object} tokens, contains `[cloudUrl]: token` pairs
- * @param {Array<string>} cloudUrlsToUpdate, list of cloudUrls that has to be updated
- * @param {Array<string>} cloudsUrlsToDelete, list of cloudUrls that has to be updated
- * @private
- */
-const _loadData = function (tokens, cloudUrlsToUpdate, cloudsUrlsToDelete) {
-  if (cloudsUrlsToDelete?.length) {
-    cloudsUrlsToDelete.forEach((url) => {
-      // stop setInterval, just in case and remove EC
-      pr.store.extendedClouds[url].stopUpdateCloudByTimeOut();
-      delete pr.store.extendedClouds[url];
+  Object.keys(providerTokens).forEach((providerUrl) => {
+    if (cloudStoreTokens[providerUrl]) {
+      // provider URL is also in CloudStore set of URLs: if the token has changed,
+      //  it's updated (as far as we're concerned here in ExtendedCloudProvider)
+      if (cloudStoreTokens[providerUrl] !== providerTokens[providerUrl]) {
+        cloudUrlsToUpdate.push(providerUrl);
+      }
+    } else {
+      // provider URL is not in CloudStore set of URLs: removed
+      cloudUrlsToRemove.push(providerUrl);
+    }
+  });
+
+  const curCount = Object.keys(cloudStoreTokens).length;
+  if (
+    cloudUrlsToUpdate.length !== curCount &&
+    cloudUrlsToRemove.length !== curCount
+  ) {
+    // there's at least one new URL (or none) in `currentTokens`
+    Object.keys(cloudStoreTokens).forEach((curUrl) => {
+      if (!providerTokens[curUrl]) {
+        // not a stored/known URL: must be new
+        cloudUrlsToAdd.push(curUrl);
+      }
     });
   }
 
-  const cloudUrls = cloudUrlsToUpdate?.length
-    ? cloudUrlsToUpdate
-    : Object.keys(cloudStore.clouds);
+  return { cloudUrlsToAdd, cloudUrlsToUpdate, cloudUrlsToRemove };
+};
 
-  pr.store.tokens = tokens;
-  cloudUrls.forEach((url) => {
+/**
+ * Update extended clouds in the store.
+ * @param {Object} params
+ * @param {{ [index: string]: string }} params.cloudStoreTokens Map of Cloud URL to token for
+ *  the current set of known Clouds stored on disk.
+ * @param {Array<string>} params.cloudUrlsToAdd List of new cloudUrls to be added
+ * @param {Array<string>} params.cloudUrlsToUpdate List of cloudUrls that have to be updated
+ * @param {Array<string>} params.cloudUrlsToRemove List of cloudUrls that must be removed
+ * @private
+ */
+const _updateStore = function ({
+  cloudStoreTokens,
+  cloudUrlsToAdd,
+  cloudUrlsToUpdate,
+  cloudUrlsToRemove,
+}) {
+  // update ExtendedCloudProvider state to current CloudStore tokens
+  pr.store.tokens = cloudStoreTokens;
+
+  cloudUrlsToRemove.forEach((url) => {
+    // destroy and remove ExtendedCloud
+    pr.store.extendedClouds[url].destroy();
+    delete pr.store.extendedClouds[url];
+  });
+
+  cloudUrlsToAdd.concat(cloudUrlsToUpdate).forEach((url) => {
     const cloud = cloudStore.clouds[url];
-    // if extendedCloud exists - replace extendedCloud.cloud
+
+    // if extendedCloud exists - update extendedCloud.cloud
     if (pr.store.extendedClouds[url]) {
+      // NOTE: updating the EC's Cloud instance will cause the EC to fetch new data,
+      //  IIF the `cloud` is actually a new instance at the same URL; it's not always
+      //  new as the CloudStore listens for changes on each Cloud and triggers the
+      //  `autorun()` Mobx binding in the ExtendedCloudProvider declaration whenever
+      //  that happens, but we still make the assignment just in case it's new and
+      //  leave it to the ExtendedCloud to optimize what it does if the instance is
+      //  the same as it already has
       pr.store.extendedClouds[url].cloud = cloud;
     } else {
       // otherwise create new ExtendedCloud
       const extCl = new ExtendedCloud(cloud);
       // add new EC to store
       pr.store.extendedClouds[url] = extCl;
-      // if it's connected - start fetch data by interval
-      if (extCl.cloud.isConnected()) {
-        extCl.startUpdateCloudByTimeOut();
-      }
     }
   });
-  pr.onChange();
+
+  // NOTE: there's no need to cause a Provider context update if all we did was
+  //  update some ExtendedCloud instances because the store hasn't changed in that
+  //  case -- components using these instances should already be listening for its
+  //  various events to get notified when its data changes
+  if (cloudUrlsToAdd.length > 0 || cloudUrlsToRemove.length > 0) {
+    pr.onChange();
+  }
 };
 
 export const useExtendedCloudData = function () {
@@ -114,21 +180,27 @@ export const ExtendedCloudProvider = function (props) {
   pr.setState = setState;
   // autorun calls on any cloudStore update (to often)
   autorun(() => {
-    const cloudUrlsToUpdate = [];
-    // we need to take stable part to compare and observe
-    // cloud.token, as I understand, is good for that
-    // when we update cloud - we update its token (for now at least, this 'compare' part may be changed in the future)
-    const tokens = Object.keys(cloudStore.clouds).reduce((acc, cloudUrl) => {
-      acc[cloudUrl] = cloudStore.clouds[cloudUrl].token;
-      if (cloudStore.clouds[cloudUrl].token !== pr?.store?.tokens?.[cloudUrl]) {
-        cloudUrlsToUpdate.push(cloudUrl);
-      }
-      return acc;
-    }, {});
-    // compare tokens from cloudStore.clouds and tokens we store at previous change in context
-    if (!isEqual(pr.store.tokens, tokens)) {
-      const cloudsUrlsToDelete = _deleteCloudCheck(tokens);
-      _loadData(tokens, cloudUrlsToUpdate, cloudsUrlsToDelete);
+    // @type {{ [index: string]: string }} Map of Cloud URL to token for
+    //   the new (current) set of known Clouds stored on disk.
+    const cloudStoreTokens = Object.values(cloudStore.clouds).reduce(
+      (acc, cloud) => {
+        acc[cloud.cloudUrl] = cloud.token;
+        return acc;
+      },
+      {}
+    );
+
+    // compare tokens from cloudStore.clouds and tokens in ExtendedCloudProvider state
+    //  at previous change in context
+    if (!isEqual(pr.store.tokens, cloudStoreTokens)) {
+      const { cloudUrlsToAdd, cloudUrlsToUpdate, cloudUrlsToRemove } =
+        _triageCloudUrls(cloudStoreTokens);
+      _updateStore({
+        cloudStoreTokens,
+        cloudUrlsToAdd,
+        cloudUrlsToUpdate,
+        cloudUrlsToRemove,
+      });
     }
   });
 

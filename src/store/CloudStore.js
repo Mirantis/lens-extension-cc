@@ -1,4 +1,10 @@
-import { observable, toJS, makeObservable, extendObservable } from 'mobx';
+import {
+  observable,
+  action,
+  toJS,
+  makeObservable,
+  extendObservable,
+} from 'mobx';
 import { Common } from '@k8slens/extensions';
 import * as rtv from 'rtvjs';
 import { logger } from '../util/logger';
@@ -38,6 +44,10 @@ export class CloudStore extends Common.Store.ExtensionStore {
     Object.keys(this).forEach((key) => (this[key] = defaults[key]));
   }
 
+  // NOTE: this method is not just called when reading from disk; it's also called in the
+  //  sync process between the Main and Renderer threads should code on either thread
+  //  update any of the store's properties
+  @action // prevent mobx from emitting a change event until the function returns
   fromStore(store) {
     const result = rtv.check({ store }, { store: storeTs });
 
@@ -54,18 +64,36 @@ export class CloudStore extends Common.Store.ExtensionStore {
       if (key === 'clouds') {
         // restore from a map of cloudUrl to JSON object -> into a map of cloudUrl
         //  to Cloud instance
-        this[key] = Object.entries(json[key] || {}).reduce(
+        const existingClouds = this.clouds || {};
+        const newClouds = Object.entries(json[key] || {}).reduce(
           (cloudMap, [cloudUrl, cloudJson]) => {
-            const cloud = new Cloud(cloudJson);
-            cloud.addEventListener(
-              CLOUD_EVENTS.DATA_UPDATED,
-              this.onCloudUpdate
-            );
+            let cloud;
+            if (existingClouds[cloudUrl]) {
+              // update existing Cloud with new data instead of creating a new instance
+              //  so that currently-bound objects don't leak
+              cloud = existingClouds[cloudUrl].update(cloudJson);
+            } else {
+              // add new Cloud we don't know about yet
+              cloud = new Cloud(cloudJson);
+              this.listenForChanges(cloud);
+              cloudMap[cloudUrl] = cloud;
+            }
             cloudMap[cloudUrl] = cloud;
             return cloudMap;
           },
           {}
         );
+
+        // make sure we properly remove any old/deleted Clouds
+        Object.keys(existingClouds).forEach((cloudUrl) => {
+          if (!newClouds[cloudUrl]) {
+            this.stopListeningForChanges(existingClouds[cloudUrl]);
+          }
+        });
+
+        // this assignment will implicitly remove any old clouds from the map
+        //  they won't be included in `newClouds`
+        this.clouds = newClouds;
       } else {
         this[key] = json[key];
       }
@@ -95,29 +123,67 @@ export class CloudStore extends Common.Store.ExtensionStore {
   }
 
   /**
+   * Handles a change to any of the Cloud's properties (e.g. tokens were refreshed and now Cloud
+   *  has a new set of tokens, synced namespaces changed, name changed, etc.).
    * @param {Cloud} cloud
    */
   onCloudUpdate = (cloud) => {
+    // NOTE: this event doesn't mean we have a new Cloud instance; it just means
+    //  one or more properties of the Cloud object were changed, and by using
+    //  `extendObservable()` here, we'll trigger the Store to persist to disk,
+    //  thereby capturing the Cloud's latest data in case the user quits Lens
     extendObservable(this.clouds, { [cloud.cloudUrl]: cloud });
   };
 
   /**
+   * Adds a Cloud to this store, notifying listeners bound to the `clouds` observable.
    * @param {Cloud} cloud
+   * @throws {Error} If the cloud already exists in this store (based on URL).
    */
   addCloud(cloud) {
     const { cloudUrl } = cloud;
-    cloud.addEventListener(CLOUD_EVENTS.DATA_UPDATED, this.onCloudUpdate);
+    if (this.clouds[cloudUrl]) {
+      throw new Error(
+        `Store already has an entry for url="${cloudUrl}", existing=${this.clouds[cloudUrl]}, new=${cloud}`
+      );
+    }
+
+    this.listenForChanges(cloud);
     extendObservable(this.clouds, { [cloudUrl]: cloud });
   }
+
   /**
+   * Subscribes to a Cloud's change events to know when it gets updated and should
+   *  be written to disk via this store.
+   * @param {Cloud} cloud
+   */
+  listenForChanges(cloud) {
+    Object.values(CLOUD_EVENTS).forEach((eventName) =>
+      cloud.addEventListener(eventName, this.onCloudUpdate)
+    );
+  }
+
+  /**
+   * Unsubscribes from a Cloud's change events.
+   * @param {Cloud} cloud
+   */
+  stopListeningForChanges(cloud) {
+    Object.values(CLOUD_EVENTS).forEach((eventName) =>
+      cloud.removeEventListener(eventName, this.onCloudUpdate)
+    );
+  }
+
+  /**
+   * Removes a Cloud from this store. Does nothing if this store doesn't have a Cloud
+   *  for this URL.
    * @param {string} cloudUrl
    */
   removeCloud(cloudUrl) {
-    this.clouds[cloudUrl].removeEventListener(
-      CLOUD_EVENTS.DATA_UPDATED,
-      this.onCloudUpdate
-    );
-    delete this.clouds[cloudUrl];
+    const cloud = this.clouds[cloudUrl];
+    if (cloud) {
+      this.stopListeningForChanges(cloud);
+      delete this.clouds[cloudUrl];
+    }
   }
 }
 
