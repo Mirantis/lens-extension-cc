@@ -22,11 +22,12 @@ const hasPassed = function (date) {
 
 /**
  * Formats a date for debugging/logging purposes.
- * @param {Date} date
- * @returns {string} Formatted date, or 'undefined' or 'null' if it's not defined.
+ * @param {Date} [date]
+ * @returns {string|any} Formatted date if `date` was a `Date`; the `date` as it was
+ *  given if it's not a `Date`.
  */
 const logDate = function (date) {
-  if (date) {
+  if (date instanceof Date) {
     const offset = date.getTimezoneOffset() / 60;
     return `${date.getFullYear()}/${`${date.getMonth() + 1}`.padStart(
       2,
@@ -43,7 +44,7 @@ const logDate = function (date) {
     )}.${date.getMilliseconds()} UTC${offset > 0 ? '-' : '+'}${offset}`;
   }
 
-  return `${date}`;
+  return date;
 };
 
 export const CONNECTION_STATUSES = Object.freeze({
@@ -484,22 +485,32 @@ export class Cloud extends EventDispatcher {
   }
 
   /**
-   * @returns {boolean} True if there are credentials, a token, and a valid way
+   * @returns {boolean} True if the Cloud has a token and a valid way
    *  to refresh it if it expires; false otherwise.
    */
   isConnected() {
     return !!this.token && !this.isRefreshTokenExpired();
   }
 
-  /** @returns {boolean} True if the `token` has expired; false otherwise. */
+  /**
+   * @returns {boolean} True if the Cloud doesn't have a `token` or it has expired;
+   *  false otherwise.
+   */
   isTokenExpired() {
-    return !!this.tokenValidTill && hasPassed(this.tokenValidTill);
+    return (
+      !this.token || !this.tokenValidTill || hasPassed(this.tokenValidTill)
+    );
   }
 
-  /** @returns {boolean} True if the `refreshToken` has expired; false otherwise. */
+  /**
+   * @returns {boolean} True if the Cloud doesn't have a `refreshToken` or it has expired;
+   *  false otherwise.
+   */
   isRefreshTokenExpired() {
     return (
-      !!this.refreshTokenValidTill && hasPassed(this.refreshTokenValidTill)
+      !this.refreshToken ||
+      !this.refreshTokenValidTill ||
+      hasPassed(this.refreshTokenValidTill)
     );
   }
 
@@ -611,12 +622,12 @@ export class Cloud extends EventDispatcher {
       id_token: this.token,
       expires_in: this.expiresIn,
       tokenExpiresAt: this.tokenValidTill?.getTime() ?? null,
-      _tokenExpiresAtTime: this.tokenValidTill?.toString() || null,
+      _tokenValidTill: this.tokenValidTill?.toString() || null,
 
       refresh_token: this.refreshToken,
       refresh_expires_in: this.refreshExpiresIn,
       refreshExpiresAt: this.refreshTokenValidTill?.getTime() ?? null,
-      _refreshExpiresAtTime: this.refreshTokenValidTill?.toString() || null,
+      _refreshValidTill: this.refreshTokenValidTill?.toString() || null,
     };
   }
 

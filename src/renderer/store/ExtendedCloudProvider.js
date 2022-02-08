@@ -26,8 +26,10 @@ class ExtendedCloudProviderStore extends ProviderStore {
             rtv.HASH_MAP,
             { $values: [rtv.CLASS_OBJECT, { ctor: ExtendedCloud }] },
           ],
-          // map of cloudUrl -> Cloud access token
-          tokens: [rtv.HASH_MAP, { $values: rtv.STRING }],
+          // map of cloudUrl -> Cloud access token (could be `null` if the Cloud
+          //  doesn't have any tokens yet, or its tokens get reset after
+          //  getting disconnected)
+          tokens: [rtv.HASH_MAP, { $values: [rtv.EXPECTED, rtv.STRING] }],
         },
       }
     );

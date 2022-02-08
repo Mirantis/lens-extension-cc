@@ -76,7 +76,6 @@ export class CloudStore extends Common.Store.ExtensionStore {
               // add new Cloud we don't know about yet
               cloud = new Cloud(cloudJson);
               this.listenForChanges(cloud);
-              cloudMap[cloudUrl] = cloud;
             }
             cloudMap[cloudUrl] = cloud;
             return cloudMap;
