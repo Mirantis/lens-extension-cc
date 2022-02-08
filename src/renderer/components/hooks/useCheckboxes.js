@@ -1,18 +1,25 @@
 import { checkValues } from '../TriStateCheckbox/TriStateCheckbox';
 import { useState } from 'react';
 
-const checkboxesStateObj = (extCloud) => {
+const makeCheckboxesStateObj = (extCloud) => {
   return (extCloud?.namespaces || []).reduce((acc, namespace) => {
     acc[namespace.name] = false;
     return acc;
   }, {});
 };
-
-export function useCheckboxes(extendedCloud) {
-  const [checkboxesState, setCheckboxesState] = useState({
+export const makeCheckboxesInitialState = (extCloud) => {
+  return {
     parent: false,
-    children: checkboxesStateObj(extendedCloud),
-  });
+    children: makeCheckboxesStateObj(extCloud),
+  };
+};
+
+/**
+ * @param {boolean} initialState.parent
+ * @param {Object} initialState.children {[key]: boolean, ....} pairs. Mainly it's result of makeCheckboxesStateObj
+ */
+export function useCheckboxes(initialState) {
+  const [checkboxesState, setCheckboxesState] = useState(initialState);
 
   // set parent checkbox state based on changes of children checkboxes
   const setParentCheckboxState = (children) => {
@@ -39,23 +46,6 @@ export function useCheckboxes(extendedCloud) {
     return newChildren;
   };
 
-  const checkBoxChangeHandler = (name) => {
-    if (!name) {
-      setCheckboxesState({
-        parent: !checkboxesState.parent,
-        children: getNewChildren(!checkboxesState.parent, checkboxesState),
-      });
-    } else {
-      const newChildren = { ...checkboxesState.children };
-      newChildren[name] = !checkboxesState.children[name];
-
-      setCheckboxesState({
-        children: newChildren,
-        parent: setParentCheckboxState(newChildren, checkboxesState),
-      });
-    }
-  };
-
   const getParentCheckboxValue = () => {
     const childrenCheckboxes = Object.values(checkboxesState.children);
 
@@ -79,9 +69,38 @@ export function useCheckboxes(extendedCloud) {
       : checkValues.UNCHECKED;
   };
 
+  /**
+   *
+   * @param {string?} name has to be present for children (optional for parent)
+   * @param {boolean?} isParent has to be true for parent.
+   * @return {string} one of checkValues
+   */
+  const getCheckboxValue = ({ name, isParent }) =>
+    isParent ? getParentCheckboxValue() : getChildrenCheckboxValue(name);
+
+  /**
+   * @param {string?} name has to be present for children (optional for parent)
+   * @param {boolean?} isParent has to be true for parent.
+   */
+  const setCheckboxValue = ({ name, isParent }) => {
+    if (isParent) {
+      setCheckboxesState({
+        parent: !checkboxesState.parent,
+        children: getNewChildren(!checkboxesState.parent, checkboxesState),
+      });
+    } else {
+      const newChildren = { ...checkboxesState.children };
+      newChildren[name] = !checkboxesState.children[name];
+
+      setCheckboxesState({
+        children: newChildren,
+        parent: setParentCheckboxState(newChildren, checkboxesState),
+      });
+    }
+  };
+
   return {
-    getChildrenCheckboxValue,
-    parentCheckboxValue: getParentCheckboxValue(),
-    checkBoxChangeHandler,
+    getCheckboxValue,
+    setCheckboxValue,
   };
 }

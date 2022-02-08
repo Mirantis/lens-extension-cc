@@ -7,7 +7,7 @@ import { AdditionalInfoRows } from './AdditionalInfoRows';
 import { connectionStatuses, contextMenus } from '../../../strings';
 import { EXTENDED_CLOUD_EVENTS } from '../../../common/ExtendedCloud';
 import { TriStateCheckbox } from '../TriStateCheckbox/TriStateCheckbox';
-import { useCheckboxes } from '../hooks/useCheckboxes';
+import { useCheckboxes, makeCheckboxesInitialState } from '../hooks/useCheckboxes';
 import { openBrowser } from '../../../util/netUtil';
 
 const { Icon, MenuItem, MenuActions } = Renderer.Component;
@@ -153,11 +153,9 @@ const namespaceMenuItems = [
 ];
 
 export const EnhancedTableRow = ({ extendedCloud, withCheckboxes }) => {
-  const {
-    checkBoxChangeHandler,
-    getChildrenCheckboxValue,
-    parentCheckboxValue,
-  } = useCheckboxes(extendedCloud);
+  const { getCheckboxValue, setCheckboxValue } = useCheckboxes(
+    makeCheckboxesInitialState(extendedCloud)
+  );
 
   const [onOpen, toggleMenu] = useState(false);
   const [isOpenFirstLevel, setIsOpenFirstLevel] = useState(false);
@@ -232,14 +230,11 @@ export const EnhancedTableRow = ({ extendedCloud, withCheckboxes }) => {
    */
   const makeCell = (name, isParent) => {
     if (withCheckboxes) {
-      const handlerValue = isParent ? null : name;
       return (
         <TriStateCheckbox
           label={name}
-          onChange={() => checkBoxChangeHandler(handlerValue)}
-          value={
-            isParent ? parentCheckboxValue : getChildrenCheckboxValue(name)
-          }
+          onChange={() => setCheckboxValue({ name, isParent })}
+          value={getCheckboxValue({ name, isParent })}
         />
       );
     }

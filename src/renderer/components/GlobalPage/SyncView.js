@@ -6,7 +6,7 @@ import { AddCloudInstance } from './AddCloudInstance.js';
 import { useExtendedCloudData } from '../../store/ExtendedCloudProvider';
 import { WelcomeView } from './WelcomeView';
 import { cloudStore } from '../../../store/CloudStore';
-import { managementClusters } from '../../../strings';
+import { syncView } from '../../../strings';
 import { EnhancedTable } from '../EnhancedTable/EnhancedTable';
 
 const {
@@ -83,24 +83,24 @@ export const SyncView = () => {
     return (
       <Content>
         <ContentTop>
-          <Title>{managementClusters.title()}</Title>
+          <Title>{syncView.title()}</Title>
           <TopButtonsWrapper>
             {isSelectiveSyncView ? (
               <>
                 <CancelButton
                   plain
-                  label={managementClusters.cancelButtonLabel()}
+                  label={syncView.cancelButtonLabel()}
                   onClick={() => setIsSelectiveSyncView(!isSelectiveSyncView)}
                 />
                 <Button
                   primary
-                  label={managementClusters.synchroniseProjectsButtonLabel()}
+                  label={syncView.synchronizeProjectsButtonLabel()}
                 />
               </>
             ) : (
               <Button
                 variant="outlined"
-                label={managementClusters.syncButtonLabel()}
+                label={syncView.syncButtonLabel()}
                 onClick={() => setIsSelectiveSyncView(!isSelectiveSyncView)}
               />
             )}
@@ -118,7 +118,7 @@ export const SyncView = () => {
           <ButtonWrapper>
             <Button
               primary
-              label={managementClusters.connectButtonLabel()}
+              label={syncView.connectButtonLabel()}
               onClick={openAddCloud}
             />
           </ButtonWrapper>

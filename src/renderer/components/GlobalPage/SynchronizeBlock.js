@@ -9,7 +9,10 @@ import {
 import { Accordion } from '../Accordion/Accordion';
 import { layout } from '../styles';
 import { synchronizeBlock } from '../../../strings';
-import { useCheckboxes } from '../hooks/useCheckboxes';
+import {
+  useCheckboxes,
+  makeCheckboxesInitialState,
+} from '../hooks/useCheckboxes';
 
 const { Notifications, Button, Icon } = Renderer.Component;
 
@@ -88,14 +91,14 @@ const SortButton = styled.button`
 `;
 
 export const SynchronizeBlock = ({ extendedCloud, onAdd }) => {
-  const {
-    checkBoxChangeHandler,
-    getChildrenCheckboxValue,
-    parentCheckboxValue,
-  } = useCheckboxes(extendedCloud);
+  const { setCheckboxValue, getCheckboxValue } = useCheckboxes(
+    makeCheckboxesInitialState(extendedCloud)
+  );
 
   // @type {object} sorted object of projects
-  const [projectsList, setProjectsList] = useState(extendedCloud.namespaces);
+  const [projectsList, setProjectsList] = useState([
+    ...(extendedCloud.namespaces || []),
+  ]);
 
   // @type {string} sort by name order
   const [nextSortType, setNextSortType] = useState('');
@@ -122,7 +125,7 @@ export const SynchronizeBlock = ({ extendedCloud, onAdd }) => {
     const { cloud } = extendedCloud;
     const allNamespaces = extendedCloud.namespaces.map(({ name }) => name);
     const namespaces = allNamespaces.filter(
-      (name) => getChildrenCheckboxValue(name) === checkValues.CHECKED
+      (name) => getCheckboxValue({ name }) === checkValues.CHECKED
     );
 
     if (!namespaces.length) {
@@ -148,8 +151,8 @@ export const SynchronizeBlock = ({ extendedCloud, onAdd }) => {
         <ProjectsHead>
           <TriStateCheckbox
             label={synchronizeBlock.checkAllCheckboxLabel()}
-            onChange={() => checkBoxChangeHandler(false)}
-            value={parentCheckboxValue}
+            onChange={() => setCheckboxValue({ isParent: true })}
+            value={getCheckboxValue({ isParent: true })}
           />
           <SortButton
             type="button"
@@ -173,9 +176,11 @@ export const SynchronizeBlock = ({ extendedCloud, onAdd }) => {
                 <Accordion
                   title={
                     <TriStateCheckbox
-                      value={getChildrenCheckboxValue(namespace.name)}
+                      value={getCheckboxValue({ name: namespace.name })}
                       label={namespace.name}
-                      onChange={() => checkBoxChangeHandler(namespace.name)}
+                      onChange={() =>
+                        setCheckboxValue({ name: namespace.name })
+                      }
                     />
                   }
                 >
