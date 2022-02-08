@@ -6,6 +6,7 @@ import { layout } from '../styles';
 import { AdditionalInfoRows } from './AdditionalInfoRows';
 import { connectionStatuses, contextMenus } from '../../../strings';
 import { EXTENDED_CLOUD_EVENTS } from '../../../common/ExtendedCloud';
+import { openBrowser } from '../../../util/netUtil';
 
 const { Icon, MenuItem, MenuActions } = Renderer.Component;
 
@@ -97,9 +98,11 @@ const cloudMenuItems = [
     onClick: () => {},
   },
   {
-    title: `(WIP) ${contextMenus.cloud.openInBrowser()}`,
+    title: `${contextMenus.cloud.openInBrowser()}`,
     name: 'openInBrowser',
-    onClick: () => {},
+    onClick: (extendedCloud) => {
+      openBrowser(extendedCloud.cloud.cloudUrl);
+    },
   },
 ];
 const namespaceMenuItems = [
@@ -205,7 +208,10 @@ export const EnhancedTableRow = ({ extendedCloud }) => {
             <MenuActions onOpen={onOpen}>
               {cloudMenuItems.map((item) => {
                 return (
-                  <MenuItem key={`cloud-${item.name}`} onClick={item.onClick}>
+                  <MenuItem
+                    key={`cloud-${item.name}`}
+                    onClick={() => item.onClick(extendedCloud)}
+                  >
                     {item.title}
                   </MenuItem>
                 );
