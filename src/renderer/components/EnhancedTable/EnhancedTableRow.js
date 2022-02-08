@@ -99,7 +99,9 @@ const cloudMenuItems = [
   {
     title: `(WIP) ${contextMenus.cloud.openInBrowser()}`,
     name: 'openInBrowser',
-    onClick: () => {},
+    onClick: (url) => {
+      require('electron').shell.openExternal(url);
+    },
   },
 ];
 const namespaceMenuItems = [
@@ -205,7 +207,10 @@ export const EnhancedTableRow = ({ extendedCloud }) => {
             <MenuActions onOpen={onOpen}>
               {cloudMenuItems.map((item) => {
                 return (
-                  <MenuItem key={`cloud-${item.name}`} onClick={item.onClick}>
+                  <MenuItem
+                    key={`cloud-${item.name}`}
+                    onClick={() => item.onClick(extendedCloud.cloud.cloudUrl)}
+                  >
                     {item.title}
                   </MenuItem>
                 );
