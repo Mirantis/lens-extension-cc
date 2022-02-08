@@ -81,11 +81,11 @@ const getStatus = (isCloudConnected) => {
       };
 };
 
-const cloudMenuItems = [
+const getCloudMenuItems = (extendedCloud) =>  [
   {
-    title: `(WIP) ${contextMenus.cloud.reconnect()}`,
+    title: contextMenus.cloud.reconnect(),
     name: 'reconnect',
-    onClick: () => {},
+    onClick: () => extendedCloud.cloud.connect(),
   },
   {
     title: `(WIP) ${contextMenus.cloud.remove()}`,
@@ -182,6 +182,7 @@ export const EnhancedTableRow = ({ extendedCloud }) => {
 
   const isCloudConnected = extendedCloud.cloud.isConnected();
   const { cloudStatus, namespaceStatus } = getStatus(isCloudConnected);
+  const cloudMenuItems = getCloudMenuItems(extendedCloud);
 
   return (
     <>
