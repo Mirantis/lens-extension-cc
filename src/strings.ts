@@ -311,7 +311,7 @@ export const extendedCloud: Dict = {
   },
 };
 
-export const connectionStatuses = {
+export const connectionStatuses: Dict = {
   cloud: {
     connected: () => 'Connected',
     disconnected: () => 'Disconnected',
@@ -319,5 +319,23 @@ export const connectionStatuses = {
   namespace: {
     connected: () => 'Synced',
     disconnected: () => 'Not synced',
+  },
+};
+
+export const contextMenus: Dict = {
+  cloud: {
+    reconnect: () => 'Reconnect',
+    remove: () => 'Remove',
+    sync: () => 'Sync now',
+    openInBrowser: () => 'Open in browser',
+  },
+  namespace: {
+    sync: () => 'Sync now',
+    openInBrowser: () => 'Open in browser',
+    createCluster: () => 'Create cluster',
+    createSHHKey: () => 'Create SHH Key',
+    createCredential: () => 'Create Credential',
+    createLicense: () => 'Create RHEL License',
+    createProxy: () => 'Create Proxy',
   },
 };
