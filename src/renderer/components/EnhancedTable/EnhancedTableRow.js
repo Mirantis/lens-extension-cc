@@ -81,7 +81,7 @@ const getStatus = (isCloudConnected) => {
       };
 };
 
-const getCloudMenuItems = (extendedCloud) =>  [
+const getCloudMenuItems = (extendedCloud) => [
   {
     title: contextMenus.cloud.reconnect(),
     name: 'reconnect',
