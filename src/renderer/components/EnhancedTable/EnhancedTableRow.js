@@ -119,7 +119,7 @@ const cloudMenuItems = [
   {
     title: contextMenus.cloud.reconnect(),
     name: 'reconnect',
-    onClick: (extendedCloud) => extendedCloud.cloud.connect(),
+    onClick: (extendedCloud) => extendedCloud.reconnect(),
   },
   {
     title: `(WIP) ${contextMenus.cloud.remove()}`,
