@@ -164,9 +164,9 @@ export const EnhancedTableRow = ({ extendedCloud, withCheckboxes }) => {
 
   const [onOpen, toggleMenu] = useState(false);
   const [isOpenFirstLevel, setIsOpenFirstLevel] = useState(false);
-  const [actualNamespaces, setActualNamespaces] = useState([
-    ...(extendedCloud[usedNamespaces] || []),
-  ]);
+  const [actualNamespaces, setActualNamespaces] = useState(
+    extendedCloud[usedNamespaces]
+  );
   const [openedSecondLevelListIndex, setOpenedSecondLevelListIndex] = useState(
     []
   );
