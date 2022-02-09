@@ -13,11 +13,11 @@ import { EventDispatcher } from './EventDispatcher';
 
 /**
  * Determines if a date has passed.
- * @param {Date} date
- * @returns {boolean} true if the date has passed; false otherwise.
+ * @param {Date} [date]
+ * @returns {boolean} True if the date has passed or is not a `Date`; false otherwise.
  */
 const hasPassed = function (date) {
-  return date.getTime() - Date.now() < 0;
+  return date instanceof Date ? date.getTime() - Date.now() < 0 : false;
 };
 
 /**
@@ -48,8 +48,11 @@ const logDate = function (date) {
 };
 
 export const CONNECTION_STATUSES = Object.freeze({
+  /** Cloud has a config object and an API token, and the ability to refresh it when it expires. */
   CONNECTED: 'connected',
+  /** Cloud does not have a token nor the ability to get a new one automatically. */
   DISCONNECTED: 'disconnected',
+  /** Cloud is actively obtaining new API tokens from the Mgmt Cluster. */
   CONNECTING: 'connecting',
 });
 
@@ -87,6 +90,12 @@ export const CLOUD_EVENTS = Object.freeze({
   PROP_CHANGE: 'propChange',
 });
 
+/**
+ * Loads the config object from the Mgmt Cluster at the given URL.
+ * @param {string} url
+ * @returns {Promise<Object>} The Mgmt cluster's config object as JSON if successful;
+ *  rejects with an `Error` if not.
+ */
 const _loadConfig = async (url) => {
   const res = await request(
     `${url}/config.js`,
@@ -192,8 +201,9 @@ export class Cloud extends EventDispatcher {
     let _connectError = null;
     let _connecting = false;
 
-    /** name is the "friendly name" given to the mgmt cluster by
-     * the user when they will add new mgmt clusters to the extension
+    /**
+     * @member {string} name The "friendly name" given to the mgmt cluster by
+     * the user when they will add new mgmt clusters to the extension.
      */
     Object.defineProperty(this, 'name', {
       enumerable: true,
@@ -210,8 +220,9 @@ export class Cloud extends EventDispatcher {
       },
     });
 
-    /** is true if the user chooses to sync all namespaces in a mgmt cluster,
-     * or false if they pick individual namespaces.
+    /**
+     * @member {boolean} syncAll True if the user chooses to sync all namespaces in
+     *  a mgmt cluster, or false if they pick individual namespaces.
      */
     Object.defineProperty(this, 'syncAll', {
       enumerable: true,
@@ -228,8 +239,10 @@ export class Cloud extends EventDispatcher {
       },
     });
 
-    /** is a list of namespace names in the mgmt cluster that should be synced.
-     *  If syncAll is true, this list is ignored and all existing/future namespaces are synced.
+    /**
+     * @member {Array<string>} syncNamespaces A list of namespace names in the mgmt
+     *  cluster that should be synced. If syncAll is true, this list is ignored and
+     *  all existing/future namespaces are synced.
      */
     Object.defineProperty(this, 'syncNamespaces', {
       enumerable: true,
@@ -249,21 +262,9 @@ export class Cloud extends EventDispatcher {
       },
     });
 
-    Object.defineProperty(this, 'status', {
-      enumerable: false, // not persisted in JSON
-      get() {
-        if (this.connecting) {
-          return CONNECTION_STATUSES.CONNECTING;
-        }
-        if (this.isConnected()) {
-          return CONNECTION_STATUSES.CONNECTED;
-        }
-        return CONNECTION_STATUSES.DISCONNECTED;
-      },
-    });
-
+    /** @member {boolean} connecting True if this Cloud is currently trying to connect to MCC. */
     Object.defineProperty(this, 'connecting', {
-      enumerable: false, // not persisted in JSON
+      enumerable: true,
       get() {
         return _connecting;
       },
@@ -277,7 +278,7 @@ export class Cloud extends EventDispatcher {
 
     /** @member {string} connectError */
     Object.defineProperty(this, 'connectError', {
-      enumerable: false, // NOTE: we make this non-enumerable so it doesn't get persisted to JSON
+      enumerable: true,
       get() {
         return _connectError;
       },
@@ -296,17 +297,16 @@ export class Cloud extends EventDispatcher {
       },
     });
 
-    /** @member {Object} config */
+    /** @member {Object} config Mgmt cluster config object. */
     Object.defineProperty(this, 'config', {
-      enumerable: false, // NOTE: we make this non-enumerable so it doesn't get persisted to JSON
+      enumerable: true,
       get() {
         return _config;
       },
       set(newValue) {
         if (newValue !== _config) {
           _config = newValue || null;
-          // NOTE: the config is only used internally, so we don't notify listeners
-          //  when it changes
+          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this); // affects status
         }
       },
     });
@@ -484,34 +484,50 @@ export class Cloud extends EventDispatcher {
     this.emptyEventQueue();
   }
 
-  /**
-   * @returns {boolean} True if the Cloud has a token and a valid way
-   *  to refresh it if it expires; false otherwise.
-   */
-  isConnected() {
-    return !!this.token && !this.isRefreshTokenExpired();
+  /** @member {string} status One of the `CONNECTION_STATUSES` enum values. */
+  get status() {
+    if (this.connecting) {
+      return CONNECTION_STATUSES.CONNECTING;
+    }
+
+    // we're not truly connected to the Cloud unless there's no error, we have
+    //  a config (can't make API calls without it), we have an API token, and'
+    //  we have the ability to refresh it when it expires
+    if (!this.connectError && this.token && this.refreshTokenValid) {
+      // if all we're missing is the config, claim we're "connecting" because we
+      //  most likely just restored this Cloud from disk after opening Lens, and
+      //  we just haven't attempted to fetch the config yet as part of a data fetch
+      if (!this.config) {
+        return CONNECTION_STATUSES.CONNECTING;
+      }
+
+      return CONNECTION_STATUSES.CONNECTED;
+    }
+
+    return CONNECTION_STATUSES.DISCONNECTED;
   }
 
   /**
-   * @returns {boolean} True if the Cloud doesn't have a `token` or it has expired;
-   *  false otherwise.
+   * @member {boolean} connected True if the Cloud's `status` is
+   *  `CONNECTION_STATUSES.CONNECTED`; false otherwise.
    */
-  isTokenExpired() {
-    return (
-      !this.token || !this.tokenValidTill || hasPassed(this.tokenValidTill)
-    );
+  get connected() {
+    return this.status === CONNECTION_STATUSES.CONNECTED;
   }
 
   /**
-   * @returns {boolean} True if the Cloud doesn't have a `refreshToken` or it has expired;
+   * @member {boolean} tokenValid True if the Cloud has a token that has not expired.
+   */
+  get tokenValid() {
+    return !!this.token && !hasPassed(this.tokenValidTill);
+  }
+
+  /**
+   * @returns {boolean} True if the Cloud has a `refreshToken` and it has not expired;
    *  false otherwise.
    */
-  isRefreshTokenExpired() {
-    return (
-      !this.refreshToken ||
-      !this.refreshTokenValidTill ||
-      hasPassed(this.refreshTokenValidTill)
-    );
+  get refreshTokenValid() {
+    return !!this.refreshToken && !hasPassed(this.refreshTokenValidTill);
   }
 
   /**
@@ -529,11 +545,6 @@ export class Cloud extends EventDispatcher {
 
     // tokens are tied to the user, so clear that too
     this.username = null;
-  }
-
-  /** Clears all data. */
-  reset() {
-    this.resetTokens();
   }
 
   /**
@@ -638,25 +649,49 @@ export class Cloud extends EventDispatcher {
       this.token
         ? `"${this.token.slice(0, 15)}..${this.token.slice(-15)}"`
         : this.token
-    }, validTill: ${
+    }, valid: ${this.tokenValid}, validTill: ${
       validTillStr ? `"${validTillStr}"` : validTillStr
-    }, expired: ${this.isTokenExpired()}, refreshExpired: ${this.isRefreshTokenExpired()}, connected: ${this.isConnected()}, connectError: ${
+    }, refreshValid: ${this.refreshTokenValid}, status: "${
+      this.status
+    }", connectError: ${
       this.connectError ? `"${this.connectError}"` : this.connectError
     }}`;
   }
 
+  /**
+   * Loads the Cloud's config object. On failure, the promise still succeeds, but
+   *  the `connectError` property is updated with an error message.
+   * @returns {Promise} This promise always succeeds.
+   */
   async loadConfig() {
     try {
       this.config = await _loadConfig(this.cloudUrl);
-    } catch (error) {
-      this.connectError = error;
+      this.connectError = null;
+    } catch (err) {
+      this.connectError = err;
+      logger.error(
+        'Cloud.loadConfig()',
+        `Failed to get config, error="${err?.message || err}", cloud=${this}`
+      );
     }
   }
 
+  /**
+   * Connects to the Cloud, obtaining the `config` and API tokens.
+   *
+   * __WARNING:__ This method returns before the connection is established because
+   *  it must wait for the user to go through SSO steps in their browser. Subscribe
+   *  to `STATUS_CHANGE` events to get notified when the connection status has changed,
+   *  and use the `status` property to know if the Cloud is now connected.
+   *
+   * @returns {Promise} This promise always succeeds, and returns __BEFORE__ the
+   *  entire process is complete, per WARNING above.
+   */
   async connect() {
     if (this.connecting) {
       return;
     }
+
     // set initial values
     this.connecting = true;
     this.connectError = null;
@@ -670,12 +705,12 @@ export class Cloud extends EventDispatcher {
       try {
         ssoUtil.startAuthorization({ config: this.config, state });
       } catch (err) {
-        logger.error(
-          'Cloud.connect()',
-          `Failed to start SSO authorization, error="${err.message}"`
-        );
         this.connectError = err;
         this.connecting = false;
+        logger.error(
+          'Cloud.connect() => ssoUtil.startAuthorization',
+          `Failed to start SSO authorization, error="${err.message}", cloud=${this}`
+        );
         return;
       }
 
@@ -693,7 +728,7 @@ export class Cloud extends EventDispatcher {
         } catch (err) {
           logger.error(
             'Cloud.connect => ssoUtil.finishAuthorization',
-            `Failed to finish SSO authorization, error="${err.message}"`
+            `Failed to finish SSO authorization, error="${err.message}", cloud=${this}`
           );
           this.connectError = err;
           this.resetTokens();
@@ -709,8 +744,13 @@ export class Cloud extends EventDispatcher {
   }
 
   disconnect() {
+    if (this.connecting) {
+      throw new Error('Cannot disconnect while trying to connect');
+    }
+
     this.config = null;
     this.connectError = null;
+    this.connecting = false;
     this.resetTokens();
   }
 }

@@ -11,6 +11,7 @@ import {
   useCheckboxes,
   makeCheckboxesInitialState,
 } from '../hooks/useCheckboxes';
+import { CONNECTION_STATUSES } from '../../../common/Cloud';
 import { openBrowser } from '../../../util/netUtil';
 
 const { Icon, MenuItem, MenuActions } = Renderer.Component;
@@ -72,24 +73,46 @@ const colorGreen = {
   color: 'var(--colorSuccess)',
 };
 
+const colorYellow = {
+  color: 'var(--colorWarning)',
+};
+
 const colorRed = {
   color: 'var(--colorError)',
 };
 
 /**
- * @param {boolean} isCloudConnected
- * @return {{cloudStatus: string, namespaceStatus: string}}
+ * Determines the connection status of the Cloud.
+ * @param {Cloud} cloud
+ * @return {{cloudStatus: string, namespaceStatus: string, connectColor: Object}}
+ *  where `cloudStatus` and `namespaceStatus` are labels, and `connectColor` is
+ *  a style object to apply to the label.
  */
-const getStatus = (isCloudConnected) => {
-  return isCloudConnected
-    ? {
+const getStatus = (cloud) => {
+  switch (cloud.status) {
+    case CONNECTION_STATUSES.CONNECTED:
+      return {
         cloudStatus: connectionStatuses.cloud.connected(),
         namespaceStatus: connectionStatuses.namespace.connected(),
-      }
-    : {
+        connectColor: colorGreen,
+      };
+
+    case CONNECTION_STATUSES.CONNECTING:
+      return {
+        cloudStatus: connectionStatuses.cloud.connecting(),
+        // NOTE: namespace is disconnected until Cloud is connected
+        namespaceStatus: connectionStatuses.namespace.disconnected(),
+        connectColor: colorYellow,
+      };
+
+    case CONNECTION_STATUSES.DISCONNECTED: // fall-through
+    default:
+      return {
         cloudStatus: connectionStatuses.cloud.disconnected(),
         namespaceStatus: connectionStatuses.namespace.disconnected(),
+        connectColor: colorRed,
       };
+  }
 };
 
 const cloudMenuItems = [
@@ -198,8 +221,9 @@ export const EnhancedTableRow = ({ extendedCloud, withCheckboxes }) => {
     }
   };
 
-  const isCloudConnected = extendedCloud.cloud.isConnected();
-  const { cloudStatus, namespaceStatus } = getStatus(isCloudConnected);
+  const { cloudStatus, namespaceStatus, connectColor } = getStatus(
+    extendedCloud.cloud
+  );
 
   const renderRestOfRows = (namespace) =>
     withCheckboxes ? (
@@ -265,7 +289,7 @@ export const EnhancedTableRow = ({ extendedCloud, withCheckboxes }) => {
         {withCheckboxes ? null : (
           <>
             <EnhTableRowCell>{extendedCloud.cloud.username}</EnhTableRowCell>
-            <EnhTableRowCell style={isCloudConnected ? colorGreen : colorRed}>
+            <EnhTableRowCell style={connectColor}>
               {cloudStatus}
             </EnhTableRowCell>
             <EnhTableRowCell isRightAligned>

@@ -120,7 +120,7 @@ export async function cloudLogout(cloud) {
  */
 export async function cloudRequest({ cloud, method, entity, args }) {
   // NOTE: it's useless to fetch if we don't have a token, or we can't refresh it
-  if (!cloud.isConnected()) {
+  if (!cloud.connected) {
     cloud.resetTokens();
     return {
       cloud,
