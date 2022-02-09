@@ -21,7 +21,7 @@ const setParentCheckboxState = (children) => {
  * @return {Object} {[namespaceName]: boolean}
  */
 const makeCheckboxesStateObj = (extCloud, syncedNamespaces) => {
-  const syncedNamespacesNames = syncedNamespaces.map((sn) => sn.name)
+  const syncedNamespacesNames = syncedNamespaces.map((sn) => sn.name);
   return (extCloud?.namespaces || []).reduce((acc, namespace) => {
     acc[namespace.name] = syncedNamespacesNames.includes(namespace.name);
     return acc;
@@ -34,7 +34,7 @@ const makeCheckboxesStateObj = (extCloud, syncedNamespaces) => {
  * @return {{parent: (boolean), children: Object}}
  */
 export const makeCheckboxesInitialState = (extCloud, syncedNamespaces = []) => {
-  const children = makeCheckboxesStateObj(extCloud, syncedNamespaces)
+  const children = makeCheckboxesStateObj(extCloud, syncedNamespaces);
   return {
     parent: setParentCheckboxState(children),
     children,
