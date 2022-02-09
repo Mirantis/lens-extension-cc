@@ -81,11 +81,11 @@ const getStatus = (isCloudConnected) => {
       };
 };
 
-const getCloudMenuItems = (extendedCloud) => [
+const cloudMenuItems = [
   {
     title: contextMenus.cloud.reconnect(),
     name: 'reconnect',
-    onClick: () => extendedCloud.cloud.connect(),
+    onClick: (extendedCloud) => extendedCloud.cloud.connect(),
   },
   {
     title: `(WIP) ${contextMenus.cloud.remove()}`,
@@ -98,13 +98,14 @@ const getCloudMenuItems = (extendedCloud) => [
     onClick: () => {},
   },
   {
-    title: `${contextMenus.cloud.openInBrowser()}`,
+    title: contextMenus.cloud.openInBrowser(),
     name: 'openInBrowser',
     onClick: (extendedCloud) => {
       openBrowser(extendedCloud.cloud.cloudUrl);
     },
   },
 ];
+
 const namespaceMenuItems = [
   {
     title: `(WIP) ${contextMenus.namespace.sync()}`,
@@ -182,7 +183,6 @@ export const EnhancedTableRow = ({ extendedCloud }) => {
 
   const isCloudConnected = extendedCloud.cloud.isConnected();
   const { cloudStatus, namespaceStatus } = getStatus(isCloudConnected);
-  const cloudMenuItems = getCloudMenuItems(extendedCloud);
 
   return (
     <>
