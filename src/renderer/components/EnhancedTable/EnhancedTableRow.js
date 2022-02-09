@@ -83,9 +83,9 @@ const getStatus = (isCloudConnected) => {
 
 const cloudMenuItems = [
   {
-    title: `(WIP) ${contextMenus.cloud.reconnect()}`,
+    title: contextMenus.cloud.reconnect(),
     name: 'reconnect',
-    onClick: () => {},
+    onClick: (extendedCloud) => extendedCloud.cloud.connect(),
   },
   {
     title: `(WIP) ${contextMenus.cloud.remove()}`,
@@ -98,13 +98,14 @@ const cloudMenuItems = [
     onClick: () => {},
   },
   {
-    title: `${contextMenus.cloud.openInBrowser()}`,
+    title: contextMenus.cloud.openInBrowser(),
     name: 'openInBrowser',
     onClick: (extendedCloud) => {
       openBrowser(extendedCloud.cloud.cloudUrl);
     },
   },
 ];
+
 const namespaceMenuItems = [
   {
     title: `(WIP) ${contextMenus.namespace.sync()}`,
