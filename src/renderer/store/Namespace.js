@@ -1,5 +1,6 @@
 import * as rtv from 'rtvjs';
 import { Cluster } from './Cluster';
+import { Credential } from './Credential';
 
 /**
  * MCC project/namespace.
@@ -99,18 +100,10 @@ export class Namespace {
         return _credentials;
       },
       set(newValue) {
-        // TODO: update the shape to check for an Credential class instance
         rtv.verify(
           { credentials: newValue },
           {
-            credentials: [
-              rtv.EXPECTED,
-              {
-                awscredential: [[rtv.OBJECT]],
-                byocredential: [[rtv.OBJECT]],
-                openstackcredential: [[rtv.OBJECT]],
-              },
-            ],
+            credentials: [rtv.CLASS_OBJECT, { ctor: Credential }],
           }
         );
         if (newValue !== _credentials) {

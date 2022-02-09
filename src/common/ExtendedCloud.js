@@ -4,6 +4,8 @@ import { filter, flatten } from 'lodash';
 import { cloudRequest, extractJwtPayload } from '../renderer/auth/authUtil';
 import * as strings from '../strings';
 import { Namespace } from '../renderer/store/Namespace';
+import { Credential } from '../renderer/store/Credential';
+
 import { logger } from '../util/logger';
 import { Cluster } from '../renderer/store/Cluster';
 import { EventDispatcher } from './EventDispatcher';
@@ -121,6 +123,7 @@ const _fetchCredentials = async function (cloud, namespaces) {
           tokensRefreshed = tokensRefreshed || refreshed;
 
           const items = _deserializeCredentialsList(body);
+
           return {
             items,
             error: error || items.error,
@@ -149,12 +152,8 @@ const _fetchCredentials = async function (cloud, namespaces) {
     } = val;
     if (acc[nsName]) {
       acc[nsName][credentialType] = items;
-      acc[nsName].allCredentialsCount += items.length;
     } else {
-      acc[nsName] = {
-        [credentialType]: items,
-        allCredentialsCount: items.length,
-      };
+      acc[nsName] = new Credential({ [credentialType]: items }, nsName);
     }
     return acc;
   }, {});
