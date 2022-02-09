@@ -50,9 +50,10 @@ export const EnhancedTable = ({ extendedClouds, isSelectiveSyncView }) => {
       <EnhancedTableHead sortBy={sortBy} headerValues={headCellValue} />
       <tbody>
         {sortData(extendedClouds, sortedBy, order, path).map((url) => {
+          const key = `${url}-${isSelectiveSyncView ? 'selective': ''}`
           return (
             <EnhancedTableRow
-              key={url}
+              key={key}
               extendedCloud={extendedClouds[url]}
               withCheckboxes={isSelectiveSyncView}
             />

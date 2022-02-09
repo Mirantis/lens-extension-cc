@@ -58,9 +58,8 @@ export function useCheckboxes(initialState) {
     }
     if (checkboxesState.parent) {
       return checkValues.CHECKED;
-    } else {
-      return checkValues.UNCHECKED;
     }
+    return checkValues.UNCHECKED;
   };
 
   const getChildrenCheckboxValue = (name) => {

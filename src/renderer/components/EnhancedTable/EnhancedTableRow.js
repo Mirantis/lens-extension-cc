@@ -7,7 +7,10 @@ import { AdditionalInfoRows } from './AdditionalInfoRows';
 import { connectionStatuses, contextMenus } from '../../../strings';
 import { EXTENDED_CLOUD_EVENTS } from '../../../common/ExtendedCloud';
 import { TriStateCheckbox } from '../TriStateCheckbox/TriStateCheckbox';
-import { useCheckboxes, makeCheckboxesInitialState } from '../hooks/useCheckboxes';
+import {
+  useCheckboxes,
+  makeCheckboxesInitialState,
+} from '../hooks/useCheckboxes';
 import { openBrowser } from '../../../util/netUtil';
 
 const { Icon, MenuItem, MenuActions } = Renderer.Component;
@@ -131,8 +134,8 @@ const namespaceMenuItems = [
     onClick: () => {},
   },
   {
-    title: `(WIP) ${contextMenus.namespace.createSHHKey()}`,
-    name: 'createSHHKey',
+    title: `(WIP) ${contextMenus.namespace.createSshKey()}`,
+    name: 'createSshKey',
     onClick: () => {},
   },
   {
@@ -156,18 +159,20 @@ export const EnhancedTableRow = ({ extendedCloud, withCheckboxes }) => {
   const { getCheckboxValue, setCheckboxValue } = useCheckboxes(
     makeCheckboxesInitialState(extendedCloud)
   );
+  // show all namespaces if selectiveSync table or only syncedNamespaces in this main SyncView table
+  const usedNamespaces = withCheckboxes ? 'namespaces' : 'syncedNamespaces';
 
   const [onOpen, toggleMenu] = useState(false);
   const [isOpenFirstLevel, setIsOpenFirstLevel] = useState(false);
-  const [actualNamespaces, setActualNamespaces] = useState(
-    extendedCloud.syncedNamespaces
-  );
+  const [actualNamespaces, setActualNamespaces] = useState([
+    ...(extendedCloud[usedNamespaces] || []),
+  ]);
   const [openedSecondLevelListIndex, setOpenedSecondLevelListIndex] = useState(
     []
   );
   const updateNamespaces = (updatedRow) => {
     if (updatedRow) {
-      setActualNamespaces(updatedRow.syncedNamespaces);
+      setActualNamespaces(updatedRow[usedNamespaces]);
     }
   };
   useEffect(() => {
@@ -270,7 +275,7 @@ export const EnhancedTableRow = ({ extendedCloud, withCheckboxes }) => {
                     return (
                       <MenuItem
                         key={`cloud-${item.name}`}
-                        onClick={item.onClick}
+                        onClick={() => item.onClick(extendedCloud)}
                       >
                         {item.title}
                       </MenuItem>
