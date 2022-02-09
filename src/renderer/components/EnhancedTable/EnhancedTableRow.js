@@ -157,7 +157,7 @@ const namespaceMenuItems = [
 
 export const EnhancedTableRow = ({ extendedCloud, withCheckboxes }) => {
   const { getCheckboxValue, setCheckboxValue } = useCheckboxes(
-    makeCheckboxesInitialState(extendedCloud)
+    makeCheckboxesInitialState(extendedCloud, extendedCloud.syncedNamespaces)
   );
   // show all namespaces if selectiveSync table or only syncedNamespaces in this main SyncView table
   const usedNamespaces = withCheckboxes ? 'namespaces' : 'syncedNamespaces';
