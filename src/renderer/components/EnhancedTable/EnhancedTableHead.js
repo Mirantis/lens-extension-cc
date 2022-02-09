@@ -2,7 +2,6 @@ import PropTypes from 'prop-types';
 import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
 import { layout } from '../styles';
-import { HEAD_CELL_VALUES } from './EnhancedTable';
 import { managementClusters } from '../../../strings';
 
 const { Component } = Renderer;
@@ -34,25 +33,17 @@ const sortButtonStyles = {
   marginLeft: layout.grid,
 };
 
-export const EnhancedTableHead = ({ sortBy }) => {
-  const headerCells = [
-    {
-      label: managementClusters.table.thead.name(),
-      key: HEAD_CELL_VALUES.NAME,
-    },
-    {
-      label: managementClusters.table.thead.url(),
-      key: HEAD_CELL_VALUES.URL,
-    },
-    {
-      label: managementClusters.table.thead.username(),
-      key: HEAD_CELL_VALUES.USERNAME,
-    },
-    {
-      label: managementClusters.table.thead.status(),
-      key: HEAD_CELL_VALUES.STATUS,
-    },
-  ];
+/**
+ * @param {function} sortBy sorting func
+ * @param {Object} headerValues  'enum' with header values (HEAD_CELL_VALUES or SELECTIVE_HEAD_CELL_VALUES in tableUtil.js)
+ * @return {JSX.Element}
+ */
+export const EnhancedTableHead = ({ sortBy, headerValues }) => {
+  const headerCells = Object.keys(headerValues).map((key) => ({
+    label: managementClusters.table.thead[key.toLowerCase()](),
+    key,
+  }));
+
   return (
     <EnhTableHead>
       <tr>
@@ -67,7 +58,6 @@ export const EnhancedTableHead = ({ sortBy }) => {
             </EnhSortButton>
           </EnhTableHeadCell>
         ))}
-        <EnhTableHeadCell></EnhTableHeadCell>
       </tr>
     </EnhTableHead>
   );
@@ -75,4 +65,5 @@ export const EnhancedTableHead = ({ sortBy }) => {
 
 EnhancedTableHead.propTypes = {
   sortBy: PropTypes.func.isRequired,
+  headerValues: PropTypes.object.isRequired,
 };

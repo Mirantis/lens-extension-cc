@@ -109,7 +109,7 @@ export const AddCloudInstance = ({ onAdd, onCancel }) => {
           cleanCloudsState={cleanCloudsState}
         />
         {extCloud && !extCloud.error ? (
-          <SynchronizeBlock extCloud={extCloud} onAdd={onAdd} />
+          <SynchronizeBlock extendedCloud={extCloud} onAdd={onAdd} />
         ) : null}
       </MainColumn>
       <EscColumn>

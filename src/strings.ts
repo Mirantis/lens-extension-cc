@@ -73,10 +73,15 @@ export const synchronizeBlock = {
     noProjects: () => 'Select at least one project to sync',
   },
 };
-export const managementClusters = {
+
+export const syncView: Dict = {
   title: () => 'Mirantis Container Cloud management clusters',
+  cancelButtonLabel: () => 'Cancel',
+  synchronizeProjectsButtonLabel: () => 'Synchronize selected projects',
   syncButtonLabel: () => 'Selective sync...',
   connectButtonLabel: () => 'Connect new Management Cluster',
+};
+export const managementClusters = {
   table: {
     thead: {
       name: () => 'Name',
@@ -338,7 +343,7 @@ export const contextMenus: Dict = {
     sync: () => 'Sync now',
     openInBrowser: () => 'Open in browser',
     createCluster: () => 'Create cluster',
-    createSHHKey: () => 'Create SHH Key',
+    createSshKey: () => 'Create SHH Key',
     createCredential: () => 'Create Credential',
     createLicense: () => 'Create RHEL License',
     createProxy: () => 'Create Proxy',

@@ -6,6 +6,11 @@ import { layout } from '../styles';
 import { AdditionalInfoRows } from './AdditionalInfoRows';
 import { connectionStatuses, contextMenus } from '../../../strings';
 import { EXTENDED_CLOUD_EVENTS } from '../../../common/ExtendedCloud';
+import { TriStateCheckbox } from '../TriStateCheckbox/TriStateCheckbox';
+import {
+  useCheckboxes,
+  makeCheckboxesInitialState,
+} from '../hooks/useCheckboxes';
 import { openBrowser } from '../../../util/netUtil';
 
 const { Icon, MenuItem, MenuActions } = Renderer.Component;
@@ -38,13 +43,19 @@ const EnhTableRowCell = styled.td`
     `
     text-align: right;
   `}
+
+  ${({ withCheckboxes }) =>
+    withCheckboxes &&
+    `
+    display: flex;
+    align-items: center;
+  `}
 `;
 
 const EnhCollapseBtn = styled.button`
   background: transparent;
   cursor: pointer;
   margin-right: ${layout.grid * 1.5}px;
-  transform: translateY(-2px);
 `;
 
 const EnhMore = styled.div`
@@ -123,8 +134,8 @@ const namespaceMenuItems = [
     onClick: () => {},
   },
   {
-    title: `(WIP) ${contextMenus.namespace.createSHHKey()}`,
-    name: 'createSHHKey',
+    title: `(WIP) ${contextMenus.namespace.createSshKey()}`,
+    name: 'createSshKey',
     onClick: () => {},
   },
   {
@@ -144,18 +155,24 @@ const namespaceMenuItems = [
   },
 ];
 
-export const EnhancedTableRow = ({ extendedCloud }) => {
+export const EnhancedTableRow = ({ extendedCloud, withCheckboxes }) => {
+  const { getCheckboxValue, setCheckboxValue } = useCheckboxes(
+    makeCheckboxesInitialState(extendedCloud, extendedCloud.syncedNamespaces)
+  );
+  // show all namespaces if selectiveSync table or only syncedNamespaces in this main SyncView table
+  const usedNamespaces = withCheckboxes ? 'namespaces' : 'syncedNamespaces';
+
   const [onOpen, toggleMenu] = useState(false);
   const [isOpenFirstLevel, setIsOpenFirstLevel] = useState(false);
   const [actualNamespaces, setActualNamespaces] = useState(
-    extendedCloud.syncedNamespaces
+    extendedCloud[usedNamespaces]
   );
   const [openedSecondLevelListIndex, setOpenedSecondLevelListIndex] = useState(
     []
   );
   const updateNamespaces = (updatedRow) => {
     if (updatedRow) {
-      setActualNamespaces(updatedRow.syncedNamespaces);
+      setActualNamespaces(updatedRow[usedNamespaces]);
     }
   };
   useEffect(() => {
@@ -184,10 +201,55 @@ export const EnhancedTableRow = ({ extendedCloud }) => {
   const isCloudConnected = extendedCloud.cloud.isConnected();
   const { cloudStatus, namespaceStatus } = getStatus(isCloudConnected);
 
+  const renderRestOfRows = (namespace) =>
+    withCheckboxes ? (
+      <EnhTableRowCell />
+    ) : (
+      <>
+        <EnhTableRowCell />
+        <EnhTableRowCell />
+        <EnhTableRowCell>{namespaceStatus}</EnhTableRowCell>
+        <EnhTableRowCell isRightAligned>
+          <EnhMore onClick={() => toggleMenu(!onOpen)}>
+            <MenuActions onOpen={onOpen}>
+              {namespaceMenuItems.map((item) => {
+                return (
+                  <MenuItem
+                    key={`${namespace.name}-${item.name}`}
+                    onClick={item.onClick}
+                  >
+                    {item.title}
+                  </MenuItem>
+                );
+              })}
+            </MenuActions>
+          </EnhMore>
+        </EnhTableRowCell>
+      </>
+    );
+
+  /**
+   * @param {string} name cloud or namespace name
+   * @param {boolean?} isParent if true - then it's a main, cloud checkbox
+   * @return {JSX.Element|*}
+   */
+  const makeCell = (name, isParent) => {
+    if (withCheckboxes) {
+      return (
+        <TriStateCheckbox
+          label={name}
+          onChange={() => setCheckboxValue({ name, isParent })}
+          value={getCheckboxValue({ name, isParent })}
+        />
+      );
+    }
+    return name;
+  };
+
   return (
     <>
       <EnhTableRow isTopLevel>
-        <EnhTableRowCell isBigger>
+        <EnhTableRowCell isBigger withCheckboxes={withCheckboxes}>
           <EnhCollapseBtn
             onClick={() => setIsOpenFirstLevel(!isOpenFirstLevel)}
           >
@@ -197,35 +259,39 @@ export const EnhancedTableRow = ({ extendedCloud }) => {
               <Icon material="chevron_right" style={expandIconStyles} />
             )}
           </EnhCollapseBtn>
-          {extendedCloud.cloud.name}
+          {makeCell(extendedCloud.cloud.name, true)}
         </EnhTableRowCell>
         <EnhTableRowCell>{extendedCloud.cloud.cloudUrl}</EnhTableRowCell>
-        <EnhTableRowCell>{extendedCloud.cloud.username}</EnhTableRowCell>
-        <EnhTableRowCell style={isCloudConnected ? colorGreen : colorRed}>
-          {cloudStatus}
-        </EnhTableRowCell>
-        <EnhTableRowCell isRightAligned>
-          <EnhMore>
-            <MenuActions onOpen={onOpen}>
-              {cloudMenuItems.map((item) => {
-                return (
-                  <MenuItem
-                    key={`cloud-${item.name}`}
-                    onClick={() => item.onClick(extendedCloud)}
-                  >
-                    {item.title}
-                  </MenuItem>
-                );
-              })}
-            </MenuActions>
-          </EnhMore>
-        </EnhTableRowCell>
+        {withCheckboxes ? null : (
+          <>
+            <EnhTableRowCell>{extendedCloud.cloud.username}</EnhTableRowCell>
+            <EnhTableRowCell style={isCloudConnected ? colorGreen : colorRed}>
+              {cloudStatus}
+            </EnhTableRowCell>
+            <EnhTableRowCell isRightAligned>
+              <EnhMore>
+                <MenuActions onOpen={onOpen}>
+                  {cloudMenuItems.map((item) => {
+                    return (
+                      <MenuItem
+                        key={`cloud-${item.name}`}
+                        onClick={() => item.onClick(extendedCloud)}
+                      >
+                        {item.title}
+                      </MenuItem>
+                    );
+                  })}
+                </MenuActions>
+              </EnhMore>
+            </EnhTableRowCell>
+          </>
+        )}
       </EnhTableRow>
       {isOpenFirstLevel &&
         actualNamespaces.map((namespace, index) => (
           <EnhRowsWrapper key={namespace.name}>
             <EnhTableRow>
-              <EnhTableRowCell isFirstLevel>
+              <EnhTableRowCell isFirstLevel withCheckboxes={withCheckboxes}>
                 <EnhCollapseBtn onClick={() => setOpenedList(index)}>
                   {openedSecondLevelListIndex.includes(index) ? (
                     <Icon material="expand_more" style={expandIconStyles} />
@@ -233,31 +299,16 @@ export const EnhancedTableRow = ({ extendedCloud }) => {
                     <Icon material="chevron_right" style={expandIconStyles} />
                   )}
                 </EnhCollapseBtn>
-                {namespace.name}
+                {makeCell(namespace.name)}
               </EnhTableRowCell>
-              <EnhTableRowCell />
-              <EnhTableRowCell />
-              <EnhTableRowCell>{namespaceStatus}</EnhTableRowCell>
-              <EnhTableRowCell isRightAligned>
-                <EnhMore onClick={() => toggleMenu(!onOpen)}>
-                  <MenuActions onOpen={onOpen}>
-                    {namespaceMenuItems.map((item) => {
-                      return (
-                        <MenuItem
-                          key={`${namespace.name}-${item.name}`}
-                          onClick={item.onClick}
-                        >
-                          {item.title}
-                        </MenuItem>
-                      );
-                    })}
-                  </MenuActions>
-                </EnhMore>
-              </EnhTableRowCell>
+              {renderRestOfRows(namespace)}
             </EnhTableRow>
 
             {openedSecondLevelListIndex.includes(index) && (
-              <AdditionalInfoRows namespace={namespace} />
+              <AdditionalInfoRows
+                namespace={namespace}
+                emptyCellsCount={withCheckboxes ? 1 : 4}
+              />
             )}
           </EnhRowsWrapper>
         ))}
@@ -267,4 +318,9 @@ export const EnhancedTableRow = ({ extendedCloud }) => {
 
 EnhancedTableRow.propTypes = {
   extendedCloud: PropTypes.object.isRequired,
+  withCheckboxes: PropTypes.bool,
+};
+
+EnhancedTableRow.defaultProps = {
+  withCheckboxes: false,
 };

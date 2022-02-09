@@ -9,11 +9,12 @@ import {
 import { Accordion } from '../Accordion/Accordion';
 import { layout } from '../styles';
 import { synchronizeBlock } from '../../../strings';
+import {
+  useCheckboxes,
+  makeCheckboxesInitialState,
+} from '../hooks/useCheckboxes';
 
 const { Notifications, Button, Icon } = Renderer.Component;
-
-// Mocked cloud data
-import { mockExtCloud } from '../../../../test/mocks/mockExtCloud';
 
 const Content = styled.div(() => ({
   marginTop: layout.gap * 2,
@@ -89,25 +90,18 @@ const SortButton = styled.button`
     isRotated ? 'rotate(180deg)' : 'rotate(0deg)'};
 `;
 
-const checkboxesStateObj = (extCloud) => {
-  return extCloud.namespaces.reduce((acc, namespace) => {
-    acc[namespace.name] = false;
-    return acc;
-  }, {});
-};
+export const SynchronizeBlock = ({ extendedCloud, onAdd }) => {
+  const { setCheckboxValue, getCheckboxValue } = useCheckboxes(
+    makeCheckboxesInitialState(extendedCloud)
+  );
 
-export const SynchronizeBlock = ({ extCloud, onAdd }) => {
   // @type {object} sorted object of projects
-  const [projectsList, setProjectsList] = useState(extCloud.namespaces);
+  const [projectsList, setProjectsList] = useState([
+    ...(extendedCloud.namespaces || []),
+  ]);
 
   // @type {string} sort by name order
   const [nextSortType, setNextSortType] = useState('');
-
-  // @type {object} checkboxes state
-  const [checkboxesState, setCheckboxesState] = useState({
-    parent: false,
-    children: checkboxesStateObj(extCloud),
-  });
 
   if (!projectsList) {
     return null;
@@ -127,75 +121,11 @@ export const SynchronizeBlock = ({ extCloud, onAdd }) => {
     setProjectsList(sorted);
   };
 
-  // set parent checkbox state based on changes of children checkboxes
-  const setParentCheckboxState = (children) => {
-    const childrenCheckboxes = Object.values(children);
-
-    if (
-      childrenCheckboxes.every((el) => el === false) ||
-      childrenCheckboxes.every((el) => el === true)
-    ) {
-      return childrenCheckboxes[0];
-    }
-    if (childrenCheckboxes.some((el) => el === false)) {
-      return true;
-    }
-    return checkboxesState.parent;
-  };
-
-  const getNewChildren = (parentCheckedStatus) => {
-    const newChildren = { ...checkboxesState.children };
-
-    Object.keys(checkboxesState.children).forEach((name) => {
-      newChildren[name] = parentCheckedStatus;
-    });
-    return newChildren;
-  };
-
-  const onChangeHandler = (name) => {
-    if (!name) {
-      setCheckboxesState({
-        parent: !checkboxesState.parent,
-        children: getNewChildren(!checkboxesState.parent),
-      });
-    } else {
-      const newChildren = { ...checkboxesState.children };
-      newChildren[name] = !checkboxesState.children[name];
-
-      setCheckboxesState({
-        children: newChildren,
-        parent: setParentCheckboxState(newChildren),
-      });
-    }
-  };
-
-  const parentCheckboxValue = () => {
-    const childrenCheckboxes = Object.values(checkboxesState.children);
-
-    if (
-      checkboxesState.parent &&
-      childrenCheckboxes.some((el) => el === false) &&
-      childrenCheckboxes.some((el) => el === true)
-    ) {
-      return checkValues.MIXED;
-    }
-    if (checkboxesState.parent) {
-      return checkValues.CHECKED;
-    }
-    return checkValues.UNCHECKED;
-  };
-
-  const childrenCheckboxValue = (name) => {
-    return checkboxesState.children[name]
-      ? checkValues.CHECKED
-      : checkValues.UNCHECKED;
-  };
-
   const onSynchronize = () => {
-    const { cloud } = extCloud;
-    const allNamespaces = Object.keys(checkboxesState.children);
+    const { cloud } = extendedCloud;
+    const allNamespaces = extendedCloud.namespaces.map(({ name }) => name);
     const namespaces = allNamespaces.filter(
-      (name) => checkboxesState.children[name]
+      (name) => getCheckboxValue({ name }) === checkValues.CHECKED
     );
 
     if (!namespaces.length) {
@@ -221,8 +151,8 @@ export const SynchronizeBlock = ({ extCloud, onAdd }) => {
         <ProjectsHead>
           <TriStateCheckbox
             label={synchronizeBlock.checkAllCheckboxLabel()}
-            onChange={() => onChangeHandler()}
-            value={parentCheckboxValue()}
+            onChange={() => setCheckboxValue({ isParent: true })}
+            value={getCheckboxValue({ isParent: true })}
           />
           <SortButton
             type="button"
@@ -246,9 +176,11 @@ export const SynchronizeBlock = ({ extCloud, onAdd }) => {
                 <Accordion
                   title={
                     <TriStateCheckbox
-                      value={childrenCheckboxValue(namespace.name)}
+                      value={getCheckboxValue({ name: namespace.name })}
                       label={namespace.name}
-                      onChange={() => onChangeHandler(namespace.name)}
+                      onChange={() =>
+                        setCheckboxValue({ name: namespace.name })
+                      }
                     />
                   }
                 >
@@ -290,10 +222,6 @@ export const SynchronizeBlock = ({ extCloud, onAdd }) => {
 };
 
 SynchronizeBlock.propTypes = {
-  extCloud: PropTypes.object,
+  extendedCloud: PropTypes.object.isRequired,
   onAdd: PropTypes.func.isRequired,
-};
-
-SynchronizeBlock.defaultProps = {
-  extCloud: mockExtCloud,
 };

@@ -6,7 +6,7 @@ import { AddCloudInstance } from './AddCloudInstance.js';
 import { useExtendedCloudData } from '../../store/ExtendedCloudProvider';
 import { WelcomeView } from './WelcomeView';
 import { cloudStore } from '../../../store/CloudStore';
-import { managementClusters } from '../../../strings';
+import { syncView } from '../../../strings';
 import { EnhancedTable } from '../EnhancedTable/EnhancedTable';
 
 const {
@@ -34,6 +34,14 @@ const Title = styled.h2`
   margin-bottom: ${layout.grid * 5}px;
 `;
 
+const TopButtonsWrapper = styled.div`
+  text-align: right;
+`;
+
+const CancelButton = styled(Button)`
+  margin-right: ${layout.grid}px;
+`;
+
 const TableWrapper = styled.div`
   max-height: calc(100vh - ${layout.grid * 57.5}px);
   margin-bottom: ${layout.grid * 5}px;
@@ -52,6 +60,7 @@ export const SyncView = () => {
     state: { extendedClouds },
   } = useExtendedCloudData();
   const [showAddCloudComponent, setShowAddCloudComponent] = useState();
+  const [isSelectiveSyncView, setIsSelectiveSyncView] = useState(false);
 
   const handleAddCloud = useCallback(function (cloud) {
     cloudStore.addCloud(cloud);
@@ -74,24 +83,46 @@ export const SyncView = () => {
     return (
       <Content>
         <ContentTop>
-          <Title>{managementClusters.title()}</Title>
-          <Button
-            variant="outlined"
-            label={managementClusters.syncButtonLabel()}
-          />
+          <Title>{syncView.title()}</Title>
+          <TopButtonsWrapper>
+            {isSelectiveSyncView ? (
+              <>
+                <CancelButton
+                  plain
+                  label={syncView.cancelButtonLabel()}
+                  onClick={() => setIsSelectiveSyncView(!isSelectiveSyncView)}
+                />
+                <Button
+                  primary
+                  label={syncView.synchronizeProjectsButtonLabel()}
+                />
+              </>
+            ) : (
+              <Button
+                variant="outlined"
+                label={syncView.syncButtonLabel()}
+                onClick={() => setIsSelectiveSyncView(!isSelectiveSyncView)}
+              />
+            )}
+          </TopButtonsWrapper>
         </ContentTop>
 
         <TableWrapper>
-          <EnhancedTable extendedClouds={extendedClouds} />
+          <EnhancedTable
+            extendedClouds={extendedClouds}
+            isSelectiveSyncView={isSelectiveSyncView}
+          />
         </TableWrapper>
 
-        <ButtonWrapper>
-          <Button
-            primary
-            label={managementClusters.connectButtonLabel()}
-            onClick={openAddCloud}
-          />
-        </ButtonWrapper>
+        {!isSelectiveSyncView && (
+          <ButtonWrapper>
+            <Button
+              primary
+              label={syncView.connectButtonLabel()}
+              onClick={openAddCloud}
+            />
+          </ButtonWrapper>
+        )}
       </Content>
     );
   }
