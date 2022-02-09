@@ -67,17 +67,19 @@ export const AddCloudInstance = ({ onAdd, onCancel }) => {
         setExtCloud(extCl);
 
         extCl.removeEventListener(
-          EXTENDED_CLOUD_EVENTS.LOADING_CHANGE,
+          EXTENDED_CLOUD_EVENTS.LOADED,
+          loadingListener
+        );
+        extCl.removeEventListener(
+          EXTENDED_CLOUD_EVENTS.ERROR_CHANGE,
           loadingListener
         );
       }
       setLoading(extCl.loading);
     };
 
-    extCl.addEventListener(
-      EXTENDED_CLOUD_EVENTS.LOADING_CHANGE,
-      loadingListener
-    );
+    extCl.addEventListener(EXTENDED_CLOUD_EVENTS.LOADED, loadingListener);
+    extCl.addEventListener(EXTENDED_CLOUD_EVENTS.ERROR_CHANGE, loadingListener);
   }, [extCloud, cloud]);
 
   const cleanCloudsState = () => {

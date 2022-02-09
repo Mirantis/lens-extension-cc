@@ -14,22 +14,15 @@ export const EXTENDED_CLOUD_EVENTS = Object.freeze({
    *
    * Expected signature: `(extCloud: ExtendedCloud) => void`
    */
-  LOADING_CHANGE: 'loadingChange',
+  LOADED: 'loaded',
 
   /**
    * Whenever new data is being fetched, or done fetching (even on the initial
-   *  data load, which means there's overlap with the `LOADING_CHANGE` event).
+   *  data load, which means there's overlap with the `LOADED` event).
    *
    * Expected signature: `(extCloud: ExtendedCloud) => void`
    */
   FETCHING_CHANGE: 'fetchingChange',
-
-  /**
-   * When any data-related property, including `error`, has been updated.
-   *
-   * Expected signature: `(extCloud: ExtendedCloud) => void`
-   */
-  DATA_UPDATED: 'dataUpdated',
 
   /**
    * When new data will be fetched.
@@ -37,6 +30,20 @@ export const EXTENDED_CLOUD_EVENTS = Object.freeze({
    * Expected signature: `(extCloud: ExtendedCloud) => void`
    */
   FETCH_DATA: 'fetchData',
+
+  /**
+   * Whenever the `error` property changes.
+   *
+   * Expected signature: `(extCloud: ExtendedCloud) => void`
+   */
+  ERROR_CHANGE: 'errorChange',
+
+  /**
+   * When any data-related property (e.g. `namespaces`) has been updated.
+   *
+   * Expected signature: `(extCloud: ExtendedCloud) => void`
+   */
+  DATA_UPDATED: 'dataUpdated',
 });
 
 /**
@@ -381,9 +388,9 @@ export class ExtendedCloud extends EventDispatcher {
   constructor(cloud) {
     super();
 
-    let _loading = false; // initial load only
+    let _loaded = false; // true if we've fetched data at least once, successfully
     let _fetching = false; // anytime we're fetching new data
-    let _namespaces = null;
+    let _namespaces = [];
     let _cloud = null; // starts null, but once set, can never be null/undefined again
     let _error = null;
 
@@ -427,23 +434,27 @@ export class ExtendedCloud extends EventDispatcher {
     });
 
     /**
-     * @member {boolean} loading True if we're fetching new data from the Cloud for the first time.
+     * @member {boolean} loaded True if we have __successfully__ fetched Cloud data at least once;
+     *  false otherwise.
+     * @see {@link ExtendedCloud.loading}
      */
-    Object.defineProperty(this, 'loading', {
+    Object.defineProperty(this, 'loaded', {
       enumerable: true,
       get() {
-        return _loading;
+        return _loaded;
       },
       set(newValue) {
-        if (!!newValue !== _loading) {
-          _loading = !!newValue;
-          this.dispatchEvent(EXTENDED_CLOUD_EVENTS.LOADING_CHANGE, this);
+        // only change it once from false -> true because we only load once; after that, we fetch
+        if (!_loaded && !!newValue) {
+          _loaded = true;
+          this.dispatchEvent(EXTENDED_CLOUD_EVENTS.LOADED, this);
         }
       },
     });
 
     /**
-     * @member {boolean} fetching True if we're currently fetching new data from the Cloud.
+     * @member {boolean} fetching True if we're currently fetching new data from the Cloud,
+     *  whether it's the first time or any subsequent time.
      */
     Object.defineProperty(this, 'fetching', {
       enumerable: true,
@@ -470,7 +481,13 @@ export class ExtendedCloud extends EventDispatcher {
       },
       set(newValue) {
         if (newValue !== _namespaces) {
-          _namespaces = newValue || null;
+          // must be an array (could be empty) of Namespace objects
+          DEV_ENV &&
+            rtv.verify(
+              { namespaces: newValue },
+              { namespaces: [[rtv.CLASS_OBJECT, { ctor: Namespace }]] }
+            );
+          _namespaces = newValue;
           this.dispatchEvent(EXTENDED_CLOUD_EVENTS.DATA_UPDATED, this);
         }
       },
@@ -488,7 +505,7 @@ export class ExtendedCloud extends EventDispatcher {
       set(newValue) {
         if (newValue !== _error) {
           _error = newValue || null;
-          this.dispatchEvent(EXTENDED_CLOUD_EVENTS.DATA_UPDATED, this);
+          this.dispatchEvent(EXTENDED_CLOUD_EVENTS.ERROR_CHANGE, this);
         }
       },
     });
@@ -522,16 +539,22 @@ export class ExtendedCloud extends EventDispatcher {
   }
 
   /**
+   * @member {boolean} loading True if we're loading/fetching Cloud data for the __first__ time;
+   *  false otherwise.
+   * @see {@link ExtendedCloud.fetching}
+   */
+  get loading() {
+    return !this.loaded && this.fetching;
+  }
+
+  /**
    * @member {Array<Namespace>} syncedNamespaces List of namespaces the Cloud is syncing;
    *  empty if none or the namespaces haven't been successfully fetched at least once yet.
    */
   get syncedNamespaces() {
-    return (
-      this.namespaces?.filter(
-        (namespace) =>
-          this.cloud.syncAll ||
-          this.cloud.syncNamespaces.includes(namespace.name)
-      ) || []
+    return this.namespaces.filter(
+      (namespace) =>
+        this.cloud.syncAll || this.cloud.syncNamespaces.includes(namespace.name)
     );
   }
 
@@ -581,9 +604,6 @@ export class ExtendedCloud extends EventDispatcher {
       return;
     }
 
-    // undefined/null for BOTH implies we've never fetched at least once, so this
-    //  must be the initial load
-    this.loading = !this.namespaces && !this.error;
     this.fetching = true;
 
     logger.log(
@@ -624,9 +644,8 @@ export class ExtendedCloud extends EventDispatcher {
     }
 
     if (error) {
-      // NOTE: in this case, we don't set `this.namespaces`, either leaving it
-      //  unset (never successfully fetched at least once), or leaving it as its
-      //  previous value so we don't lose the Cloud's last known state
+      // NOTE: in this case, we don't set `this.namespaces`, leaving it as its
+      //  previous value so we don't lose the Cloud's last known state if we have it
       this.error = getErrorMessage(error);
 
       if (nsResults?.error) {
@@ -658,6 +677,7 @@ export class ExtendedCloud extends EventDispatcher {
       }
     } else {
       this.error = null;
+
       this.namespaces = nsResults.namespaces.map((namespace) => {
         namespace.clusters = clusterResults.clusters.filter(
           (c) => c.namespace === namespace.name
@@ -666,17 +686,25 @@ export class ExtendedCloud extends EventDispatcher {
         namespace.credentials = credResults.credentials[namespace.name];
         return namespace;
       });
+
+      if (!this.loaded) {
+        // successfully loaded at least once
+        this.loaded = true;
+        logger.log(
+          'ExtendedCloud.fetchData()',
+          `Initial data load successful, extCloud=${this}`
+        );
+      }
     }
 
-    this.loading = false;
     this.fetching = false;
   }
 
   /** @returns {string} String representation of this ExtendedCloud for logging/debugging. */
   toString() {
-    return `{ExtendedCloud loading: ${this.loading}, fetching: ${
+    return `{ExtendedCloud loaded: ${this.loaded}, fetching: ${
       this.fetching
-    }, namespaces: ${this.namespaces?.length ?? '<unknown>'}, error: ${
+    }, namespaces: ${this.loaded ? this.namespaces.length : '??'}, error: ${
       this.error
     }, cloud: ${this.cloud}}`;
   }

@@ -222,7 +222,7 @@ export const EnhancedTableRow = ({ extendedCloud }) => {
         </EnhTableRowCell>
       </EnhTableRow>
       {isOpenFirstLevel &&
-        (actualNamespaces || []).map((namespace, index) => (
+        actualNamespaces.map((namespace, index) => (
           <EnhRowsWrapper key={namespace.name}>
             <EnhTableRow>
               <EnhTableRowCell isFirstLevel>
