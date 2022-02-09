@@ -339,6 +339,11 @@ export const contextMenus: Dict = {
     remove: () => 'Remove',
     sync: () => 'Sync now',
     openInBrowser: () => 'Open in browser',
+    confirmDialog: {
+      messageHtml: (cloudName) =>
+        `Are you sure you want to remove the <b>${cloudName}</b> cloud from Lens?`,
+      confirmButtonLabel: () => 'Remove',
+    },
   },
   namespace: {
     sync: () => 'Sync now',

@@ -13,8 +13,9 @@ import {
 } from '../hooks/useCheckboxes';
 import { CONNECTION_STATUSES } from '../../../common/Cloud';
 import { openBrowser } from '../../../util/netUtil';
+import { cloudStore } from '../../../store/CloudStore';
 
-const { Icon, MenuItem, MenuActions } = Renderer.Component;
+const { Icon, MenuItem, MenuActions, ConfirmDialog } = Renderer.Component;
 
 const EnhRowsWrapper = styled.div`
   display: contents;
@@ -122,9 +123,26 @@ const cloudMenuItems = [
     onClick: (extendedCloud) => extendedCloud.reconnect(),
   },
   {
-    title: `(WIP) ${contextMenus.cloud.remove()}`,
+    title: `${contextMenus.cloud.remove()}`,
     name: 'remove',
-    onClick: () => {},
+    onClick: (extendedCloud) => {
+      ConfirmDialog.open({
+        ok: () => {
+          extendedCloud.destroy();
+          cloudStore.removeCloud(extendedCloud.cloud.cloudUrl);
+        },
+        labelOk: contextMenus.cloud.confirmDialog.confirmButtonLabel(),
+        message: (
+          <p
+            dangerouslySetInnerHTML={{
+              __html: contextMenus.cloud.confirmDialog.messageHtml(
+                extendedCloud.cloud.name
+              ),
+            }}
+          />
+        ),
+      });
+    },
   },
   {
     title: `(WIP) ${contextMenus.cloud.sync()}`,
