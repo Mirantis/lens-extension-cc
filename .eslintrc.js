@@ -26,6 +26,7 @@ const rules = {
     },
   ],
   'no-use-before-define': 'error',
+  'lines-between-class-members': 'error',
 
   //// react plugin
 
