@@ -158,7 +158,6 @@ export const ConnectionBlock = ({
           <Button
             primary
             type="submit"
-            waiting={loading || extCloudLoading}
             label={connectionBlock.button.label()}
             onClick={handleConnectClick}
             disabled={loading || extCloudLoading}

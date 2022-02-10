@@ -12,7 +12,7 @@ import {
 import { Renderer } from '@k8slens/extensions';
 
 const {
-  Component: { Notifications },
+  Component: { Notifications, Spinner },
 } = Renderer;
 
 const PageContainer = styled.div(function () {
@@ -108,7 +108,9 @@ export const AddCloudInstance = ({ onAdd, onCancel }) => {
           extCloudLoading={loading}
           cleanCloudsState={cleanCloudsState}
         />
-        {extCloud && !extCloud.error ? (
+        {loading ? (
+          <Spinner />
+        ) : extCloud && !extCloud.error ? (
           <SynchronizeBlock extendedCloud={extCloud} onAdd={onAdd} />
         ) : null}
       </MainColumn>
