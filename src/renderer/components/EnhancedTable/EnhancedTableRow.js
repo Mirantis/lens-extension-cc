@@ -123,7 +123,7 @@ const cloudMenuItems = [
     onClick: (extendedCloud) => extendedCloud.reconnect(),
   },
   {
-    title: `${contextMenus.cloud.remove()}`,
+    title: contextMenus.cloud.remove(),
     name: 'remove',
     onClick: (extendedCloud) => {
       ConfirmDialog.open({
