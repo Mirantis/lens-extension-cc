@@ -700,6 +700,27 @@ export class ExtendedCloud extends EventDispatcher {
     this.fetching = false;
   }
 
+  /**
+   * @desc reconnect cloud and fetch data for EC
+   * @return {Promise<void>}
+   */
+  async reconnect() {
+    // WARNING: does not block because goes to browser and waits for user
+    await this.cloud.connect();
+
+    if (this.cloud.connecting) {
+      const handler = () => {
+        if (this.cloud.connected) {
+          this.cloud.removeEventListener(CLOUD_EVENTS.STATUS_CHANGE, handler);
+          this.dispatchEvent(EXTENDED_CLOUD_EVENTS.FETCH_DATA, this);
+        }
+      };
+      this.cloud.addEventListener(CLOUD_EVENTS.STATUS_CHANGE, handler);
+    } else {
+      this.error = this.cloud.connectError;
+    }
+  }
+
   /** @returns {string} String representation of this ExtendedCloud for logging/debugging. */
   toString() {
     return `{ExtendedCloud loaded: ${this.loaded}, fetching: ${
