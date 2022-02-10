@@ -720,6 +720,7 @@ export class ExtendedCloud extends EventDispatcher {
       this.error = this.cloud.connectError;
     }
   }
+
   /** @returns {string} String representation of this ExtendedCloud for logging/debugging. */
   toString() {
     return `{ExtendedCloud loaded: ${this.loaded}, fetching: ${
