@@ -91,7 +91,7 @@ export class Cluster {
     this.namespace = data.metadata.namespace;
 
     /** @member {Date} */
-    this.created = new Date(data.metadata.creationTimestamp);
+    this.creationDate = new Date(data.metadata.creationTimestamp);
 
     /** @member {boolean|null} */
     this.deleteInProgress = !!data.metadata.deletionTimestamp;
