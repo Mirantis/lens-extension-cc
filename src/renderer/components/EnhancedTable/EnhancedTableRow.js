@@ -128,7 +128,6 @@ const cloudMenuItems = [
     onClick: (extendedCloud) => {
       ConfirmDialog.open({
         ok: () => {
-          extendedCloud.destroy();
           cloudStore.removeCloud(extendedCloud.cloud.cloudUrl);
         },
         labelOk: contextMenus.cloud.confirmDialog.confirmButtonLabel(),

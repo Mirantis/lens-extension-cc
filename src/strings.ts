@@ -341,7 +341,7 @@ export const contextMenus: Dict = {
     openInBrowser: () => 'Open in browser',
     confirmDialog: {
       messageHtml: (cloudName) =>
-        `Are you sure you want to remove the <b>${cloudName}</b> cloud from Lens?`,
+        `Are you sure you want to remove the <b>${cloudName}</b> Management Cluster from Lens?`,
       confirmButtonLabel: () => 'Remove',
     },
   },
