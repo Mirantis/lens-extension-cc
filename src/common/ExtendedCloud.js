@@ -594,11 +594,24 @@ export class ExtendedCloud extends EventDispatcher {
       return;
     }
 
-    if (!this.cloud?.isConnected()) {
+    // make sure we have a Cloud and it's connected
+    if (!this.cloud?.connected) {
+      // if no config (eg when we restore cloud from disk) try to load it
+      if (!this.cloud.config) {
+        await this.cloud.loadConfig();
+        // if loadConfig error we get it as connectError
+        if (this.cloud.connectError) {
+          this.error = getErrorMessage(this.cloud.connectError);
+        }
+      }
+    }
+
+    // if we're still not connected, stop the fetch before it starts
+    if (!this.cloud.connected) {
       logger.log(
         'ExtendedCloud.fetchData()',
         `Cannot fetch data for extCloud=${this}: Cloud is ${
-          this.cloud ? 'disconnected' : 'unknown'
+          this.cloud ? this.cloud.status : 'unknown'
         }`
       );
       return;
@@ -610,19 +623,6 @@ export class ExtendedCloud extends EventDispatcher {
       'ExtendedCloud.fetchData()',
       `Fetching data for extCloud=${this}`
     );
-
-    // if no config (eg when we restore cloud from disk) try to load it
-    if (!this.cloud?.config) {
-      await this.cloud.loadConfig();
-      // if loadConfig error we get it as connectError
-      // in this case stop fetchData and set ExtendedCloud.error to that error
-      if (this.cloud.connectError) {
-        this.error = getErrorMessage(this.cloud.connectError);
-        this.loading = false;
-        this.fetching = false;
-        return;
-      }
-    }
 
     const nsResults = await _fetchNamespaces(this.cloud);
     let error = nsResults.error;
