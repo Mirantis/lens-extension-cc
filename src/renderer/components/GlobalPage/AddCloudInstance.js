@@ -122,18 +122,13 @@ export const AddCloudInstance = ({ onAdd, onCancel }) => {
     }
   };
 
-  const handleClusterConnect = async function (
-    managementClusterUrl,
-    setManagementClusterUrl,
-    managementClusterName
-  ) {
+  const handleClusterConnect = async function (clusterUrl, clusterName) {
     cleanCloudsState();
-    const normUrl = normalizeUrl(managementClusterUrl.trim());
-    setManagementClusterUrl(normUrl); // update to actual URL we'll use
+    const normUrl = normalizeUrl(clusterUrl.trim());
     setLoading(true);
     let newCloud = new Cloud();
     newCloud.cloudUrl = normUrl;
-    newCloud.name = managementClusterName;
+    newCloud.name = clusterName;
     const statusListener = () => {
       if (newCloud.status === CONNECTION_STATUSES.CONNECTING) {
         setLoading(true);
@@ -158,7 +153,7 @@ export const AddCloudInstance = ({ onAdd, onCancel }) => {
     <PageContainer>
       <MainColumn>
         <ConnectionBlock
-          extCloudLoading={loading}
+          loading={loading}
           handleClusterConnect={handleClusterConnect}
         />
         {loading ? (

@@ -60,7 +60,7 @@ const nameAlreadyUsed = {
     !Object.values(cloudStore.clouds).find(({ name }) => name === value),
 };
 
-export const ConnectionBlock = ({ extCloudLoading, handleClusterConnect }) => {
+export const ConnectionBlock = ({ loading, handleClusterConnect }) => {
   const [clusterName, setClusterName] = useState('');
   const [clusterUrl, setClusterUrl] = useState('');
   const [showInfoBox, setShowInfoBox] = useState(true);
@@ -72,17 +72,9 @@ export const ConnectionBlock = ({ extCloudLoading, handleClusterConnect }) => {
     setClusterUrl(value);
   };
 
-  const handleConnectClick = (
-    managementClusterUrl,
-    setManagementClusterUrl,
-    managementClusterName
-  ) => {
+  const handleConnectClick = () => {
     setShowInfoBox(false);
-    handleClusterConnect(
-      managementClusterUrl,
-      setManagementClusterUrl,
-      managementClusterName
-    );
+    handleClusterConnect(clusterUrl, clusterName);
   };
 
   return (
@@ -100,7 +92,7 @@ export const ConnectionBlock = ({ extCloudLoading, handleClusterConnect }) => {
           id="lecc-cluster-name"
           value={clusterName}
           onChange={setClusterName}
-          disabled={extCloudLoading}
+          disabled={loading}
           validators={[nameSymbols, nameAlreadyUsed]}
           required
           trim
@@ -118,7 +110,7 @@ export const ConnectionBlock = ({ extCloudLoading, handleClusterConnect }) => {
           value={clusterUrl}
           onChange={setUrl}
           validators={[cloudAlreadySynced]}
-          disabled={extCloudLoading}
+          disabled={loading}
           required
           trim
         />
@@ -127,10 +119,8 @@ export const ConnectionBlock = ({ extCloudLoading, handleClusterConnect }) => {
             primary
             type="submit"
             label={connectionBlock.button.label()}
-            onClick={() =>
-              handleConnectClick(clusterUrl, setClusterUrl, clusterName)
-            }
-            disabled={extCloudLoading}
+            onClick={() => handleConnectClick()}
+            disabled={loading}
           />
         </ButtonWrapper>
       </Field>
@@ -150,6 +140,6 @@ export const ConnectionBlock = ({ extCloudLoading, handleClusterConnect }) => {
 };
 
 ConnectionBlock.propTypes = {
-  extCloudLoading: PropTypes.bool.isRequired,
+  loading: PropTypes.bool.isRequired,
   handleClusterConnect: PropTypes.func.isRequired,
 };
