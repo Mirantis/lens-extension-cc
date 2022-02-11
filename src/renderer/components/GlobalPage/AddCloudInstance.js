@@ -5,11 +5,19 @@ import { layout } from '../styles';
 import { ConnectionBlock } from './ConnectionBlock';
 import { SynchronizeBlock } from './SynchronizeBlock';
 import { CloseButton } from '../CloseButton/CloseButton';
+import { ErrorPanel } from '../ErrorPanel';
 import {
   ExtendedCloud,
   EXTENDED_CLOUD_EVENTS,
 } from '../../../common/ExtendedCloud';
 import { Renderer } from '@k8slens/extensions';
+import { normalizeUrl } from '../../../util/netUtil';
+import { addCloudInstance } from '../../../strings';
+import {
+  Cloud,
+  CONNECTION_STATUSES,
+  CLOUD_EVENTS,
+} from '../../../common/Cloud';
 
 const {
   Component: { Notifications, Spinner },
@@ -44,6 +52,14 @@ const MainColumn = styled.div(function () {
     alignItems: 'center',
     maxHeight: '100%',
     overflow: 'auto',
+  };
+});
+
+const ErrorPanelWrapper = styled.div(function () {
+  return {
+    maxWidth: '750px',
+    width: '100%',
+    marginTop: layout.gap * 3,
   };
 });
 
@@ -100,19 +116,69 @@ export const AddCloudInstance = ({ onAdd, onCancel }) => {
     return () => extCloud?.destroy();
   }, [extCloud]);
 
+  const checkConnectionError = (managementCluster) => {
+    if (managementCluster?.connectError) {
+      Notifications.error(managementCluster.connectError);
+    }
+  };
+
+  const handleClusterConnect = async function (
+    managementClusterUrl,
+    setManagementClusterUrl,
+    managementClusterName
+  ) {
+    cleanCloudsState();
+    const normUrl = normalizeUrl(managementClusterUrl.trim());
+    setManagementClusterUrl(normUrl); // update to actual URL we'll use
+    setLoading(true);
+    let newCloud = new Cloud();
+    newCloud.cloudUrl = normUrl;
+    newCloud.name = managementClusterName;
+    const statusListener = () => {
+      if (newCloud.status === CONNECTION_STATUSES.CONNECTING) {
+        setLoading(true);
+      } else {
+        setLoading(false);
+        newCloud.removeEventListener(
+          CLOUD_EVENTS.STATUS_CHANGE,
+          statusListener
+        );
+        if (newCloud.status === CONNECTION_STATUSES.CONNECTED) {
+          setCloud(newCloud);
+        } else {
+          checkConnectionError(newCloud);
+        }
+      }
+    };
+    newCloud.addEventListener(CLOUD_EVENTS.STATUS_CHANGE, statusListener);
+    await newCloud.connect();
+  };
+
   return (
     <PageContainer>
       <MainColumn>
         <ConnectionBlock
-          setCloud={setCloud}
           extCloudLoading={loading}
-          cleanCloudsState={cleanCloudsState}
+          handleClusterConnect={handleClusterConnect}
         />
         {loading ? (
           <Spinner />
-        ) : extCloud && !extCloud.error ? (
-          <SynchronizeBlock extendedCloud={extCloud} onAdd={onAdd} />
-        ) : null}
+        ) : (
+          extCloud &&
+          (!extCloud.error ? (
+            <SynchronizeBlock extendedCloud={extCloud} onAdd={onAdd} />
+          ) : (
+            <ErrorPanelWrapper>
+              <ErrorPanel>
+                <p
+                  dangerouslySetInnerHTML={{
+                    __html: addCloudInstance.errorHtml(),
+                  }}
+                />
+              </ErrorPanel>
+            </ErrorPanelWrapper>
+          ))
+        )}
       </MainColumn>
       <EscColumn>
         <CloseButton onClick={onCancel} />
