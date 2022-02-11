@@ -2,6 +2,8 @@ import * as rtv from 'rtvjs';
 import { Cluster } from './Cluster';
 import { Credential } from './Credential';
 import { SshKey } from './SshKey';
+import { Proxy } from './Proxy';
+import { License } from './License';
 
 /**
  * MCC project/namespace.
@@ -31,6 +33,8 @@ export class Namespace {
     let _clusters = null;
     let _sshKeys = null;
     let _credentials = null;
+    let _proxies = null;
+    let _licenses = null;
 
     /** @member {string} */
     this.id = data.metadata.uid;
@@ -122,6 +126,57 @@ export class Namespace {
         }
       },
     });
+
+    /**
+     * @member {Array<Object>|null} proxies Proxies in this namespace. `null` if unknown.
+     */
+    Object.defineProperty(this, 'proxies', {
+      enumerable: true,
+      get() {
+        return _proxies;
+      },
+      set(newValue) {
+        rtv.verify(
+          { proxies: newValue },
+          {
+            proxies: [
+              rtv.EXPECTED,
+              rtv.ARRAY,
+              { $: [rtv.CLASS_OBJECT, { ctor: Proxy }] },
+            ],
+          }
+        );
+        if (newValue !== _proxies) {
+          _proxies = newValue || null;
+        }
+      },
+    });
+
+    /**
+     * @member {Array<Object>|null} proxies Proxies in this namespace. `null` if unknown.
+     */
+    Object.defineProperty(this, 'licenses', {
+      enumerable: true,
+      get() {
+        return _licenses;
+      },
+      set(newValue) {
+        rtv.verify(
+          { licenses: newValue },
+          {
+            licenses: [
+              rtv.EXPECTED,
+              rtv.ARRAY,
+              { $: [rtv.CLASS_OBJECT, { ctor: License }] },
+            ],
+          }
+        );
+        if (newValue !== _proxies) {
+          _licenses = newValue || null;
+        }
+      },
+    });
+
   }
 
   /**
