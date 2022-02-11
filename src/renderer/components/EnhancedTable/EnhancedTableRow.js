@@ -126,21 +126,26 @@ const cloudMenuItems = [
     title: contextMenus.cloud.remove(),
     name: 'remove',
     onClick: (extendedCloud) => {
-      ConfirmDialog.open({
-        ok: () => {
-          cloudStore.removeCloud(extendedCloud.cloud.cloudUrl);
-        },
-        labelOk: contextMenus.cloud.confirmDialog.confirmButtonLabel(),
-        message: (
-          <p
-            dangerouslySetInnerHTML={{
-              __html: contextMenus.cloud.confirmDialog.messageHtml(
-                extendedCloud.cloud.name
-              ),
-            }}
-          />
-        ),
-      });
+      console.log('test ', extendedCloud.cloud.syncAll);
+      if (!extendedCloud.cloud.syncAll && extendedCloud.cloud.syncNamespaces.length === 0) {
+        cloudStore.removeCloud(extendedCloud.cloud.cloudUrl);
+      } else {
+        ConfirmDialog.open({
+          ok: () => {
+            cloudStore.removeCloud(extendedCloud.cloud.cloudUrl);
+          },
+          labelOk: contextMenus.cloud.confirmDialog.confirmButtonLabel(),
+          message: (
+            <div
+              dangerouslySetInnerHTML={{
+                __html: contextMenus.cloud.confirmDialog.messageHtml(
+                  extendedCloud
+                ),
+              }}
+            />
+          ),
+        });
+      }
     },
   },
   {
