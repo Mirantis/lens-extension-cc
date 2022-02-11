@@ -119,7 +119,7 @@ export const ConnectionBlock = ({ loading, handleClusterConnect }) => {
             primary
             type="submit"
             label={connectionBlock.button.label()}
-            onClick={() => handleConnectClick()}
+            onClick={handleConnectClick}
             disabled={loading}
           />
         </ButtonWrapper>
