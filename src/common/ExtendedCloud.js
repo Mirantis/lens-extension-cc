@@ -5,6 +5,7 @@ import { cloudRequest, extractJwtPayload } from '../renderer/auth/authUtil';
 import * as strings from '../strings';
 import { Namespace } from '../renderer/store/Namespace';
 import { Credential } from '../renderer/store/Credential';
+import { SshKey } from '../renderer/store/SshKey';
 
 import { logger } from '../util/logger';
 import { Cluster } from '../renderer/store/Cluster';
@@ -168,7 +169,20 @@ const _deserializeSshKeysList = function (body) {
     };
   }
 
-  return body.items;
+  return body.items
+    .map((item, idx) => {
+      try {
+        return new SshKey(item);
+      } catch (err) {
+        logger.warn(
+          'ExtendedCloud._deserializeSshKeysList()',
+          `Ignoring sshKey ${idx} because it could not be deserialized: ${err.message}`,
+          err
+        );
+        return undefined;
+      }
+    })
+    .filter((shKey) => !!shKey);
 };
 
 /**
@@ -685,7 +699,7 @@ export class ExtendedCloud extends EventDispatcher {
         namespace.credentials = credResults.credentials[namespace.name];
         return namespace;
       });
-
+      console.log('this.namespaces', this.namespaces);
       if (!this.loaded) {
         // successfully loaded at least once
         this.loaded = true;

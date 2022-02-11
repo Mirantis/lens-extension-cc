@@ -1,6 +1,7 @@
 import * as rtv from 'rtvjs';
 import { Cluster } from './Cluster';
 import { Credential } from './Credential';
+import { SshKey } from './SshKey';
 
 /**
  * MCC project/namespace.
@@ -79,10 +80,9 @@ export class Namespace {
         return _sshKeys;
       },
       set(newValue) {
-        // TODO: update the shape to check for an SshKey class instance
         rtv.verify(
           { sshKeys: newValue },
-          { sshKeys: [rtv.EXPECTED, rtv.ARRAY, { $: [rtv.OBJECT] }] }
+          { sshKeys: [rtv.EXPECTED, rtv.ARRAY, { ctor: SshKey }] }
         );
         if (newValue !== _sshKeys) {
           _sshKeys = newValue || null;
