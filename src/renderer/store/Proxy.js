@@ -1,6 +1,7 @@
 import * as rtv from 'rtvjs';
 import { ApiObject } from './ApiObject';
 import { get } from 'lodash';
+import { Namespace } from './Namespace';
 
 const proxySpec = {
   apiVersion: rtv.STRING,
@@ -28,9 +29,16 @@ const proxySpec = {
 };
 
 export class Proxy extends ApiObject {
-  constructor(data) {
+  constructor(data, namespace) {
     super(data);
-    DEV_ENV && rtv.verify(data, proxySpec);
+    DEV_ENV &&
+      rtv.verify(
+        { data, namespace },
+        { data: proxySpec, namespace: [rtv.CLASS_OBJECT, { ctor: Namespace }] }
+      );
+
+    /** @member {Namespace} */
+    this.namespace = namespace;
 
     /** @member {string} */
     this.kind = data.kind;

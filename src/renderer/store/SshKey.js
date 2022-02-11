@@ -1,5 +1,6 @@
 import * as rtv from 'rtvjs';
 import { ApiObject } from './ApiObject';
+import { Namespace } from './Namespace';
 
 const sshKeySpec = {
   apiVersion: rtv.STRING,
@@ -18,9 +19,16 @@ const sshKeySpec = {
 };
 
 export class SshKey extends ApiObject {
-  constructor(data) {
+  constructor(data, namespace) {
     super(data);
-    DEV_ENV && rtv.verify(data, sshKeySpec);
+    DEV_ENV &&
+      rtv.verify(
+        { data, namespace },
+        { data: sshKeySpec, namespace: [rtv.CLASS_OBJECT, { ctor: Namespace }] }
+      );
+
+    /** @member {Namespace} */
+    this.namespace = namespace;
 
     /** @member {string} */
     this.kind = data.kind;

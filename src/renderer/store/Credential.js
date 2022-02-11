@@ -1,6 +1,7 @@
 import * as rtv from 'rtvjs';
 import { get } from 'lodash';
 import { ApiObject } from './ApiObject';
+import { Namespace } from './Namespace';
 
 export const credentialTypes = [
   'awscredential',
@@ -42,13 +43,23 @@ const openStackCredentialSpec = {
 };
 
 export class Credential extends ApiObject {
-  constructor(data) {
+  constructor(data, namespace) {
     super(data);
     // now we have check only for openStack. It's hard to predict other types
-    DEV_ENV && rtv.verify(data, openStackCredentialSpec);
+    DEV_ENV &&
+      rtv.verify(
+        { data, namespace },
+        {
+          data: openStackCredentialSpec,
+          namespace: [rtv.CLASS_OBJECT, { ctor: Namespace }],
+        }
+      );
 
     /** @member {string} */
     this.kind = data.kind;
+
+    /** @member {Namespace} */
+    this.namespace = namespace;
 
     /** @member {string} */
     this.region = get(

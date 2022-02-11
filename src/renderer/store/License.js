@@ -1,5 +1,6 @@
 import { ApiObject } from './ApiObject';
 import * as rtv from 'rtvjs';
+import { Namespace } from './Namespace';
 
 const licenseSpec = {
   apiVersion: rtv.STRING,
@@ -19,9 +20,19 @@ const licenseSpec = {
   },
 };
 export class License extends ApiObject {
-  constructor(data) {
+  constructor(data, namespace) {
     super(data);
-    DEV_ENV && rtv.verify(data, licenseSpec);
+    DEV_ENV &&
+      rtv.verify(
+        { data, namespace },
+        {
+          data: licenseSpec,
+          namespace: [rtv.CLASS_OBJECT, { ctor: Namespace }],
+        }
+      );
+
+    /** @member {Namespace} */
+    this.namespace = namespace;
 
     /** @member {string} */
     this.kind = data.kind;

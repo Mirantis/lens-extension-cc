@@ -76,7 +76,13 @@ const getErrorMessage = (error) => {
   return error.message;
 };
 
-const _deserializeCredentialsList = function (body) {
+/**
+ * Deserialize the raw list of credentials data from the API into credentials objects.
+ * @param {Object} body Data response from /list/credential API by credentialTypes
+ * @param {Namespace} namespace The Namespace object
+ * @returns {Array<Credential>} Array of Credential objects.
+ */
+const _deserializeCredentialsList = function (body, namespace) {
   if (!body || !Array.isArray(body.items)) {
     return {
       error: strings.extendedCloud.error.invalidCredentialsPayload(),
@@ -86,7 +92,7 @@ const _deserializeCredentialsList = function (body) {
   return body.items
     .map((item, idx) => {
       try {
-        return new Credential(item);
+        return new Credential(item, namespace);
       } catch (err) {
         logger.warn(
           'ExtendedCloud._deserializeCredentialsList()',
@@ -130,7 +136,7 @@ const _fetchCredentials = async function (cloud, namespaces) {
 
           tokensRefreshed = tokensRefreshed || refreshed;
 
-          const items = _deserializeCredentialsList(body);
+          const items = _deserializeCredentialsList(body, namespace);
 
           return {
             items,
@@ -173,7 +179,13 @@ const _fetchCredentials = async function (cloud, namespaces) {
   return { credentials, tokensRefreshed };
 };
 
-const _deserializeSshKeysList = function (body) {
+/**
+ * Deserialize the raw list of sshKeys data from the API into sshKeys object.
+ * @param {Object} body Data response from /list/sshKey API
+ * @param {Namespace} namespace The Namespace object
+ * @returns {Array<SshKey>} Array of SshKey objects.
+ */
+const _deserializeSshKeysList = function (body, namespace) {
   if (!body || !Array.isArray(body.items)) {
     return {
       error: strings.extendedCloud.error.invalidSshKeysPayload(),
@@ -183,7 +195,7 @@ const _deserializeSshKeysList = function (body) {
   return body.items
     .map((item, idx) => {
       try {
-        return new SshKey(item);
+        return new SshKey(item, namespace);
       } catch (err) {
         logger.warn(
           'ExtendedCloud._deserializeSshKeysList()',
@@ -224,7 +236,7 @@ const _fetchSshKeys = async function (cloud, namespaces) {
 
       tokensRefreshed = tokensRefreshed || refreshed;
 
-      const items = _deserializeSshKeysList(body);
+      const items = _deserializeSshKeysList(body, namespace);
       return { items, error: error || items.error, namespace };
     })
   );
@@ -250,33 +262,32 @@ const _fetchSshKeys = async function (cloud, namespaces) {
  * Deserialize the raw list of cluster data from the API into Cluster objects.
  * @param {Object} body Data response from /list/cluster API.
  * @param {Cloud} cloud The Cloud object used to access the clusters.
+ * @param {Namespace} namespace The Namespace object
  * @returns {Array<Cluster>} Array of Cluster objects.
  */
-const _deserializeClustersList = function (body, cloud) {
+const _deserializeClustersList = function (body, cloud, namespace) {
   if (!body || !Array.isArray(body.items)) {
     return { error: strings.extendedCloud.error.invalidClusterPayload() };
   }
 
-  return {
-    data: body.items
-      .map((item, idx) => {
-        try {
-          return new Cluster(item, cloud.username);
-        } catch (err) {
-          logger.warn(
-            'ExtendedCloud._deserializeClustersList()',
-            `Ignoring cluster ${idx} (namespace/name="${
-              item?.metadata?.namespace ?? '<unknown>'
-            }/${
-              item?.metadata?.name ?? '<unknown>'
-            }") because it could not be deserialized: ${err.message}`,
-            err
-          );
-          return undefined;
-        }
-      })
-      .filter((cl) => !!cl), // eliminate invalid clusters (`undefined` items)
-  };
+  return body.items
+    .map((item, idx) => {
+      try {
+        return new Cluster(item, cloud.username, namespace);
+      } catch (err) {
+        logger.warn(
+          'ExtendedCloud._deserializeClustersList()',
+          `Ignoring cluster ${idx} (namespace/name="${
+            item?.metadata?.namespace ?? '<unknown>'
+          }/${
+            item?.metadata?.name ?? '<unknown>'
+          }") because it could not be deserialized: ${err.message}`,
+          err
+        );
+        return undefined;
+      }
+    })
+    .filter((cl) => !!cl); // eliminate invalid clusters (`undefined` items)
 };
 
 /**
@@ -363,49 +374,40 @@ const _fetchNamespaces = async function (cloud) {
  *  all namespaces on which cluster retrieval was attempted.
  */
 const _fetchClusters = async function (cloud, namespaces) {
+  let tokensRefreshed = false;
+
   const results = await Promise.all(
-    namespaces.map(({ name: namespaceName }) =>
-      cloudRequest({
+    namespaces.map(async (namespace) => {
+      const {
+        body,
+        tokensRefreshed: refreshed,
+        error,
+      } = await cloudRequest({
         cloud,
         method: 'list',
         entity: 'cluster',
-        args: { namespaceName }, // extra args
-      })
-    )
+        args: { namespaceName: namespace.name }, // extra args
+      });
+      tokensRefreshed = tokensRefreshed || refreshed;
+
+      const items = _deserializeClustersList(body, cloud, namespace);
+      return { items, error: error || items.error, namespace };
+    })
   );
 
-  let errResult;
-  let tokensRefreshed = false;
-  results.every((r) => {
-    if (r.error && !errResult) {
-      errResult = r;
-    }
-
-    tokensRefreshed = tokensRefreshed || r.tokensRefreshed;
-
-    // keep looking until we've found both or reached the end
-    return !!errResult && tokensRefreshed;
-  });
-
-  if (errResult) {
-    return { error: errResult.error };
+  const error = results.find((cl) => cl.error);
+  if (error) {
+    return { error };
   }
 
   let clusters = [];
-  let dsError;
 
-  results.every((result) => {
-    const { data, error } = _deserializeClustersList(result.body, cloud);
-    if (error) {
-      dsError = { error };
-      return false; // break
-    }
-
-    clusters = [...clusters, ...data];
+  results.every(({ items }) => {
+    clusters = [...clusters, ...items];
     return true; // next
   });
 
-  return dsError || { clusters, tokensRefreshed };
+  return { clusters, tokensRefreshed };
 };
 
 export class ExtendedCloud extends EventDispatcher {
@@ -704,7 +706,7 @@ export class ExtendedCloud extends EventDispatcher {
 
       this.namespaces = nsResults.namespaces.map((namespace) => {
         namespace.clusters = clusterResults.clusters.filter(
-          (c) => c.namespace === namespace.name
+          (c) => c.namespace.name === namespace.name
         );
         namespace.sshKeys = keyResults.sshKeys[namespace.name];
         namespace.credentials = credResults.credentials[namespace.name];
