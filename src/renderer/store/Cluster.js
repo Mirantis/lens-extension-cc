@@ -83,9 +83,6 @@ export class Cluster extends ApiObject {
     /** @member {string} */
     this.username = username;
 
-    /** @member {string} */
-    this.namespace = data.metadata.namespace;
-
     /** @member {boolean} */
     this.isManagementCluster = isManagementCluster(data);
 

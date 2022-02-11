@@ -50,9 +50,6 @@ export class Credential extends ApiObject {
     /** @member {string} */
     this.kind = data.kind;
 
-    /** @member {string}  namespaceName */
-    this.namespace = data.metadata.namespace;
-
     /** @member {string} */
     this.region = get(
       data.metadata,

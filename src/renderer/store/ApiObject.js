@@ -6,6 +6,9 @@ export class ApiObject {
     /** @member {string} */
     this.name = data.metadata.name;
 
+    /** @member {string}  namespaceName */
+    this.namespace = data.metadata.namespace;
+
     /** @member {Date} */
     this.creationDate = new Date(data.metadata.creationTimestamp);
 

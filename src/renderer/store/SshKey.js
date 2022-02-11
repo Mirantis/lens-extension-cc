@@ -28,9 +28,6 @@ export class SshKey extends ApiObject {
     /** @member {string} */
     this.publicKey = data.spec.publicKey;
 
-    /** @member {string}  namespaceName */
-    this.namespace = data.metadata.namespace;
-
     // TODO this need to find and  define
     this.status = null;
     this.source = null;

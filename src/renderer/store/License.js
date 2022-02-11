@@ -26,9 +26,6 @@ export class License extends ApiObject {
     /** @member {string} */
     this.kind = data.kind;
 
-    /** @member {string}  namespaceName */
-    this.namespace = data.metadata.namespace;
-
     // TODO this need to find and  define
     this.source = null;
     this.labels = [];
