@@ -21,11 +21,15 @@ export class SshKey extends ApiObject {
   constructor(data) {
     super(data);
     DEV_ENV && rtv.verify(data, sshKeySpec);
+
     /** @member {string} */
     this.kind = data.kind;
 
     /** @member {string} */
     this.publicKey = data.spec.publicKey;
+
+    /** @member {string}  namespaceName */
+    this.namespace = data.metadata.namespace;
 
     // TODO this need to find and  define
     this.status = null;

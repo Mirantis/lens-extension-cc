@@ -710,7 +710,7 @@ export class ExtendedCloud extends EventDispatcher {
         namespace.credentials = credResults.credentials[namespace.name];
         return namespace;
       });
-      console.log('this.namespaces', this.namespaces);
+
       if (!this.loaded) {
         // successfully loaded at least once
         this.loaded = true;

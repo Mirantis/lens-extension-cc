@@ -15,7 +15,7 @@ const openStackCredentialSpec = {
     name: rtv.STRING,
     namespace: rtv.STRING,
     uid: rtv.STRING,
-    finalizers: [rtv.ARRAY, rtv.OBJECT],
+    finalizers: [rtv.OPTIONAL, rtv.ARRAY, rtv.OBJECT],
     managedFields: [rtv.ARRAY, { $: [rtv.OBJECT] }], // complex nested object
     resourceVersion: rtv.STRING,
     labels: [
@@ -49,10 +49,11 @@ export class Credential extends ApiObject {
 
     /** @member {string} */
     this.kind = data.kind;
-    /** @member {string} */
 
+    /** @member {string}  namespaceName */
     this.namespace = data.metadata.namespace;
 
+    /** @member {string} */
     this.region = get(
       data.metadata,
       'labels["kaas.mirantis.com/region"]',
