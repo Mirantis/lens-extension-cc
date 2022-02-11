@@ -126,8 +126,11 @@ const cloudMenuItems = [
     title: contextMenus.cloud.remove(),
     name: 'remove',
     onClick: (extendedCloud) => {
-      console.log('test ', extendedCloud.cloud.syncAll);
-      if (!extendedCloud.cloud.syncAll && extendedCloud.cloud.syncNamespaces.length === 0) {
+      if (
+        !extendedCloud.cloud.connected ||
+        (!extendedCloud.cloud.syncAll &&
+          extendedCloud.cloud.syncNamespaces.length === 0)
+      ) {
         cloudStore.removeCloud(extendedCloud.cloud.cloudUrl);
       } else {
         ConfirmDialog.open({
@@ -138,9 +141,8 @@ const cloudMenuItems = [
           message: (
             <div
               dangerouslySetInnerHTML={{
-                __html: contextMenus.cloud.confirmDialog.messageHtml(
-                  extendedCloud
-                ),
+                __html:
+                  contextMenus.cloud.confirmDialog.messageHtml(extendedCloud),
               }}
             />
           ),

@@ -343,11 +343,13 @@ export const contextMenus: Dict = {
       messageHtml: (extCloud) =>
         // `Are you sure you want to remove the <b>${extCloud.cloud.name}</b> Management Cluster from Lens?`,
         `
-        <p>Removing management cluster “${extCloud.cloud.name}” will also remove the following projects and their associated catalog items:</p>
-        <ul>
-          ${extCloud.namespaces.map((namespace) => (
-            `<li>- ${namespace}</li>`
-          ))}
+        <p>Removing management cluster “${
+          extCloud.cloud.name
+        }” will also remove the following projects and their associated catalog items:</p>
+        <ul style="padding: 12px;">
+          ${extCloud.namespaces
+            .map((namespace) => `<li>- ${namespace.name}</li>`)
+            .join('')}
         </ul>
         <p>Are you sure you want to continue?</p>
         `,
