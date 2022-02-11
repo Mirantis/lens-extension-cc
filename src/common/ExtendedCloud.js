@@ -4,7 +4,7 @@ import { filter, flatten } from 'lodash';
 import { cloudRequest, extractJwtPayload } from '../renderer/auth/authUtil';
 import * as strings from '../strings';
 import { Namespace } from '../renderer/store/Namespace';
-import { Credential } from '../renderer/store/Credential';
+import { Credential, credentialTypes } from '../renderer/store/Credential';
 import { SshKey } from '../renderer/store/SshKey';
 
 import { logger } from '../util/logger';
@@ -66,12 +66,6 @@ export const EXTENDED_CLOUD_EVENTS = Object.freeze({
  */
 const FETCH_INTERVAL = 4.85 * 60 * 1000; // 4:51 minutes (AVOID exactly 5 minutes)
 
-const credentialTypes = [
-  'awscredential',
-  'byocredential',
-  'openstackcredential',
-];
-
 const getErrorMessage = (error) => {
   if (!error) {
     return null;
@@ -89,7 +83,20 @@ const _deserializeCredentialsList = function (body) {
     };
   }
 
-  return body.items;
+  return body.items
+    .map((item, idx) => {
+      try {
+        return new Credential(item);
+      } catch (err) {
+        logger.warn(
+          'ExtendedCloud._deserializeCredentialsList()',
+          `Ignoring credential ${idx} because it could not be deserialized: ${err.message}`,
+          err
+        );
+        return undefined;
+      }
+    })
+    .filter((shKey) => !!shKey);
 };
 
 /**
@@ -153,8 +160,12 @@ const _fetchCredentials = async function (cloud, namespaces) {
     } = val;
     if (acc[nsName]) {
       acc[nsName][credentialType] = items;
+      acc[nsName].allCredentialsCount += items.length;
     } else {
-      acc[nsName] = new Credential({ [credentialType]: items }, nsName);
+      acc[nsName] = {
+        [credentialType]: items,
+        allCredentialsCount: items.length,
+      };
     }
     return acc;
   }, {});

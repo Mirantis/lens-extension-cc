@@ -103,7 +103,18 @@ export class Namespace {
         rtv.verify(
           { credentials: newValue },
           {
-            credentials: [rtv.CLASS_OBJECT, { ctor: Credential }],
+            credentials: [
+              rtv.EXPECTED,
+              {
+                awscredential: [rtv.EXPECTED, rtv.ARRAY, { ctor: Credential }],
+                byocredential: [rtv.EXPECTED, rtv.ARRAY, { ctor: Credential }],
+                openstackcredential: [
+                  rtv.EXPECTED,
+                  rtv.ARRAY,
+                  { ctor: Credential },
+                ],
+              },
+            ],
           }
         );
         if (newValue !== _credentials) {

@@ -6,7 +6,10 @@ export class ApiObject {
     /** @member {string} */
     this.name = data.metadata.name;
 
-    /** @member {boolean} */
+    /** @member {Date} */
+    this.creationDate = new Date(data.metadata.creationTimestamp);
+
+    /** @member {boolean|null} */
     this.deleteInProgress = !!data.metadata.deletionTimestamp;
   }
 }

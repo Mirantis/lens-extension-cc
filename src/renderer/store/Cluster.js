@@ -1,5 +1,6 @@
 import * as rtv from 'rtvjs';
 import { get } from 'lodash';
+import { ApiObject } from './ApiObject';
 
 const isManagementCluster = function (data) {
   const kaas = get(data.spec, 'providerSpec.value.kaas', {});
@@ -17,8 +18,9 @@ const getServerUrl = function (data) {
  * @param {Object} data Raw cluster data payload from the API.
  * @param {string} username Username used to access the cluster.
  */
-export class Cluster {
+export class Cluster extends ApiObject {
   constructor(data, username) {
+    super(data);
     DEV_ENV &&
       rtv.verify(
         { username, data },
@@ -82,19 +84,7 @@ export class Cluster {
     this.username = username;
 
     /** @member {string} */
-    this.id = data.metadata.uid;
-
-    /** @member {string} */
-    this.name = data.metadata.name;
-
-    /** @member {string} */
     this.namespace = data.metadata.namespace;
-
-    /** @member {Date} */
-    this.creationDate = new Date(data.metadata.creationTimestamp);
-
-    /** @member {boolean|null} */
-    this.deleteInProgress = !!data.metadata.deletionTimestamp;
 
     /** @member {boolean} */
     this.isManagementCluster = isManagementCluster(data);

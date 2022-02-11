@@ -22,17 +22,14 @@ export class SshKey extends ApiObject {
     super(data);
     DEV_ENV && rtv.verify(data, sshKeySpec);
     /** @member {string} */
-    this.kind = data.kind
+    this.kind = data.kind;
 
     /** @member {string} */
-    this.publicKey = data.spec.publicKey
-
-    this.creationDate = new Date(data.metadata.creationTimestamp);
+    this.publicKey = data.spec.publicKey;
 
     // TODO this need to find and  define
     this.status = null;
-    this.source = null
-    this.labels = []
-
+    this.source = null;
+    this.labels = [];
   }
 }
