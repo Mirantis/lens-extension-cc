@@ -32,7 +32,7 @@ export class Namespace {
 
     let _clusters = [];
     let _sshKeys = [];
-    let _credentials = [];
+    let _credentials = {};
     let _proxies = [];
     let _licenses = [];
 
@@ -93,7 +93,11 @@ export class Namespace {
     });
 
     /**
-     * @member {Array<Credential>} credentials Credentials in this namespace. Empty if none.
+     * @member {Object} credentials grouped by type in this namespace. Empty object by default.
+     * @param {Array<Credential>} credentials.awscredential
+     * @param {Array<Credential>} credentials.byocredential
+     * @param {Array<Credential>} credentials.openstackcredential
+     * @param {number} credentials.allCredentialsCount
      */
     Object.defineProperty(this, 'credentials', {
       enumerable: true,
@@ -107,6 +111,7 @@ export class Namespace {
             credentials: [
               rtv.EXPECTED,
               {
+                allCredentialsCount: rtv.NUMBER,
                 awscredential: [rtv.EXPECTED, rtv.ARRAY, { ctor: Credential }],
                 byocredential: [rtv.EXPECTED, rtv.ARRAY, { ctor: Credential }],
                 openstackcredential: [
@@ -119,7 +124,7 @@ export class Namespace {
           }
         );
         if (newValue !== _credentials) {
-          _credentials = newValue || [];
+          _credentials = newValue || {};
         }
       },
     });
