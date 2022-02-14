@@ -200,7 +200,7 @@ export const SynchronizeBlock = ({ extendedCloud, onAdd }) => {
                     <li>
                       <p>
                         {synchronizeBlock.checkboxesDropdownLabels.credentials()}{' '}
-                        ({namespace.credentials.allCredentialsCount})
+                        ({namespace.credentialsCount})
                       </p>
                     </li>
                   </AccordionChildrenList>

@@ -1,5 +1,7 @@
 import * as rtv from 'rtvjs';
 import { get } from 'lodash';
+import { ApiObject } from './ApiObject';
+import { Namespace } from './Namespace';
 
 const isManagementCluster = function (data) {
   const kaas = get(data.spec, 'providerSpec.value.kaas', {});
@@ -17,13 +19,15 @@ const getServerUrl = function (data) {
  * @param {Object} data Raw cluster data payload from the API.
  * @param {string} username Username used to access the cluster.
  */
-export class Cluster {
-  constructor(data, username) {
+export class Cluster extends ApiObject {
+  constructor(data, username, namespace) {
+    super(data);
     DEV_ENV &&
       rtv.verify(
-        { username, data },
+        { username, data, namespace },
         {
           username: rtv.STRING,
+          namespace: [rtv.CLASS_OBJECT, { ctor: Namespace }],
           data: {
             metadata: {
               name: rtv.STRING,
@@ -78,23 +82,11 @@ export class Cluster {
 
     // NOTE: regardless of `ready`, we assume `data.metadata` is always available
 
+    /** @member {Namespace} */
+    this.namespace = namespace;
+
     /** @member {string} */
     this.username = username;
-
-    /** @member {string} */
-    this.id = data.metadata.uid;
-
-    /** @member {string} */
-    this.name = data.metadata.name;
-
-    /** @member {string} */
-    this.namespace = data.metadata.namespace;
-
-    /** @member {Date} */
-    this.created = new Date(data.metadata.creationTimestamp);
-
-    /** @member {boolean|null} */
-    this.deleteInProgress = !!data.metadata.deletionTimestamp;
 
     /** @member {boolean} */
     this.isManagementCluster = isManagementCluster(data);
@@ -165,6 +157,6 @@ export class Cluster {
   /** @member {string} contextName Kubeconfig context name for this cluster. */
   get contextName() {
     // NOTE: this mirrors how MCC generates kubeconfig context names
-    return `${this.username}@${this.namespace}@${this.name}`;
+    return `${this.username}@${this.namespace.name}@${this.name}`;
   }
 }

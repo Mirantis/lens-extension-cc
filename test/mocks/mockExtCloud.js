@@ -19,12 +19,7 @@ export const mockExtCloud = {
       name: 'namespaces-1',
       clusters: [],
       sshKeys: [],
-      credentials: {
-        awscredential: [],
-        allCredentialsCount: 1,
-        byocredential: [],
-        openstackcredential: [{}],
-      },
+      credentials: [{}],
     },
     {
       name: 'namespaces-2',
@@ -51,12 +46,7 @@ export const mockExtCloud = {
         },
       ],
       sshKeys: [],
-      credentials: {
-        awscredential: [],
-        allCredentialsCount: 1,
-        byocredential: [],
-        openstackcredential: [{}],
-      },
+      credentials: [{}],
     },
     {
       name: 'namespaces-3',
@@ -83,12 +73,7 @@ export const mockExtCloud = {
         },
       ],
       sshKeys: [],
-      credentials: {
-        awscredential: [],
-        allCredentialsCount: 1,
-        byocredential: [],
-        openstackcredential: [{}],
-      },
+      credentials: [{}],
     },
   ],
 };
@@ -114,12 +99,7 @@ export const mockExtCloud2 = {
       name: 'namespaces-1',
       clusters: [],
       sshKeys: [],
-      credentials: {
-        awscredential: [],
-        allCredentialsCount: 1,
-        byocredential: [],
-        openstackcredential: [{}],
-      },
+      credentials: [{}],
     },
     {
       name: 'namespaces-2',
@@ -146,12 +126,7 @@ export const mockExtCloud2 = {
         },
       ],
       sshKeys: [],
-      credentials: {
-        awscredential: [],
-        allCredentialsCount: 1,
-        byocredential: [],
-        openstackcredential: [{}],
-      },
+      credentials: [{}],
     },
     {
       name: 'namespaces-3',
@@ -178,12 +153,7 @@ export const mockExtCloud2 = {
         },
       ],
       sshKeys: [],
-      credentials: {
-        awscredential: [],
-        allCredentialsCount: 1,
-        byocredential: [],
-        openstackcredential: [{}],
-      },
+      credentials: [{}],
     },
   ],
 };
