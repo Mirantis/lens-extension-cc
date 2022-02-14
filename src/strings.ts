@@ -347,9 +347,11 @@ export const contextMenus: Dict = {
         }</p>
         ${
           extCloudProjects.length > 0 &&
-          `<ul style="padding: 12px;">
+          `<ul style="padding: 12px 12px 12px 26px; list-style: disc;">
             ${extCloudProjects
-              .map((project) => `<li>- ${project}</li>`)
+              .map(
+                (project) => `<li>${project.name ? project.name : project}</li>`
+              )
               .join('')}
           </ul>`
         }

@@ -151,7 +151,7 @@ const cloudMenuItems = [
           ),
         });
       } else {
-        if (extendedCloud.cloud.syncNamespaces > 0) {
+        if (extendedCloud.namespaces.length > 0) {
           ConfirmDialog.open({
             ok: () => {
               cloudStore.removeCloud(extendedCloud.cloud.cloudUrl);
@@ -162,7 +162,7 @@ const cloudMenuItems = [
                 dangerouslySetInnerHTML={{
                   __html: contextMenus.cloud.confirmDialog.messageHtml(
                     extendedCloud.cloud.name,
-                    extendedCloud.cloud.syncNamespaces
+                    extendedCloud.namespaces
                   ),
                 }}
               />
