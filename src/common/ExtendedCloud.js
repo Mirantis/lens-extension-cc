@@ -113,7 +113,7 @@ const _deserializeCredentialsList = function (body, namespace, credentialType) {
  *  if necessary.
  * @param {Array<Namespace>} namespaces List of namespaces.
  * @returns {Promise<Object>} On success
- *  `{ credentials: { [index: string]: { allCredentialsCount: number, [index: string]: Array<ApiCluster> } }, tokensRefreshed: boolean }`,
+ *  `{ credentials: {Array<Credential>}, tokensRefreshed: boolean }`,
  *  where `credentials` is a map of namespace name to credential type, to a raw credential
  *  API object; or `{error: string}` on error. The error will be the first-found error out of
  *  all namespaces on which SSH Key retrieval was attempted.
@@ -143,7 +143,6 @@ const _fetchCredentials = async function (cloud, namespaces) {
             items,
             error: error || items.error,
             namespace,
-            credentialType: entity,
           };
         })
       );
@@ -162,17 +161,12 @@ const _fetchCredentials = async function (cloud, namespaces) {
   const credentials = flattenCreds.reduce((acc, val) => {
     const {
       namespace: { name: nsName },
-      credentialType,
       items,
     } = val;
     if (acc[nsName]) {
-      acc[nsName][credentialType] = items;
-      acc[nsName].allCredentialsCount += items.length;
+      acc[nsName] = [...acc[nsName], ...items];
     } else {
-      acc[nsName] = {
-        [credentialType]: items,
-        allCredentialsCount: items.length,
-      };
+      acc[nsName] = [...items];
     }
     return acc;
   }, {});

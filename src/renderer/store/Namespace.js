@@ -32,7 +32,7 @@ export class Namespace {
 
     let _clusters = [];
     let _sshKeys = [];
-    let _credentials = {};
+    let _credentials = [];
     let _proxies = [];
     let _licenses = [];
 
@@ -93,11 +93,7 @@ export class Namespace {
     });
 
     /**
-     * @member {Object} credentials grouped by type in this namespace. Empty object by default.
-     * @param {Array<Credential>} credentials.awscredential
-     * @param {Array<Credential>} credentials.byocredential
-     * @param {Array<Credential>} credentials.openstackcredential
-     * @param {number} credentials.allCredentialsCount
+     * @param {Array<Credential>} credentials
      */
     Object.defineProperty(this, 'credentials', {
       enumerable: true,
@@ -108,19 +104,7 @@ export class Namespace {
         rtv.verify(
           { credentials: newValue },
           {
-            credentials: [
-              rtv.EXPECTED,
-              {
-                allCredentialsCount: rtv.NUMBER,
-                awscredential: [rtv.EXPECTED, rtv.ARRAY, { ctor: Credential }],
-                byocredential: [rtv.EXPECTED, rtv.ARRAY, { ctor: Credential }],
-                openstackcredential: [
-                  rtv.EXPECTED,
-                  rtv.ARRAY,
-                  { ctor: Credential },
-                ],
-              },
-            ],
+            credentials: [rtv.EXPECTED, rtv.ARRAY, { ctor: Credential }],
           }
         );
         if (newValue !== _credentials) {
@@ -192,5 +176,12 @@ export class Namespace {
    */
   get sshKeyCount() {
     return this.sshKeys?.length || 0;
+  }
+
+  /**
+   * @member {number} credentialsCount Number of all credentials, doesn't matter type, in this namespace.
+   */
+  get credentialsCount() {
+    return this.credentials?.length || 0;
   }
 }

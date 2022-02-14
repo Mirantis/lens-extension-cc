@@ -11,7 +11,9 @@ export const credentialTypes = {
 
 export const credentialTypesList = Object.values(credentialTypes);
 
-const openStackCredentialSpec = {
+// NOTE: this spec based on openStack type. We hope other types have the same structure.
+// But keep this place in the mind just in case
+const credentialSpec = {
   apiVersion: rtv.STRING,
   kind: [rtv.REQUIRED, rtv.STRING],
   metadata: {
@@ -44,12 +46,6 @@ const openStackCredentialSpec = {
   },
 };
 
-const credentialsSpec = {
-  [credentialTypes.OPENSTACK_CREDENTIAL]: openStackCredentialSpec,
-  [credentialTypes.BYO_CREDENTIAL]: rtv.ANY, // temporary. Will be filled later,
-  [credentialTypes.AWS_CREDENTIAL]: rtv.ANY, // temporary. Will be filled later,
-};
-
 export class Credential extends ApiObject {
   constructor(data, namespace, credentialType) {
     super(data);
@@ -58,7 +54,7 @@ export class Credential extends ApiObject {
       rtv.verify(
         { data, namespace, credentialType },
         {
-          data: credentialsSpec[credentialType],
+          data: credentialSpec,
           namespace: [rtv.CLASS_OBJECT, { ctor: Namespace }],
           credentialType: rtv.STRING, // is it way to define 'one of values' (credentialTypes enum or credentialTypesList) ask Stefan
         }
