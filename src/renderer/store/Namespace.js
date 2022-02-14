@@ -30,11 +30,11 @@ export class Namespace {
         }
       );
 
-    let _clusters = null;
-    let _sshKeys = null;
-    let _credentials = null;
-    let _proxies = null;
-    let _licenses = null;
+    let _clusters = [];
+    let _sshKeys = [];
+    let _credentials = [];
+    let _proxies = [];
+    let _licenses = [];
 
     /** @member {string} */
     this.id = data.metadata.uid;
@@ -49,8 +49,7 @@ export class Namespace {
     this.phase = data.status.phase;
 
     /**
-     * @member {Array<Cluster>|null} clusters Clusters in this namespace. `null` if unknown.
-     *  Empty if none.
+     * @member {Array<Cluster>} clusters Clusters in this namespace. Empty if none.
      */
     Object.defineProperty(this, 'clusters', {
       enumerable: true,
@@ -69,14 +68,13 @@ export class Namespace {
           }
         );
         if (newValue !== _clusters) {
-          _clusters = newValue || null;
+          _clusters = newValue || [];
         }
       },
     });
 
     /**
-     * @member {Array<Object>|null} sshKeys SSH keys in this namespace. `null` if unknown.
-     *  Empty if none.
+     * @member{ Array<SshKey>} sshKeys SSH keys in this namespace. Empty if none.
      */
     Object.defineProperty(this, 'sshKeys', {
       enumerable: true,
@@ -89,14 +87,13 @@ export class Namespace {
           { sshKeys: [rtv.EXPECTED, rtv.ARRAY, { ctor: SshKey }] }
         );
         if (newValue !== _sshKeys) {
-          _sshKeys = newValue || null;
+          _sshKeys = newValue || [];
         }
       },
     });
 
     /**
-     * @member {Array<Object>|null} credentials Credentials in this namespace. `null` if unknown.
-     *  Empty if none.
+     * @member {Array<Credential>} credentials Credentials in this namespace. Empty if none.
      */
     Object.defineProperty(this, 'credentials', {
       enumerable: true,
@@ -122,13 +119,13 @@ export class Namespace {
           }
         );
         if (newValue !== _credentials) {
-          _credentials = newValue || null;
+          _credentials = newValue || [];
         }
       },
     });
 
     /**
-     * @member {Array<Object>|null} proxies Proxies in this namespace. `null` if unknown.
+     * @member {Array<Proxy>} proxies Proxies in this namespace. Empty if none.
      */
     Object.defineProperty(this, 'proxies', {
       enumerable: true,
@@ -147,13 +144,13 @@ export class Namespace {
           }
         );
         if (newValue !== _proxies) {
-          _proxies = newValue || null;
+          _proxies = newValue || [];
         }
       },
     });
 
     /**
-     * @member {Array<Object>|null} proxies Proxies in this namespace. `null` if unknown.
+     * @member {Array<License>} licenses License in this namespace. Empty if none.
      */
     Object.defineProperty(this, 'licenses', {
       enumerable: true,
@@ -172,7 +169,7 @@ export class Namespace {
           }
         );
         if (newValue !== _proxies) {
-          _licenses = newValue || null;
+          _licenses = newValue || [];
         }
       },
     });

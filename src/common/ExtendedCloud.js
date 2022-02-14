@@ -4,7 +4,7 @@ import { filter, flatten } from 'lodash';
 import { cloudRequest, extractJwtPayload } from '../renderer/auth/authUtil';
 import * as strings from '../strings';
 import { Namespace } from '../renderer/store/Namespace';
-import { Credential, credentialTypes } from '../renderer/store/Credential';
+import { Credential, credentialTypesList } from '../renderer/store/Credential';
 import { SshKey } from '../renderer/store/SshKey';
 
 import { logger } from '../util/logger';
@@ -80,9 +80,10 @@ const getErrorMessage = (error) => {
  * Deserialize the raw list of credentials data from the API into credentials objects.
  * @param {Object} body Data response from /list/credential API by credentialTypes
  * @param {Namespace} namespace The Namespace object
+ * @param {strings} credentialType one of credentialTypesList
  * @returns {Array<Credential>} Array of Credential objects.
  */
-const _deserializeCredentialsList = function (body, namespace) {
+const _deserializeCredentialsList = function (body, namespace, credentialType) {
   if (!body || !Array.isArray(body.items)) {
     return {
       error: strings.extendedCloud.error.invalidCredentialsPayload(),
@@ -92,7 +93,7 @@ const _deserializeCredentialsList = function (body, namespace) {
   return body.items
     .map((item, idx) => {
       try {
-        return new Credential(item, namespace);
+        return new Credential(item, namespace, credentialType);
       } catch (err) {
         logger.warn(
           'ExtendedCloud._deserializeCredentialsList()',
@@ -120,7 +121,7 @@ const _deserializeCredentialsList = function (body, namespace) {
 const _fetchCredentials = async function (cloud, namespaces) {
   let tokensRefreshed = false;
   const results = await Promise.all(
-    credentialTypes.map(async (entity) => {
+    credentialTypesList.map(async (entity) => {
       return await Promise.all(
         namespaces.map(async (namespace) => {
           const {
@@ -136,7 +137,7 @@ const _fetchCredentials = async function (cloud, namespaces) {
 
           tokensRefreshed = tokensRefreshed || refreshed;
 
-          const items = _deserializeCredentialsList(body, namespace);
+          const items = _deserializeCredentialsList(body, namespace, entity);
 
           return {
             items,

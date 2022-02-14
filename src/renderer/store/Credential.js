@@ -3,11 +3,13 @@ import { get } from 'lodash';
 import { ApiObject } from './ApiObject';
 import { Namespace } from './Namespace';
 
-export const credentialTypes = [
-  'awscredential',
-  'byocredential',
-  'openstackcredential',
-];
+export const credentialTypes = {
+  AWS_CREDENTIAL: 'awscredential',
+  BYO_CREDENTIAL: 'byocredential',
+  OPENSTACK_CREDENTIAL: 'openstackcredential',
+};
+
+export const credentialTypesList = Object.values(credentialTypes);
 
 const openStackCredentialSpec = {
   apiVersion: rtv.STRING,
@@ -42,16 +44,23 @@ const openStackCredentialSpec = {
   },
 };
 
+const credentialsSpec = {
+  [credentialTypes.OPENSTACK_CREDENTIAL]: openStackCredentialSpec,
+  [credentialTypes.BYO_CREDENTIAL]: rtv.ANY, // temporary. Will be filled later,
+  [credentialTypes.AWS_CREDENTIAL]: rtv.ANY, // temporary. Will be filled later,
+};
+
 export class Credential extends ApiObject {
-  constructor(data, namespace) {
+  constructor(data, namespace, credentialType) {
     super(data);
     // now we have check only for openStack. It's hard to predict other types
     DEV_ENV &&
       rtv.verify(
-        { data, namespace },
+        { data, namespace, credentialType },
         {
-          data: openStackCredentialSpec,
+          data: credentialsSpec[credentialType],
           namespace: [rtv.CLASS_OBJECT, { ctor: Namespace }],
+          credentialType: rtv.STRING, // is it way to define 'one of values' (credentialTypes enum or credentialTypesList) ask Stefan
         }
       );
 
@@ -73,10 +82,5 @@ export class Credential extends ApiObject {
       'labels["kaas.mirantis.com/provider"]',
       null
     );
-
-    // TODO this need to find and  define
-    this.status = data.status.valid ? 'Connected' : 'Disconnected';
-    this.source = null;
-    this.labels = [];
   }
 }

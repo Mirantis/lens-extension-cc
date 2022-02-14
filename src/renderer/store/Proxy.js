@@ -55,10 +55,5 @@ export class Proxy extends ApiObject {
 
     /** @member {string} */
     this.httpsProxy = data.spec.httpsProxy;
-
-    // TODO this need to find and  define
-    this.status = null;
-    this.source = null;
-    this.labels = [];
   }
 }

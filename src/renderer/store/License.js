@@ -36,9 +36,5 @@ export class License extends ApiObject {
 
     /** @member {string} */
     this.kind = data.kind;
-
-    // TODO this need to find and  define
-    this.source = null;
-    this.labels = [];
   }
 }

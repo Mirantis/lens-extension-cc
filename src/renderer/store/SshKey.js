@@ -35,10 +35,5 @@ export class SshKey extends ApiObject {
 
     /** @member {string} */
     this.publicKey = data.spec.publicKey;
-
-    // TODO this need to find and  define
-    this.status = null;
-    this.source = null;
-    this.labels = [];
   }
 }
