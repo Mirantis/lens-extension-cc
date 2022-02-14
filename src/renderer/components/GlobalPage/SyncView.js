@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Renderer } from '@k8slens/extensions';
 import styled from '@emotion/styled';
 import { layout } from '../styles';
@@ -61,6 +61,8 @@ export const SyncView = () => {
   } = useExtendedCloudData();
   const [showAddCloudComponent, setShowAddCloudComponent] = useState();
   const [isSelectiveSyncView, setIsSelectiveSyncView] = useState(false);
+  const [isSyncStarted, setIsSyncStarted] = useState(false);
+  const [syncedClouds, setSyncedClouds] = useState({});
 
   const handleAddCloud = useCallback(function (cloud) {
     cloudStore.addCloud(cloud);
@@ -69,6 +71,46 @@ export const SyncView = () => {
 
   const onCancel = () => setShowAddCloudComponent(false);
   const openAddCloud = () => setShowAddCloudComponent(true);
+  const closeSelectiveSyncView = () => {
+    setIsSelectiveSyncView(false);
+    setIsSyncStarted(false);
+    setSyncedClouds({});
+  };
+  const openSelectiveSyncView = () => setIsSelectiveSyncView(true);
+  /**
+   * @param {boolean} data.syncAll
+   * @param {Array<string>} data.syncNamespaces
+   * @param {string} url - cloudUrl
+   */
+  const getDataToSync = (data, url) => {
+    // store data from each cloud in local object
+    setSyncedClouds({ ...syncedClouds, [url]: data });
+    // when clouds count in local object === count ECs preparation is done and we can use syncedClouds
+    if (
+      Object.keys(syncedClouds).length === Object.keys(extendedClouds).length
+    ) {
+      setIsSyncStarted(false);
+    }
+  };
+  const startSyncAll = () => {
+    // clean syncedClouds and start get data to Sync
+    setSyncedClouds({});
+    setIsSyncStarted(true);
+  };
+
+  useEffect(() => {
+    // this condition happens only when last cloud is written to syncedClouds
+    if (!isSyncStarted && Object.keys(syncedClouds).length) {
+      // go through all clouds and update properties
+      Object.keys(syncedClouds).map(url => {
+        const {syncAll, syncNamespaces} = syncedClouds[url];
+        const cloud = cloudStore.clouds[url]
+        cloud.syncAll = syncAll;
+        cloud.syncNamespaces = syncNamespaces;
+      })
+      closeSelectiveSyncView()
+    }
+  }, [syncedClouds, isSyncStarted]);
 
   // we control this state and should check it first
   if (showAddCloudComponent) {
@@ -90,18 +132,19 @@ export const SyncView = () => {
                 <CancelButton
                   plain
                   label={syncView.cancelButtonLabel()}
-                  onClick={() => setIsSelectiveSyncView(!isSelectiveSyncView)}
+                  onClick={closeSelectiveSyncView}
                 />
                 <Button
                   primary
                   label={syncView.synchronizeProjectsButtonLabel()}
+                  onClick={startSyncAll}
                 />
               </>
             ) : (
               <Button
                 variant="outlined"
                 label={syncView.syncButtonLabel()}
-                onClick={() => setIsSelectiveSyncView(!isSelectiveSyncView)}
+                onClick={openSelectiveSyncView}
               />
             )}
           </TopButtonsWrapper>
@@ -111,6 +154,8 @@ export const SyncView = () => {
           <EnhancedTable
             extendedClouds={extendedClouds}
             isSelectiveSyncView={isSelectiveSyncView}
+            isSyncStarted={isSyncStarted}
+            getDataToSync={getDataToSync}
           />
         </TableWrapper>
 

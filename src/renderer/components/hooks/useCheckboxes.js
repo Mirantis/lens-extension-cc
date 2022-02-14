@@ -109,8 +109,20 @@ export function useCheckboxes(initialState) {
     }
   };
 
+  const getSyncedData = () => {
+    if (getParentCheckboxValue() === checkValues.CHECKED) {
+      return { syncAll: true, syncNamespaces: [] };
+    }
+    return {
+      syncAll: false,
+      syncNamespaces: Object.keys(checkboxesState.children).filter(
+        (name) => checkboxesState.children[name]
+      ),
+    };
+  };
   return {
     getCheckboxValue,
     setCheckboxValue,
+    getSyncedData,
   };
 }
