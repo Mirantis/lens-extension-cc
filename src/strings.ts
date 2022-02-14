@@ -340,17 +340,19 @@ export const contextMenus: Dict = {
     sync: () => 'Sync now',
     openInBrowser: () => 'Open in browser',
     confirmDialog: {
-      messageHtml: (extCloud) =>
-        // `Are you sure you want to remove the <b>${extCloud.cloud.name}</b> Management Cluster from Lens?`,
+      messageHtml: (extCloudName, extCloudProjects) =>
         `
-        <p>Removing management cluster “${
-          extCloud.cloud.name
-        }” will also remove the following projects and their associated catalog items:</p>
-        <ul style="padding: 12px;">
-          ${extCloud.namespaces
-            .map((namespace) => `<li>- ${namespace.name}</li>`)
-            .join('')}
-        </ul>
+        <p>Removing management cluster “${extCloudName}” will also remove the following projects and their associated catalog items${
+          extCloudProjects ? ':' : '.'
+        }</p>
+        ${
+          extCloudProjects.length > 0 &&
+          `<ul style="padding: 12px;">
+            ${extCloudProjects
+              .map((project) => `<li>- ${project}</li>`)
+              .join('')}
+          </ul>`
+        }
         <p>Are you sure you want to continue?</p>
         `,
       confirmButtonLabel: () => 'Yes',

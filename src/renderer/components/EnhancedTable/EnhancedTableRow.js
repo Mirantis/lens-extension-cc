@@ -126,13 +126,14 @@ const cloudMenuItems = [
     title: contextMenus.cloud.remove(),
     name: 'remove',
     onClick: (extendedCloud) => {
-      if (
-        !extendedCloud.cloud.connected ||
-        (!extendedCloud.cloud.syncAll &&
-          extendedCloud.cloud.syncNamespaces.length === 0)
-      ) {
-        cloudStore.removeCloud(extendedCloud.cloud.cloudUrl);
-      } else {
+      if (!extendedCloud.cloud.connected || !extendedCloud.loaded) {
+        const projects = !extendedCloud.cloud.syncAll
+          ? extendedCloud.cloud.syncNamespaces
+          : [];
+        const confirmDialogMessageParams = {
+          name: extendedCloud.cloud.name,
+          projects: projects,
+        };
         ConfirmDialog.open({
           ok: () => {
             cloudStore.removeCloud(extendedCloud.cloud.cloudUrl);
@@ -141,12 +142,35 @@ const cloudMenuItems = [
           message: (
             <div
               dangerouslySetInnerHTML={{
-                __html:
-                  contextMenus.cloud.confirmDialog.messageHtml(extendedCloud),
+                __html: contextMenus.cloud.confirmDialog.messageHtml(
+                  confirmDialogMessageParams.name,
+                  confirmDialogMessageParams.projects
+                ),
               }}
             />
           ),
         });
+      } else {
+        if (extendedCloud.cloud.syncNamespaces > 0) {
+          ConfirmDialog.open({
+            ok: () => {
+              cloudStore.removeCloud(extendedCloud.cloud.cloudUrl);
+            },
+            labelOk: contextMenus.cloud.confirmDialog.confirmButtonLabel(),
+            message: (
+              <div
+                dangerouslySetInnerHTML={{
+                  __html: contextMenus.cloud.confirmDialog.messageHtml(
+                    extendedCloud.cloud.name,
+                    extendedCloud.cloud.syncNamespaces
+                  ),
+                }}
+              />
+            ),
+          });
+        } else {
+          cloudStore.removeCloud(extendedCloud.cloud.cloudUrl);
+        }
       }
     },
   },
