@@ -13,8 +13,9 @@ import {
 } from '../hooks/useCheckboxes';
 import { CONNECTION_STATUSES } from '../../../common/Cloud';
 import { openBrowser } from '../../../util/netUtil';
+import { cloudStore } from '../../../store/CloudStore';
 
-const { Icon, MenuItem, MenuActions } = Renderer.Component;
+const { Icon, MenuItem, MenuActions, ConfirmDialog } = Renderer.Component;
 
 const EnhRowsWrapper = styled.div`
   display: contents;
@@ -122,9 +123,56 @@ const cloudMenuItems = [
     onClick: (extendedCloud) => extendedCloud.reconnect(),
   },
   {
-    title: `(WIP) ${contextMenus.cloud.remove()}`,
+    title: contextMenus.cloud.remove(),
     name: 'remove',
-    onClick: () => {},
+    onClick: (extendedCloud) => {
+      if (!extendedCloud.cloud.connected || !extendedCloud.loaded) {
+        const projects = !extendedCloud.cloud.syncAll
+          ? extendedCloud.cloud.syncNamespaces
+          : [];
+        const confirmDialogMessageParams = {
+          name: extendedCloud.cloud.name,
+          projects: projects,
+        };
+        ConfirmDialog.open({
+          ok: () => {
+            cloudStore.removeCloud(extendedCloud.cloud.cloudUrl);
+          },
+          labelOk: contextMenus.cloud.confirmDialog.confirmButtonLabel(),
+          message: (
+            <div
+              dangerouslySetInnerHTML={{
+                __html: contextMenus.cloud.confirmDialog.messageHtml(
+                  confirmDialogMessageParams.name,
+                  confirmDialogMessageParams.projects
+                ),
+              }}
+            />
+          ),
+        });
+      } else {
+        if (extendedCloud.namespaces.length > 0) {
+          ConfirmDialog.open({
+            ok: () => {
+              cloudStore.removeCloud(extendedCloud.cloud.cloudUrl);
+            },
+            labelOk: contextMenus.cloud.confirmDialog.confirmButtonLabel(),
+            message: (
+              <div
+                dangerouslySetInnerHTML={{
+                  __html: contextMenus.cloud.confirmDialog.messageHtml(
+                    extendedCloud.cloud.name,
+                    extendedCloud.namespaces
+                  ),
+                }}
+              />
+            ),
+          });
+        } else {
+          cloudStore.removeCloud(extendedCloud.cloud.cloudUrl);
+        }
+      }
+    },
   },
   {
     title: `(WIP) ${contextMenus.cloud.sync()}`,
