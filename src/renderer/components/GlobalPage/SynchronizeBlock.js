@@ -52,10 +52,11 @@ const ProjectsBody = styled.div(() => ({
   paddingTop: layout.grid * 1.5,
   paddingLeft: layout.grid * 3.25,
   paddingRight: layout.grid * 3.25,
-  paddingBottom: layout.grid * 4.5,
+  paddingBottom: layout.grid * 1.5,
 }));
 
 const ProjectsList = styled.ul(() => ({
+  paddingBottom: layout.grid * 3,
   '& > li:not(:last-of-type)': {
     marginBottom: layout.grid * 2.5,
   },
@@ -148,66 +149,72 @@ export const SynchronizeBlock = ({ extendedCloud, onAdd }) => {
     <Content>
       <Title>{synchronizeBlock.title()}</Title>
       <Projects>
-        <ProjectsHead>
-          <TriStateCheckbox
-            label={synchronizeBlock.checkAllCheckboxLabel()}
-            onChange={() => setCheckboxValue({ isParent: true })}
-            value={getCheckboxValue({ isParent: true })}
-          />
-          <SortButton
-            type="button"
-            onClick={sortByName}
-            isRotated={nextSortType === 'DESC'}
-          >
-            <Icon
-              material="arrow_drop_up"
-              style={{
-                color: 'var(--textColorSecondary)',
-                fontSize: 'calc(var(--font-size) * 1.8)',
-                marginTop: layout.grid / 2,
-              }}
+        {projectsList.length ? (
+          <ProjectsHead>
+            <TriStateCheckbox
+              label={synchronizeBlock.checkAllCheckboxLabel()}
+              onChange={() => setCheckboxValue({ isParent: true })}
+              value={getCheckboxValue({ isParent: true })}
             />
-          </SortButton>
-        </ProjectsHead>
+            <SortButton
+              type="button"
+              onClick={sortByName}
+              isRotated={nextSortType === 'DESC'}
+            >
+              <Icon
+                material="arrow_drop_up"
+                style={{
+                  color: 'var(--textColorSecondary)',
+                  fontSize: 'calc(var(--font-size) * 1.8)',
+                  marginTop: layout.grid / 2,
+                }}
+              />
+            </SortButton>
+          </ProjectsHead>
+        ) : null}
         <ProjectsBody>
-          <ProjectsList>
-            {projectsList.map((namespace) => (
-              <li key={namespace.name}>
-                <Accordion
-                  title={
-                    <TriStateCheckbox
-                      value={getCheckboxValue({ name: namespace.name })}
-                      label={namespace.name}
-                      onChange={() =>
-                        setCheckboxValue({ name: namespace.name })
-                      }
-                    />
-                  }
-                >
-                  <AccordionChildrenList>
-                    <li>
-                      <p>
-                        {synchronizeBlock.checkboxesDropdownLabels.clusters()} (
-                        {namespace.clusterCount})
-                      </p>
-                    </li>
-                    <li>
-                      <p>
-                        {synchronizeBlock.checkboxesDropdownLabels.sshKeys()} (
-                        {namespace.sshKeyCount})
-                      </p>
-                    </li>
-                    <li>
-                      <p>
-                        {synchronizeBlock.checkboxesDropdownLabels.credentials()}{' '}
-                        ({namespace.credentialsCount})
-                      </p>
-                    </li>
-                  </AccordionChildrenList>
-                </Accordion>
-              </li>
-            ))}
-          </ProjectsList>
+          {!projectsList.length ? (
+            synchronizeBlock.noProjectsFound()
+          ) : (
+            <ProjectsList>
+              {projectsList.map((namespace) => (
+                <li key={namespace.name}>
+                  <Accordion
+                    title={
+                      <TriStateCheckbox
+                        value={getCheckboxValue({ name: namespace.name })}
+                        label={namespace.name}
+                        onChange={() =>
+                          setCheckboxValue({ name: namespace.name })
+                        }
+                      />
+                    }
+                  >
+                    <AccordionChildrenList>
+                      <li>
+                        <p>
+                          {synchronizeBlock.checkboxesDropdownLabels.clusters()}{' '}
+                          ({namespace.clusterCount})
+                        </p>
+                      </li>
+                      <li>
+                        <p>
+                          {synchronizeBlock.checkboxesDropdownLabels.sshKeys()}{' '}
+                          ({namespace.sshKeyCount})
+                        </p>
+                      </li>
+                      <li>
+                        <p>
+                          {synchronizeBlock.checkboxesDropdownLabels.credentials()}{' '}
+                          ({namespace.credentialsCount})
+                        </p>
+                      </li>
+                    </AccordionChildrenList>
+                  </Accordion>
+                </li>
+              ))}
+            </ProjectsList>
+          )}
         </ProjectsBody>
       </Projects>
       <SynchronizeProjectsButtonWrapper>
@@ -215,6 +222,7 @@ export const SynchronizeBlock = ({ extendedCloud, onAdd }) => {
           primary
           label={synchronizeBlock.synchronizeButtonLabel()}
           onClick={onSynchronize}
+          disabled={!projectsList.length}
         />
       </SynchronizeProjectsButtonWrapper>
     </Content>
