@@ -5,7 +5,6 @@ import { layout } from '../styles';
 import { ConnectionBlock } from './ConnectionBlock';
 import { SynchronizeBlock } from './SynchronizeBlock';
 import { CloseButton } from '../CloseButton/CloseButton';
-import { ErrorPanel } from '../ErrorPanel';
 import {
   ExtendedCloud,
   EXTENDED_CLOUD_EVENTS,
@@ -52,14 +51,6 @@ const MainColumn = styled.div(function () {
     alignItems: 'center',
     maxHeight: '100%',
     overflow: 'auto',
-  };
-});
-
-const ErrorPanelWrapper = styled.div(function () {
-  return {
-    maxWidth: '750px',
-    width: '100%',
-    marginTop: layout.gap * 3,
   };
 });
 
@@ -116,10 +107,8 @@ export const AddCloudInstance = ({ onAdd, onCancel }) => {
     return () => extCloud?.destroy();
   }, [extCloud]);
 
-  const checkConnectionError = (managementCluster) => {
-    if (managementCluster?.connectError) {
-      Notifications.error(managementCluster.connectError);
-    }
+  const checkConnectionError = () => {
+    Notifications.error(addCloudInstance.errorHtml());
   };
 
   const handleClusterConnect = async function (clusterUrl, clusterName) {
@@ -141,7 +130,7 @@ export const AddCloudInstance = ({ onAdd, onCancel }) => {
         if (newCloud.status === CONNECTION_STATUSES.CONNECTED) {
           setCloud(newCloud);
         } else {
-          checkConnectionError(newCloud);
+          checkConnectionError();
         }
       }
     };
@@ -160,19 +149,9 @@ export const AddCloudInstance = ({ onAdd, onCancel }) => {
           <Spinner />
         ) : (
           extCloud &&
-          (!extCloud.error ? (
+          !extCloud.error && (
             <SynchronizeBlock extendedCloud={extCloud} onAdd={onAdd} />
-          ) : (
-            <ErrorPanelWrapper>
-              <ErrorPanel>
-                <p
-                  dangerouslySetInnerHTML={{
-                    __html: addCloudInstance.errorHtml(),
-                  }}
-                />
-              </ErrorPanel>
-            </ErrorPanelWrapper>
-          ))
+          )
         )}
       </MainColumn>
       <EscColumn>
