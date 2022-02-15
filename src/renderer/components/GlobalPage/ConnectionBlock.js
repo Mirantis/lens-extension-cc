@@ -7,14 +7,9 @@ import { layout } from '../styles';
 import { normalizeUrl } from '../../../util/netUtil';
 import { connectionBlock } from '../../../strings';
 import { cloudStore } from '../../../store/CloudStore';
-import {
-  Cloud,
-  CONNECTION_STATUSES,
-  CLOUD_EVENTS,
-} from '../../../common/Cloud';
 
 const {
-  Component: { Input, Button, Notifications },
+  Component: { Input, Button },
 } = Renderer;
 
 const Title = styled.h2(() => ({
@@ -65,56 +60,21 @@ const nameAlreadyUsed = {
     !Object.values(cloudStore.clouds).find(({ name }) => name === value),
 };
 
-export const ConnectionBlock = ({
-  setCloud,
-  extCloudLoading,
-  cleanCloudsState,
-}) => {
+export const ConnectionBlock = ({ loading, handleClusterConnect }) => {
   const [clusterName, setClusterName] = useState('');
-  const [loading, setLoading] = useState(false);
   const [clusterUrl, setClusterUrl] = useState('');
   const [showInfoBox, setShowInfoBox] = useState(true);
-
-  const checkConnectionError = (cloud) => {
-    if (cloud?.connectError) {
-      Notifications.error(cloud.connectError);
-    }
-  };
-
-  const handleConnectClick = async function () {
-    cleanCloudsState();
-    const normUrl = normalizeUrl(clusterUrl.trim());
-    setClusterUrl(normUrl); // update to actual URL we'll use
-    setLoading(true);
-    let newCloud = new Cloud();
-    newCloud.cloudUrl = normUrl;
-    newCloud.name = clusterName;
-    setShowInfoBox(false);
-    const statusListener = () => {
-      if (newCloud.status === CONNECTION_STATUSES.CONNECTING) {
-        setLoading(true);
-      } else {
-        setLoading(false);
-        newCloud.removeEventListener(
-          CLOUD_EVENTS.STATUS_CHANGE,
-          statusListener
-        );
-        if (newCloud.status === CONNECTION_STATUSES.CONNECTED) {
-          setCloud(newCloud);
-        } else {
-          checkConnectionError(newCloud);
-        }
-      }
-    };
-    newCloud.addEventListener(CLOUD_EVENTS.STATUS_CHANGE, statusListener);
-    await newCloud.connect();
-  };
 
   const setUrl = (value) => {
     if (!showInfoBox) {
       setShowInfoBox(true);
     }
     setClusterUrl(value);
+  };
+
+  const handleConnectClick = () => {
+    setShowInfoBox(false);
+    handleClusterConnect(clusterUrl, clusterName);
   };
 
   return (
@@ -132,7 +92,7 @@ export const ConnectionBlock = ({
           id="lecc-cluster-name"
           value={clusterName}
           onChange={setClusterName}
-          disabled={loading || extCloudLoading}
+          disabled={loading}
           validators={[nameSymbols, nameAlreadyUsed]}
           required
           trim
@@ -150,7 +110,7 @@ export const ConnectionBlock = ({
           value={clusterUrl}
           onChange={setUrl}
           validators={[cloudAlreadySynced]}
-          disabled={loading || extCloudLoading}
+          disabled={loading}
           required
           trim
         />
@@ -158,10 +118,9 @@ export const ConnectionBlock = ({
           <Button
             primary
             type="submit"
-            waiting={loading || extCloudLoading}
             label={connectionBlock.button.label()}
             onClick={handleConnectClick}
-            disabled={loading || extCloudLoading}
+            disabled={loading}
           />
         </ButtonWrapper>
       </Field>
@@ -181,7 +140,6 @@ export const ConnectionBlock = ({
 };
 
 ConnectionBlock.propTypes = {
-  setCloud: PropTypes.func.isRequired,
-  extCloudLoading: PropTypes.bool.isRequired,
-  cleanCloudsState: PropTypes.func.isRequired,
+  loading: PropTypes.bool.isRequired,
+  handleClusterConnect: PropTypes.func.isRequired,
 };

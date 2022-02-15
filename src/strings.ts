@@ -38,7 +38,7 @@ export const closeButton: Dict = {
   title: () => 'ESC',
 };
 export const connectionBlock: Dict = {
-  title: () => 'Add a Mirantis Container Cloud Management Custer to Lens',
+  title: () => 'Add a Mirantis Container Cloud Management Cluster to Lens',
   clusterName: {
     label: () => 'Management Cluster name:',
     placeholder: () =>
@@ -60,6 +60,12 @@ export const connectionBlock: Dict = {
       'A Management Cluster with this name is already being synced',
   },
 };
+
+export const addCloudInstance = {
+  errorHtml: () =>
+    'An error occurred while connecting to the management cluster and retrieving its projects. <br/>Click on the Connect button to try again.',
+};
+
 export const synchronizeBlock = {
   title: () => 'Select projects to synchronize',
   synchronizeButtonLabel: () => 'Synchronize selected projects',
@@ -340,15 +346,15 @@ export const contextMenus: Dict = {
     sync: () => 'Sync now',
     openInBrowser: () => 'Open in browser',
     confirmDialog: {
-      messageHtml: (extCloudName, extCloudProjects) =>
+      messageHtml: (cloudName, projects) =>
         `
-        <p>Removing management cluster “${extCloudName}” will also remove the following projects and their associated catalog items${
-          extCloudProjects.length > 0 ? ':' : '.'
+        <p>Removing management cluster “${cloudName}” will also remove the following projects and their associated catalog items${
+          projects.length > 0 ? ':' : '.'
         }</p>
         ${
-          extCloudProjects.length > 0
+          projects.length > 0
             ? `<ul style="padding: 12px 12px 12px 26px; list-style: disc;">
-            ${extCloudProjects
+            ${projects
               .map(
                 (project) => `<li>${project.name ? project.name : project}</li>`
               )
