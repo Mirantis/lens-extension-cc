@@ -1,5 +1,9 @@
 import * as rtv from 'rtvjs';
 import { Cluster } from './Cluster';
+import { Credential } from './Credential';
+import { SshKey } from './SshKey';
+import { Proxy } from './Proxy';
+import { License } from './License';
 
 /**
  * MCC project/namespace.
@@ -26,9 +30,11 @@ export class Namespace {
         }
       );
 
-    let _clusters = null;
-    let _sshKeys = null;
-    let _credentials = null;
+    let _clusters = [];
+    let _sshKeys = [];
+    let _credentials = [];
+    let _proxies = [];
+    let _licenses = [];
 
     /** @member {string} */
     this.id = data.metadata.uid;
@@ -43,8 +49,7 @@ export class Namespace {
     this.phase = data.status.phase;
 
     /**
-     * @member {Array<Cluster>|null} clusters Clusters in this namespace. `null` if unknown.
-     *  Empty if none.
+     * @member {Array<Cluster>} clusters Clusters in this namespace. Empty if none.
      */
     Object.defineProperty(this, 'clusters', {
       enumerable: true,
@@ -63,14 +68,13 @@ export class Namespace {
           }
         );
         if (newValue !== _clusters) {
-          _clusters = newValue || null;
+          _clusters = newValue || [];
         }
       },
     });
 
     /**
-     * @member {Array<Object>|null} sshKeys SSH keys in this namespace. `null` if unknown.
-     *  Empty if none.
+     * @member{ Array<SshKey>} sshKeys SSH keys in this namespace. Empty if none.
      */
     Object.defineProperty(this, 'sshKeys', {
       enumerable: true,
@@ -78,20 +82,18 @@ export class Namespace {
         return _sshKeys;
       },
       set(newValue) {
-        // TODO: update the shape to check for an SshKey class instance
         rtv.verify(
           { sshKeys: newValue },
-          { sshKeys: [rtv.EXPECTED, rtv.ARRAY, { $: [rtv.OBJECT] }] }
+          { sshKeys: [rtv.EXPECTED, rtv.ARRAY, { ctor: SshKey }] }
         );
         if (newValue !== _sshKeys) {
-          _sshKeys = newValue || null;
+          _sshKeys = newValue || [];
         }
       },
     });
 
     /**
-     * @member {Array<Object>|null} credentials Credentials in this namespace. `null` if unknown.
-     *  Empty if none.
+     * @param {Array<Credential>} credentials
      */
     Object.defineProperty(this, 'credentials', {
       enumerable: true,
@@ -99,22 +101,64 @@ export class Namespace {
         return _credentials;
       },
       set(newValue) {
-        // TODO: update the shape to check for an Credential class instance
         rtv.verify(
           { credentials: newValue },
           {
-            credentials: [
-              rtv.EXPECTED,
-              {
-                awscredential: [[rtv.OBJECT]],
-                byocredential: [[rtv.OBJECT]],
-                openstackcredential: [[rtv.OBJECT]],
-              },
-            ],
+            credentials: [rtv.EXPECTED, rtv.ARRAY, { ctor: Credential }],
           }
         );
         if (newValue !== _credentials) {
-          _credentials = newValue || null;
+          _credentials = newValue || {};
+        }
+      },
+    });
+
+    /**
+     * @member {Array<Proxy>} proxies Proxies in this namespace. Empty if none.
+     */
+    Object.defineProperty(this, 'proxies', {
+      enumerable: true,
+      get() {
+        return _proxies;
+      },
+      set(newValue) {
+        rtv.verify(
+          { proxies: newValue },
+          {
+            proxies: [
+              rtv.EXPECTED,
+              rtv.ARRAY,
+              { $: [rtv.CLASS_OBJECT, { ctor: Proxy }] },
+            ],
+          }
+        );
+        if (newValue !== _proxies) {
+          _proxies = newValue || [];
+        }
+      },
+    });
+
+    /**
+     * @member {Array<License>} licenses License in this namespace. Empty if none.
+     */
+    Object.defineProperty(this, 'licenses', {
+      enumerable: true,
+      get() {
+        return _licenses;
+      },
+      set(newValue) {
+        rtv.verify(
+          { licenses: newValue },
+          {
+            licenses: [
+              rtv.EXPECTED,
+              rtv.ARRAY,
+              { $: [rtv.CLASS_OBJECT, { ctor: License }] },
+            ],
+          }
+        );
+        if (newValue !== _proxies) {
+          _licenses = newValue || [];
         }
       },
     });
@@ -132,5 +176,12 @@ export class Namespace {
    */
   get sshKeyCount() {
     return this.sshKeys?.length || 0;
+  }
+
+  /**
+   * @member {number} credentialsCount Number of all credentials, doesn't matter type, in this namespace.
+   */
+  get credentialsCount() {
+    return this.credentials?.length || 0;
   }
 }

@@ -34,9 +34,11 @@ export class ProxyEntity extends Common.Catalog.CatalogEntity<
   ProxySpec
 > {
   public static readonly apiVersion = `${consts.catalog.entities.proxy.group}/${consts.catalog.entities.proxy.versions.v1alpha1}`;
+
   public static readonly kind = consts.catalog.entities.proxy.kind;
 
   public readonly apiVersion = ProxyEntity.apiVersion;
+
   public readonly kind = ProxyEntity.kind;
 
   // "runs" the entity; called when the user just clicks on the item in the Catalog
@@ -76,6 +78,7 @@ export class ProxyEntity extends Common.Catalog.CatalogEntity<
 
 export class ProxyCategory extends Common.Catalog.CatalogCategory {
   public readonly apiVersion = `${consts.catalog.category.group}/${consts.catalog.category.versions.v1alpha1}`;
+
   public readonly kind = consts.catalog.category.kind;
 
   public metadata = {

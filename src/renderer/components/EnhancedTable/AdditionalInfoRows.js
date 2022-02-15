@@ -47,7 +47,7 @@ export const AdditionalInfoRows = ({ namespace, emptyCellsCount }) => {
     },
     {
       infoName: managementClusters.table.tbodyDetailedInfo.credentials(),
-      infoCount: namespace.credentials.allCredentialsCount,
+      infoCount: namespace.credentialsCount,
     },
   ];
   return (

@@ -30,6 +30,7 @@ export class ProviderStore {
   get loading() {
     return this.store.loading;
   }
+
   set loading(newValue) {
     this.store.loading = !!newValue;
   }
@@ -39,6 +40,7 @@ export class ProviderStore {
   get loaded() {
     return this.store.loaded;
   }
+
   set loaded(newValue) {
     this.store.loaded = !!newValue;
   }
@@ -51,6 +53,7 @@ export class ProviderStore {
   get error() {
     return this.store.error;
   }
+
   set error(newValue) {
     this.store.error = newValue || undefined; // empty string is NOT an error
   }

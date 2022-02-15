@@ -32,9 +32,11 @@ export class SshKeyEntity extends Common.Catalog.CatalogEntity<
   SshKeySpec
 > {
   public static readonly apiVersion = `${consts.catalog.entities.sshKey.group}/${consts.catalog.entities.sshKey.versions.v1alpha1}`;
+
   public static readonly kind = consts.catalog.entities.sshKey.kind;
 
   public readonly apiVersion = SshKeyEntity.apiVersion;
+
   public readonly kind = SshKeyEntity.kind;
 
   // "runs" the entity; called when the user just clicks on the item in the Catalog
@@ -74,6 +76,7 @@ export class SshKeyEntity extends Common.Catalog.CatalogEntity<
 
 export class SshKeyCategory extends Common.Catalog.CatalogCategory {
   public readonly apiVersion = `${consts.catalog.category.group}/${consts.catalog.category.versions.v1alpha1}`;
+
   public readonly kind = consts.catalog.category.kind;
 
   public metadata = {

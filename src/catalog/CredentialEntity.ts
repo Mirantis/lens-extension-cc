@@ -35,9 +35,11 @@ export class CredentialEntity extends Common.Catalog.CatalogEntity<
   CredentialSpec
 > {
   public static readonly apiVersion = `${consts.catalog.entities.credential.group}/${consts.catalog.entities.credential.versions.v1alpha1}`;
+
   public static readonly kind = consts.catalog.entities.credential.kind;
 
   public readonly apiVersion = CredentialEntity.apiVersion;
+
   public readonly kind = CredentialEntity.kind;
 
   // "runs" the entity; called when the user just clicks on the item in the Catalog
@@ -78,6 +80,7 @@ export class CredentialEntity extends Common.Catalog.CatalogEntity<
 
 export class CredentialCategory extends Common.Catalog.CatalogCategory {
   public readonly apiVersion = `${consts.catalog.category.group}/${consts.catalog.category.versions.v1alpha1}`;
+
   public readonly kind = consts.catalog.category.kind;
 
   public metadata = {
