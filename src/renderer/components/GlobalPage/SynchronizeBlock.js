@@ -82,6 +82,12 @@ const SynchronizeProjectsButtonWrapper = styled.div(() => ({
   marginTop: layout.grid * 4,
 }));
 
+const sortIconStyles = {
+  color: 'var(--textColorSecondary)',
+  fontSize: 'calc(var(--font-size) * 1.8)',
+  marginTop: layout.grid / 2,
+};
+
 const SortButton = styled.button`
   display: flex;
   background: transparent;
@@ -161,14 +167,7 @@ export const SynchronizeBlock = ({ extendedCloud, onAdd }) => {
               onClick={sortByName}
               isRotated={nextSortType === 'DESC'}
             >
-              <Icon
-                material="arrow_drop_up"
-                style={{
-                  color: 'var(--textColorSecondary)',
-                  fontSize: 'calc(var(--font-size) * 1.8)',
-                  marginTop: layout.grid / 2,
-                }}
-              />
+              <Icon material="arrow_drop_up" style={sortIconStyles} />
             </SortButton>
           </ProjectsHead>
         ) : null}
