@@ -74,16 +74,12 @@ const colorGreen = {
   color: 'var(--colorSuccess)',
 };
 
-const colorOrange = {
+const colorYellow = {
   color: 'var(--colorWarning)',
 };
 
 const colorRed = {
   color: 'var(--colorError)',
-};
-
-const colorYellow = {
-  color: 'var(--terminalYellow)',
 };
 
 /**
@@ -98,7 +94,7 @@ const getStatus = (cloud, isFetching) => {
   if (isFetching) {
     return {
       cloudStatus: connectionStatuses.cloud.updating(),
-      namespaceStatus: connectionStatuses.namespace.updating(),
+      namespaceStatus: connectionStatuses.namespace.disconnected(),
       connectColor: colorYellow,
     };
   }
@@ -115,7 +111,7 @@ const getStatus = (cloud, isFetching) => {
         cloudStatus: connectionStatuses.cloud.connecting(),
         // NOTE: namespace is disconnected until Cloud is connected
         namespaceStatus: connectionStatuses.namespace.disconnected(),
-        connectColor: colorOrange,
+        connectColor: colorYellow,
       };
 
     case CONNECTION_STATUSES.DISCONNECTED: // fall-through
