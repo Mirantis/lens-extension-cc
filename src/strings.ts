@@ -334,10 +334,12 @@ export const connectionStatuses: Dict = {
     connected: () => 'Connected',
     connecting: () => 'Connecting',
     disconnected: () => 'Disconnected',
+    updating: () => 'Updating',
   },
   namespace: {
     connected: () => 'Synced',
     disconnected: () => 'Not synced',
+    updating: () => 'Updating',
   },
 };
 

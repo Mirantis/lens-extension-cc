@@ -74,22 +74,32 @@ const colorGreen = {
   color: 'var(--colorSuccess)',
 };
 
-const colorYellow = {
+const colorOrange = {
   color: 'var(--colorWarning)',
 };
 
 const colorRed = {
   color: 'var(--colorError)',
 };
-
+const colorYellow = {
+  color: 'var(--terminalYellow)',
+}
 /**
  * Determines the connection status of the Cloud.
  * @param {Cloud} cloud
+ * @param {boolean} isFetching
  * @return {{cloudStatus: string, namespaceStatus: string, connectColor: Object}}
  *  where `cloudStatus` and `namespaceStatus` are labels, and `connectColor` is
  *  a style object to apply to the label.
  */
-const getStatus = (cloud) => {
+const getStatus = (cloud, isFetching) => {
+  if (isFetching) {
+    return {
+      cloudStatus: connectionStatuses.cloud.updating(),
+      namespaceStatus: connectionStatuses.namespace.updating(),
+      connectColor: colorYellow,
+    };
+  }
   switch (cloud.status) {
     case CONNECTION_STATUSES.CONNECTED:
       return {
@@ -103,7 +113,7 @@ const getStatus = (cloud) => {
         cloudStatus: connectionStatuses.cloud.connecting(),
         // NOTE: namespace is disconnected until Cloud is connected
         namespaceStatus: connectionStatuses.namespace.disconnected(),
-        connectColor: colorYellow,
+        connectColor: colorOrange,
       };
 
     case CONNECTION_STATUSES.DISCONNECTED: // fall-through
@@ -221,6 +231,7 @@ export const EnhancedTableRow = ({ extendedCloud, withCheckboxes }) => {
   const usedNamespaces = withCheckboxes ? 'namespaces' : 'syncedNamespaces';
 
   const [onOpen, toggleMenu] = useState(false);
+  const [isFetching, setFetching] = useState(false);
   const [isOpenFirstLevel, setIsOpenFirstLevel] = useState(false);
   const [actualNamespaces, setActualNamespaces] = useState(
     extendedCloud[usedNamespaces]
@@ -233,6 +244,11 @@ export const EnhancedTableRow = ({ extendedCloud, withCheckboxes }) => {
       setActualNamespaces(updatedRow[usedNamespaces]);
     }
   };
+
+  const listenFetching = (cl) => {
+    setFetching(cl.fetching);
+  };
+
   useEffect(() => {
     extendedCloud.addEventListener(
       EXTENDED_CLOUD_EVENTS.DATA_UPDATED,
@@ -242,6 +258,19 @@ export const EnhancedTableRow = ({ extendedCloud, withCheckboxes }) => {
       extendedCloud.removeEventListener(
         EXTENDED_CLOUD_EVENTS.DATA_UPDATED,
         updateNamespaces
+      );
+    };
+  });
+
+  useEffect(() => {
+    extendedCloud.addEventListener(
+      EXTENDED_CLOUD_EVENTS.FETCHING_CHANGE,
+      listenFetching
+    );
+    return () => {
+      extendedCloud.removeEventListener(
+        EXTENDED_CLOUD_EVENTS.FETCHING_CHANGE,
+        listenFetching
       );
     };
   });
@@ -257,7 +286,8 @@ export const EnhancedTableRow = ({ extendedCloud, withCheckboxes }) => {
   };
 
   const { cloudStatus, namespaceStatus, connectColor } = getStatus(
-    extendedCloud.cloud
+    extendedCloud.cloud,
+    isFetching
   );
 
   const renderRestOfRows = (namespace) =>
@@ -305,18 +335,29 @@ export const EnhancedTableRow = ({ extendedCloud, withCheckboxes }) => {
     return name;
   };
 
+  const getExpandIcon = (condition) => {
+    if (!extendedCloud.loaded) {
+      return null;
+    }
+    return condition ? (
+      <Icon material="expand_more" style={expandIconStyles} />
+    ) : (
+      <Icon material="chevron_right" style={expandIconStyles} />
+    );
+  };
+
+  const toggleOpenFirstLevel = () => {
+    if (extendedCloud.loaded) {
+      setIsOpenFirstLevel(!isOpenFirstLevel);
+    }
+  };
+
   return (
     <>
       <EnhTableRow isTopLevel>
         <EnhTableRowCell isBigger withCheckboxes={withCheckboxes}>
-          <EnhCollapseBtn
-            onClick={() => setIsOpenFirstLevel(!isOpenFirstLevel)}
-          >
-            {isOpenFirstLevel ? (
-              <Icon material="expand_more" style={expandIconStyles} />
-            ) : (
-              <Icon material="chevron_right" style={expandIconStyles} />
-            )}
+          <EnhCollapseBtn onClick={toggleOpenFirstLevel}>
+            {getExpandIcon(isOpenFirstLevel)}
           </EnhCollapseBtn>
           {makeCell(extendedCloud.cloud.name, true)}
         </EnhTableRowCell>
@@ -352,11 +393,7 @@ export const EnhancedTableRow = ({ extendedCloud, withCheckboxes }) => {
             <EnhTableRow>
               <EnhTableRowCell isFirstLevel withCheckboxes={withCheckboxes}>
                 <EnhCollapseBtn onClick={() => setOpenedList(index)}>
-                  {openedSecondLevelListIndex.includes(index) ? (
-                    <Icon material="expand_more" style={expandIconStyles} />
-                  ) : (
-                    <Icon material="chevron_right" style={expandIconStyles} />
-                  )}
+                  {getExpandIcon(openedSecondLevelListIndex.includes(index))}
                 </EnhCollapseBtn>
                 {makeCell(namespace.name)}
               </EnhTableRowCell>
