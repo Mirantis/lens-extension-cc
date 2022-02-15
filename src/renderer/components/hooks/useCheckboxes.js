@@ -120,6 +120,7 @@ export function useCheckboxes(initialState) {
       ),
     };
   };
+
   return {
     getCheckboxValue,
     setCheckboxValue,

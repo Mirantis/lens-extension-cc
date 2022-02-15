@@ -1,4 +1,5 @@
 import * as rtv from 'rtvjs';
+import { isEqual } from 'lodash';
 import { request } from '../util/netUtil';
 import { logger } from '../util/logger';
 import * as strings from '../strings';
@@ -255,7 +256,7 @@ export class Cloud extends EventDispatcher {
             { token: newValue },
             { token: Cloud.specTs.syncNamespaces }
           );
-        if (_syncNamespaces !== newValue) {
+        if (!isEqual(_syncNamespaces, newValue)) {
           _syncNamespaces = newValue;
           this.dispatchEvent(CLOUD_EVENTS.SYNC_CHANGE, this);
         }
