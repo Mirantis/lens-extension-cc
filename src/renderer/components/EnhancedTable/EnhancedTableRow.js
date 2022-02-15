@@ -162,9 +162,9 @@ const cloudMenuItems = [
     },
   },
   {
-    title: `(WIP) ${contextMenus.cloud.sync()}`,
+    title: contextMenus.cloud.sync(),
     name: 'sync',
-    onClick: () => {},
+    onClick: (extendedCloud) => extendedCloud.fetchNow(),
   },
   {
     title: contextMenus.cloud.openInBrowser(),
