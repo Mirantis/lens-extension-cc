@@ -81,9 +81,11 @@ const colorOrange = {
 const colorRed = {
   color: 'var(--colorError)',
 };
+
 const colorYellow = {
   color: 'var(--terminalYellow)',
-}
+};
+
 /**
  * Determines the connection status of the Cloud.
  * @param {Cloud} cloud
