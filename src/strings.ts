@@ -345,6 +345,27 @@ export const contextMenus: Dict = {
     remove: () => 'Remove',
     sync: () => 'Sync now',
     openInBrowser: () => 'Open in browser',
+    confirmDialog: {
+      messageHtml: (cloudName, projects) =>
+        `
+        <p>Removing management cluster “${cloudName}” will also remove the following projects and their associated catalog items${
+          projects.length > 0 ? ':' : '.'
+        }</p>
+        ${
+          projects.length > 0
+            ? `<ul style="padding: 12px 12px 12px 26px; list-style: disc;">
+            ${projects
+              .map(
+                (project) => `<li>${project.name ? project.name : project}</li>`
+              )
+              .join('')}
+          </ul>`
+            : '<p style="margin-bottom: 12px;"></p>'
+        }
+        <p>Are you sure you want to continue?</p>
+        `,
+      confirmButtonLabel: () => 'Yes',
+    },
   },
   namespace: {
     sync: () => 'Sync now',

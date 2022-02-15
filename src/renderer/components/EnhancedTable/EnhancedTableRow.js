@@ -13,8 +13,9 @@ import {
 } from '../hooks/useCheckboxes';
 import { CONNECTION_STATUSES } from '../../../common/Cloud';
 import { openBrowser } from '../../../util/netUtil';
+import { cloudStore } from '../../../store/CloudStore';
 
-const { Icon, MenuItem, MenuActions } = Renderer.Component;
+const { Icon, MenuItem, MenuActions, ConfirmDialog } = Renderer.Component;
 
 const EnhRowsWrapper = styled.div`
   display: contents;
@@ -122,9 +123,43 @@ const cloudMenuItems = [
     onClick: (extendedCloud) => extendedCloud.reconnect(),
   },
   {
-    title: `(WIP) ${contextMenus.cloud.remove()}`,
+    title: contextMenus.cloud.remove(),
     name: 'remove',
-    onClick: () => {},
+    onClick: (extendedCloud) => {
+      const {
+        name: cloudName,
+        cloudUrl,
+        syncAll,
+        syncNamespaces,
+        connected,
+      } = extendedCloud.cloud;
+      const isConnected = connected && extendedCloud.loaded;
+      if (isConnected && !extendedCloud.namespaces.length) {
+        cloudStore.removeCloud(cloudUrl);
+      } else {
+        const projects = !syncAll
+          ? syncNamespaces
+          : isConnected
+          ? extendedCloud.namespaces
+          : [];
+        ConfirmDialog.open({
+          ok: () => {
+            cloudStore.removeCloud(cloudUrl);
+          },
+          labelOk: contextMenus.cloud.confirmDialog.confirmButtonLabel(),
+          message: (
+            <div
+              dangerouslySetInnerHTML={{
+                __html: contextMenus.cloud.confirmDialog.messageHtml(
+                  cloudName,
+                  projects
+                ),
+              }}
+            />
+          ),
+        });
+      }
+    },
   },
   {
     title: `(WIP) ${contextMenus.cloud.sync()}`,
