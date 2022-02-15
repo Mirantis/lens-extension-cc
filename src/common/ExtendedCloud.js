@@ -603,6 +603,11 @@ export class ExtendedCloud extends EventDispatcher {
     this.dispatchEvent(EXTENDED_CLOUD_EVENTS.FETCH_DATA, this);
   };
 
+  /** Called when this instance is being updated/synced. */
+  syncData = () => {
+    this.dispatchEvent(EXTENDED_CLOUD_EVENTS.FETCH_DATA, this);
+  };
+
   /** Called when __this__ ExtendedCloud should fetch new data from its Cloud. */
   onFetchData = () => this.fetchData();
 
