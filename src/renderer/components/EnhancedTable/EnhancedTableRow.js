@@ -126,51 +126,38 @@ const cloudMenuItems = [
     title: contextMenus.cloud.remove(),
     name: 'remove',
     onClick: (extendedCloud) => {
-      if (!extendedCloud.cloud.connected || !extendedCloud.loaded) {
-        const projects = !extendedCloud.cloud.syncAll
-          ? extendedCloud.cloud.syncNamespaces
+      const {
+        name: cloudName,
+        cloudUrl,
+        syncAll,
+        syncNamespaces,
+        connected,
+      } = extendedCloud.cloud;
+      const isConnected = connected && extendedCloud.loaded;
+      if (isConnected && !extendedCloud.namespaces.length) {
+        cloudStore.removeCloud(cloudUrl);
+      } else {
+        const projects = !syncAll
+          ? syncNamespaces
+          : isConnected
+          ? extendedCloud.namespaces
           : [];
-        const confirmDialogMessageParams = {
-          name: extendedCloud.cloud.name,
-          projects: projects,
-        };
         ConfirmDialog.open({
           ok: () => {
-            cloudStore.removeCloud(extendedCloud.cloud.cloudUrl);
+            cloudStore.removeCloud(cloudUrl);
           },
           labelOk: contextMenus.cloud.confirmDialog.confirmButtonLabel(),
           message: (
             <div
               dangerouslySetInnerHTML={{
                 __html: contextMenus.cloud.confirmDialog.messageHtml(
-                  confirmDialogMessageParams.name,
-                  confirmDialogMessageParams.projects
+                  cloudName,
+                  projects
                 ),
               }}
             />
           ),
         });
-      } else {
-        if (extendedCloud.namespaces.length > 0) {
-          ConfirmDialog.open({
-            ok: () => {
-              cloudStore.removeCloud(extendedCloud.cloud.cloudUrl);
-            },
-            labelOk: contextMenus.cloud.confirmDialog.confirmButtonLabel(),
-            message: (
-              <div
-                dangerouslySetInnerHTML={{
-                  __html: contextMenus.cloud.confirmDialog.messageHtml(
-                    extendedCloud.cloud.name,
-                    extendedCloud.cloud.syncNamespaces
-                  ),
-                }}
-              />
-            ),
-          });
-        } else {
-          cloudStore.removeCloud(extendedCloud.cloud.cloudUrl);
-        }
       }
     },
   },
