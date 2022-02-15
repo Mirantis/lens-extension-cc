@@ -38,7 +38,7 @@ export const closeButton: Dict = {
   title: () => 'ESC',
 };
 export const connectionBlock: Dict = {
-  title: () => 'Add a Mirantis Container Cloud Management Custer to Lens',
+  title: () => 'Add a Mirantis Container Cloud Management Cluster to Lens',
   clusterName: {
     label: () => 'Management Cluster name:',
     placeholder: () =>
@@ -60,6 +60,12 @@ export const connectionBlock: Dict = {
       'A Management Cluster with this name is already being synced',
   },
 };
+
+export const addCloudInstance = {
+  errorHtml: () =>
+    'An error occurred while connecting to the management cluster and retrieving its projects. <br/>Click on the Connect button to try again.',
+};
+
 export const synchronizeBlock = {
   title: () => 'Select projects to synchronize',
   synchronizeButtonLabel: () => 'Synchronize selected projects',

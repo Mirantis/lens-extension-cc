@@ -10,9 +10,16 @@ import {
   EXTENDED_CLOUD_EVENTS,
 } from '../../../common/ExtendedCloud';
 import { Renderer } from '@k8slens/extensions';
+import { normalizeUrl } from '../../../util/netUtil';
+import { addCloudInstance } from '../../../strings';
+import {
+  Cloud,
+  CONNECTION_STATUSES,
+  CLOUD_EVENTS,
+} from '../../../common/Cloud';
 
 const {
-  Component: { Notifications },
+  Component: { Notifications, Spinner },
 } = Renderer;
 
 const PageContainer = styled.div(function () {
@@ -100,17 +107,52 @@ export const AddCloudInstance = ({ onAdd, onCancel }) => {
     return () => extCloud?.destroy();
   }, [extCloud]);
 
+  const checkConnectionError = () => {
+    Notifications.error(addCloudInstance.errorHtml());
+  };
+
+  const handleClusterConnect = async function (clusterUrl, clusterName) {
+    cleanCloudsState();
+    const normUrl = normalizeUrl(clusterUrl.trim());
+    setLoading(true);
+    let newCloud = new Cloud();
+    newCloud.cloudUrl = normUrl;
+    newCloud.name = clusterName;
+    const statusListener = () => {
+      if (newCloud.status === CONNECTION_STATUSES.CONNECTING) {
+        setLoading(true);
+      } else {
+        setLoading(false);
+        newCloud.removeEventListener(
+          CLOUD_EVENTS.STATUS_CHANGE,
+          statusListener
+        );
+        if (newCloud.status === CONNECTION_STATUSES.CONNECTED) {
+          setCloud(newCloud);
+        } else {
+          checkConnectionError();
+        }
+      }
+    };
+    newCloud.addEventListener(CLOUD_EVENTS.STATUS_CHANGE, statusListener);
+    await newCloud.connect();
+  };
+
   return (
     <PageContainer>
       <MainColumn>
         <ConnectionBlock
-          setCloud={setCloud}
-          extCloudLoading={loading}
-          cleanCloudsState={cleanCloudsState}
+          loading={loading}
+          handleClusterConnect={handleClusterConnect}
         />
-        {extCloud && !extCloud.error ? (
-          <SynchronizeBlock extendedCloud={extCloud} onAdd={onAdd} />
-        ) : null}
+        {loading ? (
+          <Spinner />
+        ) : (
+          extCloud &&
+          !extCloud.error && (
+            <SynchronizeBlock extendedCloud={extCloud} onAdd={onAdd} />
+          )
+        )}
       </MainColumn>
       <EscColumn>
         <CloseButton onClick={onCancel} />
