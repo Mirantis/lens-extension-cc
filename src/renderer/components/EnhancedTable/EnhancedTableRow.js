@@ -177,7 +177,7 @@ const cloudMenuItems = [
   {
     title: contextMenus.cloud.sync(),
     name: 'sync',
-    onClick: (extendedCloud) => extendedCloud.syncData(),
+    onClick: (extendedCloud) => extendedCloud.fetchNow(),
   },
   {
     title: contextMenus.cloud.openInBrowser(),
