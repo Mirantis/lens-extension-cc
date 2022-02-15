@@ -162,7 +162,7 @@ const cloudMenuItems = [
                 dangerouslySetInnerHTML={{
                   __html: contextMenus.cloud.confirmDialog.messageHtml(
                     extendedCloud.cloud.name,
-                    extendedCloud.cloud.syncNamespaces,
+                    extendedCloud.cloud.syncNamespaces
                   ),
                 }}
               />
