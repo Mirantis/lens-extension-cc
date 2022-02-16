@@ -332,8 +332,9 @@ export const extendedCloud: Dict = {
 export const connectionStatuses: Dict = {
   cloud: {
     connected: () => 'Connected',
-    connecting: () => 'Connecting',
+    connecting: () => 'Connecting...',
     disconnected: () => 'Disconnected',
+    updating: () => 'Updating...',
   },
   namespace: {
     connected: () => 'Synced',
