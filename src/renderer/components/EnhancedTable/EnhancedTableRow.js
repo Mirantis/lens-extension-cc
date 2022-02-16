@@ -337,11 +337,8 @@ export const EnhancedTableRow = ({ extendedCloud, withCheckboxes }) => {
     if (!extendedCloud.loaded) {
       return null;
     }
-    return condition ? (
-      <Icon material="expand_more" style={expandIconStyles} />
-    ) : (
-      <Icon material="chevron_right" style={expandIconStyles} />
-    );
+    const material = condition ? 'expand_more' : 'chevron_right';
+    return <Icon material={material} style={expandIconStyles} />;
   };
 
   const toggleOpenFirstLevel = () => {
