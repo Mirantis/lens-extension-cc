@@ -2,10 +2,7 @@ import PropTypes from 'prop-types';
 import { useState } from 'react';
 import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
-import {
-  TriStateCheckbox,
-  checkValues,
-} from '../TriStateCheckbox/TriStateCheckbox';
+import { TriStateCheckbox } from '../TriStateCheckbox/TriStateCheckbox';
 import { Accordion } from '../Accordion/Accordion';
 import { layout } from '../styles';
 import { synchronizeBlock } from '../../../strings';
@@ -98,7 +95,7 @@ const SortButton = styled.button`
 `;
 
 export const SynchronizeBlock = ({ extendedCloud, onAdd }) => {
-  const { setCheckboxValue, getCheckboxValue } = useCheckboxes(
+  const { setCheckboxValue, getCheckboxValue, getSyncedData } = useCheckboxes(
     makeCheckboxesInitialState(extendedCloud)
   );
 
@@ -130,23 +127,15 @@ export const SynchronizeBlock = ({ extendedCloud, onAdd }) => {
 
   const onSynchronize = () => {
     const { cloud } = extendedCloud;
-    const allNamespaces = extendedCloud.namespaces.map(({ name }) => name);
-    const namespaces = allNamespaces.filter(
-      (name) => getCheckboxValue({ name }) === checkValues.CHECKED
-    );
+    const { syncNamespaces, syncAll } = getSyncedData();
 
-    if (!namespaces.length) {
+    if (!syncAll && !syncNamespaces.length) {
       Notifications.error(synchronizeBlock.error.noProjects());
       return;
     }
 
-    if (allNamespaces.length === namespaces.length) {
-      cloud.syncNamespaces = [];
-      cloud.syncAll = true;
-    } else {
-      cloud.syncAll = false;
-      cloud.syncNamespaces = namespaces;
-    }
+    cloud.syncAll = syncAll;
+    cloud.syncNamespaces = syncNamespaces;
 
     onAdd(cloud);
   };

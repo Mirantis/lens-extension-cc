@@ -153,7 +153,7 @@ const _fetchCredentials = async function (cloud, namespaces) {
   //  retrieved for each namespace
   const flattenCreds = flatten(results);
 
-  const error = flattenCreds.find((c) => c.error);
+  const error = (flattenCreds.find((c) => c.error) || {}).error;
   if (error) {
     return { error };
   }
@@ -236,7 +236,7 @@ const _fetchSshKeys = async function (cloud, namespaces) {
     })
   );
 
-  const error = results.find((sk) => sk.error);
+  const error = (results.find((sk) => sk.error) || {}).error;
   if (error) {
     return { error };
   }
@@ -390,7 +390,7 @@ const _fetchClusters = async function (cloud, namespaces) {
     })
   );
 
-  const error = results.find((cl) => cl.error);
+  const error = (results.find((cl) => cl.error) || {}).error;
   if (error) {
     return { error };
   }
@@ -743,7 +743,11 @@ export class ExtendedCloud extends EventDispatcher {
       };
       this.cloud.addEventListener(CLOUD_EVENTS.STATUS_CHANGE, handler);
     } else {
-      this.error = this.cloud.connectError;
+      this.error = getErrorMessage(this.cloud.connectError);
+      logger.error(
+        'ExtendedCloud.reconnect()',
+        `Cloud connection failed, error="${this.error}", extCloud=${this}`
+      );
     }
   }
 

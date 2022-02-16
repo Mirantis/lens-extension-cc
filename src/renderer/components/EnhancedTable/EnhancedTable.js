@@ -26,7 +26,12 @@ const emptyRowStyles = {
   backgroundColor: 'var(--mainBackground)',
 };
 
-export const EnhancedTable = ({ extendedClouds, isSelectiveSyncView }) => {
+export const EnhancedTable = ({
+  extendedClouds,
+  isSelectiveSyncView,
+  isSyncStarted,
+  getDataToSync,
+}) => {
   const { path, headCellValue } = getTableData(isSelectiveSyncView);
   const [sortedBy, setSortedBy] = useState(headCellValue.NAME);
   const [order, setOrder] = useState('asc');
@@ -56,6 +61,8 @@ export const EnhancedTable = ({ extendedClouds, isSelectiveSyncView }) => {
               key={key}
               extendedCloud={extendedClouds[url]}
               withCheckboxes={isSelectiveSyncView}
+              isSyncStarted={isSyncStarted}
+              getDataToSync={getDataToSync}
             />
           );
         })}
@@ -70,8 +77,11 @@ export const EnhancedTable = ({ extendedClouds, isSelectiveSyncView }) => {
 EnhancedTable.propTypes = {
   extendedClouds: PropTypes.object.isRequired,
   isSelectiveSyncView: PropTypes.bool,
+  isSyncStarted: PropTypes.bool.isRequired,
+  getDataToSync: PropTypes.func,
 };
 
 EnhancedTable.defaultProps = {
   isSelectiveSyncView: false,
+  getDataToSync: null,
 };

@@ -225,8 +225,13 @@ const namespaceMenuItems = [
   },
 ];
 
-export const EnhancedTableRow = ({ extendedCloud, withCheckboxes }) => {
-  const { getCheckboxValue, setCheckboxValue } = useCheckboxes(
+export const EnhancedTableRow = ({
+  extendedCloud,
+  withCheckboxes,
+  isSyncStarted,
+  getDataToSync,
+}) => {
+  const { getCheckboxValue, setCheckboxValue, getSyncedData } = useCheckboxes(
     makeCheckboxesInitialState(extendedCloud, extendedCloud.syncedNamespaces)
   );
   // show all namespaces if selectiveSync table or only syncedNamespaces in this main SyncView table
@@ -276,6 +281,17 @@ export const EnhancedTableRow = ({ extendedCloud, withCheckboxes }) => {
       );
     };
   });
+
+  useEffect(() => {
+    if (isSyncStarted && typeof getDataToSync === 'function') {
+      getDataToSync(getSyncedData(), extendedCloud.cloud.cloudUrl);
+    }
+  }, [
+    getDataToSync,
+    isSyncStarted,
+    getSyncedData,
+    extendedCloud.cloud.cloudUrl,
+  ]);
 
   const setOpenedList = (index) => {
     if (openedSecondLevelListIndex.includes(index)) {
@@ -417,8 +433,12 @@ export const EnhancedTableRow = ({ extendedCloud, withCheckboxes }) => {
 EnhancedTableRow.propTypes = {
   extendedCloud: PropTypes.object.isRequired,
   withCheckboxes: PropTypes.bool,
+  isSyncStarted: PropTypes.bool,
+  getDataToSync: PropTypes.func,
 };
 
 EnhancedTableRow.defaultProps = {
   withCheckboxes: false,
+  isSyncStarted: false,
+  getDataToSync: null,
 };
