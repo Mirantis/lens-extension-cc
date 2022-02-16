@@ -124,23 +124,16 @@ const getStatus = (cloud, isFetching) => {
   }
 };
 
-const CLOUD_MENU_ITEMS_NAME = {
-  RECONNECT: 'reconnect',
-  REMOVE: 'remove',
-  SYNC: 'sync',
-  OPEN_IN_BROWSER: 'openInBrowser',
-};
-
 const getCloudMenuItems = (extendedCloud) => [
   {
     title: contextMenus.cloud.reconnect(),
-    name: CLOUD_MENU_ITEMS_NAME.RECONNECT,
+    name: 'reconnect',
     disabled: extendedCloud.cloud.status === CONNECTION_STATUSES.CONNECTED,
     onClick: () => extendedCloud.reconnect(),
   },
   {
     title: contextMenus.cloud.remove(),
-    name: CLOUD_MENU_ITEMS_NAME.REMOVE,
+    name: 'remove',
     disabled: false,
     onClick: () => {
       const {
@@ -180,13 +173,13 @@ const getCloudMenuItems = (extendedCloud) => [
   },
   {
     title: contextMenus.cloud.sync(),
-    name: CLOUD_MENU_ITEMS_NAME.SYNC,
+    name: 'sync',
     disabled: extendedCloud.cloud.status === CONNECTION_STATUSES.DISCONNECTED,
     onClick: () => extendedCloud.fetchNow(),
   },
   {
     title: contextMenus.cloud.openInBrowser(),
-    name: CLOUD_MENU_ITEMS_NAME.OPEN_IN_BROWSER,
+    name: 'openInBrowser',
     disabled: false,
     onClick: () => {
       openBrowser(extendedCloud.cloud.cloudUrl);
