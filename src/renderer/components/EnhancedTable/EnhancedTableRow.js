@@ -124,15 +124,22 @@ const getStatus = (cloud, isFetching) => {
   }
 };
 
+const CLOUD_MENU_ITEMS_NAME = {
+  RECONNECT: 'reconnect',
+  REMOVE: 'remove',
+  SYNC: 'sync',
+  OPEN_IN_BROWSER: 'openInBrowser',
+};
+
 const cloudMenuItems = [
   {
     title: contextMenus.cloud.reconnect(),
-    name: 'reconnect',
+    name: CLOUD_MENU_ITEMS_NAME.RECONNECT,
     onClick: (extendedCloud) => extendedCloud.reconnect(),
   },
   {
     title: contextMenus.cloud.remove(),
-    name: 'remove',
+    name: CLOUD_MENU_ITEMS_NAME.REMOVE,
     onClick: (extendedCloud) => {
       const {
         name: cloudName,
@@ -171,12 +178,12 @@ const cloudMenuItems = [
   },
   {
     title: contextMenus.cloud.sync(),
-    name: 'sync',
+    name: CLOUD_MENU_ITEMS_NAME.SYNC,
     onClick: (extendedCloud) => extendedCloud.fetchNow(),
   },
   {
     title: contextMenus.cloud.openInBrowser(),
-    name: 'openInBrowser',
+    name: CLOUD_MENU_ITEMS_NAME.OPEN_IN_BROWSER,
     onClick: (extendedCloud) => {
       openBrowser(extendedCloud.cloud.cloudUrl);
     },
@@ -370,6 +377,14 @@ export const EnhancedTableRow = ({ extendedCloud, withCheckboxes }) => {
                     return (
                       <MenuItem
                         key={`cloud-${item.name}`}
+                        disabled={
+                          (item.name === CLOUD_MENU_ITEMS_NAME.SYNC &&
+                            extendedCloud.cloud.status ===
+                              CONNECTION_STATUSES.DISCONNECTED) ||
+                          (item.name === CLOUD_MENU_ITEMS_NAME.RECONNECT &&
+                            extendedCloud.cloud.status ===
+                              CONNECTION_STATUSES.CONNECTED)
+                        }
                         onClick={() => item.onClick(extendedCloud)}
                       >
                         {item.title}
