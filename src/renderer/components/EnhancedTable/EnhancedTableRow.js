@@ -131,16 +131,18 @@ const CLOUD_MENU_ITEMS_NAME = {
   OPEN_IN_BROWSER: 'openInBrowser',
 };
 
-const cloudMenuItems = [
+const getCloudMenuItems = (extendedCloud) => [
   {
     title: contextMenus.cloud.reconnect(),
     name: CLOUD_MENU_ITEMS_NAME.RECONNECT,
-    onClick: (extendedCloud) => extendedCloud.reconnect(),
+    disabled: extendedCloud.cloud.status === CONNECTION_STATUSES.CONNECTED,
+    onClick: () => extendedCloud.reconnect(),
   },
   {
     title: contextMenus.cloud.remove(),
     name: CLOUD_MENU_ITEMS_NAME.REMOVE,
-    onClick: (extendedCloud) => {
+    disabled: false,
+    onClick: () => {
       const {
         name: cloudName,
         cloudUrl,
@@ -179,12 +181,14 @@ const cloudMenuItems = [
   {
     title: contextMenus.cloud.sync(),
     name: CLOUD_MENU_ITEMS_NAME.SYNC,
-    onClick: (extendedCloud) => extendedCloud.fetchNow(),
+    disabled: extendedCloud.cloud.status === CONNECTION_STATUSES.DISCONNECTED,
+    onClick: () => extendedCloud.fetchNow(),
   },
   {
     title: contextMenus.cloud.openInBrowser(),
     name: CLOUD_MENU_ITEMS_NAME.OPEN_IN_BROWSER,
-    onClick: (extendedCloud) => {
+    disabled: false,
+    onClick: () => {
       openBrowser(extendedCloud.cloud.cloudUrl);
     },
   },
@@ -354,6 +358,8 @@ export const EnhancedTableRow = ({ extendedCloud, withCheckboxes }) => {
     }
   };
 
+  const cloudMenuItems = getCloudMenuItems(extendedCloud);
+
   return (
     <>
       <EnhTableRow isTopLevel>
@@ -377,15 +383,8 @@ export const EnhancedTableRow = ({ extendedCloud, withCheckboxes }) => {
                     return (
                       <MenuItem
                         key={`cloud-${item.name}`}
-                        disabled={
-                          (item.name === CLOUD_MENU_ITEMS_NAME.SYNC &&
-                            extendedCloud.cloud.status ===
-                              CONNECTION_STATUSES.DISCONNECTED) ||
-                          (item.name === CLOUD_MENU_ITEMS_NAME.RECONNECT &&
-                            extendedCloud.cloud.status ===
-                              CONNECTION_STATUSES.CONNECTED)
-                        }
-                        onClick={() => item.onClick(extendedCloud)}
+                        disabled={item.disabled}
+                        onClick={item.onClick}
                       >
                         {item.title}
                       </MenuItem>
