@@ -124,16 +124,18 @@ const getStatus = (cloud, isFetching) => {
   }
 };
 
-const cloudMenuItems = [
+const getCloudMenuItems = (extendedCloud) => [
   {
     title: contextMenus.cloud.reconnect(),
     name: 'reconnect',
-    onClick: (extendedCloud) => extendedCloud.reconnect(),
+    disabled: extendedCloud.cloud.status === CONNECTION_STATUSES.CONNECTED,
+    onClick: () => extendedCloud.reconnect(),
   },
   {
     title: contextMenus.cloud.remove(),
     name: 'remove',
-    onClick: (extendedCloud) => {
+    disabled: false,
+    onClick: () => {
       const {
         name: cloudName,
         cloudUrl,
@@ -172,12 +174,14 @@ const cloudMenuItems = [
   {
     title: contextMenus.cloud.sync(),
     name: 'sync',
-    onClick: (extendedCloud) => extendedCloud.fetchNow(),
+    disabled: extendedCloud.cloud.status === CONNECTION_STATUSES.DISCONNECTED,
+    onClick: () => extendedCloud.fetchNow(),
   },
   {
     title: contextMenus.cloud.openInBrowser(),
     name: 'openInBrowser',
-    onClick: (extendedCloud) => {
+    disabled: false,
+    onClick: () => {
       openBrowser(extendedCloud.cloud.cloudUrl);
     },
   },
@@ -347,6 +351,8 @@ export const EnhancedTableRow = ({ extendedCloud, withCheckboxes }) => {
     }
   };
 
+  const cloudMenuItems = getCloudMenuItems(extendedCloud);
+
   return (
     <>
       <EnhTableRow isTopLevel>
@@ -370,7 +376,8 @@ export const EnhancedTableRow = ({ extendedCloud, withCheckboxes }) => {
                     return (
                       <MenuItem
                         key={`cloud-${item.name}`}
-                        onClick={() => item.onClick(extendedCloud)}
+                        disabled={item.disabled}
+                        onClick={item.onClick}
                       >
                         {item.title}
                       </MenuItem>
