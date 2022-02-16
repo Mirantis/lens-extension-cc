@@ -78,8 +78,8 @@ const colorYellow = {
   color: 'var(--colorWarning)',
 };
 
-const colorRed = {
-  color: 'var(--colorError)',
+const colorGray = {
+  color: 'var(--halfGray)',
 };
 
 /**
@@ -119,7 +119,7 @@ const getStatus = (cloud, isFetching) => {
       return {
         cloudStatus: connectionStatuses.cloud.disconnected(),
         namespaceStatus: connectionStatuses.namespace.disconnected(),
-        connectColor: colorRed,
+        connectColor: colorGray,
       };
   }
 };
