@@ -70,6 +70,8 @@ export const synchronizeBlock = {
   title: () => 'Select projects to synchronize',
   synchronizeButtonLabel: () => 'Synchronize selected projects',
   checkAllCheckboxLabel: () => 'Project name',
+  noProjectsFound: () =>
+    'No projects found. At least one project is required for syncing. Try another management cluster.',
   checkboxesDropdownLabels: {
     clusters: () => 'clusters',
     sshKeys: () => 'SSH keys',
