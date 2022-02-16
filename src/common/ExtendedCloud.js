@@ -746,7 +746,7 @@ export class ExtendedCloud extends EventDispatcher {
       this.error = getErrorMessage(this.cloud.connectError);
       logger.error(
         'ExtendedCloud.reconnect()',
-        `Failed to get cloud.connect, error="${this.error}", extCloud=${this}`
+        `Cloud connection failed, error="${this.error}", extCloud=${this}`
       );
     }
   }
