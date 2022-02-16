@@ -11,39 +11,49 @@ export const credentialTypes = {
 
 export const credentialTypesList = Object.values(credentialTypes);
 
-// NOTE: this spec based on openStack type. We hope other types have the same structure.
-// But keep this place in the mind just in case
-const credentialSpec = {
-  apiVersion: rtv.STRING,
-  kind: [rtv.REQUIRED, rtv.STRING],
-  metadata: {
-    name: rtv.STRING,
-    namespace: rtv.STRING,
-    uid: rtv.STRING,
-    finalizers: [rtv.OPTIONAL, rtv.ARRAY, rtv.OBJECT],
-    managedFields: [rtv.ARRAY, { $: [rtv.OBJECT] }], // complex nested object
-    resourceVersion: rtv.STRING,
-    labels: [
-      rtv.OPTIONAL,
-      {
-        'kaas.mirantis.com/provider': [rtv.OPTIONAL, rtv.STRING],
-        'kaas.mirantis.com/region': [rtv.OPTIONAL, rtv.STRING],
-      },
-    ],
+const specByType = {
+  [credentialTypes.AWS_CREDENTIAL]: {
+    accessKeyID: rtv.STRING,
+    secretAccessKey: rtv.OBJECT,
   },
-  spec: {
+  [credentialTypes.OPENSTACK_CREDENTIAL]: {
     regionName: rtv.STRING,
     auth: {
       authURL: rtv.STRING,
-      password: rtv.OBJECT, // do we need details here?
+      password: rtv.OBJECT,
       projectID: rtv.STRING,
       userDomainName: rtv.STRING,
       userName: rtv.STRING,
     },
   },
-  status: {
-    valid: rtv.BOOLEAN,
-  },
+  [credentialTypes.BYO_CREDENTIAL]: rtv.OBJECT, // define in details later
+};
+
+const getCredentialSpec = (type) => {
+  return {
+    apiVersion: rtv.STRING,
+    kind: [rtv.REQUIRED, rtv.STRING],
+    metadata: {
+      name: rtv.STRING,
+      namespace: rtv.STRING,
+      uid: rtv.STRING,
+      finalizers: [rtv.OPTIONAL, rtv.ARRAY, rtv.OBJECT],
+      managedFields: [rtv.ARRAY, { $: [rtv.OBJECT] }], // complex nested object
+      resourceVersion: rtv.STRING,
+      labels: [
+        rtv.OPTIONAL,
+        {
+          'kaas.mirantis.com/provider': [rtv.OPTIONAL, rtv.STRING],
+          'kaas.mirantis.com/region': [rtv.OPTIONAL, rtv.STRING],
+        },
+      ],
+    },
+    spec: specByType[type],
+    status: {
+      message: [rtv.OPTIONAL, rtv.STRING],
+      valid: rtv.BOOLEAN,
+    },
+  };
 };
 
 export class Credential extends ApiObject {
@@ -54,9 +64,9 @@ export class Credential extends ApiObject {
       rtv.verify(
         { data, namespace, credentialType },
         {
-          data: credentialSpec,
+          data: getCredentialSpec(credentialType),
           namespace: [rtv.CLASS_OBJECT, { ctor: Namespace }],
-          credentialType: rtv.STRING, // is it way to define 'one of values' (credentialTypes enum or credentialTypesList) ask Stefan
+          credentialType: [rtv.STRING, { oneOf: credentialTypesList }],
         }
       );
 
@@ -73,6 +83,7 @@ export class Credential extends ApiObject {
       null
     );
 
+    /** @member {string|null} */
     this.provider = get(
       data.metadata,
       'labels["kaas.mirantis.com/provider"]',
