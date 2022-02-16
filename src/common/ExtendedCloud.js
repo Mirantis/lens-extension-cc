@@ -1,7 +1,7 @@
 import * as rtv from 'rtvjs';
 import { Cloud, CLOUD_EVENTS } from './Cloud';
 import { filter, flatten } from 'lodash';
-import { cloudRequest, extractJwtPayload } from '../renderer/auth/authUtil';
+import { cloudRequest, extractJwtPayload } from '../api/apiUtil';
 import * as strings from '../strings';
 import { Namespace } from '../renderer/store/Namespace';
 import { Credential, credentialTypesList } from '../renderer/store/Credential';

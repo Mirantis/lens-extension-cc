@@ -1,5 +1,5 @@
-import { request } from '../../../util/netUtil';
-import * as strings from '../../../strings';
+import { request } from '../../util/netUtil';
+import * as strings from '../../strings';
 
 // no start nor end slashes
 const clusterEndpoint = 'apis/cluster.k8s.io/v1alpha1';

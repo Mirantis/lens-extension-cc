@@ -62,8 +62,8 @@ export const connectionBlock: Dict = {
 };
 
 export const addCloudInstance = {
-  errorHtml: () =>
-    'An error occurred while connecting to the management cluster and retrieving its projects. <br/>Click on the Connect button to try again.',
+  connectionError: () =>
+    'An error occurred while connecting to the management cluster and retrieving its projects. Click on the Connect button to try again.',
 };
 
 export const synchronizeBlock = {
@@ -105,7 +105,7 @@ export const managementClusters = {
   },
 };
 
-export const authUtil: Dict = {
+export const apiUtil: Dict = {
   error: {
     sessionExpired: () => 'Session expired',
     invalidCredentials: () => 'Invalid credentials',

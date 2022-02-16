@@ -1,9 +1,13 @@
-import * as strings from '../../strings';
-import { AuthClient } from './clients/AuthClient';
+//
+// Utility methods for making Cloud API requests.
+//
+
+import * as strings from '../strings';
+import { ApiClient } from './clients/ApiClient';
 import { KubernetesAuthorizationClient } from './clients/KubernetesAuthorizationClient';
 import { KubernetesClient } from './clients/KubernetesClient';
 import { KubernetesEntityClient } from './clients/KubernetesEntityClient';
-import { logger } from '../../util/logger';
+import { logger } from '../util/logger';
 
 const entityToClient = {
   cluster: KubernetesEntityClient,
@@ -59,16 +63,16 @@ export function extractJwtPayload(token) {
  *  and `false` is returned.
  */
 export async function cloudRefresh(cloud) {
-  const authClient = new AuthClient({
+  const apiClient = new ApiClient({
     baseUrl: cloud.cloudUrl,
     config: cloud.config,
   });
-  const { response, body, error } = await authClient.refreshToken(
+  const { response, body, error } = await apiClient.refreshToken(
     cloud.refreshToken
   );
 
   if (response && response.status === 400) {
-    cloud.connectError = strings.authUtil.error.sessionExpired();
+    cloud.connectError = strings.apiUtil.error.sessionExpired();
   } else if (error) {
     cloud.connectError = error;
   }
@@ -79,7 +83,7 @@ export async function cloudRefresh(cloud) {
 
   // token was refreshed
   cloud.updateTokens(body);
-  logger.log('authUtil.cloudRefresh()', `Refreshed tokens of cloud=${cloud}`);
+  logger.log('apiUtil.cloudRefresh()', `Refreshed tokens of cloud=${cloud}`);
 
   return true;
 }
@@ -90,11 +94,11 @@ export async function cloudRefresh(cloud) {
  * @returns {string|undefined} `undefined` if successful; error message otherwise.
  */
 export async function cloudLogout(cloud) {
-  const authClient = new AuthClient({
+  const apiClient = new ApiClient({
     baseUrl: cloud.cloudUrl,
     config: cloud.config,
   });
-  const { error: refreshError } = await authClient.logout(cloud.refreshToken);
+  const { error: refreshError } = await apiClient.logout(cloud.refreshToken);
 
   if (refreshError) {
     return refreshError;
@@ -124,7 +128,7 @@ export async function cloudRequest({ cloud, method, entity, args }) {
     cloud.resetTokens();
     return {
       cloud,
-      error: strings.authUtil.error.invalidCredentials(),
+      error: strings.apiUtil.error.invalidCredentials(),
       status: 401,
     };
   }

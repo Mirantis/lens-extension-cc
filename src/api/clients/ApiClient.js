@@ -1,8 +1,8 @@
 import queryString from 'query-string';
-import { request } from '../../../util/netUtil';
-import * as strings from '../../../strings';
-import { EXT_EVENT_OAUTH_CODE } from '../../eventBus';
-import pkg from '../../../../package.json';
+import { request } from '../../util/netUtil';
+import * as strings from '../../strings';
+import { EXT_EVENT_OAUTH_CODE } from '../../renderer/eventBus';
+import pkg from '../../../package.json';
 
 const redirectUri = `lens://extension/${pkg.name}/${EXT_EVENT_OAUTH_CODE}`;
 const authRoute = 'protocol/openid-connect'; // NEVER begins/ends with a slash
@@ -10,11 +10,11 @@ const authRoute = 'protocol/openid-connect'; // NEVER begins/ends with a slash
 /**
  * Authentication Client able to get OAuth tokens from Keycloak/SSO,
  *  and refresh those tokens if they expire.
- * @class AuthClient
+ * @class ApiClient
  * @param {Object} options
  * @param {Object} options.config The MCC Configuration object.
  */
-export class AuthClient {
+export class ApiClient {
   constructor({ config }) {
     if (!config || !config.keycloakLogin) {
       throw new Error(
@@ -103,7 +103,7 @@ export class AuthClient {
    *  than a normal refresh token as it will never expire.
    * @param {string} [options.clientId] If specified, this ID will be used instead
    *  of the client ID obtained from the `config` object used to create this
-   *  AuthClient instance. Set this to the `idpClientId` of a cluster if generating
+   *  ApiClient instance. Set this to the `idpClientId` of a cluster if generating
    *  access tokens for a specific cluster.
    * @returns {Promise<Object>} See netUtil.request() for response shape. On success,
    *  the `body` property will be an object with the following properties:

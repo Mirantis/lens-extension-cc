@@ -1,6 +1,6 @@
 import { logger } from './logger';
-import { extractJwtPayload } from '../renderer/auth/authUtil';
-import { AuthClient } from '../renderer/auth/clients/AuthClient';
+import { extractJwtPayload } from '../api/apiUtil';
+import { ApiClient } from '../api/clients/ApiClient';
 import { openBrowser } from '../util/netUtil';
 import * as strings from '../strings';
 
@@ -16,10 +16,10 @@ import * as strings from '../strings';
  * @throws {Error} If the MCC instance has an illegal Keycloak URL.
  */
 export const startAuthorization = function ({ config, state }) {
-  const authClient = new AuthClient({ config });
+  const apiClient = new ApiClient({ config });
 
   if (config.keycloakLogin) {
-    const url = authClient.getSsoAuthUrl({ state });
+    const url = apiClient.getSsoAuthUrl({ state });
     try {
       openBrowser(url); // open in default browser (will throw if `url` is blacklisted)
     } catch (err) {
@@ -42,12 +42,12 @@ export const startAuthorization = function ({ config, state }) {
  *  This instance WILL be cleared and updated with new tokens.
  */
 export const finishAuthorization = async function ({ oAuth, config, cloud }) {
-  const authClient = new AuthClient({ config });
+  const apiClient = new ApiClient({ config });
   let body;
   let error;
 
   if (oAuth.code) {
-    ({ body, error } = await authClient.getToken({ authCode: oAuth.code }));
+    ({ body, error } = await apiClient.getToken({ authCode: oAuth.code }));
   } else {
     // no code, something went wrong
     error = oAuth.error || oAuth.error_description || 'unknown';

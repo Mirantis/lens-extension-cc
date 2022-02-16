@@ -1,5 +1,5 @@
-import { request } from '../../../util/netUtil';
-import * as strings from '../../../strings';
+import { request } from '../../util/netUtil';
+import * as strings from '../../strings';
 
 /**
  * @param {string} baseUrl The MCC base URL (i.e. the URL to the MCC UI). Expected to
