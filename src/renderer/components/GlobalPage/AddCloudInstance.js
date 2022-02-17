@@ -12,7 +12,11 @@ import {
 import { Renderer } from '@k8slens/extensions';
 import { normalizeUrl } from '../../../util/netUtil';
 import { addCloudInstance } from '../../../strings';
-import { Cloud, CONNECTION_STATUSES, CLOUD_EVENTS } from '../../../common/Cloud';
+import {
+  Cloud,
+  CONNECTION_STATUSES,
+  CLOUD_EVENTS,
+} from '../../../common/Cloud';
 
 const {
   Component: { Notifications, Spinner },

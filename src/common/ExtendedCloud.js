@@ -3,12 +3,12 @@ import { Cloud, CLOUD_EVENTS } from './Cloud';
 import { filter, flatten } from 'lodash';
 import { cloudRequest, extractJwtPayload } from '../api/apiUtil';
 import * as strings from '../strings';
-import { Namespace } from '../renderer/store/Namespace';
-import { Credential, credentialTypesList } from '../renderer/store/Credential';
-import { SshKey } from '../renderer/store/SshKey';
+import { Namespace } from '../api/types/Namespace';
+import { Credential, credentialTypesList } from '../api/types/Credential';
+import { SshKey } from '../api/types/SshKey';
 
 import { logger } from '../util/logger';
-import { Cluster } from '../renderer/store/Cluster';
+import { Cluster } from '../api/types/Cluster';
 import { EventDispatcher } from './EventDispatcher';
 
 export const EXTENDED_CLOUD_EVENTS = Object.freeze({
