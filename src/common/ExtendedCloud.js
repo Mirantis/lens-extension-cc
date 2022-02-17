@@ -83,6 +83,11 @@ const getErrorMessage = (error) => {
  * @param {Object} body Data response from `/list/{entity}` API.
  * @param {Namespace} [namespace] The related Namespace; `undefined` if fetching
  *  namespaces themselves (i.e. `entity === apiEntities.NAMESPACE`).
+ * @param {(params: { data: Object, namespace?: Namespace }) => ApiObject} params.create Function
+ *  called to create new instance of an `ApiObject`-based class that represents the API entity.
+ *  - `data` is the raw object returned from the API for the entity
+ *  - `namespace` is the related Namespace (`undefined` when fetching namespaces themselves
+ *      with `entity === apiEntities.NAMESPACE`)
  * @returns {Array<ApiObject>} Array of API objects. Empty list if none. Any
  *  item that can't be deserialized is ignored and not returned in the list.
  */
