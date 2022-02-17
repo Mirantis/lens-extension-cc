@@ -1,5 +1,5 @@
 //
-// Main view for the ClusterPage
+// Main view for the ClusterPage within the 'Lens > Catalog > Cluster' UI
 //
 
 import styled from '@emotion/styled';
@@ -9,7 +9,7 @@ import * as strings from '../../../strings';
 import * as consts from '../../../constants';
 import { layout, mixinPageStyles } from '../styles';
 import { logger } from '../../../util/logger';
-import { clusterModelTs } from '../../../typesets';
+import { clusterEntityModelTs } from '../../../typesets';
 
 const { Component } = Renderer;
 
@@ -93,7 +93,7 @@ export const ClusterView = function () {
     return null;
   }
 
-  DEV_ENV && rtv.verify(clusterEntity, clusterModelTs);
+  DEV_ENV && rtv.verify(clusterEntity, clusterEntityModelTs);
 
   //
   // STATE

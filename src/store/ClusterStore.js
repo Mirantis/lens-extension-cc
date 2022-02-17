@@ -6,12 +6,12 @@ import { observable, action, toJS, makeObservable } from 'mobx';
 import { Common } from '@k8slens/extensions';
 import * as rtv from 'rtvjs';
 import { logger } from '../util/logger';
-import { clusterModelTs } from '../typesets';
+import { clusterEntityModelTs } from '../typesets';
 
 /** RTV.js typeset for preferences model. */
 export const storeTs = {
   /** List of models representing each cluster in the Catalog added by this extension. */
-  models: [[clusterModelTs]],
+  models: [[clusterEntityModelTs]],
 };
 
 /** Preferences auto-persisted by Lens. Singleton. Use `getInstance()` static method. */

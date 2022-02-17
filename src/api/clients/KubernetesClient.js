@@ -1,5 +1,6 @@
 import { request } from '../../util/netUtil';
 import * as strings from '../../strings';
+import { apiEntities } from '../apiConstants';
 
 /**
  * @param {string} baseUrl The MCC base URL (i.e. the URL to the MCC UI). Expected to
@@ -39,9 +40,9 @@ export class KubernetesClient {
 
   list(entity, { namespaceName, entityDescriptionName } = {}) {
     const url = {
-      namespace: 'namespaces',
-      credential: `namespaces/${namespaceName}/secrets`,
-      event: `namespaces/${namespaceName}/events`,
+      [apiEntities.NAMESPACE]: entity,
+      [apiEntities.METAL_CREDENTIAL]: `${apiEntities.NAMESPACE}/${namespaceName}/${entity}`,
+      [apiEntities.EVENT]: `${apiEntities.NAMESPACE}/${namespaceName}/${entity}`,
     };
     return this.request(url[entity], {
       errorMessage: strings.apiClient.error.failedToGet(
@@ -52,8 +53,8 @@ export class KubernetesClient {
 
   create(entity, { namespaceName, config, entityDescriptionName } = {}) {
     const url = {
-      namespace: 'namespaces',
-      credential: `namespaces/${namespaceName}/secrets`,
+      [apiEntities.NAMESPACE]: entity,
+      [apiEntities.METAL_CREDENTIAL]: `${apiEntities.NAMESPACE}/${namespaceName}/${entity}`,
     };
     return this.request(url[entity], {
       options: { method: 'POST', body: JSON.stringify(config) },
@@ -66,8 +67,8 @@ export class KubernetesClient {
 
   delete(entity, { namespaceName, name, entityDescriptionName } = {}) {
     const url = {
-      namespace: `namespaces/${name}`,
-      credential: `namespaces/${namespaceName}/secrets/${name}`,
+      [apiEntities.NAMESPACE]: `${entity}/${name}`,
+      [apiEntities.METAL_CREDENTIAL]: `${apiEntities.NAMESPACE}/${namespaceName}/${entity}/${name}`,
     };
     return this.request(url[entity], {
       options: { method: 'DELETE' },

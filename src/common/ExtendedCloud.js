@@ -1,15 +1,16 @@
 import * as rtv from 'rtvjs';
 import { Cloud, CLOUD_EVENTS } from './Cloud';
-import { filter, flatten } from 'lodash';
+import { filter } from 'lodash';
 import { cloudRequest, extractJwtPayload } from '../api/apiUtil';
-import * as strings from '../strings';
 import { Namespace } from '../api/types/Namespace';
-import { Credential, credentialTypesList } from '../api/types/Credential';
+import { Credential } from '../api/types/Credential';
 import { SshKey } from '../api/types/SshKey';
-
-import { logger } from '../util/logger';
 import { Cluster } from '../api/types/Cluster';
+import { Proxy } from '../api/types/Proxy';
+import { License } from '../api/types/License';
+import { logger } from '../util/logger';
 import { EventDispatcher } from './EventDispatcher';
+import { apiEntities, apiCredentialEntities } from '../api/apiConstants';
 
 export const EXTENDED_CLOUD_EVENTS = Object.freeze({
   /**
@@ -77,97 +78,202 @@ const getErrorMessage = (error) => {
 };
 
 /**
- * Deserialize the raw list of credentials data from the API into credentials objects.
- * @param {Object} body Data response from /list/credential API by credentialTypes
- * @param {Namespace} namespace The Namespace object
- * @param {strings} credentialType one of credentialTypesList
- * @returns {Array<Credential>} Array of Credential objects.
+ * Deserialize a raw list of API entity objects into `ApiObject` instances.
+ * @param {string} entity API entity name to fetch from the `apiConstants.apiEntities` enum.
+ * @param {Object} body Data response from `/list/{entity}` API.
+ * @param {Namespace} [namespace] The related Namespace; `undefined` if fetching
+ *  namespaces themselves (i.e. `entity === apiEntities.NAMESPACE`).
+ * @param {(params: { data: Object, namespace?: Namespace }) => ApiObject} params.create Function
+ *  called to create new instance of an `ApiObject`-based class that represents the API entity.
+ *  - `data` is the raw object returned from the API for the entity
+ *  - `namespace` is the related Namespace (`undefined` when fetching namespaces themselves
+ *      with `entity === apiEntities.NAMESPACE`)
+ * @returns {Array<ApiObject>} Array of API objects. Empty list if none. Any
+ *  item that can't be deserialized is ignored and not returned in the list.
  */
-const _deserializeCredentialsList = function (body, namespace, credentialType) {
+const _deserializeEntityList = function (entity, body, namespace, create) {
   if (!body || !Array.isArray(body.items)) {
-    return {
-      error: strings.extendedCloud.error.invalidCredentialsPayload(),
-    };
+    logger.error(
+      'ExtendedCloud._deserializeEntityList()',
+      `Failed to parse "${entity}" payload: Unexpected data format`
+    );
+    return [];
   }
 
   return body.items
-    .map((item, idx) => {
+    .map((data, idx) => {
       try {
-        return new Credential(item, namespace, credentialType);
+        return create({ data, namespace });
       } catch (err) {
         logger.warn(
-          'ExtendedCloud._deserializeCredentialsList()',
-          `Ignoring credential ${idx} because it could not be deserialized: ${err.message}`,
+          'ExtendedCloud._deserializeEntityList()',
+          `Ignoring "${entity}" entity ${idx}${
+            namespace ? ` from namespace "${namespace.name}"` : ''
+          }: Could not be deserialized, error="${getErrorMessage(err)}"`,
           err
         );
         return undefined;
       }
     })
-    .filter((shKey) => !!shKey);
+    .filter((obj) => !!obj);
 };
 
 /**
- * [ASYNC] Get all existing Credentials from the management cluster, for each namespace
- *  specified.
+ * [ASYNC] Best-try to get all existing entities of a given type from the management cluster,
+ *  for each namespace specified.
+ * @param {Object} params
+ * @param {string} params.entity API entity name to fetch from the `apiConstants.apiEntities` enum.
+ * @param {Cloud} params.cloud An Cloud object. Tokens will be updated/cleared
+ *  if necessary.
+ * @param {Array<Namespace>} [params.namespaces] List of namespaces in which to get the entities.
+ *  __REQUIRED__ unless `entity === apiEntities.NAMESPACE`, in which case this parameter is
+ *  ignored because we're fetching the namespaces themselves.
+ * @param {(params: { data: Object, namespace?: Namespace }) => ApiObject} params.create Function
+ *  called to create new instance of an `ApiObject`-based class that represents the API entity.
+ *  - `data` is the raw object returned from the API for the entity
+ *  - `namespace` is the related Namespace (`undefined` when fetching namespaces themselves
+ *      with `entity === apiEntities.NAMESPACE`)
+ * @returns {Promise<Object>} Never fails, always resolves in
+ *  `{ entities: { [index: string]: Array<ApiObject> }, tokensRefreshed: boolean }`,
+ *  where `entities` is a map of namespace name to list of `ApiObject`-based instances
+ *  as returned by `create()`. If an error occurs trying to get an entity or deserialize
+ *  it, it is ignored/skipped.
+ *
+ *  NOTE: If `entity === apiEntities.NAMESPACE` (i.e. fetching namespaces themselves),
+ *   `entities` is a map with a single key which is the `apiEntities.NAMESPACE` entity
+ *   mapped to the list of all namespaces in the Cloud.
+ */
+const _fetchEntityList = async function ({
+  entity,
+  cloud,
+  namespaces,
+  create,
+}) {
+  rtv.verify(
+    { entity },
+    { entity: [rtv.STRING, { oneOf: Object.values(apiEntities) }] }
+  );
+
+  let tokensRefreshed = false;
+
+  // process a result from an API call
+  // NOTE: `namespace` is `undefined` when fetching namespaces themselves
+  const processResult = (
+    { body, tokensRefreshed: refreshed, error, status },
+    namespace
+  ) => {
+    tokensRefreshed = tokensRefreshed || refreshed;
+
+    let items = [];
+    if (error) {
+      // if it's a 403 "access denied" issue, just log it but don't flag it
+      //  as an error since there are various mechianisms that could prevent
+      //  a user from accessing certain entities in the API (disabled components,
+      //  permissions, etc.)
+      logger[status === 403 ? 'log' : 'error'](
+        'ExtendedCloud._fetchEntityList',
+        `${
+          status === 403 ? '(IGNORED: Access denied) ' : ''
+        }Failed to get "${entity}" entities, namespace=${
+          namespace?.name || namespace // undefined if `entity === apiEntities.NAMESPACE`
+        }, status=${status}, error="${getErrorMessage(error)}"`
+      );
+    } else {
+      items = _deserializeEntityList(entity, body, namespace, create);
+    }
+
+    return {
+      items,
+      namespace,
+    };
+  };
+
+  let results;
+  if (entity === apiEntities.NAMESPACE) {
+    const result = await cloudRequest({
+      cloud,
+      method: 'list',
+      entity: apiEntities.NAMESPACE,
+    });
+    results = [processResult(result)];
+  } else {
+    results = await Promise.all(
+      namespaces.map(async (namespace) => {
+        const result = await cloudRequest({
+          cloud,
+          method: 'list',
+          entity,
+          args: { namespaceName: namespace.name }, // extra args
+        });
+
+        return processResult(result, namespace);
+      })
+    );
+  }
+
+  // NOTE: the loop above ensures that there are no error results; all items in
+  //  `results` have the same shape
+
+  let entities;
+  if (entity === apiEntities.NAMESPACE) {
+    entities = { [apiEntities.NAMESPACE]: results[0].items };
+  } else {
+    entities = results.reduce((acc, val) => {
+      const {
+        namespace: { name: nsName },
+        items,
+      } = val;
+      acc[nsName] = items;
+      return acc;
+    }, {});
+  }
+
+  return { entities, tokensRefreshed };
+};
+
+/**
+ * [ASYNC] Best-try to get all existing Credentials from the management cluster, for each
+ *  namespace specified.
  * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
  *  if necessary.
  * @param {Array<Namespace>} namespaces List of namespaces.
- * @returns {Promise<Object>} On success
- *  `{ credentials: {Array<Credential>}, tokensRefreshed: boolean }`,
- *  where `credentials` is a map of namespace name to credential type, to a raw credential
- *  API object; or `{error: string}` on error. The error will be the first-found error out of
- *  all namespaces on which SSH Key retrieval was attempted.
+ * @returns {Promise<Object>} Never fails, always resolves in
+ *  `{ credentials: { [index: string]: Array<Credential> }, tokensRefreshed: boolean }`,
+ *  where `credentials` is a map of namespace name to credential (regardless of type).
+ *  If there's an error trying to get any credential, it will be skipped/ignored.
  */
 const _fetchCredentials = async function (cloud, namespaces) {
-  let tokensRefreshed = false;
   const results = await Promise.all(
-    credentialTypesList.map(async (entity) => {
-      return await Promise.all(
-        namespaces.map(async (namespace) => {
-          const {
-            body,
-            tokensRefreshed: refreshed,
-            error,
-          } = await cloudRequest({
-            cloud,
-            method: 'list',
-            entity,
-            args: { namespaceName: namespace.name }, // extra args
-          });
-
-          tokensRefreshed = tokensRefreshed || refreshed;
-
-          const items = _deserializeCredentialsList(body, namespace, entity);
-
-          return {
-            items,
-            error: error || items.error,
-            namespace,
-          };
-        })
-      );
-    })
+    Object.values(apiCredentialEntities).map((entity) =>
+      _fetchEntityList({
+        entity,
+        cloud,
+        namespaces,
+        create: ({ data, namespace }) => new Credential(data, namespace),
+      })
+    )
   );
 
-  // `results` will be an array of arrays because of each credential type that was
-  //  retrieved for each namespace
-  const flattenCreds = flatten(results);
+  // NOTE: `results` will be an array of `{ entities, tokensRefreshed }` because of each credential
+  //  type that was retrieved for each namespace
+  // NOTE: _fetchEntityList() ensures there are no error results; all items in
+  //  `results` have the same shape
 
-  const error = (flattenCreds.find((c) => c.error) || {}).error;
-  if (error) {
-    return { error };
-  }
+  let tokensRefreshed = false;
+  const credentials = results.reduce((acc, result) => {
+    const { entities, tokensRefreshed: refreshed } = result;
 
-  const credentials = flattenCreds.reduce((acc, val) => {
-    const {
-      namespace: { name: nsName },
-      items,
-    } = val;
-    if (acc[nsName]) {
-      acc[nsName] = [...acc[nsName], ...items];
-    } else {
-      acc[nsName] = [...items];
-    }
+    tokensRefreshed = tokensRefreshed || refreshed;
+
+    Object.keys(entities).forEach((nsName) => {
+      const creds = entities[nsName];
+      if (acc[nsName]) {
+        acc[nsName] = [...acc[nsName], ...creds];
+      } else {
+        acc[nsName] = [...creds];
+      }
+    });
+
     return acc;
   }, {});
 
@@ -175,171 +281,110 @@ const _fetchCredentials = async function (cloud, namespaces) {
 };
 
 /**
- * Deserialize the raw list of sshKeys data from the API into sshKeys object.
- * @param {Object} body Data response from /list/sshKey API
- * @param {Namespace} namespace The Namespace object
- * @returns {Array<SshKey>} Array of SshKey objects.
- */
-const _deserializeSshKeysList = function (body, namespace) {
-  if (!body || !Array.isArray(body.items)) {
-    return {
-      error: strings.extendedCloud.error.invalidSshKeysPayload(),
-    };
-  }
-
-  return body.items
-    .map((item, idx) => {
-      try {
-        return new SshKey(item, namespace);
-      } catch (err) {
-        logger.warn(
-          'ExtendedCloud._deserializeSshKeysList()',
-          `Ignoring sshKey ${idx} because it could not be deserialized: ${err.message}`,
-          err
-        );
-        return undefined;
-      }
-    })
-    .filter((shKey) => !!shKey);
-};
-
-/**
- * [ASYNC] Get all existing SSH Keys from the management cluster, for each namespace
- *  specified.
+ * [ASYNC] Best-try to get all existing licenses from the management cluster, for each
+ *  namespace specified.
  * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
  *  if necessary.
  * @param {Array<Namespace>} namespaces List of namespaces.
- * @returns {Promise<Object>} On success `{ sshKeys: { [index: string]: Array<ApiSshKey> }, tokensRefreshed: boolean }`,
- *  where `sshKeys` is a map of namespace name to list of SSH keys; or `{error: string}` on error.
- *  The error will be the first-found error out of all namespaces on which SSH Key retrieval
- *  was attempted.
+ * @returns {Promise<Object>} Never fails, always resolves in
+ *  `{ licenses: { [index: string]: Array<License> }, tokensRefreshed: boolean }`
+ *  where the licenses are mapped per namespace name. If an error occurs trying to get
+ *  any license, it will be ignored/skipped.
+ */
+const _fetchLicenses = async function (cloud, namespaces) {
+  const { entities: licenses, tokensRefreshed } = await _fetchEntityList({
+    entity: apiEntities.RHEL_LICENSE,
+    cloud,
+    namespaces,
+    create: ({ data, namespace }) => new License(data, namespace),
+  });
+  return { licenses, tokensRefreshed };
+};
+
+/**
+ * [ASYNC] Best-try to get all existing proxies from the management cluster, for each
+ *  namespace specified.
+ * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
+ *  if necessary.
+ * @param {Array<Namespace>} namespaces List of namespaces.
+ * @returns {Promise<Object>} Never fails, always resolves in
+ *  `{ proxies: { [index: string]: Array<Proxy> }, tokensRefreshed: boolean }`
+ *  where the proxies are mapped per namespace name. If an error occurs trying to get
+ *  any proxy, it will be ignored/skipped.
+ */
+const _fetchProxies = async function (cloud, namespaces) {
+  const { entities: proxies, tokensRefreshed } = await _fetchEntityList({
+    entity: apiEntities.PROXY,
+    cloud,
+    namespaces,
+    create: ({ data, namespace }) => new Proxy(data, namespace),
+  });
+  return { proxies, tokensRefreshed };
+};
+
+/**
+ * [ASYNC] Best-try to get all existing SSH keys from the management cluster, for each
+ *  namespace specified.
+ * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
+ *  if necessary.
+ * @param {Array<Namespace>} namespaces List of namespaces.
+ * @returns {Promise<Object>} Never fails, always resolves in
+ *  `{ sshKeys: { [index: string]: Array<SshKey> }, tokensRefreshed: boolean }`
+ *  where the SSH keys are mapped per namespace name. If an error occurs trying to get
+ *  any SSH key, it will be ignored/skipped.
  */
 const _fetchSshKeys = async function (cloud, namespaces) {
-  let tokensRefreshed = false;
-  const results = await Promise.all(
-    namespaces.map(async (namespace) => {
-      const {
-        body,
-        tokensRefreshed: refreshed,
-        error,
-      } = await cloudRequest({
-        cloud,
-        method: 'list',
-        entity: 'publickey',
-        args: { namespaceName: namespace.name }, // extra args
-      });
-
-      tokensRefreshed = tokensRefreshed || refreshed;
-
-      const items = _deserializeSshKeysList(body, namespace);
-      return { items, error: error || items.error, namespace };
-    })
-  );
-
-  const error = (results.find((sk) => sk.error) || {}).error;
-  if (error) {
-    return { error };
-  }
-
-  const sshKeys = results.reduce((acc, val) => {
-    const {
-      namespace: { name: nsName },
-      items,
-    } = val;
-    acc[nsName] = items;
-    return acc;
-  }, {});
-
+  const { entities: sshKeys, tokensRefreshed } = await _fetchEntityList({
+    entity: apiEntities.PUBLIC_KEY,
+    cloud,
+    namespaces,
+    create: ({ data, namespace }) => new SshKey(data, namespace),
+  });
   return { sshKeys, tokensRefreshed };
 };
 
 /**
- * Deserialize the raw list of cluster data from the API into Cluster objects.
- * @param {Object} body Data response from /list/cluster API.
- * @param {Cloud} cloud The Cloud object used to access the clusters.
- * @param {Namespace} namespace The Namespace object
- * @returns {Array<Cluster>} Array of Cluster objects.
- */
-const _deserializeClustersList = function (body, cloud, namespace) {
-  if (!body || !Array.isArray(body.items)) {
-    return { error: strings.extendedCloud.error.invalidClusterPayload() };
-  }
-
-  return body.items
-    .map((item, idx) => {
-      try {
-        return new Cluster(item, cloud.username, namespace);
-      } catch (err) {
-        logger.warn(
-          'ExtendedCloud._deserializeClustersList()',
-          `Ignoring cluster ${idx} (namespace/name="${
-            item?.metadata?.namespace ?? '<unknown>'
-          }/${
-            item?.metadata?.name ?? '<unknown>'
-          }") because it could not be deserialized: ${err.message}`,
-          err
-        );
-        return undefined;
-      }
-    })
-    .filter((cl) => !!cl); // eliminate invalid clusters (`undefined` items)
-};
-
-/**
- * Deserialize the raw list of namespace data from the API into Namespace objects.
- * @param {Object} body Data response from /list/namespace API.
- * @returns {Array<Namespace>} Array of Namespace objects.
- */
-const _deserializeNamespacesList = function (body) {
-  if (!body || !Array.isArray(body.items)) {
-    return {
-      error: strings.extendedCloud.error.invalidNamespacePayload(),
-    };
-  }
-
-  return {
-    data: body.items
-      .map((item, idx) => {
-        try {
-          return new Namespace(item);
-        } catch (err) {
-          logger.warn(
-            'ExtendedCloud._deserializeNamespacesList()',
-            `Ignoring namespace ${idx} because it could not be deserialized: ${err.message}`,
-            err
-          );
-          return undefined;
-        }
-      })
-      .filter((cl) => !!cl), // eliminate invalid namespaces (`undefined` items)
-  };
-};
-
-/**
- * [ASYNC] Get all existing namespaces from the management cluster.
+ * [ASYNC] Best-try to get all existing clusters from the management cluster, for each
+ *  namespace specified.
  * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
  *  if necessary.
- * @returns {Promise<Object>} On success `{ namespaces: Array<Namespace>, tokensRefreshed: boolean }`;
- *  on error `{error: string}`.
+ * @param {Array<Namespace>} namespaces List of namespaces.
+ * @returns {Promise<Object>} Never fails, always resolves in
+ *  `{ clusters: { [index: string]: Array<Cluster> }, tokensRefreshed: boolean }`
+ *  where the clusters are mapped per namespace name. If an error occurs trying to get
+ *  any cluster, it will be ignored/skipped.
+ */
+const _fetchClusters = async function (cloud, namespaces) {
+  const { entities: clusters, tokensRefreshed } = await _fetchEntityList({
+    entity: apiEntities.CLUSTER,
+    cloud,
+    namespaces,
+    create: ({ data, namespace }) =>
+      new Cluster(data, namespace, cloud.username),
+  });
+  return { clusters, tokensRefreshed };
+};
+
+/**
+ * [ASYNC] Best-try to get all existing namespaces from the management cluster.
+ * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
+ *  if necessary.
+ * @returns {Promise<Object>} Never fails, always resolves in
+ *  `{ namespaces: Array<Namespace>, tokensRefreshed: boolean }`. If an error occurs
+ *  trying to get any namespace, it will be ignored/skipped.
  */
 const _fetchNamespaces = async function (cloud) {
   // NOTE: we always fetch ALL known namespaces because when we display metadata
   //  about this ExtendedCloud, we always need to show the actual total, not just
   //  what we're syncing
-  const { error, body, tokensRefreshed } = await cloudRequest({
+  const {
+    entities: { [apiEntities.NAMESPACE]: namespaces },
+    tokensRefreshed,
+  } = await _fetchEntityList({
+    entity: apiEntities.NAMESPACE,
     cloud,
-    method: 'list',
-    entity: 'namespace',
+    create: ({ data }) => new Namespace(data),
   });
-
-  if (error) {
-    return { error };
-  }
-
-  const { data, error: dsError } = _deserializeNamespacesList(body);
-  if (dsError) {
-    return { error: dsError };
-  }
 
   const userRoles = extractJwtPayload(cloud.token).iam_roles || [];
 
@@ -348,65 +393,34 @@ const _fetchNamespaces = async function (cloud) {
     userRoles.includes(`m:kaas:${name}@writer`);
 
   const ignoredNamespaces = cloud?.config?.ignoredNamespaces || [];
-  const namespaces = filter(
-    data,
-    (ns) => !ignoredNamespaces.includes(ns.name) && hasReadPermissions(ns.name)
-  );
 
-  return { namespaces, tokensRefreshed };
+  return {
+    namespaces: filter(
+      namespaces,
+      (ns) =>
+        !ignoredNamespaces.includes(ns.name) && hasReadPermissions(ns.name)
+    ),
+    tokensRefreshed,
+  };
 };
 
 /**
- * [ASYNC] Get all existing clusters from the management cluster, for each namespace
- *  specified.
- * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
- *  if necessary.
- * @param {Array<Namespace>} namespaces List of namespaces.
- * @returns {Promise<Object>} On success `{ clusters: Array<Cluster>, tokensRefreshed: boolean }`
- *  where the list of clusters is flat and in the order of the specified namespaces (use
- *  `Cluster.namespace` to identify which cluster belongs to which namespace);
- *  on error `{error: string}`. The error will be the first-found error out of
- *  all namespaces on which cluster retrieval was attempted.
+ * Performs scheduled and on-demand data fetching of a given Cloud.
+ * @class ExtendedCloud
  */
-const _fetchClusters = async function (cloud, namespaces) {
-  let tokensRefreshed = false;
-
-  const results = await Promise.all(
-    namespaces.map(async (namespace) => {
-      const {
-        body,
-        tokensRefreshed: refreshed,
-        error,
-      } = await cloudRequest({
-        cloud,
-        method: 'list',
-        entity: 'cluster',
-        args: { namespaceName: namespace.name }, // extra args
-      });
-      tokensRefreshed = tokensRefreshed || refreshed;
-
-      const items = _deserializeClustersList(body, cloud, namespace);
-      return { items, error: error || items.error, namespace };
-    })
-  );
-
-  const error = (results.find((cl) => cl.error) || {}).error;
-  if (error) {
-    return { error };
-  }
-
-  let clusters = [];
-
-  results.every(({ items }) => {
-    clusters = [...clusters, ...items];
-    return true; // next
-  });
-
-  return { clusters, tokensRefreshed };
-};
-
 export class ExtendedCloud extends EventDispatcher {
-  constructor(cloud) {
+  /**
+   * @constructor
+   * @param {Cloud} cloud The Cloud that provides backing for the ExtendedCloud to access
+   *  the API and determines which namespaces are synced.
+   * @param {boolean} [preview] If truthy, declares this instance is only for preview
+   *  purposes, which reduces the amount of data fetched from the Cloud in order to
+   *  make data fetching a bit faster. Retrieving licenses and proxies can take quite
+   *  a bit more time for some reason, and we don't list their numbers when the user
+   *  is adding a new Cloud connection, so there's no point retrieving that data if
+   *  the user ultimately chooses not to add the Cloud.
+   */
+  constructor(cloud, preview) {
     super();
 
     let _loaded = false; // true if we've fetched data at least once, successfully
@@ -531,6 +545,19 @@ export class ExtendedCloud extends EventDispatcher {
       },
     });
 
+    /**
+     * @member {boolean} preview True if this instance is for previous purposes
+     *  only; false if it's for full use. Use a preview instance when letting the
+     *  user choose whether they want to add a new Cloud or not. Use a full instance
+     *  for a Cloud that has formally been added and is being synced.
+     */
+    Object.defineProperty(this, 'preview', {
+      enumerable: true,
+      get() {
+        return !!preview;
+      },
+    });
+
     //// initialize
 
     this.cloud = cloud;
@@ -575,7 +602,8 @@ export class ExtendedCloud extends EventDispatcher {
   get syncedNamespaces() {
     return this.namespaces.filter(
       (namespace) =>
-        this.cloud.syncAll || this.cloud.syncNamespaces.includes(namespace.name)
+        this.cloud.syncAll ||
+        this.cloud.syncedNamespaces.includes(namespace.name)
     );
   }
 
@@ -651,76 +679,47 @@ export class ExtendedCloud extends EventDispatcher {
     );
 
     const nsResults = await _fetchNamespaces(this.cloud);
-    let error = nsResults.error;
-    let clusterResults;
-    let keyResults;
-    let credResults;
+    const clusterResults = await _fetchClusters(
+      this.cloud,
+      nsResults.namespaces
+    );
+    const credResults = await _fetchCredentials(
+      this.cloud,
+      nsResults.namespaces
+    );
+    const keyResults = await _fetchSshKeys(this.cloud, nsResults.namespaces);
 
-    if (!nsResults.error) {
-      clusterResults = await _fetchClusters(this.cloud, nsResults.namespaces);
-      error = clusterResults.error;
-      if (!clusterResults.error) {
-        credResults = await _fetchCredentials(this.cloud, nsResults.namespaces);
-        error = credResults.error;
-        if (!credResults.error) {
-          keyResults = await _fetchSshKeys(this.cloud, nsResults.namespaces);
-          error = keyResults.error;
-        }
-      }
+    let proxyResults;
+    let licenseResults;
+    if (!this.preview) {
+      proxyResults = await _fetchProxies(this.cloud, nsResults.namespaces);
+      licenseResults = await _fetchLicenses(this.cloud, nsResults.namespaces);
+    } else {
+      logger.log(
+        'ExtendedCloud.fetchData()',
+        `Skipping proxy and license fetch for preview instance, extCloud=${this}`
+      );
     }
 
-    if (error) {
-      // NOTE: in this case, we don't set `this.namespaces`, leaving it as its
-      //  previous value so we don't lose the Cloud's last known state if we have it
-      this.error = getErrorMessage(error);
+    this.error = null;
 
-      if (nsResults?.error) {
-        logger.error(
-          'ExtendedCloud.fetchData()',
-          `Failed to fetch namespaces; error="${nsResults.error}", extCloud=${this}`
-        );
-      }
+    this.namespaces = nsResults.namespaces.map((namespace) => {
+      namespace.clusters = clusterResults?.clusters[namespace.name] || [];
+      namespace.sshKeys = keyResults?.sshKeys[namespace.name] || [];
+      namespace.credentials = credResults?.credentials[namespace.name] || [];
+      namespace.proxies = proxyResults?.proxies[namespace.name] || [];
+      namespace.licenses = licenseResults?.licenses[namespace.name] || [];
 
-      if (clusterResults?.error) {
-        logger.error(
-          'ExtendedCloud.fetchData()',
-          `Failed to get cluster metadata, error="${clusterResults?.error}", extCloud=${this}`
-        );
-      }
+      return namespace;
+    });
 
-      if (keyResults?.error) {
-        logger.error(
-          'ExtendedCloud.fetchData()',
-          `Failed to get ssh key metadata, error="${keyResults?.error}", extCloud=${this}`
-        );
-      }
-
-      if (credResults?.error) {
-        logger.error(
-          'ExtendedCloud.fetchData()',
-          `Failed to get credential metadata, error="${credResults?.error}", extCloud=${this}`
-        );
-      }
-    } else {
-      this.error = null;
-
-      this.namespaces = nsResults.namespaces.map((namespace) => {
-        namespace.clusters = clusterResults.clusters.filter(
-          (c) => c.namespace.name === namespace.name
-        );
-        namespace.sshKeys = keyResults.sshKeys[namespace.name];
-        namespace.credentials = credResults.credentials[namespace.name];
-        return namespace;
-      });
-
-      if (!this.loaded) {
-        // successfully loaded at least once
-        this.loaded = true;
-        logger.log(
-          'ExtendedCloud.fetchData()',
-          `Initial data load successful, extCloud=${this}`
-        );
-      }
+    if (!this.loaded) {
+      // successfully loaded at least once
+      this.loaded = true;
+      logger.log(
+        'ExtendedCloud.fetchData()',
+        `Initial data load successful, extCloud=${this}`
+      );
     }
 
     this.fetching = false;
@@ -755,8 +754,8 @@ export class ExtendedCloud extends EventDispatcher {
   toString() {
     return `{ExtendedCloud loaded: ${this.loaded}, fetching: ${
       this.fetching
-    }, namespaces: ${this.loaded ? this.namespaces.length : '??'}, error: ${
-      this.error
-    }, cloud: ${this.cloud}}`;
+    }, preview: ${this.preview}, namespaces: ${
+      this.loaded ? this.namespaces.length : '??'
+    }, error: ${this.error}, cloud: ${this.cloud}}`;
   }
 }

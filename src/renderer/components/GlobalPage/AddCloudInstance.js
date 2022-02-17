@@ -62,7 +62,8 @@ export const AddCloudInstance = ({ onAdd, onCancel }) => {
   const makeExtCloud = useCallback(() => {
     setLoading(true);
 
-    const extCl = new ExtendedCloud(cloud);
+    // just use a minimal preview instance since it's throw-away
+    const extCl = new ExtendedCloud(cloud, true);
 
     const loadingListener = () => {
       // when extCl loaded, it means extCl contains all needed data

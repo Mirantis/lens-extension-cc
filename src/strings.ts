@@ -316,19 +316,6 @@ export const cloud: Dict = {
   },
 };
 
-export const extendedCloud: Dict = {
-  error: {
-    invalidClusterPayload: () =>
-      'Failed to parse Clusters payload: Unexpected data format.',
-    invalidNamespacePayload: () =>
-      'Failed to parse Namespaces payload: Unexpected data format.',
-    invalidCredentialsPayload: () =>
-      'Failed to parse Credentials payload: Unexpected data format.',
-    invalidSshKeysPayload: () =>
-      'Failed to parse SSH Keys payload: Unexpected data format.',
-  },
-};
-
 export const connectionStatuses: Dict = {
   cloud: {
     connected: () => 'Connected',
@@ -349,7 +336,10 @@ export const contextMenus: Dict = {
     sync: () => 'Sync now',
     openInBrowser: () => 'Open in browser',
     confirmDialog: {
-      messageHtml: (cloudName, projects) =>
+      messageHtml: (
+        cloudName,
+        projects // `projects` is `Array<Namespace>`
+      ) =>
         `
         <p>Removing management cluster “${cloudName}” will also remove the following projects and their associated catalog items${
           projects.length > 0 ? ':' : '.'

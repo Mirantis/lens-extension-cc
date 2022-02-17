@@ -79,7 +79,7 @@ export const SyncView = () => {
   const openSelectiveSyncView = () => setIsSelectiveSyncView(true);
   /**
    * @param {boolean} data.syncAll
-   * @param {Array<string>} data.syncNamespaces
+   * @param {Array<string>} data.syncedNamespaces
    * @param {string} url - cloudUrl
    */
   const getDataToSync = (data, url) => {
@@ -103,10 +103,10 @@ export const SyncView = () => {
     if (!isSyncStarted && Object.keys(syncedClouds).length) {
       // go through all clouds and update properties
       Object.keys(syncedClouds).map((url) => {
-        const { syncAll, syncNamespaces } = syncedClouds[url];
+        const { syncAll, syncedNamespaces } = syncedClouds[url];
         const cloud = cloudStore.clouds[url];
         cloud.syncAll = syncAll;
-        cloud.syncNamespaces = syncNamespaces;
+        cloud.syncedNamespaces = syncedNamespaces;
       });
       closeSelectiveSyncView();
     }

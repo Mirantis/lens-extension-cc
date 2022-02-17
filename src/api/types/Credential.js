@@ -1,93 +1,111 @@
 import * as rtv from 'rtvjs';
 import { get } from 'lodash';
-import { ApiObject } from './ApiObject';
+import { mergeRtvShapes } from '../../util/mergeRtvShapes';
+import { ApiObject, apiObjectTs } from './ApiObject';
 import { Namespace } from './Namespace';
 
-export const credentialTypes = {
-  AWS_CREDENTIAL: 'awscredential',
-  BYO_CREDENTIAL: 'byocredential',
-  OPENSTACK_CREDENTIAL: 'openstackcredential',
-};
+/**
+ * Map of name to credential kind values as used by the API in a Credential object
+ *  payload.
+ */
+export const credentialKinds = Object.freeze({
+  OPENSTACK: 'OpenStackCredential',
+  VSPHERE: 'VsphereCredential',
+  EQUINIX: 'EquinixMetalCredential',
+  AZURE: 'AzureCredential',
+  AWS: 'AWSCredential',
+  // TODO: there may be one more kind here for BM credentials (i.e. secrets) but we
+  //  first need to test this in an MCC+BM env
+});
 
-export const credentialTypesList = Object.values(credentialTypes);
+/**
+ * Typeset for an MCC Credential object.
+ */
+export const apiCredentialTs = mergeRtvShapes({}, apiObjectTs, {
+  // NOTE: this is not intended to be fully-representative; we only list the properties
+  //  related to what we expect to find in order to create a `Credential` class instance
 
-const specByType = {
-  [credentialTypes.AWS_CREDENTIAL]: {
-    accessKeyID: rtv.STRING,
-    secretAccessKey: rtv.OBJECT,
+  kind: [rtv.STRING, { oneOf: Object.values(credentialKinds) }],
+  metadata: {
+    labels: [
+      rtv.OPTIONAL,
+      {
+        'kaas.mirantis.com/provider': [rtv.OPTIONAL, rtv.STRING],
+        'kaas.mirantis.com/region': [rtv.OPTIONAL, rtv.STRING],
+      },
+    ],
   },
-  [credentialTypes.OPENSTACK_CREDENTIAL]: {
-    regionName: rtv.STRING,
-    auth: {
-      authURL: rtv.STRING,
-      password: rtv.OBJECT,
-      projectID: rtv.STRING,
-      userDomainName: rtv.STRING,
-      userName: rtv.STRING,
-    },
+  status: {
+    valid: rtv.BOOLEAN,
   },
-  [credentialTypes.BYO_CREDENTIAL]: rtv.OBJECT, // define in details later
-};
-
-const getCredentialSpec = (type) => {
-  return {
-    apiVersion: rtv.STRING,
-    kind: [rtv.REQUIRED, rtv.STRING],
-    metadata: {
-      name: rtv.STRING,
-      namespace: rtv.STRING,
-      uid: rtv.STRING,
-      finalizers: [rtv.OPTIONAL, rtv.ARRAY, rtv.OBJECT],
-      managedFields: [rtv.ARRAY, { $: [rtv.OBJECT] }], // complex nested object
-      resourceVersion: rtv.STRING,
-      labels: [
-        rtv.OPTIONAL,
-        {
-          'kaas.mirantis.com/provider': [rtv.OPTIONAL, rtv.STRING],
-          'kaas.mirantis.com/region': [rtv.OPTIONAL, rtv.STRING],
-        },
-      ],
-    },
-    spec: specByType[type],
-    status: {
-      message: [rtv.OPTIONAL, rtv.STRING],
-      valid: rtv.BOOLEAN,
-    },
-  };
-};
+});
 
 export class Credential extends ApiObject {
-  constructor(data, namespace, credentialType) {
+  constructor(data, namespace) {
     super(data);
+
     // now we have check only for openStack. It's hard to predict other types
     DEV_ENV &&
       rtv.verify(
-        { data, namespace, credentialType },
+        { data, namespace },
         {
-          data: getCredentialSpec(credentialType),
+          data: apiCredentialTs,
           namespace: [rtv.CLASS_OBJECT, { ctor: Namespace }],
-          credentialType: [rtv.STRING, { oneOf: credentialTypesList }],
         }
       );
 
-    /** @member {string} */
-    this.kind = data.kind;
+    /** @member {string} kind  */
+    Object.defineProperty(this, 'kind', {
+      enumerable: true,
+      get() {
+        return data.kind;
+      },
+    });
 
-    /** @member {Namespace} */
-    this.namespace = namespace;
+    /** @member {Namespace} namespace */
+    Object.defineProperty(this, 'namespace', {
+      enumerable: true,
+      get() {
+        return namespace;
+      },
+    });
 
-    /** @member {string} */
-    this.region = get(
-      data.metadata,
-      'labels["kaas.mirantis.com/region"]',
-      null
-    );
+    /** @member {string} region */
+    Object.defineProperty(this, 'region', {
+      enumerable: true,
+      get() {
+        return get(data.metadata, 'labels["kaas.mirantis.com/region"]', null);
+      },
+    });
 
-    /** @member {string|null} */
-    this.provider = get(
-      data.metadata,
-      'labels["kaas.mirantis.com/provider"]',
-      null
-    );
+    /** @member {string} provider */
+    Object.defineProperty(this, 'provider', {
+      enumerable: true,
+      get() {
+        return get(data.metadata, 'labels["kaas.mirantis.com/provider"]', null);
+      },
+    });
+
+    /** @member {boolean} valid */
+    Object.defineProperty(this, 'valid', {
+      enumerable: true,
+      get() {
+        return !!data.status.valid;
+      },
+    });
+  }
+
+  /** @returns {string} A string representation of this instance for logging/debugging. */
+  toString() {
+    const propStr = `${super.toString()}, kind: "${this.kind}", namespace: "${
+      this.namespace.name
+    }", valid: ${this.valid}`;
+
+    if (Object.getPrototypeOf(this).constructor === Credential) {
+      return `{Credential ${propStr}}`;
+    }
+
+    // this is actually an extended class instance, so return only the properties
+    return propStr;
   }
 }
