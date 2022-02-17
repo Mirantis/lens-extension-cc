@@ -1,39 +1,78 @@
 import * as rtv from 'rtvjs';
-import { ApiObject } from './ApiObject';
+import { mergeRtvShapes } from '../../util/mergeRtvShapes';
+import { ApiObject, apiObjectTs } from './ApiObject';
 import { Namespace } from './Namespace';
 
-const sshKeySpec = {
-  apiVersion: rtv.STRING,
-  kind: [rtv.REQUIRED, rtv.STRING],
-  metadata: {
-    name: [rtv.REQUIRED, rtv.STRING],
-    namespace: [rtv.REQUIRED, rtv.STRING],
-    uid: [rtv.REQUIRED, rtv.STRING],
-    creationTimestamp: rtv.STRING, // ISO8601 timestamp
-    managedFields: [rtv.ARRAY, { $: [rtv.OBJECT] }], // complex nested object
-    resourceVersion: rtv.STRING,
-  },
+/**
+ * Typeset for an MCC SSH Key object.
+ */
+export const apiSshKeyTs = mergeRtvShapes({}, apiObjectTs, {
+  // NOTE: this is not intended to be fully-representative; we only list the properties
+  //  related to what we expect to find in order to create a `Credential` class instance
+
+  kind: [rtv.STRING, { oneOf: 'PublicKey' }],
   spec: {
     publicKey: rtv.STRING,
   },
-};
+});
 
+/**
+ * MCC ssh key.
+ * @class SshKey
+ * @param {Object} data Raw cluster data payload from the API.
+ * @param {Namespace} namespace Namespace to which this object belongs.
+ */
 export class SshKey extends ApiObject {
   constructor(data, namespace) {
     super(data);
+
     DEV_ENV &&
       rtv.verify(
         { data, namespace },
-        { data: sshKeySpec, namespace: [rtv.CLASS_OBJECT, { ctor: Namespace }] }
+        {
+          data: apiSshKeyTs,
+          namespace: [rtv.CLASS_OBJECT, { ctor: Namespace }],
+        }
       );
 
     /** @member {Namespace} */
-    this.namespace = namespace;
+    Object.defineProperty(this, 'namespace', {
+      enumerable: true,
+      get() {
+        return namespace;
+      },
+    });
 
     /** @member {string} */
-    this.kind = data.kind;
+    Object.defineProperty(this, 'kind', {
+      enumerable: true,
+      get() {
+        return data.kind;
+      },
+    });
 
     /** @member {string} */
-    this.publicKey = data.spec.publicKey;
+    Object.defineProperty(this, 'publicKey', {
+      enumerable: true,
+      get() {
+        return data.spec.publicKey;
+      },
+    });
+  }
+
+  /** @returns {string} A string representation of this instance for logging/debugging. */
+  toString() {
+    const propStr = `${super.toString()}, kind: "${this.kind}", namespace: "${
+      this.namespace.name
+    }", publicKey: "${this.publicKey.slice(0, 15)}..${this.publicKey.slice(
+      -15
+    )}"`;
+
+    if (Object.getPrototypeOf(this).constructor === SshKey) {
+      return `{SshKey ${propStr}}`;
+    }
+
+    // this is actually an extended class instance, so return only the properties
+    return propStr;
   }
 }

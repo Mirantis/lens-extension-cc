@@ -127,15 +127,15 @@ export const SynchronizeBlock = ({ extendedCloud, onAdd }) => {
 
   const onSynchronize = () => {
     const { cloud } = extendedCloud;
-    const { syncNamespaces, syncAll } = getSyncedData();
+    const { syncedNamespaces, syncAll } = getSyncedData();
 
-    if (!syncAll && !syncNamespaces.length) {
+    if (!syncAll && !syncedNamespaces.length) {
       Notifications.error(synchronizeBlock.error.noProjects());
       return;
     }
 
     cloud.syncAll = syncAll;
-    cloud.syncNamespaces = syncNamespaces;
+    cloud.syncedNamespaces = syncedNamespaces;
 
     onAdd(cloud);
   };
@@ -194,7 +194,7 @@ export const SynchronizeBlock = ({ extendedCloud, onAdd }) => {
                       <li>
                         <p>
                           {synchronizeBlock.checkboxesDropdownLabels.credentials()}{' '}
-                          ({namespace.credentialsCount})
+                          ({namespace.credentialCount})
                         </p>
                       </li>
                     </AccordionChildrenList>

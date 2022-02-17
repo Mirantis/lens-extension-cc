@@ -140,7 +140,7 @@ const getCloudMenuItems = (extendedCloud) => [
         name: cloudName,
         cloudUrl,
         syncAll,
-        syncNamespaces,
+        syncedNamespaces,
         connected,
       } = extendedCloud.cloud;
       const isConnected = connected && extendedCloud.loaded;
@@ -148,7 +148,7 @@ const getCloudMenuItems = (extendedCloud) => [
         cloudStore.removeCloud(cloudUrl);
       } else {
         const projects = !syncAll
-          ? syncNamespaces
+          ? syncedNamespaces
           : isConnected
           ? extendedCloud.namespaces
           : [];

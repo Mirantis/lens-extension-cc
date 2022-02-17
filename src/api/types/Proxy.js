@@ -1,20 +1,18 @@
 import * as rtv from 'rtvjs';
-import { ApiObject } from './ApiObject';
+import { mergeRtvShapes } from '../../util/mergeRtvShapes';
+import { ApiObject, apiObjectTs } from './ApiObject';
 import { get } from 'lodash';
 import { Namespace } from './Namespace';
 
-const proxySpec = {
-  apiVersion: rtv.STRING,
-  kind: [rtv.REQUIRED, rtv.STRING],
-  metadata: {
-    name: [rtv.REQUIRED, rtv.STRING],
-    namespace: [rtv.REQUIRED, rtv.STRING],
-    uid: [rtv.REQUIRED, rtv.STRING],
-    creationTimestamp: rtv.STRING, // ISO8601 timestamp
-    resourceVersion: rtv.STRING,
-    finalizers: [rtv.OPTIONAL, rtv.ARRAY, rtv.OBJECT],
-    managedFields: [rtv.ARRAY, { $: [rtv.OBJECT] }], // complex nested object
+/**
+ * Typeset for an MCC Proxy object.
+ */
+export const apiProxyTs = mergeRtvShapes({}, apiObjectTs, {
+  // NOTE: this is not intended to be fully-representative; we only list the properties
+  //  related to what we expect to find in order to create a `Credential` class instance
 
+  kind: [rtv.STRING, { oneOf: 'Proxy' }],
+  metadata: {
     labels: [
       rtv.OPTIONAL,
       {
@@ -26,34 +24,76 @@ const proxySpec = {
     httpProxy: rtv.STRING,
     httpsProxy: rtv.STRING,
   },
-};
+});
 
+/**
+ * MCC proxy.
+ * @class Proxy
+ * @param {Object} data Raw cluster data payload from the API.
+ * @param {Namespace} namespace Namespace to which this object belongs.
+ */
 export class Proxy extends ApiObject {
   constructor(data, namespace) {
     super(data);
+
     DEV_ENV &&
       rtv.verify(
         { data, namespace },
-        { data: proxySpec, namespace: [rtv.CLASS_OBJECT, { ctor: Namespace }] }
+        { data: apiProxyTs, namespace: [rtv.CLASS_OBJECT, { ctor: Namespace }] }
       );
 
     /** @member {Namespace} */
-    this.namespace = namespace;
+    Object.defineProperty(this, 'namespace', {
+      enumerable: true,
+      get() {
+        return namespace;
+      },
+    });
 
     /** @member {string} */
-    this.kind = data.kind;
+    Object.defineProperty(this, 'kind', {
+      enumerable: true,
+      get() {
+        return data.kind;
+      },
+    });
 
     /** @member {string} */
-    this.region = get(
-      data.metadata,
-      'labels["kaas.mirantis.com/region"]',
-      null
-    );
+    Object.defineProperty(this, 'region', {
+      enumerable: true,
+      get() {
+        return get(data.metadata, 'labels["kaas.mirantis.com/region"]', null);
+      },
+    });
 
     /** @member {string} */
-    this.httpProxy = data.spec.httpProxy;
+    Object.defineProperty(this, 'httpProxy', {
+      enumerable: true,
+      get() {
+        return data.spec.httpProxy;
+      },
+    });
 
     /** @member {string} */
-    this.httpsProxy = data.spec.httpsProxy;
+    Object.defineProperty(this, 'httpsProxy', {
+      enumerable: true,
+      get() {
+        return data.spec.httpsProxy;
+      },
+    });
+  }
+
+  /** @returns {string} A string representation of this instance for logging/debugging. */
+  toString() {
+    const propStr = `${super.toString()}, kind: "${this.kind}", namespace: "${
+      this.namespace.name
+    }", http: "${this.httpProxy}", https: "${this.httpsProxy}"`;
+
+    if (Object.getPrototypeOf(this).constructor === Proxy) {
+      return `{Proxy ${propStr}}`;
+    }
+
+    // this is actually an extended class instance, so return only the properties
+    return propStr;
   }
 }

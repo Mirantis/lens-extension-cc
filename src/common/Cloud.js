@@ -171,7 +171,7 @@ export class Cloud extends EventDispatcher {
     // URL to the MCC instance
     cloudUrl: [rtv.EXPECTED, rtv.STRING],
 
-    syncNamespaces: [rtv.EXPECTED, rtv.ARRAY, { $: rtv.STRING }],
+    syncedNamespaces: [rtv.EXPECTED, rtv.ARRAY, { $: rtv.STRING }],
     name: [rtv.EXPECTED, rtv.STRING],
     syncAll: [rtv.EXPECTED, rtv.BOOLEAN],
   };
@@ -189,7 +189,7 @@ export class Cloud extends EventDispatcher {
 
     let _name = null;
     let _syncAll = false;
-    let _syncNamespaces = [];
+    let _syncedNamespaces = [];
     let _token = null;
     let _expiresIn = null;
     let _tokenValidTill = null;
@@ -241,23 +241,23 @@ export class Cloud extends EventDispatcher {
     });
 
     /**
-     * @member {Array<string>} syncNamespaces A list of namespace names in the mgmt
+     * @member {Array<string>} syncedNamespaces A list of namespace names in the mgmt
      *  cluster that should be synced. If syncAll is true, this list is ignored and
      *  all existing/future namespaces are synced.
      */
-    Object.defineProperty(this, 'syncNamespaces', {
+    Object.defineProperty(this, 'syncedNamespaces', {
       enumerable: true,
       get() {
-        return _syncNamespaces;
+        return _syncedNamespaces;
       },
       set(newValue) {
         DEV_ENV &&
           rtv.verify(
             { token: newValue },
-            { token: Cloud.specTs.syncNamespaces }
+            { token: Cloud.specTs.syncedNamespaces }
           );
-        if (!isEqual(_syncNamespaces, newValue)) {
-          _syncNamespaces = newValue;
+        if (!isEqual(_syncedNamespaces, newValue)) {
+          _syncedNamespaces = newValue;
           this.dispatchEvent(CLOUD_EVENTS.SYNC_CHANGE, this);
         }
       },
@@ -597,7 +597,7 @@ export class Cloud extends EventDispatcher {
       this.cloudUrl = spec.cloudUrl;
       this.name = spec.name;
       this.syncAll = spec.syncAll;
-      this.syncNamespaces = spec.syncNamespaces;
+      this.syncedNamespaces = spec.syncedNamespaces;
       this.username = spec.username;
 
       if (spec.id_token && spec.refresh_token) {
@@ -619,7 +619,7 @@ export class Cloud extends EventDispatcher {
       cloudUrl: this.cloudUrl,
       name: this.name,
       syncAll: this.syncAll,
-      syncNamespaces: this.syncNamespaces.concat(),
+      syncedNamespaces: this.syncedNamespaces.concat(),
       username: this.username,
 
       // NOTE: the API-related properties have underscores in them since they do

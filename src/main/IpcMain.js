@@ -7,10 +7,10 @@ import { observable } from 'mobx';
 import { Main, Common } from '@k8slens/extensions';
 import * as rtv from 'rtvjs';
 import {
-  clusterModelTs,
-  sshKeyModelTs,
-  credentialModelTs,
-  proxyModelTs,
+  clusterEntityModelTs,
+  sshKeyEntityModelTs,
+  credentialEntityModelTs,
+  proxyEntityModelTs,
 } from '../typesets';
 import { clusterStore } from '../store/ClusterStore';
 import { logger } from '../util/logger';
@@ -178,7 +178,7 @@ export class IpcMain extends Main.Ipc {
    * @param {boolean} [persist] If false, models will not be persisted to the store.
    */
   addClusters(models, persist = true) {
-    DEV_ENV && rtv.verify({ models }, { models: [[clusterModelTs]] });
+    DEV_ENV && rtv.verify({ models }, { models: [[clusterEntityModelTs]] });
 
     models.forEach((model) => {
       // officially add to Lens
@@ -275,7 +275,7 @@ export class IpcMain extends Main.Ipc {
       },
     ];
 
-    DEV_ENV && rtv.verify(sshKeyModels, [[sshKeyModelTs]]);
+    DEV_ENV && rtv.verify(sshKeyModels, [[sshKeyEntityModelTs]]);
 
     sshKeyModels.forEach((model) => {
       this.capture(
@@ -327,7 +327,7 @@ export class IpcMain extends Main.Ipc {
       },
     ];
 
-    DEV_ENV && rtv.verify(credentialModels, [[credentialModelTs]]);
+    DEV_ENV && rtv.verify(credentialModels, [[credentialEntityModelTs]]);
 
     credentialModels.forEach((model) => {
       this.capture(
@@ -377,7 +377,7 @@ export class IpcMain extends Main.Ipc {
       },
     ];
 
-    DEV_ENV && rtv.verify(proxyModels, [[proxyModelTs]]);
+    DEV_ENV && rtv.verify(proxyModels, [[proxyEntityModelTs]]);
 
     proxyModels.forEach((model) => {
       this.capture(

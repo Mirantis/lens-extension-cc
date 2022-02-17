@@ -8,24 +8,31 @@ import { KubernetesAuthorizationClient } from './clients/KubernetesAuthorization
 import { KubernetesClient } from './clients/KubernetesClient';
 import { KubernetesEntityClient } from './clients/KubernetesEntityClient';
 import { logger } from '../util/logger';
+import { apiEntities } from './apiConstants';
 
 const entityToClient = {
-  cluster: KubernetesEntityClient,
-  machine: KubernetesEntityClient,
-  namespace: KubernetesClient,
-  credential: KubernetesClient,
-  openstackcredential: KubernetesEntityClient,
-  awscredential: KubernetesEntityClient,
-  byocredential: KubernetesEntityClient,
-  event: KubernetesClient,
-  publickey: KubernetesEntityClient,
-  clusterrelease: KubernetesEntityClient,
-  kaasrelease: KubernetesEntityClient,
-  openstackresource: KubernetesEntityClient,
-  awsresource: KubernetesEntityClient,
-  authorization: KubernetesAuthorizationClient,
-  baremetalhost: KubernetesEntityClient,
-  kaascephcluster: KubernetesEntityClient,
+  [apiEntities.CLUSTER]: KubernetesEntityClient,
+  [apiEntities.MACHINE]: KubernetesEntityClient,
+  [apiEntities.PUBLIC_KEY]: KubernetesEntityClient, // SSH keys
+  [apiEntities.NAMESPACE]: KubernetesClient,
+  [apiEntities.CREDENTIAL]: KubernetesClient,
+  [apiEntities.OPENSTACK_CREDENTIAL]: KubernetesEntityClient,
+  [apiEntities.AWS_CREDENTIAL]: KubernetesEntityClient,
+  [apiEntities.EQUINIX_CREDENTIAL]: KubernetesEntityClient,
+  [apiEntities.VSPHERE_CREDENTIAL]: KubernetesEntityClient,
+  [apiEntities.AZURE_CREDENTIAL]: KubernetesEntityClient,
+  [apiEntities.BYO_CREDENTIAL]: KubernetesEntityClient,
+  [apiEntities.METAL_CREDENTIAL]: KubernetesClient,
+  [apiEntities.EVENT]: KubernetesClient,
+  [apiEntities.CLUSTER_RELEASE]: KubernetesEntityClient,
+  [apiEntities.KAAS_RELEASE]: KubernetesEntityClient,
+  [apiEntities.OPENSTACK_RESOURCE]: KubernetesEntityClient,
+  [apiEntities.AWS_RESOURCE]: KubernetesEntityClient,
+  [apiEntities.AUTHORIZATION]: KubernetesAuthorizationClient,
+  [apiEntities.METAL_HOST]: KubernetesEntityClient,
+  [apiEntities.CEPH_CLUSTER]: KubernetesEntityClient,
+  [apiEntities.RHEL_LICENSE]: KubernetesEntityClient,
+  [apiEntities.PROXY]: KubernetesEntityClient,
 };
 
 /**
@@ -134,6 +141,16 @@ export async function cloudRequest({ cloud, method, entity, args }) {
   }
 
   const Client = entityToClient[entity];
+  if (!Client) {
+    return {
+      cloud,
+      error: `Unknown or unmapped entity ${
+        typeof entity === 'string' ? `"${entity}"` : entity
+      }`,
+      status: 0,
+    };
+  }
+
   let tokensRefreshed = false;
 
   // the first attempt to fetch

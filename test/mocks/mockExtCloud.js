@@ -11,7 +11,7 @@ export const mockExtCloud = {
     cloudUrl: 'https://cloud-url.com',
     name: 'Container name',
     syncAll: false,
-    syncNamespaces: [],
+    syncedNamespaces: [],
   },
   loading: false,
   namespaces: [
@@ -91,7 +91,7 @@ export const mockExtCloud2 = {
     cloudUrl: 'https://cloud-url-2.com',
     name: 'Container name 2',
     syncAll: false,
-    syncNamespaces: [],
+    syncedNamespaces: [],
   },
   loading: false,
   namespaces: [

@@ -1,4 +1,6 @@
 import * as rtv from 'rtvjs';
+import { mergeRtvShapes } from '../../util/mergeRtvShapes';
+import { ApiObject, apiObjectTs } from './ApiObject';
 import { Cluster } from './Cluster';
 import { Credential } from './Credential';
 import { SshKey } from './SshKey';
@@ -6,29 +8,27 @@ import { Proxy } from './Proxy';
 import { License } from './License';
 
 /**
+ * Typeset for an MCC Namespace object.
+ */
+export const apiNamespaceTs = mergeRtvShapes({}, apiObjectTs, {
+  // NOTE: this is not intended to be fully-representative; we only list the properties
+  //  related to what we expect to find in order to create a `Credential` class instance
+
+  status: {
+    phase: rtv.STRING,
+  },
+});
+
+/**
  * MCC project/namespace.
  * @class Namespace
  * @param {Object} data Raw namespace data payload from the API.
  */
-export class Namespace {
+export class Namespace extends ApiObject {
   constructor(data) {
-    DEV_ENV &&
-      rtv.verify(
-        { data },
-        {
-          data: {
-            metadata: {
-              uid: rtv.STRING,
-              name: rtv.STRING,
-              creationTimestamp: rtv.STRING, // ISO8601 timestamp
-              deletionTimestamp: [rtv.OPTIONAL, rtv.STRING], // ISO8601 timestamp; only exists if being deleted
-            },
-            status: {
-              phase: rtv.STRING,
-            },
-          },
-        }
-      );
+    super(data);
+
+    DEV_ENV && rtv.verify({ data }, { data: apiNamespaceTs });
 
     let _clusters = [];
     let _sshKeys = [];
@@ -37,16 +37,12 @@ export class Namespace {
     let _licenses = [];
 
     /** @member {string} */
-    this.id = data.metadata.uid;
-
-    /** @member {string} */
-    this.name = data.metadata.name;
-
-    /** @member {boolean} */
-    this.deleteInProgress = !!data.metadata.deletionTimestamp; // 'Active', 'Terminating', others?
-
-    /** @member {string} */
-    this.phase = data.status.phase;
+    Object.defineProperty(this, 'phase', {
+      enumerable: true,
+      get() {
+        return data.status.phase;
+      },
+    });
 
     /**
      * @member {Array<Cluster>} clusters Clusters in this namespace. Empty if none.
@@ -168,20 +164,50 @@ export class Namespace {
    * @member {number} clusterCount Number of clusters in this namespace.
    */
   get clusterCount() {
-    return this.clusters?.length || 0;
+    return this.clusters.length;
   }
 
   /**
    * @member {number} clusterCount Number of SSH keys in this namespace.
    */
   get sshKeyCount() {
-    return this.sshKeys?.length || 0;
+    return this.sshKeys.length;
   }
 
   /**
-   * @member {number} credentialsCount Number of all credentials, doesn't matter type, in this namespace.
+   * @member {number} credentialCount Number of all credentials, doesn't matter type, in this namespace.
    */
-  get credentialsCount() {
-    return this.credentials?.length || 0;
+  get credentialCount() {
+    return this.credentials.length;
+  }
+
+  /**
+   * @member {number} proxyCount Number of all proxies in this namespace.
+   */
+  get proxyCount() {
+    return this.proxies.length;
+  }
+
+  /**
+   * @member {number} licenseCount Number of all licenses in this namespace.
+   */
+  get licenseCount() {
+    return this.licenses.length;
+  }
+
+  /** @returns {string} A string representation of this instance for logging/debugging. */
+  toString() {
+    const propStr = `${super.toString()}, clusters: ${
+      this.clusterCount
+    }, sshKeys: ${this.sshKeyCount}, credentials: ${
+      this.credentialCount
+    }, proxies: ${this.proxyCount}, licenses: ${this.licenseCount}`;
+
+    if (Object.getPrototypeOf(this).constructor === Namespace) {
+      return `{Namespace ${propStr}}`;
+    }
+
+    // this is actually an extended class instance, so return only the properties
+    return propStr;
   }
 }

@@ -111,11 +111,11 @@ export function useCheckboxes(initialState) {
 
   const getSyncedData = () => {
     if (getParentCheckboxValue() === checkValues.CHECKED) {
-      return { syncAll: true, syncNamespaces: [] };
+      return { syncAll: true, syncedNamespaces: [] };
     }
     return {
       syncAll: false,
-      syncNamespaces: Object.keys(checkboxesState.children).filter(
+      syncedNamespaces: Object.keys(checkboxesState.children).filter(
         (name) => checkboxesState.children[name]
       ),
     };

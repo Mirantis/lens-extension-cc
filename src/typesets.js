@@ -5,11 +5,11 @@
 import * as rtv from 'rtvjs';
 
 /**
- * Describes a basic object used to create a new instance of an entity that will
+ * Typeset for a basic object used to create a new instance of an entity that will
  *  be added to the Lens Catalog.
  */
-export const entityModelTs = {
-  // based on Common.Types.CatalogEntityMetadata
+export const catalogEntityModelTs = {
+  // based on Lens Common.Types.CatalogEntityMetadata
   metadata: {
     uid: rtv.STRING,
     name: rtv.STRING,
@@ -32,10 +32,12 @@ export const entityModelTs = {
     namespace: rtv.STRING,
     cloudUrl: rtv.STRING,
   },
-  // spec is specific to the type of entity being added; for a cluster, it requires
-  //  `kubeconfigPath: string` and `kubeconfigContext: string`, but for an SshKeyEntity,
-  //  it's `publicKey: string`
+
+  // spec is specific to the type of entity being added to the Catalog; e.g. for a cluster,
+  //  it requires `kubeconfigPath: string` and `kubeconfigContext: string`, but for an
+  //  SSH key, it requires `publicKey: string`...
   spec: {},
+
   // all entities must have a status with a phase
   // based on Common.Types.CatalogEntityStatus
   status: {
@@ -47,48 +49,52 @@ export const entityModelTs = {
   },
 };
 
+export const clusterEntityPhases = Object.freeze({
+  CONNECTING: 'connecting',
+  CONNECTED: 'connected',
+  DISCONNECTING: 'disconnecting',
+  DISCONNECTED: 'disconnected',
+});
+
 /**
- * Describes an object used to create a new instance of a `Common.Catalog.KubernetesCluster`
+ * Typeset for an object used to create a new instance of a `Common.Catalog.KubernetesCluster`
  *  object that gets added to the Lens Catalog. Also describes the shape of the entity
  *  object we get from iterating "entities" of this type in the Catalog.
  */
-export const clusterModelTs = {
+export const clusterEntityModelTs = {
   metadata: {
-    ...entityModelTs.metadata,
+    ...catalogEntityModelTs.metadata,
   },
   spec: {
-    ...entityModelTs.spec,
+    ...catalogEntityModelTs.spec,
 
     kubeconfigPath: rtv.STRING, // absolute path
     kubeconfigContext: rtv.STRING,
   },
   status: {
-    ...entityModelTs.status,
+    ...catalogEntityModelTs.status,
 
     // override phase with a more specific typeset
-    phase: [
-      rtv.STRING,
-      { oneOf: ['connecting', 'connected', 'disconnecting', 'disconnected'] },
-    ],
+    phase: [rtv.STRING, { oneOf: Object.values(clusterEntityPhases) }],
   },
 };
 
 /**
- * Describes an object used to create a new instance of a `./catalog/SshKeyEntity`
+ * Typeset for an object used to create a new instance of a `./catalog/SshKeyEntity`
  *  object that gets added to the Lens Catalog. Also describes the shape of the entity
  *  object we get from iterating "entities" of this type in the Catalog.
  */
-export const sshKeyModelTs = {
+export const sshKeyEntityModelTs = {
   metadata: {
-    ...entityModelTs.metadata,
+    ...catalogEntityModelTs.metadata,
   },
   spec: {
-    ...entityModelTs.spec,
+    ...catalogEntityModelTs.spec,
 
     publicKey: rtv.STRING,
   },
   status: {
-    ...entityModelTs.status,
+    ...catalogEntityModelTs.status,
 
     // override phase with a more specific typeset
     phase: [rtv.STRING, { oneOf: ['available'] }],
@@ -96,24 +102,29 @@ export const sshKeyModelTs = {
 };
 
 /**
- * Describes an object used to create a new instance of a `./catalog/CredentialEntity`
+ * Typeset for an object used to create a new instance of a `./catalog/CredentialEntity`
  *  object that gets added to the Lens Catalog. Also describes the shape of the entity
  *  object we get from iterating "entities" of this type in the Catalog.
  */
-export const credentialModelTs = {
+export const credentialEntityModelTs = {
   metadata: {
-    ...entityModelTs.metadata,
+    ...catalogEntityModelTs.metadata,
   },
   spec: {
-    ...entityModelTs.spec,
+    ...catalogEntityModelTs.spec,
 
-    provider: [rtv.STRING, { oneOf: ['aws', 'openstack', 'equinix', 'azure'] }],
+    provider: [
+      rtv.STRING,
+      {
+        oneOf: ['aws', 'openstack', 'equinix', 'azure', 'vsphere', 'byo', 'bm'],
+      },
+    ],
     status: {
       valid: rtv.BOOLEAN,
     },
   },
   status: {
-    ...entityModelTs.status,
+    ...catalogEntityModelTs.status,
 
     // override phase with a more specific typeset
     phase: [rtv.STRING, { oneOf: ['available'] }],
@@ -121,23 +132,23 @@ export const credentialModelTs = {
 };
 
 /**
- * Describes an object used to create a new instance of a `./catalog/ProxyEntity`
+ * Typeset for an object used to create a new instance of a `./catalog/ProxyEntity`
  *  object that gets added to the Lens Catalog. Also describes the shape of the entity
  *  object we get from iterating "entities" of this type in the Catalog.
  */
-export const proxyModelTs = {
+export const proxyEntityModelTs = {
   metadata: {
-    ...entityModelTs.metadata,
+    ...catalogEntityModelTs.metadata,
   },
   spec: {
-    ...entityModelTs.spec,
+    ...catalogEntityModelTs.spec,
 
     region: rtv.STRING,
     http: rtv.STRING,
     https: rtv.STRING,
   },
   status: {
-    ...entityModelTs.status,
+    ...catalogEntityModelTs.status,
 
     // override phase with a more specific typeset
     phase: [rtv.STRING, { oneOf: ['available'] }],
