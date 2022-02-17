@@ -361,7 +361,6 @@ export const contextMenus: Dict = {
     },
   },
   namespace: {
-    sync: () => 'Sync now',
     openInBrowser: () => 'Open in browser',
     createCluster: () => 'Create cluster',
     createSshKey: () => 'Create SHH Key',

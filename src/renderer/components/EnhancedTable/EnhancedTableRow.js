@@ -189,39 +189,34 @@ const getCloudMenuItems = (extendedCloud) => [
 
 const namespaceMenuItems = [
   {
-    title: `(WIP) ${contextMenus.namespace.sync()}`,
-    name: 'sync',
-    onClick: () => {},
-  },
-  {
     title: `(WIP) ${contextMenus.namespace.openInBrowser()}`,
     name: 'openInBrowser',
-    onClick: () => {},
+    onClick: (namespace) => {},
   },
   {
     title: `(WIP) ${contextMenus.namespace.createCluster()}`,
     name: 'createCluster',
-    onClick: () => {},
+    onClick: (namespace) => {},
   },
   {
     title: `(WIP) ${contextMenus.namespace.createSshKey()}`,
     name: 'createSshKey',
-    onClick: () => {},
+    onClick: (namespace) => {},
   },
   {
     title: `(WIP) ${contextMenus.namespace.createCredential()}`,
     name: 'createCredential',
-    onClick: () => {},
+    onClick: (namespace) => {},
   },
   {
     title: `(WIP) ${contextMenus.namespace.createLicense()}`,
     name: 'createLicense',
-    onClick: () => {},
+    onClick: (namespace) => {},
   },
   {
     title: `(WIP) ${contextMenus.namespace.createProxy()}`,
     name: 'createProxy',
-    onClick: () => {},
+    onClick: (namespace) => {},
   },
 ];
 
@@ -237,7 +232,6 @@ export const EnhancedTableRow = ({
   // show all namespaces if selectiveSync table or only syncedNamespaces in this main SyncView table
   const usedNamespaces = withCheckboxes ? 'namespaces' : 'syncedNamespaces';
 
-  const [onOpen, toggleMenu] = useState(false);
   const [isFetching, setFetching] = useState(false);
   const [isOpenFirstLevel, setIsOpenFirstLevel] = useState(false);
   const [actualNamespaces, setActualNamespaces] = useState(
@@ -308,7 +302,7 @@ export const EnhancedTableRow = ({
     isFetching
   );
 
-  const renderRestOfRows = (namespace) =>
+  const renderRestOfRow = (namespace) =>
     withCheckboxes ? (
       <EnhTableRowCell />
     ) : (
@@ -317,13 +311,13 @@ export const EnhancedTableRow = ({
         <EnhTableRowCell />
         <EnhTableRowCell>{namespaceStatus}</EnhTableRowCell>
         <EnhTableRowCell isRightAligned>
-          <EnhMore onClick={() => toggleMenu(!onOpen)}>
-            <MenuActions onOpen={onOpen}>
+          <EnhMore>
+            <MenuActions>
               {namespaceMenuItems.map((item) => {
                 return (
                   <MenuItem
                     key={`${namespace.name}-${item.name}`}
-                    onClick={item.onClick}
+                    onClick={() => item.onClick(namespace)}
                   >
                     {item.title}
                   </MenuItem>
@@ -387,7 +381,7 @@ export const EnhancedTableRow = ({
             </EnhTableRowCell>
             <EnhTableRowCell isRightAligned>
               <EnhMore>
-                <MenuActions onOpen={onOpen}>
+                <MenuActions>
                   {cloudMenuItems.map((item) => {
                     return (
                       <MenuItem
@@ -415,7 +409,7 @@ export const EnhancedTableRow = ({
                 </EnhCollapseBtn>
                 {makeCell(namespace.name)}
               </EnhTableRowCell>
-              {renderRestOfRows(namespace)}
+              {renderRestOfRow(namespace)}
             </EnhTableRow>
 
             {openedSecondLevelListIndex.includes(index) && (
