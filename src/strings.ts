@@ -38,7 +38,7 @@ export const closeButton: Dict = {
   title: () => 'ESC',
 };
 export const connectionBlock: Dict = {
-  title: () => 'Add a Mirantis Container Cloud Management Cluster to Lens',
+  title: () => `Add a ${mccFullName} Management Cluster to Lens`,
   clusterName: {
     label: () => 'Management Cluster name:',
     placeholder: () =>
@@ -83,7 +83,7 @@ export const synchronizeBlock = {
 };
 
 export const syncView: Dict = {
-  title: () => 'Mirantis Container Cloud management clusters',
+  title: () => `${mccFullName} management clusters`,
   cancelButtonLabel: () => 'Cancel',
   synchronizeProjectsButtonLabel: () => 'Synchronize selected projects',
   syncButtonLabel: () => 'Selective sync...',
@@ -281,10 +281,9 @@ export const catalog: Dict = {
 };
 
 export const welcome: Dict = {
-  titleHtml: () =>
-    'Welcome to the <br/>Mirantis Container Cloud for Lens Extention',
+  titleHtml: () => `Welcome to the <br/>${mccFullName} for Lens Extention`,
   description: () =>
-    'This extension enables you to connect to multiple Mirantis Container Cloud management clusters through Lens. You can now leverage Lens for basic lifecycle management operations such as:',
+    `This extension enables you to connect to multiple ${mccFullName} management clusters through Lens. You can now leverage Lens for basic lifecycle management operations such as:`,
   listItemsHtml: () => `
     <li>Synchronizing projects to view and manage their resources in the Lens Catalog</li>
     <li>Monitoring real-time cluster status and resource utilization in Lens</li>
