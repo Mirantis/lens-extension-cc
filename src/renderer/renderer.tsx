@@ -10,13 +10,12 @@ import * as consts from '../constants';
 import { ROUTE_GLOBAL_PAGE, ROUTE_CLUSTER_PAGE } from '../routes';
 import { dispatchExtEvent } from './eventBus';
 import { cloudStore } from '../store/CloudStore';
-import { clusterStore } from '../store/ClusterStore';
 import { logger as loggerUtil } from '../util/logger';
 import { IpcRenderer } from './IpcRenderer';
 import { SshKeyEntity } from '../catalog/SshKeyEntity';
 import { CredentialEntity } from '../catalog/CredentialEntity';
 import { ProxyEntity } from '../catalog/ProxyEntity';
-import { CatalogEntityAddMenuContext } from '@k8slens/extensions/dist/src/common/catalog';
+import { LicenseEntity } from '../catalog/LicenseEntity';
 import { getLensClusters } from './rendererUtil';
 import { mkClusterContextName } from '../util/templates';
 import { EXT_EVENT_OAUTH_CODE, EXT_EVENT_ACTIVATE_CLUSTER } from './eventBus';
@@ -36,6 +35,13 @@ const {
 
 const logger: any = loggerUtil; // get around TS compiler's complaining
 const statusItemColor = 'white'; // CSS color; Lens hard-codes the color of the workspace indicator item to 'white' also
+const {
+  catalog: {
+    entities: {
+      common: { details: unknownValue },
+    },
+  },
+} = strings;
 
 declare const FEAT_CLUSTER_PAGE_ENABLED: any; // TODO[clusterpage]: remove
 
@@ -104,12 +110,17 @@ export default class ExtensionRenderer extends LensExtension {
         Details: (props: CatalogEntityDetailsProps<SshKeyEntity>) => (
           <>
             <DrawerTitle
-              title={strings.catalog.entities.sshKey.details.title()}
+              title={strings.catalog.entities.common.details.title()}
             />
+            <DrawerItem
+              name={strings.catalog.entities.common.details.props.uid()}
+            >
+              {props.entity.metadata.uid || unknownValue()}
+            </DrawerItem>
             <DrawerItem
               name={strings.catalog.entities.sshKey.details.props.publicKey()}
             >
-              {props.entity.spec.publicKey}
+              {props.entity.spec.publicKey || unknownValue()}
             </DrawerItem>
           </>
         ),
@@ -122,12 +133,22 @@ export default class ExtensionRenderer extends LensExtension {
         Details: (props: CatalogEntityDetailsProps<CredentialEntity>) => (
           <>
             <DrawerTitle
-              title={strings.catalog.entities.credential.details.title()}
+              title={strings.catalog.entities.common.details.title()}
             />
+            <DrawerItem
+              name={strings.catalog.entities.common.details.props.uid()}
+            >
+              {props.entity.metadata.uid || unknownValue()}
+            </DrawerItem>
             <DrawerItem
               name={strings.catalog.entities.credential.details.props.provider()}
             >
-              {props.entity.spec.provider}
+              {props.entity.spec.region || unknownValue()}
+            </DrawerItem>
+            <DrawerItem
+              name={strings.catalog.entities.credential.details.props.provider()}
+            >
+              {props.entity.spec.provider || unknownValue()}
             </DrawerItem>
           </>
         ),
@@ -140,12 +161,35 @@ export default class ExtensionRenderer extends LensExtension {
         Details: (props: CatalogEntityDetailsProps<ProxyEntity>) => (
           <>
             <DrawerTitle
-              title={strings.catalog.entities.proxy.details.title()}
+              title={strings.catalog.entities.common.details.title()}
             />
+            <DrawerItem
+              name={strings.catalog.entities.common.details.props.uid()}
+            >
+              {props.entity.metadata.uid || unknownValue()}
+            </DrawerItem>
             <DrawerItem
               name={strings.catalog.entities.proxy.details.props.region()}
             >
-              {props.entity.spec.region}
+              {props.entity.spec.region || unknownValue()}
+            </DrawerItem>
+          </>
+        ),
+      },
+    },
+    {
+      kind: LicenseEntity.kind,
+      apiVersions: [LicenseEntity.apiVersion],
+      components: {
+        Details: (props: CatalogEntityDetailsProps<LicenseEntity>) => (
+          <>
+            <DrawerTitle
+              title={strings.catalog.entities.common.details.title()}
+            />
+            <DrawerItem
+              name={strings.catalog.entities.common.details.props.uid()}
+            >
+              {props.entity.metadata.uid || unknownValue()}
             </DrawerItem>
           </>
         ),
@@ -201,96 +245,60 @@ export default class ExtensionRenderer extends LensExtension {
   ];
 
   /**
-   * Handles the Catalog's Context Menu Open event.
-   * @param {Common.Catalog.KubernetesCluster} cluster Cluster related to the event.
+   * Handles the Catalog's Context Menu Open event for a Kubernetes Cluster entity.
+   * @param {Common.Catalog.KubernetesCluster} entity Cluster related to the event.
    *  This could be from __any source__, but will be of the KubernetesCluster type.
    * @param {Common.Catalog.CatalogEntityContextMenuContext} ctx Context menu utility.
    */
-  protected handleClusterContextMenuOpen = async (cluster, ctx) => {
-    if (cluster.metadata.source !== consts.catalog.source) {
+  protected handleCatalogClusterContextMenuOpen = async (entity, ctx) => {
+    if (entity.metadata.source !== consts.catalog.source) {
       return; // not one of our clusters: ignore it
     }
 
-    // CLUSTER SETTINGS
+    // CLUSTER SETTINGS (standard item provided by Lens on its own cluster entities
+    //  that we have to provide here also since customizing the context menu means
+    //  we lose all of Lens' standard items that users look for anyway)
     ctx.menuItems.push({
-      title: strings.renderer.catalog.contextMenuItems.settings.title(),
+      title: strings.catalog.entities.cluster.contextMenu.settings.title(),
       icon: 'edit', // pencil, like Lens uses on its own cluster items
-      onClick: () => ctx.navigate(`/entity/${cluster.metadata.uid}/settings`),
+      onClick: async () =>
+        ctx.navigate(`/entity/${entity.metadata.uid}/settings`),
     });
 
-    // REMOVE CLUSTER (but keep kubeConfig file)
+    // OPEN IN BROWSER
     ctx.menuItems.push({
-      title: strings.renderer.catalog.contextMenuItems.remove.title(),
-      icon: 'delete',
-      onClick: async () => {
-        try {
-          await IpcRenderer.getInstance().invoke(
-            consts.ipcEvents.invoke.REMOVE_CLUSTER,
-            cluster.metadata.uid
-          );
-        } catch (err) {
-          logger.error(
-            'ExtensionRenderer.clusterContextMenu.remove.onClick()',
-            `Error during cluster removal, clusterId=${cluster.metadata.uid}, error="${err.message}"`
-          );
-          Notifications.error(
-            `${strings.renderer.catalog.contextMenuItems.remove.error.errorDuringRemove(
-              cluster.metadata.name
-            )} ${strings.noteOwner}`
-          );
-        }
-      },
-      confirm: {
-        message: strings.renderer.catalog.contextMenuItems.remove.confirm(
-          cluster.metadata.name
-        ),
-      },
-    });
-
-    // DELETE CLUSTER (including kubeConfig file)
-    ctx.menuItems.push({
-      title: strings.renderer.catalog.contextMenuItems.delete.title(),
-      icon: 'delete_forever',
-      onClick: async () => {
-        try {
-          await IpcRenderer.getInstance().invoke(
-            consts.ipcEvents.invoke.DELETE_CLUSTER,
-            cluster.metadata.uid
-          );
-        } catch (err) {
-          logger.error(
-            'ExtensionRenderer.clusterContextMenu.delete.onClick()',
-            `Error during cluster deletion, clusterId=${cluster.metadata.uid}, error="${err.message}"`
-          );
-          Notifications.error(
-            `${strings.renderer.catalog.contextMenuItems.delete.error.errorDuringDelete(
-              cluster.metadata.name
-            )} ${strings.noteOwner}`
-          );
-        }
-      },
-      confirm: {
-        message: strings.renderer.catalog.contextMenuItems.delete.confirm(
-          cluster.metadata.name
-        ),
-      },
-    });
-  };
-
-  protected handleClusterCatalogMenuOpen = (
-    ctx: CatalogEntityAddMenuContext
-  ) => {
-    ctx.menuItems.push({
-      icon: 'dns', // TODO: need better icon
-      title: strings.catalog.entities.cluster.catalogMenu.create.title(),
+      title: `(WIP) ${strings.catalog.entities.cluster.contextMenu.browserOpen.title()}`,
+      icon: 'launch',
       onClick: async () => {
         logger.log(
-          'ExtensionRenderer.clusterCatalogMenu.newCluster.onClick()',
-          'Creating new cluster...'
+          'ExtensionRenderer.handleClusterContextMenuOpen.browserOpen.onClick()',
+          'Opening cluster in browser...'
         );
       },
     });
   };
+
+  // TODO: once we're ready to support creating this item type from Lens
+  //  (this is for the big blue "+" button at the bottom/right corner of the Catalog)
+  //  WILL NEED: `import { CatalogEntityAddMenuContext } from '@k8slens/extensions/dist/src/common/catalog';`
+  // /**
+  //  * Called when the user clicks on the big blue "+" button at the bottom/right
+  //  *  corner of the Catalog.
+  //  */
+  // protected handleCatalogClusterMenuOpen = (
+  //   ctx: CatalogEntityAddMenuContext
+  // ) => {
+  //   ctx.menuItems.push({
+  //     icon: 'dns', // TODO: need better icon
+  //     title: strings.catalog.entities.cluster.catalogMenu.create.title(),
+  //     onClick: async () => {
+  //       logger.log(
+  //         'ExtensionRenderer.clusterCatalogMenu.newCluster.onClick()',
+  //         'Creating new cluster...'
+  //       );
+  //     },
+  //   });
+  // };
 
   /**
    * Updates the cluster page menus with our custom cluster page menu item if
@@ -321,7 +329,6 @@ export default class ExtensionRenderer extends LensExtension {
     logger.log('ExtensionRenderer.onActivate()', 'extension activated');
 
     cloudStore.loadExtension(this);
-    clusterStore.loadExtension(this);
     IpcRenderer.createInstance(this); // AFTER load stores
 
     const category = Catalog.catalogCategories.getForGroupKind(
@@ -330,8 +337,14 @@ export default class ExtensionRenderer extends LensExtension {
     );
 
     if (category) {
-      category.on('contextMenuOpen', this.handleClusterContextMenuOpen);
-      category.on('catalogAddMenu', this.handleClusterCatalogMenuOpen);
+      category.on('contextMenuOpen', this.handleCatalogClusterContextMenuOpen);
+
+      // NOTE: while this appears category-specific, when there is no active category in
+      //  Lens (i.e. user has clicked on "Browser" item in the Catalog's sidebar), then
+      //  ALL category-specific handlers are called to show ALL items in the Catalog menu
+      // TODO: once we're ready to support creating this item type from Lens
+      //  (this is for the big blue "+" button at the bottom/right corner of the Catalog)
+      // category.on('catalogAddMenu', this.handleCatalogClusterMenuOpen);
     } else {
       logger.warn(
         'ExtensionRenderer.onActivate()',

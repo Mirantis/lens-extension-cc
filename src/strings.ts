@@ -7,6 +7,7 @@
 //
 
 import pkg from '../package.json';
+import { mccCodeName, mccShortName, mccFullName } from './constants';
 
 export type Prop = (...tokens: any[]) => string;
 
@@ -19,10 +20,6 @@ export interface Dict {
 
 // owner info to add to all posted notifications; does NOT start/end with a space
 export const noteOwner = `(${pkg.name})`;
-
-export const mccCodeName = 'MCC';
-export const mccShortName = 'Container Cloud';
-export const mccFullName = `Mirantis ${mccShortName}`;
 
 // strings for main, renderer, and page modules
 export const extension: Dict = {
@@ -148,31 +145,6 @@ export const renderer: Dict = {
         `The ${name} cluster was not found in Lens. Try adding it first.`,
     },
   },
-  catalog: {
-    contextMenuItems: {
-      settings: {
-        title: () => 'Settings',
-      },
-      remove: {
-        title: () => 'Remove',
-        confirm: (cluster) =>
-          `Are you sure you want to remove the ${cluster} cluster from Lens? The kubeConfig file NOT be deleted (use the "Delete config" option to also delete it from disk).`,
-        error: {
-          errorDuringRemove: (cluster) =>
-            `An error occurred while attempting to remove the ${cluster} cluster from Lens. See logs for more details.`,
-        },
-      },
-      delete: {
-        title: () => 'Delete config',
-        confirm: (cluster) =>
-          `Are you sure you want to remove the ${cluster} cluster from Lens and delete the kubeConfig file from disk?`,
-        error: {
-          errorDuringDelete: (cluster) =>
-            `An error occurred while attempting remove the ${cluster} cluster from Lens and delete the kubeConfig file. See logs for more details.`,
-        },
-      },
-    },
-  },
 };
 
 export const clusterPage: Dict = {
@@ -188,6 +160,27 @@ export const clusterView: Dict = {
 
 export const catalog: Dict = {
   entities: {
+    // for all entity types
+    common: {
+      // 3-dots context menu on specific entity
+      contextMenu: {
+        browserOpen: {
+          title: () => 'Open in browser',
+        },
+      },
+
+      // details panel
+      details: {
+        title: () => 'More Information',
+        unknownValue: () => '<Unknown>', // when a value is null/undefined/empty
+        props: {
+          dateCreated: () => 'Date created',
+          uid: () => 'UID',
+          serverStatus: () => `${mccCodeName} status`,
+        },
+      },
+    },
+
     cluster: {
       // NOTE: this is a native Lens category/entity type which we're extending
       //  so there's no need for `categoryName`
@@ -198,6 +191,23 @@ export const catalog: Dict = {
           title: () => `New ${mccCodeName} cluster...`,
         },
       },
+
+      // 3-dots context menu on specific entity
+      contextMenu: {
+        settings: {
+          title: () => 'Settings',
+        },
+        browserOpen: {
+          title: () => 'Open in browser',
+        },
+      },
+
+      // details panel
+      details: {
+        props: {
+          // TODO
+        },
+      },
     },
 
     sshKey: {
@@ -206,20 +216,12 @@ export const catalog: Dict = {
       // big blue contextual "+" button when viewing the Catalog
       catalogMenu: {
         create: {
-          title: () => 'New SSH Key...',
-        },
-      },
-
-      // 3-dots context menu on specific entity
-      contextMenu: {
-        browserOpen: {
-          title: () => `Open in ${mccCodeName}`,
+          title: () => `New ${mccCodeName} SSH Key...`,
         },
       },
 
       // details panel
       details: {
-        title: () => 'More Information',
         props: {
           publicKey: () => 'Public key',
         },
@@ -232,20 +234,12 @@ export const catalog: Dict = {
       // big blue contextual "+" button when viewing the Catalog
       catalogMenu: {
         create: {
-          title: () => 'New Credential...',
-        },
-      },
-
-      // 3-dots context menu on specific entity
-      contextMenu: {
-        browserOpen: {
-          title: () => `Open in ${mccCodeName}`,
+          title: () => `New ${mccCodeName} Credential...`,
         },
       },
 
       // details panel
       details: {
-        title: () => 'More Information',
         props: {
           provider: () => 'Provider',
         },
@@ -258,22 +252,25 @@ export const catalog: Dict = {
       // big blue contextual "+" button when viewing the Catalog
       catalogMenu: {
         create: {
-          title: () => 'New Proxy...',
-        },
-      },
-
-      // 3-dots context menu on specific entity
-      contextMenu: {
-        browserOpen: {
-          title: () => `Open in ${mccCodeName}`,
+          title: () => `New ${mccCodeName} Proxy...`,
         },
       },
 
       // details panel
       details: {
-        title: () => 'More Information',
         props: {
           region: () => 'Region',
+        },
+      },
+    },
+
+    license: {
+      categoryName: () => `${mccCodeName} RHEL Licenses`,
+
+      // big blue contextual "+" button when viewing the Catalog
+      catalogMenu: {
+        create: {
+          title: () => `New ${mccCodeName} RHEL License...`,
         },
       },
     },
@@ -291,8 +288,6 @@ export const welcome: Dict = {
   `,
   link: {
     label: () => 'And more!',
-    href: () =>
-      'https://github.com/Mirantis/lens-extension-cc/blob/master/README.md',
   },
   button: {
     label: () => 'Add your first management cluster',
@@ -361,10 +356,5 @@ export const contextMenus: Dict = {
   },
   namespace: {
     openInBrowser: () => 'Open in browser',
-    createCluster: () => 'Create cluster',
-    createSshKey: () => 'Create SHH Key',
-    createCredential: () => 'Create Credential',
-    createLicense: () => 'Create RHEL License',
-    createProxy: () => 'Create Proxy',
   },
 };

@@ -119,10 +119,7 @@ export const WelcomeView = ({ openAddCloud }) => (
             __html: strings.welcome.listItemsHtml(),
           }}
         />
-        <WelcomeLink
-          href={constants.welcomePage.andMoreButton.url}
-          target={constants.welcomePage.andMoreButton.target}
-        >
+        <WelcomeLink href={constants.repository.readmeUrl} target="_blank">
           {strings.welcome.link.label()}
         </WelcomeLink>
         <WelcomeButtonWrapper>

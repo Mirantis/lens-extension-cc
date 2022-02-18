@@ -25,8 +25,8 @@ export const apiNamespaceTs = mergeRtvShapes({}, apiObjectTs, {
  * @param {Object} data Raw namespace data payload from the API.
  */
 export class Namespace extends ApiObject {
-  constructor(data) {
-    super(data);
+  constructor({ data, cloud }) {
+    super({ data, cloud });
 
     DEV_ENV && rtv.verify({ data }, { data: apiNamespaceTs });
 
@@ -80,7 +80,13 @@ export class Namespace extends ApiObject {
       set(newValue) {
         rtv.verify(
           { sshKeys: newValue },
-          { sshKeys: [rtv.EXPECTED, rtv.ARRAY, { ctor: SshKey }] }
+          {
+            sshKeys: [
+              rtv.EXPECTED,
+              rtv.ARRAY,
+              { $: [rtv.CLASS_OBJECT, { ctor: SshKey }] },
+            ],
+          }
         );
         if (newValue !== _sshKeys) {
           _sshKeys = newValue || [];
@@ -89,7 +95,7 @@ export class Namespace extends ApiObject {
     });
 
     /**
-     * @param {Array<Credential>} credentials
+     * @param {Array<Credential>} credentials Credentials in this namespace. Empty if none.
      */
     Object.defineProperty(this, 'credentials', {
       enumerable: true,
@@ -100,11 +106,15 @@ export class Namespace extends ApiObject {
         rtv.verify(
           { credentials: newValue },
           {
-            credentials: [rtv.EXPECTED, rtv.ARRAY, { ctor: Credential }],
+            credentials: [
+              rtv.EXPECTED,
+              rtv.ARRAY,
+              { $: [rtv.CLASS_OBJECT, { ctor: Credential }] },
+            ],
           }
         );
         if (newValue !== _credentials) {
-          _credentials = newValue || {};
+          _credentials = newValue || [];
         }
       },
     });
@@ -153,7 +163,7 @@ export class Namespace extends ApiObject {
             ],
           }
         );
-        if (newValue !== _proxies) {
+        if (newValue !== _licenses) {
           _licenses = newValue || [];
         }
       },

@@ -1,8 +1,13 @@
 import * as rtv from 'rtvjs';
-import { get } from 'lodash';
+import { get, merge } from 'lodash';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
 import { ApiObject, apiObjectTs } from './ApiObject';
 import { Namespace } from './Namespace';
+import { Credential } from './Credential';
+import { SshKey } from './SshKey';
+import { Proxy } from './Proxy';
+import { License } from './License';
+import { clusterEntityPhases } from '../../catalog/catalogEntities';
 
 const isManagementCluster = function (data) {
   const kaas = get(data.spec, 'providerSpec.value.kaas', {});
@@ -69,20 +74,24 @@ export const apiClusterTs = mergeRtvShapes({}, apiObjectTs, {
 /**
  * MCC cluster.
  * @class Cluster
- * @param {Object} data Raw cluster data payload from the API.
- * @param {Namespace} namespace Namespace to which this object belongs.
- * @param {string} username Username used to access the cluster.
  */
 export class Cluster extends ApiObject {
-  constructor(data, namespace, username) {
-    super(data);
+  /**
+   * @constructor
+   * @param {Object} params
+   * @param {Object} params.data Raw data payload from the API.
+   * @param {Namespace} params.namespace Namespace to which the object belongs.
+   * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
+   * @param {string} params.username Username used to access the Cloud.
+   */
+  constructor({ data, namespace, cloud, username }) {
+    super({ data, cloud });
 
     // just testing for what is Cluster-specific
     DEV_ENV &&
       rtv.verify(
-        { username, data, namespace },
+        { data, namespace },
         {
-          username: rtv.STRING,
           namespace: [rtv.CLASS_OBJECT, { ctor: Namespace }],
           data: apiClusterTs,
         }
@@ -90,11 +99,98 @@ export class Cluster extends ApiObject {
 
     // NOTE: regardless of `ready`, we assume `data.metadata` is always available
 
+    let _sshKey = null;
+    let _credential = null;
+    let _proxy = null;
+    let _license = null;
+
     /** @member {Namespace} */
     Object.defineProperty(this, 'namespace', {
       enumerable: true,
       get() {
         return namespace;
+      },
+    });
+
+    /**
+     * @member {SshKey|null} sshKey SSH key used by this Cluster. Null if none.
+     */
+    Object.defineProperty(this, 'sshKey', {
+      enumerable: true,
+      get() {
+        return _sshKey;
+      },
+      set(newValue) {
+        rtv.verify(
+          { sshKey: newValue },
+          { sshKey: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: SshKey }] }
+        );
+        if (newValue !== _sshKey) {
+          _sshKey = newValue || null;
+        }
+      },
+    });
+
+    /**
+     * @param {Credential|null} credential Credential used by this Cluster. Null if none.
+     */
+    Object.defineProperty(this, 'credential', {
+      enumerable: true,
+      get() {
+        return _credential;
+      },
+      set(newValue) {
+        rtv.verify(
+          { credential: newValue },
+          {
+            credential: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: Credential }],
+          }
+        );
+        if (newValue !== _credential) {
+          _credential = newValue || null;
+        }
+      },
+    });
+
+    /**
+     * @member {Proxy|null} proxy Proxy used by this Cluster. Null if none.
+     */
+    Object.defineProperty(this, 'proxy', {
+      enumerable: true,
+      get() {
+        return _proxy;
+      },
+      set(newValue) {
+        rtv.verify(
+          { proxy: newValue },
+          {
+            proxy: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: Proxy }],
+          }
+        );
+        if (newValue !== _proxy) {
+          _proxy = newValue || null;
+        }
+      },
+    });
+
+    /**
+     * @member {License|null} license License used by this Cluster. Null if none.
+     */
+    Object.defineProperty(this, 'license', {
+      enumerable: true,
+      get() {
+        return _license;
+      },
+      set(newValue) {
+        rtv.verify(
+          { license: newValue },
+          {
+            license: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: License }],
+          }
+        );
+        if (newValue !== _license) {
+          _license = newValue || null;
+        }
       },
     });
 
@@ -225,6 +321,44 @@ export class Cluster extends ApiObject {
   get contextName() {
     // NOTE: this mirrors how MCC generates kubeconfig context names
     return `${this.username}@${this.namespace.name}@${this.name}`;
+  }
+
+  /**
+   * Converts this API Object into a Catalog Entity.
+   * @returns {Object} Entity object.
+   * @override
+   */
+  toEntity() {
+    const entity = super.toEntity();
+
+    return merge({}, entity, {
+      metadata: {
+        labels: {
+          ...(this.isManagementCluster
+            ? {}
+            : {
+                managementCluster: this.cloud.name,
+                project: this.namespace.name,
+                sshKey: this.sshKey?.name || undefined,
+                credential: this.credential?.name || undefined,
+                proxy: this.proxy?.name || undefined,
+                license: this.license?.name || undefined,
+              }),
+        },
+      },
+      spec: {
+        kubeconfigPath: 'wip', // TODO[PRODX-21909]
+        kubeconfigContext: 'wip', // TODO[PRODX-21909]
+        isManagementCluster: this.isManagementCluster,
+        ready: this.ready,
+      },
+      status: {
+        // always starts off disconnected as far as Lens is concerned (because it
+        //  hasn't loaded it yet; Lens will update this value when the user opens
+        //  the cluster)
+        phase: clusterEntityPhases.DISCONNECTED,
+      },
+    });
   }
 
   /** @returns {string} A string representation of this instance for logging/debugging. */

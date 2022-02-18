@@ -1,7 +1,9 @@
 import * as rtv from 'rtvjs';
+import { merge } from 'lodash';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
 import { ApiObject, apiObjectTs } from './ApiObject';
 import { Namespace } from './Namespace';
+import { sshKeyEntityPhases } from '../../catalog/SshKeyEntity';
 
 /**
  * Typeset for an MCC SSH Key object.
@@ -23,8 +25,15 @@ export const apiSshKeyTs = mergeRtvShapes({}, apiObjectTs, {
  * @param {Namespace} namespace Namespace to which this object belongs.
  */
 export class SshKey extends ApiObject {
-  constructor(data, namespace) {
-    super(data);
+  /**
+   * @constructor
+   * @param {Object} params
+   * @param {Object} params.data Raw data payload from the API.
+   * @param {Namespace} params.namespace Namespace to which the object belongs.
+   * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
+   */
+  constructor({ data, namespace, cloud }) {
+    super({ data, cloud });
 
     DEV_ENV &&
       rtv.verify(
@@ -56,6 +65,30 @@ export class SshKey extends ApiObject {
       enumerable: true,
       get() {
         return data.spec.publicKey;
+      },
+    });
+  }
+
+  /**
+   * Converts this API Object into a Catalog Entity.
+   * @returns {Object} Entity object.
+   * @override
+   */
+  toEntity() {
+    const entity = super.toEntity();
+
+    return merge({}, entity, {
+      metadata: {
+        labels: {
+          managementCluster: this.cloud.name,
+          project: this.namespace.name,
+        },
+      },
+      spec: {
+        publicKey: this.publicKey,
+      },
+      status: {
+        phase: sshKeyEntityPhases.AVAILABLE,
       },
     });
   }

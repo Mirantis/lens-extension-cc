@@ -1,8 +1,9 @@
 import * as rtv from 'rtvjs';
-import { get } from 'lodash';
+import { get, merge } from 'lodash';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
 import { ApiObject, apiObjectTs } from './ApiObject';
 import { Namespace } from './Namespace';
+import { credentialEntityPhases } from '../../catalog/CredentialEntity';
 
 /**
  * Map of name to credential kind values as used by the API in a Credential object
@@ -41,8 +42,15 @@ export const apiCredentialTs = mergeRtvShapes({}, apiObjectTs, {
 });
 
 export class Credential extends ApiObject {
-  constructor(data, namespace) {
-    super(data);
+  /**
+   * @constructor
+   * @param {Object} params
+   * @param {Object} params.data Raw data payload from the API.
+   * @param {Namespace} params.namespace Namespace to which the object belongs.
+   * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
+   */
+  constructor({ data, namespace, cloud }) {
+    super({ data, cloud });
 
     // now we have check only for openStack. It's hard to predict other types
     DEV_ENV &&
@@ -91,6 +99,32 @@ export class Credential extends ApiObject {
       enumerable: true,
       get() {
         return !!data.status.valid;
+      },
+    });
+  }
+
+  /**
+   * Converts this API Object into a Catalog Entity.
+   * @returns {Object} Entity object.
+   * @override
+   */
+  toEntity() {
+    const entity = super.toEntity();
+
+    return merge({}, entity, {
+      metadata: {
+        labels: {
+          managementCluster: this.cloud.name,
+          project: this.namespace.name,
+        },
+      },
+      spec: {
+        provider: this.provider,
+        region: this.region,
+        valid: this.valid,
+      },
+      status: {
+        phase: credentialEntityPhases.AVAILABLE,
       },
     });
   }
