@@ -15,28 +15,36 @@ const setParentCheckboxState = (children) => {
 };
 
 /**
- *
  * @param {ExtendedCloud} extCloud
- * @param {Array<Namespace>?} syncedNamespaces
+ * @param {Array<Namespace>} [syncedNamespaces]
  * @return {Object} {[namespaceName]: boolean}
  */
 const makeCheckboxesStateObj = (extCloud, syncedNamespaces) => {
+  // if cloud disconnected we should use stored syncedNamespaces names to make children
+  if (!extCloud.cloud.connected) {
+    return extCloud.cloud.syncedNamespaces.reduce((acc, name) => {
+      acc[name] = true;
+      return acc;
+    }, {});
+  }
+  // otherwise we make state for all EC.namespaces, they have to be present
+  // And use syncedNamespaces to make initial state checked for selected checkboxes
   const syncedNamespacesNames = syncedNamespaces.map((sn) => sn.name);
   return (extCloud?.namespaces || []).reduce((acc, namespace) => {
     acc[namespace.name] = syncedNamespacesNames.includes(namespace.name);
     return acc;
   }, {});
 };
+
 /**
- *
  * @param {ExtendedCloud} extCloud
- * @param {Array<Namespace>?} syncedNamespaces
+ * @param {Array<Namespace>} [syncedNamespaces]
  * @return {{parent: (boolean), children: Object}}
  */
 export const makeCheckboxesInitialState = (extCloud, syncedNamespaces = []) => {
   const children = makeCheckboxesStateObj(extCloud, syncedNamespaces);
   return {
-    parent: setParentCheckboxState(children),
+    parent: extCloud?.cloud?.syncAll || setParentCheckboxState(children),
     children,
   };
 };
@@ -48,11 +56,11 @@ export const makeCheckboxesInitialState = (extCloud, syncedNamespaces = []) => {
 export function useCheckboxes(initialState) {
   const [checkboxesState, setCheckboxesState] = useState(initialState);
 
-  const getNewChildren = (parentCheckedStatus) => {
+  const getNewChildren = (newParentStatus) => {
     const newChildren = { ...checkboxesState.children };
 
     Object.keys(checkboxesState.children).forEach((name) => {
-      newChildren[name] = parentCheckedStatus;
+      newChildren[name] = newParentStatus;
     });
     return newChildren;
   };
@@ -89,14 +97,14 @@ export function useCheckboxes(initialState) {
     isParent ? getParentCheckboxValue() : getChildrenCheckboxValue(name);
 
   /**
-   * @param {string?} name has to be present for children (optional for parent)
-   * @param {boolean?} isParent has to be true for parent.
+   * @param {string} [name] has to be present for children (optional for parent)
+   * @param {boolean} [isParent] has to be true for parent.
    */
   const setCheckboxValue = ({ name, isParent }) => {
     if (isParent) {
       setCheckboxesState({
         parent: !checkboxesState.parent,
-        children: getNewChildren(!checkboxesState.parent, checkboxesState),
+        children: getNewChildren(!checkboxesState.parent),
       });
     } else {
       const newChildren = { ...checkboxesState.children };
@@ -111,7 +119,10 @@ export function useCheckboxes(initialState) {
 
   const getSyncedData = () => {
     if (getParentCheckboxValue() === checkValues.CHECKED) {
-      return { syncAll: true, syncedNamespaces: [] };
+      return {
+        syncAll: true,
+        syncedNamespaces: Object.keys(checkboxesState.children),
+      };
     }
     return {
       syncAll: false,

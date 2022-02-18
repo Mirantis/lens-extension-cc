@@ -139,7 +139,6 @@ const getCloudMenuItems = (extendedCloud) => [
       const {
         name: cloudName,
         cloudUrl,
-        syncAll,
         syncedNamespaces,
         connected,
       } = extendedCloud.cloud;
@@ -147,11 +146,6 @@ const getCloudMenuItems = (extendedCloud) => [
       if (isConnected && !extendedCloud.namespaces.length) {
         cloudStore.removeCloud(cloudUrl);
       } else {
-        const projects = !syncAll
-          ? syncedNamespaces
-          : isConnected
-          ? extendedCloud.namespaces
-          : [];
         ConfirmDialog.open({
           ok: () => {
             cloudStore.removeCloud(cloudUrl);
@@ -162,7 +156,7 @@ const getCloudMenuItems = (extendedCloud) => [
               dangerouslySetInnerHTML={{
                 __html: contextMenus.cloud.confirmDialog.messageHtml(
                   cloudName,
-                  projects
+                  syncedNamespaces
                 ),
               }}
             />
@@ -195,6 +189,20 @@ const namespaceMenuItems = [
   },
 ];
 
+/**
+ * @param {ExtendedCloud} extendedCloud
+ * @param {'namespaces'|'syncedNamespaces'} usedNamespaces if true and connected - it returns all namespaces to populate in SyncView mode
+ * @return {Array<Object>} It might be an array og Namespaces or just {name: _namespaceName_ }, depending on cloud.connected
+ */
+const getNamespaces = (extendedCloud, usedNamespaces) => {
+  // if connected return Namespaces class object from EC
+  if (extendedCloud.cloud.connected) {
+    return extendedCloud[usedNamespaces];
+  }
+  // if cloud disconnected - return just syncedNamespaces (names) stored in Cloud
+  return extendedCloud.cloud.syncedNamespaces.map((name) => ({ name }));
+};
+
 export const EnhancedTableRow = ({
   extendedCloud,
   withCheckboxes,
@@ -210,11 +218,12 @@ export const EnhancedTableRow = ({
   const [isFetching, setFetching] = useState(false);
   const [isOpenFirstLevel, setIsOpenFirstLevel] = useState(false);
   const [actualNamespaces, setActualNamespaces] = useState(
-    extendedCloud[usedNamespaces]
+    getNamespaces(extendedCloud, usedNamespaces)
   );
   const [openedSecondLevelListIndex, setOpenedSecondLevelListIndex] = useState(
     []
   );
+
   const updateNamespaces = (updatedRow) => {
     if (updatedRow) {
       setActualNamespaces(updatedRow[usedNamespaces]);
@@ -307,7 +316,7 @@ export const EnhancedTableRow = ({
   /**
    * @param {string} name cloud or namespace name
    * @param {boolean?} isParent if true - then it's a main, cloud checkbox
-   * @return {JSX.Element|*}
+   * @return {JSX.Element|string}
    */
   const makeCell = (name, isParent) => {
     if (withCheckboxes) {
@@ -322,8 +331,9 @@ export const EnhancedTableRow = ({
     return name;
   };
 
-  const getExpandIcon = (condition) => {
-    if (!extendedCloud.loaded) {
+  const getExpandIcon = (condition, showSecondLevel = true) => {
+    // if selective sync mode - show icon even if cloud isn't loaded for first level
+    if ((!extendedCloud.loaded && !withCheckboxes) || !showSecondLevel) {
       return null;
     }
     const material = condition ? 'expand_more' : 'chevron_right';
@@ -331,7 +341,7 @@ export const EnhancedTableRow = ({
   };
 
   const toggleOpenFirstLevel = () => {
-    if (extendedCloud.loaded) {
+    if (extendedCloud.loaded || withCheckboxes) {
       setIsOpenFirstLevel(!isOpenFirstLevel);
     }
   };
@@ -380,7 +390,10 @@ export const EnhancedTableRow = ({
             <EnhTableRow>
               <EnhTableRowCell isFirstLevel withCheckboxes={withCheckboxes}>
                 <EnhCollapseBtn onClick={() => setOpenedList(index)}>
-                  {getExpandIcon(openedSecondLevelListIndex.includes(index))}
+                  {getExpandIcon(
+                    openedSecondLevelListIndex.includes(index),
+                    extendedCloud.loaded
+                  )}
                 </EnhCollapseBtn>
                 {makeCell(namespace.name)}
               </EnhTableRowCell>
