@@ -110,8 +110,7 @@ export const SyncView = () => {
           syncedClouds[url];
         const cloud = cloudStore.clouds[url];
         cloud.syncAll = syncAll;
-        cloud.syncedNamespaces = syncedNamespaces;
-        cloud.ignoredNamespaces = ignoredNamespaces;
+        cloud.updateNamespaces(syncedNamespaces, ignoredNamespaces);
       });
       closeSelectiveSyncView();
     }

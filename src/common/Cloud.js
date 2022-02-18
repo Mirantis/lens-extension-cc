@@ -251,17 +251,6 @@ export class Cloud extends EventDispatcher {
       get() {
         return _syncedNamespaces;
       },
-      set(newValue) {
-        DEV_ENV &&
-          rtv.verify(
-            { token: newValue },
-            { token: Cloud.specTs.syncedNamespaces }
-          );
-        if (!isEqual(_syncedNamespaces, newValue)) {
-          _syncedNamespaces = newValue;
-          this.dispatchEvent(CLOUD_EVENTS.SYNC_CHANGE, this);
-        }
-      },
     });
 
     /**
@@ -272,18 +261,6 @@ export class Cloud extends EventDispatcher {
       enumerable: true,
       get() {
         return _ignoredNamespaces;
-      },
-      set(newValue) {
-        DEV_ENV &&
-          rtv.verify(
-            { token: newValue },
-            { token: Cloud.specTs.ignoredNamespaces }
-          );
-        if (!isEqual(_ignoredNamespaces, newValue)) {
-          _ignoredNamespaces = newValue;
-          // not sure about event type for this one. Probably we need to add a new one
-          this.dispatchEvent(CLOUD_EVENTS.SYNC_CHANGE, this);
-        }
       },
     });
 
@@ -499,6 +476,37 @@ export class Cloud extends EventDispatcher {
       },
     });
 
+    Object.defineProperty(this, 'updateNamespaces', {
+      enumerable: true,
+      /**
+       * @param {Array<string>} syncedList A list of namespace names in the mgmt cluster that should be synced.
+       * @param {Array<string>} ignoredList A list of namespace names in the mgmt cluster that not synced.
+       * @param {boolean} [silent] if true we don't dispatch event (thus ExtendedCloud does not fetch its data)
+       */
+      value: function (syncedList, ignoredList, silent = false) {
+        DEV_ENV &&
+          rtv.verify(
+            { syncedList, ignoredList },
+            {
+              syncedList: Cloud.specTs.syncedNamespaces,
+              ignoredList: Cloud.specTs.ignoredNamespaces,
+              silent: [rtv.OPTIONAL, rtv.BOOLEAN],
+            }
+          );
+        const isNewSynced = !isEqual(_syncedNamespaces, syncedList);
+        const isNewIgnored = !isEqual(_ignoredNamespaces, ignoredList);
+        if (isNewSynced) {
+          _syncedNamespaces = syncedList;
+        }
+        if (isNewIgnored) {
+          _ignoredNamespaces = ignoredList;
+        }
+        if (!silent && (isNewSynced || isNewIgnored)) {
+          this.dispatchEvent(CLOUD_EVENTS.SYNC_CHANGE, this);
+        }
+      },
+    });
+
     //// initialize
 
     this.update(spec);
@@ -621,9 +629,8 @@ export class Cloud extends EventDispatcher {
       this.cloudUrl = spec.cloudUrl;
       this.name = spec.name;
       this.syncAll = spec.syncAll;
-      this.syncedNamespaces = spec.syncedNamespaces;
-      this.ignoredNamespaces = spec.ignoredNamespaces;
       this.username = spec.username;
+      this.updateNamespaces(spec.syncedNamespaces, spec.ignoredNamespaces);
 
       if (spec.id_token && spec.refresh_token) {
         this.updateTokens(spec);

@@ -643,6 +643,32 @@ export class ExtendedCloud extends EventDispatcher {
     this.dispatchEvent(EXTENDED_CLOUD_EVENTS.FETCH_DATA, this);
   }
 
+  /**
+   * check if for projects and depending on syncAll we add them to Cloud.syncedNamespaces or Cloud.ignoredNamespaces
+   */
+  updateCloudNamespaceLists() {
+    const syncedList = [];
+    const ignoredList = [];
+
+    this.namespaces.forEach(({ name }) => {
+      if (this.cloud.syncAll) {
+        if (this.cloud.ignoredNamespaces.includes(name)) {
+          ignoredList.push(name);
+        } else {
+          syncedList.push(name);
+        }
+      } else {
+        if (this.cloud.syncedNamespaces.includes(name)) {
+          syncedList.push(name);
+        } else {
+          ignoredList.push(name);
+        }
+      }
+    });
+
+    this.cloud.updateNamespaces(syncedList, ignoredList, true);
+  }
+
   /** Called when __this__ ExtendedCloud should fetch new data from its Cloud. */
   onFetchData = () => this.fetchData();
 
@@ -720,6 +746,7 @@ export class ExtendedCloud extends EventDispatcher {
       return namespace;
     });
 
+    this.updateCloudNamespaceLists();
     if (!this.loaded) {
       // successfully loaded at least once
       this.loaded = true;

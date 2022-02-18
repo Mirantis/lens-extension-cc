@@ -34,7 +34,8 @@ const EnhTableRow = styled.tr`
 `;
 
 const EnhTableRowCell = styled.td`
-  width: ${({ isBigger }) => isBigger && '40%'};
+  width: ${({ isBigger, withCheckboxes }) =>
+    isBigger && !withCheckboxes && '40%'};
   border: 0;
   font-size: var(--font-size);
   line-height: normal;
@@ -267,13 +268,13 @@ export const EnhancedTableRow = ({
    */
   const getExpandIcon = (condition, showSecondLevel = true) => {
     // EG when namespace isn't loaded, we show first level but not second
-    if(!showSecondLevel) {
-      return null
+    if (!showSecondLevel) {
+      return null;
     }
 
     // SyncView mode - don't show if namespaces not loaded
     // but if it's Selective Sync  - show the icon (we use syncedNamespaces then)
-    if ((!extendedCloud.loaded && !withCheckboxes)) {
+    if (!extendedCloud.loaded && !withCheckboxes) {
       return null;
     }
     const material = condition ? 'expand_more' : 'chevron_right';

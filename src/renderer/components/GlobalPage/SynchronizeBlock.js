@@ -134,8 +134,7 @@ export const SynchronizeBlock = ({ extendedCloud, onAdd }) => {
     const { syncedNamespaces, ignoredNamespaces } = getSyncedData();
 
     cloud.syncAll = syncAll;
-    cloud.syncedNamespaces = syncedNamespaces;
-    cloud.ignoredNamespaces = ignoredNamespaces;
+    cloud.updateNamespaces(syncedNamespaces, ignoredNamespaces);
 
     onAdd(cloud);
   };
