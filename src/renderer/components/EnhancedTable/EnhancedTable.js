@@ -4,7 +4,7 @@ import styled from '@emotion/styled';
 import { layout } from '../styles';
 import { EnhancedTableHead } from './EnhancedTableHead';
 import { getTableData, sortData } from './tableUtil';
-import { EnhancedTableRow } from './EnhancedTableRow';
+import { TableRowListenerWrapper } from './TableRowListenerWrapper';
 
 const SelectiveSyncTableItem = styled.table`
   width: 100%;
@@ -57,7 +57,7 @@ export const EnhancedTable = ({
         {sortData(extendedClouds, sortedBy, order, path).map((url) => {
           const key = `${url}-${isSelectiveSyncView ? 'selective' : ''}`;
           return (
-            <EnhancedTableRow
+            <TableRowListenerWrapper
               key={key}
               extendedCloud={extendedClouds[url]}
               withCheckboxes={isSelectiveSyncView}
