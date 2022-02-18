@@ -431,7 +431,7 @@ export const EnhancedTableRow = ({
             {openedSecondLevelListIndex.includes(index) && (
               <AdditionalInfoRows
                 namespace={namespace}
-                emptyCellsCount={withCheckboxes ? 1 : 4}
+                emptyCellsCount={withCheckboxes ? 2 : 4}
               />
             )}
           </EnhRowsWrapper>

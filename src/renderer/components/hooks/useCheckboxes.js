@@ -19,7 +19,7 @@ const setParentCheckboxState = (children) => {
  * @return {Object} {[namespaceName]: boolean}
  */
 const makeCheckboxesStateObj = (extCloud) => {
-  // if EC.namespaces aren't loaded yet, we should use stored syncedNamespaces names from Cloud
+  // if EC.namespaces aren't loaded yet, we use stored syncedNamespaces names from Cloud
   if (!extCloud.loaded) {
     return extCloud.cloud.syncedNamespaces.reduce((acc, name) => {
       acc[name] = true;
