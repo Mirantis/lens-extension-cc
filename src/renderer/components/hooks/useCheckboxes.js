@@ -16,33 +16,32 @@ const setParentCheckboxState = (children) => {
 
 /**
  * @param {ExtendedCloud} extCloud
- * @param {Array<Namespace>} [syncedNamespaces]
  * @return {Object} {[namespaceName]: boolean}
  */
-const makeCheckboxesStateObj = (extCloud, syncedNamespaces) => {
-  // if cloud disconnected we should use stored syncedNamespaces names to make children
-  if (!extCloud.cloud.connected) {
+const makeCheckboxesStateObj = (extCloud) => {
+  // if EC.namespaces aren't loaded yet, we should use stored syncedNamespaces names from Cloud
+  if (!extCloud.loaded) {
     return extCloud.cloud.syncedNamespaces.reduce((acc, name) => {
       acc[name] = true;
       return acc;
     }, {});
   }
-  // otherwise we make state for all EC.namespaces, they have to be present
+  // otherwise, we make state for all EC.namespaces, they have to be present
   // And use syncedNamespaces to make initial state checked for selected checkboxes
-  const syncedNamespacesNames = syncedNamespaces.map((sn) => sn.name);
-  return (extCloud?.namespaces || []).reduce((acc, namespace) => {
-    acc[namespace.name] = syncedNamespacesNames.includes(namespace.name);
+  return extCloud.namespaces.reduce((acc, namespace) => {
+    acc[namespace.name] = extCloud.cloud.syncedNamespaces.includes(
+      namespace.name
+    );
     return acc;
   }, {});
 };
 
 /**
  * @param {ExtendedCloud} extCloud
- * @param {Array<Namespace>} [syncedNamespaces]
  * @return {{parent: (boolean), children: Object}}
  */
-export const makeCheckboxesInitialState = (extCloud, syncedNamespaces = []) => {
-  const children = makeCheckboxesStateObj(extCloud, syncedNamespaces);
+export const makeCheckboxesInitialState = (extCloud) => {
+  const children = makeCheckboxesStateObj(extCloud);
   return {
     parent: setParentCheckboxState(children),
     children,
@@ -55,7 +54,6 @@ export const makeCheckboxesInitialState = (extCloud, syncedNamespaces = []) => {
  */
 export function useCheckboxes(initialState) {
   const [checkboxesState, setCheckboxesState] = useState(initialState);
-
   const getNewChildren = (newParentStatus) => {
     const newChildren = { ...checkboxesState.children };
 
@@ -118,7 +116,7 @@ export function useCheckboxes(initialState) {
   };
 
   const getSyncedData = () => {
-    let ignoredNamespaces = [];
+    const ignoredNamespaces = [];
     const syncedNamespaces = [];
     Object.keys(checkboxesState.children).forEach((name) => {
       if (checkboxesState.children[name]) {

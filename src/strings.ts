@@ -86,6 +86,7 @@ export const syncView: Dict = {
   synchronizeProjectsButtonLabel: () => 'Synchronize selected projects',
   syncButtonLabel: () => 'Selective sync...',
   connectButtonLabel: () => 'Connect new Management Cluster',
+  autoSync: () => 'auto-sync',
 };
 export const managementClusters = {
   table: {

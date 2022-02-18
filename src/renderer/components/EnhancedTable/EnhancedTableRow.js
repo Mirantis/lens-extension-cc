@@ -8,6 +8,7 @@ import {
   connectionStatuses,
   contextMenus,
   synchronizeBlock,
+  syncView,
 } from '../../../strings';
 import { EXTENDED_CLOUD_EVENTS } from '../../../common/ExtendedCloud';
 import {
@@ -202,8 +203,8 @@ const namespaceMenuItems = [
  * @return {Array<Object>} It might be an array og Namespaces or just {name: _namespaceName_ }, depending on cloud.connected
  */
 const getNamespaces = (extendedCloud, usedNamespaces) => {
-  // if connected return Namespaces class object from EC
-  if (extendedCloud.cloud.connected) {
+  // if loaded return Namespaces class object from EC
+  if (extendedCloud.loaded) {
     return extendedCloud[usedNamespaces];
   }
   // if cloud disconnected - return just syncedNamespaces (names) stored in Cloud
@@ -218,8 +219,9 @@ export const EnhancedTableRow = ({
 }) => {
   const [syncAll, setSyncAll] = useState(extendedCloud.cloud.syncAll);
   const { getCheckboxValue, setCheckboxValue, getSyncedData } = useCheckboxes(
-    makeCheckboxesInitialState(extendedCloud, extendedCloud.syncedNamespaces)
+    makeCheckboxesInitialState(extendedCloud)
   );
+
   // show all namespaces if selectiveSync table or only syncedNamespaces in this main SyncView table
   const usedNamespaces = withCheckboxes ? 'namespaces' : 'syncedNamespaces';
 
@@ -270,8 +272,9 @@ export const EnhancedTableRow = ({
 
   useEffect(() => {
     if (isSyncStarted && typeof getDataToSync === 'function') {
+      const { syncedNamespaces, ignoredNamespaces } = getSyncedData();
       getDataToSync(
-        { ...getSyncedData(), syncAll },
+        { syncedNamespaces, ignoredNamespaces, syncAll },
         extendedCloud.cloud.cloudUrl
       );
     }
@@ -340,11 +343,15 @@ export const EnhancedTableRow = ({
         />
       );
     }
-    return name;
+    const autoSyncSuffix =
+      isParent && extendedCloud.cloud.syncAll
+        ? ` (${syncView.autoSync()})`
+        : '';
+    return `${name}${autoSyncSuffix}`;
   };
 
   const getExpandIcon = (condition, showSecondLevel = true) => {
-    // if selective sync mode - show icon even if cloud isn't loaded for first level
+    // if selective sync mode - show icon, even if cloud isn't loaded for first level
     if ((!extendedCloud.loaded && !withCheckboxes) || !showSecondLevel) {
       return null;
     }
