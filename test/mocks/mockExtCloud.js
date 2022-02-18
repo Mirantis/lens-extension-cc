@@ -12,6 +12,7 @@ export const mockExtCloud = {
     name: 'Container name',
     syncAll: false,
     syncedNamespaces: [],
+    ignoredNamespaces: [],
   },
   loading: false,
   namespaces: [
@@ -92,6 +93,7 @@ export const mockExtCloud2 = {
     name: 'Container name 2',
     syncAll: false,
     syncedNamespaces: [],
+    ignoredNamespaces: [],
   },
   loading: false,
   namespaces: [

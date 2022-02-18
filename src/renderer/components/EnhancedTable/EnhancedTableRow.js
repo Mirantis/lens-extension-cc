@@ -4,9 +4,16 @@ import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
 import { layout } from '../styles';
 import { AdditionalInfoRows } from './AdditionalInfoRows';
-import { connectionStatuses, contextMenus } from '../../../strings';
+import {
+  connectionStatuses,
+  contextMenus,
+  synchronizeBlock,
+} from '../../../strings';
 import { EXTENDED_CLOUD_EVENTS } from '../../../common/ExtendedCloud';
-import { TriStateCheckbox } from '../TriStateCheckbox/TriStateCheckbox';
+import {
+  checkValues,
+  TriStateCheckbox,
+} from '../TriStateCheckbox/TriStateCheckbox';
 import {
   useCheckboxes,
   makeCheckboxesInitialState,
@@ -209,6 +216,7 @@ export const EnhancedTableRow = ({
   isSyncStarted,
   getDataToSync,
 }) => {
+  const [syncAll, setSyncAll] = useState(extendedCloud.cloud.syncAll);
   const { getCheckboxValue, setCheckboxValue, getSyncedData } = useCheckboxes(
     makeCheckboxesInitialState(extendedCloud, extendedCloud.syncedNamespaces)
   );
@@ -262,12 +270,16 @@ export const EnhancedTableRow = ({
 
   useEffect(() => {
     if (isSyncStarted && typeof getDataToSync === 'function') {
-      getDataToSync(getSyncedData(), extendedCloud.cloud.cloudUrl);
+      getDataToSync(
+        { ...getSyncedData(), syncAll },
+        extendedCloud.cloud.cloudUrl
+      );
     }
   }, [
     getDataToSync,
     isSyncStarted,
     getSyncedData,
+    syncAll,
     extendedCloud.cloud.cloudUrl,
   ]);
 
@@ -315,7 +327,7 @@ export const EnhancedTableRow = ({
 
   /**
    * @param {string} name cloud or namespace name
-   * @param {boolean?} isParent if true - then it's a main, cloud checkbox
+   * @param {boolean} [isParent] if true - then it's a main, cloud checkbox
    * @return {JSX.Element|string}
    */
   const makeCell = (name, isParent) => {
@@ -357,8 +369,17 @@ export const EnhancedTableRow = ({
           </EnhCollapseBtn>
           {makeCell(extendedCloud.cloud.name, true)}
         </EnhTableRowCell>
+        {withCheckboxes && (
+          <EnhTableRowCell>
+            <TriStateCheckbox
+              label={synchronizeBlock.synchronizeFutureProjects()}
+              onChange={() => setSyncAll(!syncAll)}
+              value={syncAll ? checkValues.CHECKED : checkValues.UNCHECKED}
+            />
+          </EnhTableRowCell>
+        )}
         <EnhTableRowCell>{extendedCloud.cloud.cloudUrl}</EnhTableRowCell>
-        {withCheckboxes ? null : (
+        {!withCheckboxes && (
           <>
             <EnhTableRowCell>{extendedCloud.cloud.username}</EnhTableRowCell>
             <EnhTableRowCell style={connectColor}>

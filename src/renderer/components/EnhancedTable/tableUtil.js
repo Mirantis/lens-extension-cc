@@ -2,11 +2,13 @@ import { get, orderBy } from 'lodash';
 
 const SELECTIVE_HEAD_CELL_VALUES = {
   NAME: 'Name',
+  AUTOSYNC: 'Autosync',
   URL: 'URL',
 };
 
 const selectivePathToData = {
   [SELECTIVE_HEAD_CELL_VALUES.NAME]: ['cloud', 'name'],
+  [SELECTIVE_HEAD_CELL_VALUES.AUTOSYNC]: ['cloud', 'syncAll'],
   [SELECTIVE_HEAD_CELL_VALUES.URL]: ['cloud', 'cloudUrl'],
 };
 

@@ -44,7 +44,7 @@ const makeCheckboxesStateObj = (extCloud, syncedNamespaces) => {
 export const makeCheckboxesInitialState = (extCloud, syncedNamespaces = []) => {
   const children = makeCheckboxesStateObj(extCloud, syncedNamespaces);
   return {
-    parent: extCloud?.cloud?.syncAll || setParentCheckboxState(children),
+    parent: setParentCheckboxState(children),
     children,
   };
 };
@@ -89,8 +89,8 @@ export function useCheckboxes(initialState) {
 
   /**
    *
-   * @param {string?} name has to be present for children (optional for parent)
-   * @param {boolean?} isParent has to be true for parent.
+   * @param {string} [name] has to be present for children (optional for parent)
+   * @param {boolean} [isParent] has to be true for parent.
    * @return {string} one of checkValues
    */
   const getCheckboxValue = ({ name, isParent }) =>
@@ -118,17 +118,18 @@ export function useCheckboxes(initialState) {
   };
 
   const getSyncedData = () => {
-    if (getParentCheckboxValue() === checkValues.CHECKED) {
-      return {
-        syncAll: true,
-        syncedNamespaces: Object.keys(checkboxesState.children),
-      };
-    }
+    let ignoredNamespaces = [];
+    const syncedNamespaces = [];
+    Object.keys(checkboxesState.children).forEach((name) => {
+      if (checkboxesState.children[name]) {
+        syncedNamespaces.push(name);
+      } else {
+        ignoredNamespaces.push(name);
+      }
+    });
     return {
-      syncAll: false,
-      syncedNamespaces: Object.keys(checkboxesState.children).filter(
-        (name) => checkboxesState.children[name]
-      ),
+      syncedNamespaces,
+      ignoredNamespaces,
     };
   };
 
