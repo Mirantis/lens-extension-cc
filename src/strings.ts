@@ -161,22 +161,21 @@ export const clusterView: Dict = {
 export const catalog: Dict = {
   entities: {
     // for all entity types
-    common: {
-      // 3-dots context menu on specific entity
-      contextMenu: {
-        browserOpen: {
-          title: () => 'Open in browser',
-        },
-      },
-
+    managementCluster: {
       // details panel
       details: {
-        title: () => 'More Information',
-        unknownValue: () => '<Unknown>', // when a value is null/undefined/empty
+        title: () => 'Additional information',
         props: {
+          url: () => 'URL',
+          childClusters: () => 'Child clusters',
+          regions: () => 'Regions',
+          provider: () => 'Provider',
+          mccStatus: () => 'MCC Status',
+          release: () => 'Release',
+          managers: () => 'Managers',
+          workers: () => 'Workers',
           dateCreated: () => 'Date created',
-          uid: () => 'UID',
-          serverStatus: () => `${mccCodeName} status`,
+          id: () => 'Id',
         },
       },
     },
@@ -204,8 +203,37 @@ export const catalog: Dict = {
 
       // details panel
       details: {
+        title: () => 'Additional information',
         props: {
-          // TODO
+          childClusters: () => 'Child clusters',
+          regions: () => 'Regions',
+          provider: () => 'Provider',
+          mccStatus: () => 'MCC Status',
+          release: () => 'Release',
+          managers: () => 'Managers',
+          workers: () => 'Workers',
+          dateCreated: () => 'Date created',
+          id: () => 'Id',
+        },
+      },
+    },
+
+    common: {
+      // 3-dots context menu on specific entity
+      contextMenu: {
+        browserOpen: {
+          title: () => 'Open in browser',
+        },
+      },
+
+      // details panel
+      details: {
+        title: () => 'More Information',
+        unknownValue: () => '<Unknown>', // when a value is null/undefined/empty
+        props: {
+          dateCreated: () => 'Date created',
+          uid: () => 'UID',
+          serverStatus: () => `${mccCodeName} status`,
         },
       },
     },
@@ -240,8 +268,12 @@ export const catalog: Dict = {
 
       // details panel
       details: {
+        title: () => 'Additional information',
         props: {
           provider: () => 'Provider',
+          region: () => 'Region',
+          mccStatus: () => 'MCC Status',
+          dateCreated: () => 'Date created',
         },
       },
     },

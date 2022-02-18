@@ -15,6 +15,7 @@ import {
 import { ProxyEntity, proxyEntityModelTs } from '../catalog/ProxyEntity';
 import { LicenseEntity, licenseEntityModelTs } from '../catalog/LicenseEntity';
 import * as consts from '../constants';
+import { credentials } from '../../test/mocks/mockCatalog';
 
 // typeset for the capture() method
 const captureTs = {
@@ -26,6 +27,10 @@ const captureTs = {
 export const catalogSource = observable.array([]);
 
 export class IpcMain extends Main.Ipc {
+  constructor(extension) {
+    super(extension);
+    extension.addCatalogSource(consts.catalog.source, catalogSource);
+  }
   //
   // SINGLETON
   //
@@ -118,53 +123,9 @@ export class IpcMain extends Main.Ipc {
     });
 
     //// CREDENTIALS
+    DEV_ENV && rtv.verify(credentials, [[credentialEntityModelTs]]);
 
-    const credentialModels = [
-      {
-        metadata: {
-          source: consts.catalog.source,
-          uid: 'credential-uid-1',
-          name: 'Credential 1',
-          namespace: 'lex-ns-1',
-          cloudUrl: 'https://container-cloud.acme.com',
-          labels: {
-            managementCluster: 'mcc-1',
-            project: 'project-1',
-          },
-        },
-        spec: {
-          provider: 'aws',
-          valid: true,
-        },
-        status: {
-          phase: 'available',
-        },
-      },
-      {
-        metadata: {
-          source: consts.catalog.source,
-          uid: 'credential-uid-2',
-          name: 'Credential 2',
-          namespace: 'lex-ns-2',
-          cloudUrl: 'https://container-cloud.acme.com',
-          labels: {
-            managementCluster: 'mcc-1',
-            project: 'project-1',
-          },
-        },
-        spec: {
-          provider: 'openstack',
-          valid: false,
-        },
-        status: {
-          phase: 'available',
-        },
-      },
-    ];
-
-    DEV_ENV && rtv.verify(credentialModels, [[credentialEntityModelTs]]);
-
-    credentialModels.forEach((model) => {
+    credentials.forEach((model) => {
       this.capture(
         'log',
         'addFakeItems()',

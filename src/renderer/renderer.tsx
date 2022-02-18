@@ -19,6 +19,7 @@ import { LicenseEntity } from '../catalog/LicenseEntity';
 import { getLensClusters } from './rendererUtil';
 import { mkClusterContextName } from '../util/templates';
 import { EXT_EVENT_OAUTH_CODE, EXT_EVENT_ACTIVATE_CLUSTER } from './eventBus';
+import { EntitiesDetails } from '../renderer/components/EntitiesDetails/EntitiesDetails';
 
 // NOTE: The following interface _should_ be exported by the Lens extension package
 //  as `Common.Types.CatalogEntityDetailsProps`, but it's not, which is a known bug
@@ -35,13 +36,6 @@ const {
 
 const logger: any = loggerUtil; // get around TS compiler's complaining
 const statusItemColor = 'white'; // CSS color; Lens hard-codes the color of the workspace indicator item to 'white' also
-const {
-  catalog: {
-    entities: {
-      common: { details: unknownValue },
-    },
-  },
-} = strings;
 
 declare const FEAT_CLUSTER_PAGE_ENABLED: any; // TODO[clusterpage]: remove
 
@@ -115,12 +109,14 @@ export default class ExtensionRenderer extends LensExtension {
             <DrawerItem
               name={strings.catalog.entities.common.details.props.uid()}
             >
-              {props.entity.metadata.uid || unknownValue()}
+              {props.entity.metadata.uid ||
+                strings.catalog.entities.common.details.unknownValue()}
             </DrawerItem>
             <DrawerItem
               name={strings.catalog.entities.sshKey.details.props.publicKey()}
             >
-              {props.entity.spec.publicKey || unknownValue()}
+              {props.entity.spec.publicKey ||
+                strings.catalog.entities.common.details.unknownValue()}
             </DrawerItem>
           </>
         ),
@@ -131,26 +127,7 @@ export default class ExtensionRenderer extends LensExtension {
       apiVersions: [CredentialEntity.apiVersion],
       components: {
         Details: (props: CatalogEntityDetailsProps<CredentialEntity>) => (
-          <>
-            <DrawerTitle
-              title={strings.catalog.entities.common.details.title()}
-            />
-            <DrawerItem
-              name={strings.catalog.entities.common.details.props.uid()}
-            >
-              {props.entity.metadata.uid || unknownValue()}
-            </DrawerItem>
-            <DrawerItem
-              name={strings.catalog.entities.credential.details.props.provider()}
-            >
-              {props.entity.spec.region || unknownValue()}
-            </DrawerItem>
-            <DrawerItem
-              name={strings.catalog.entities.credential.details.props.provider()}
-            >
-              {props.entity.spec.provider || unknownValue()}
-            </DrawerItem>
-          </>
+          <EntitiesDetails info={props} />
         ),
       },
     },
@@ -166,12 +143,14 @@ export default class ExtensionRenderer extends LensExtension {
             <DrawerItem
               name={strings.catalog.entities.common.details.props.uid()}
             >
-              {props.entity.metadata.uid || unknownValue()}
+              {props.entity.metadata.uid ||
+                strings.catalog.entities.common.details.unknownValue()}
             </DrawerItem>
             <DrawerItem
               name={strings.catalog.entities.proxy.details.props.region()}
             >
-              {props.entity.spec.region || unknownValue()}
+              {props.entity.spec.region ||
+                strings.catalog.entities.common.details.unknownValue()}
             </DrawerItem>
           </>
         ),
@@ -189,7 +168,8 @@ export default class ExtensionRenderer extends LensExtension {
             <DrawerItem
               name={strings.catalog.entities.common.details.props.uid()}
             >
-              {props.entity.metadata.uid || unknownValue()}
+              {props.entity.metadata.uid ||
+                strings.catalog.entities.common.details.unknownValue()}
             </DrawerItem>
           </>
         ),
