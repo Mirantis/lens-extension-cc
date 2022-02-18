@@ -6,7 +6,7 @@ import { observable, action, toJS, makeObservable } from 'mobx';
 import { Common } from '@k8slens/extensions';
 import * as rtv from 'rtvjs';
 import { logger } from '../util/logger';
-import { clusterEntityModelTs } from '../typesets';
+import { clusterEntityModelTs } from '../catalog/catalogEntities';
 
 /** RTV.js typeset for preferences model. */
 export const storeTs = {

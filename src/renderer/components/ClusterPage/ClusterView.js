@@ -9,7 +9,7 @@ import * as strings from '../../../strings';
 import * as consts from '../../../constants';
 import { layout, mixinPageStyles } from '../styles';
 import { logger } from '../../../util/logger';
-import { clusterEntityModelTs } from '../../../typesets';
+import { clusterEntityModelTs } from '../../../catalog/catalogEntities';
 
 const { Component } = Renderer;
 

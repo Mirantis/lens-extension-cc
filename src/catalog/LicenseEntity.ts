@@ -1,5 +1,5 @@
 //
-// Proxy Category and Entity
+// License Category and Entity
 //
 
 import { Common, Renderer, Main } from '@k8slens/extensions';
@@ -19,62 +19,53 @@ type CatalogEntityActionContext = Common.Catalog.CatalogEntityActionContext;
 const logger: any = loggerUtil; // get around TS compiler's complaining
 
 /** Map of phase name to phase value as understood by Lens. */
-export const proxyEntityPhases = Object.freeze({
+export const licenseEntityPhases = Object.freeze({
   AVAILABLE: 'available',
 });
 
 /**
- * Typeset for an object used to create a new instance of a `ProxyEntity` object
+ * Typeset for an object used to create a new instance of a `LicenseEntity` object
  *  that gets added to the Lens Catalog. Also describes the shape of the entity
  *  object we get from iterating "entities" of this type in the Catalog.
  */
-export const proxyEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
+export const licenseEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
   metadata: {
     labels: requiredLabelTs,
   },
-  spec: {
-    region: [rtv.OPTIONAL, rtv.STRING],
-    httpProxy: rtv.STRING,
-    httpsProxy: rtv.STRING,
-  },
   status: {
-    phase: [rtv.STRING, { oneOf: Object.values(proxyEntityPhases) }],
+    phase: [rtv.STRING, { oneOf: Object.values(licenseEntityPhases) }],
   },
 });
 
-export interface ProxySpec {
-  region?: string;
-  http: string;
-  https: string;
-}
+export interface LicenseSpec {}
 
-export const proxyIconName = 'assistant_direction'; // must be a Material Icon name
+export const licenseIconName = 'card_membership'; // must be a Material Icon name
 
-export class ProxyEntity extends Common.Catalog.CatalogEntity<
+export class LicenseEntity extends Common.Catalog.CatalogEntity<
   CatalogEntityMetadata,
   CatalogEntityStatus,
-  ProxySpec
+  LicenseSpec
 > {
-  public static readonly apiVersion = `${consts.catalog.entities.proxy.group}/${consts.catalog.entities.proxy.versions.v1alpha1}`;
+  public static readonly apiVersion = `${consts.catalog.entities.license.group}/${consts.catalog.entities.license.versions.v1alpha1}`;
 
-  public static readonly kind = consts.catalog.entities.proxy.kind;
+  public static readonly kind = consts.catalog.entities.license.kind;
 
-  public readonly apiVersion = ProxyEntity.apiVersion;
+  public readonly apiVersion = LicenseEntity.apiVersion;
 
-  public readonly kind = ProxyEntity.kind;
+  public readonly kind = LicenseEntity.kind;
 
   constructor(
     data: Common.Catalog.CatalogEntity<
       CatalogEntityMetadata,
       CatalogEntityStatus,
-      ProxySpec
+      LicenseSpec
     >
   ) {
     super(data);
     DEV_ENV &&
       rtv.verify(
-        { proxyEntityData: data },
-        { proxyEntityData: proxyEntityModelTs }
+        { licenseEntityData: data },
+        { licenseEntityData: licenseEntityModelTs }
       );
   }
 
@@ -95,8 +86,8 @@ export class ProxyEntity extends Common.Catalog.CatalogEntity<
         icon: 'launch', // NOTE: must be a string; cannot be a component that renders an icon
         onClick: async () => {
           logger.log(
-            'ProxyEntity/ProxyEntity.onContextMenuOpen.browserOpen',
-            'opening Proxy %s in browser...',
+            'LicenseEntity/LicenseEntity.onContextMenuOpen.browserOpen',
+            'opening License %s in browser...',
             this.metadata.name
           );
         },
@@ -106,33 +97,33 @@ export class ProxyEntity extends Common.Catalog.CatalogEntity<
     // emit an event via the category so that other code (and extensions, for example)
     //  can add listeners to these events and add there own entries
     const category =
-      Renderer.Catalog.catalogCategories.getCategoryForEntity<ProxyCategory>(
+      Renderer.Catalog.catalogCategories.getCategoryForEntity<LicenseCategory>(
         this
       );
     category?.emit('contextMenuOpen', this, context);
   }
 }
 
-export class ProxyCategory extends Common.Catalog.CatalogCategory {
+export class LicenseCategory extends Common.Catalog.CatalogCategory {
   public readonly apiVersion = `${consts.catalog.category.group}/${consts.catalog.category.versions.v1alpha1}`;
 
   public readonly kind = consts.catalog.category.kind;
 
   public metadata = {
-    name: strings.catalog.entities.proxy.categoryName(),
-    icon: proxyIconName, // NOTE: must be a string; cannot be a component that renders an icon
+    name: strings.catalog.entities.license.categoryName(),
+    icon: licenseIconName, // NOTE: must be a string; cannot be a component that renders an icon
   };
 
   public spec = {
-    group: consts.catalog.entities.proxy.group,
+    group: consts.catalog.entities.license.group,
     versions: [
       {
-        name: consts.catalog.entities.proxy.versions.v1alpha1,
-        entityClass: ProxyEntity,
+        name: consts.catalog.entities.license.versions.v1alpha1,
+        entityClass: LicenseEntity,
       },
     ],
     names: {
-      kind: ProxyEntity.kind,
+      kind: LicenseEntity.kind,
     },
   };
 
@@ -147,12 +138,12 @@ export class ProxyCategory extends Common.Catalog.CatalogCategory {
     //  WILL NEED: `type CatalogEntityAddMenuContext = Common.Catalog.CatalogEntityAddMenuContext;`
     // this.on('catalogAddMenu', (ctx: CatalogEntityAddMenuContext) => {
     //   ctx.menuItems.push({
-    //     icon: proxyIconName, // NOTE: must be a string; cannot be a component that renders an icon
-    //     title: strings.catalog.entities.proxy.catalogMenu.create.title(),
+    //     icon: licenseIconName, // NOTE: must be a string; cannot be a component that renders an icon
+    //     title: strings.catalog.entities.license.catalogMenu.create.title(),
     //     onClick: async () => {
     //       logger.log(
-    //         'ProxyEntity/ProxyCategory.onCatalogAddMenu.create',
-    //         'Creating new Proxy...'
+    //         'LicenseEntity/LicenseCategory.onCatalogAddMenu.create',
+    //         'Creating new License...'
     //       );
     //     },
     //   });
@@ -162,5 +153,5 @@ export class ProxyCategory extends Common.Catalog.CatalogCategory {
 
 // NOTE: Renderer and Main will only be defined on their respective "sides", but
 //  this code must run on each side, so we have to test for existence for both
-Renderer?.Catalog.catalogCategories.add(new ProxyCategory());
-Main?.Catalog.catalogCategories.add(new ProxyCategory());
+Renderer?.Catalog.catalogCategories.add(new LicenseCategory());
+Main?.Catalog.catalogCategories.add(new LicenseCategory());

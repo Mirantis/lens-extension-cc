@@ -249,7 +249,8 @@ const _fetchCredentials = async function (cloud, namespaces) {
         entity,
         cloud,
         namespaces,
-        create: ({ data, namespace }) => new Credential(data, namespace),
+        create: ({ data, namespace }) =>
+          new Credential({ data, namespace, cloud }),
       })
     )
   );
@@ -296,7 +297,7 @@ const _fetchLicenses = async function (cloud, namespaces) {
     entity: apiEntities.RHEL_LICENSE,
     cloud,
     namespaces,
-    create: ({ data, namespace }) => new License(data, namespace),
+    create: ({ data, namespace }) => new License({ data, namespace, cloud }),
   });
   return { licenses, tokensRefreshed };
 };
@@ -317,7 +318,7 @@ const _fetchProxies = async function (cloud, namespaces) {
     entity: apiEntities.PROXY,
     cloud,
     namespaces,
-    create: ({ data, namespace }) => new Proxy(data, namespace),
+    create: ({ data, namespace }) => new Proxy({ data, namespace, cloud }),
   });
   return { proxies, tokensRefreshed };
 };
@@ -338,7 +339,7 @@ const _fetchSshKeys = async function (cloud, namespaces) {
     entity: apiEntities.PUBLIC_KEY,
     cloud,
     namespaces,
-    create: ({ data, namespace }) => new SshKey(data, namespace),
+    create: ({ data, namespace }) => new SshKey({ data, namespace, cloud }),
   });
   return { sshKeys, tokensRefreshed };
 };
@@ -359,8 +360,7 @@ const _fetchClusters = async function (cloud, namespaces) {
     entity: apiEntities.CLUSTER,
     cloud,
     namespaces,
-    create: ({ data, namespace }) =>
-      new Cluster(data, namespace, cloud.username),
+    create: ({ data, namespace }) => new Cluster({ data, namespace, cloud }),
   });
   return { clusters, tokensRefreshed };
 };
@@ -383,7 +383,7 @@ const _fetchNamespaces = async function (cloud) {
   } = await _fetchEntityList({
     entity: apiEntities.NAMESPACE,
     cloud,
-    create: ({ data }) => new Namespace(data),
+    create: ({ data }) => new Namespace({ data, cloud }),
   });
 
   const userRoles = extractJwtPayload(cloud.token).iam_roles || [];

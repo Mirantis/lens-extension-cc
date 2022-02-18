@@ -3,11 +3,13 @@
 //
 
 import { Common, Renderer, Main } from '@k8slens/extensions';
+import * as rtv from 'rtvjs';
+import { mergeRtvShapes } from '../util/mergeRtvShapes';
+import { catalogEntityModelTs, requiredLabelTs } from './catalogEntities';
 import * as consts from '../constants';
 import * as strings from '../strings';
 import { logger as loggerUtil } from '../util/logger';
 
-type CatalogEntityAddMenuContext = Common.Catalog.CatalogEntityAddMenuContext;
 type CatalogEntityContextMenuContext =
   Common.Catalog.CatalogEntityContextMenuContext;
 type CatalogEntityMetadata = Common.Catalog.CatalogEntityMetadata;
@@ -16,9 +18,27 @@ type CatalogEntityActionContext = Common.Catalog.CatalogEntityActionContext;
 
 const logger: any = loggerUtil; // get around TS compiler's complaining
 
-export interface SshKeyStatus extends CatalogEntityStatus {
-  phase: string; // see typesets.js for possible values
-}
+/** Map of phase name to phase value as understood by Lens. */
+export const sshKeyEntityPhases = Object.freeze({
+  AVAILABLE: 'available',
+});
+
+/**
+ * Typeset for an object used to create a new instance of an `SshKeyEntity` object
+ *  that gets added to the Lens Catalog. Also describes the shape of the entity
+ *  object we get from iterating "entities" of this type in the Catalog.
+ */
+export const sshKeyEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
+  metadata: {
+    labels: requiredLabelTs,
+  },
+  spec: {
+    publicKey: rtv.STRING,
+  },
+  status: {
+    phase: [rtv.STRING, { oneOf: Object.values(sshKeyEntityPhases) }],
+  },
+});
 
 export type SshKeySpec = {
   publicKey: string; // see typesets.js for possible values
@@ -28,7 +48,7 @@ export const sshKeyIconName = 'vpn_key'; // must be a Material Icon name
 
 export class SshKeyEntity extends Common.Catalog.CatalogEntity<
   CatalogEntityMetadata,
-  SshKeyStatus,
+  CatalogEntityStatus,
   SshKeySpec
 > {
   public static readonly apiVersion = `${consts.catalog.entities.sshKey.group}/${consts.catalog.entities.sshKey.versions.v1alpha1}`;
@@ -38,6 +58,21 @@ export class SshKeyEntity extends Common.Catalog.CatalogEntity<
   public readonly apiVersion = SshKeyEntity.apiVersion;
 
   public readonly kind = SshKeyEntity.kind;
+
+  constructor(
+    data: Common.Catalog.CatalogEntity<
+      CatalogEntityMetadata,
+      CatalogEntityStatus,
+      SshKeySpec
+    >
+  ) {
+    super(data);
+    DEV_ENV &&
+      rtv.verify(
+        { sshKeyEntityData: data },
+        { sshKeyEntityData: sshKeyEntityModelTs }
+      );
+  }
 
   // "runs" the entity; called when the user just clicks on the item in the Catalog
   async onRun(context: CatalogEntityActionContext) {
@@ -52,7 +87,7 @@ export class SshKeyEntity extends Common.Catalog.CatalogEntity<
   async onContextMenuOpen(context: CatalogEntityContextMenuContext) {
     if (this.metadata.source === consts.catalog.source) {
       context.menuItems.push({
-        title: strings.catalog.entities.sshKey.contextMenu.browserOpen.title(),
+        title: `(WIP) ${strings.catalog.entities.common.contextMenu.browserOpen.title()}`,
         icon: 'launch', // NOTE: must be a string; cannot be a component that renders an icon
         onClick: async () => {
           logger.log(
@@ -103,18 +138,21 @@ export class SshKeyCategory extends Common.Catalog.CatalogCategory {
     // NOTE: this is the big blue contextual "+" button in the Catalog; items added
     //  here will be available from the button when this category is active in the
     //  Catalog
-    this.on('catalogAddMenu', (ctx: CatalogEntityAddMenuContext) => {
-      ctx.menuItems.push({
-        icon: sshKeyIconName, // NOTE: must be a string; cannot be a component that renders an icon
-        title: strings.catalog.entities.sshKey.catalogMenu.create.title(),
-        onClick: async () => {
-          logger.log(
-            'SshKeyEntity/SshKeyCategory.onCatalogAddMenu.create',
-            'Creating new SSH key...'
-          );
-        },
-      });
-    });
+    // TODO: once we're ready to support creating this item type from Lens
+    //  (this is for the big blue "+" button at the bottom/right corner of the Catalog)
+    //  WILL NEED: `type CatalogEntityAddMenuContext = Common.Catalog.CatalogEntityAddMenuContext;`
+    // this.on('catalogAddMenu', (ctx: CatalogEntityAddMenuContext) => {
+    //   ctx.menuItems.push({
+    //     icon: sshKeyIconName, // NOTE: must be a string; cannot be a component that renders an icon
+    //     title: strings.catalog.entities.sshKey.catalogMenu.create.title(),
+    //     onClick: async () => {
+    //       logger.log(
+    //         'SshKeyEntity/SshKeyCategory.onCatalogAddMenu.create',
+    //         'Creating new SSH key...'
+    //       );
+    //     },
+    //   });
+    // });
   }
 }
 

@@ -1,4 +1,6 @@
 import * as rtv from 'rtvjs';
+import * as consts from '../../constants';
+import { Cloud } from '../../common/Cloud';
 
 /**
  * Typeset for a basic MCC API Object.
@@ -19,14 +21,34 @@ export const apiObjectTs = {
  * MCC generic API object. This is essentially a standard kube object spec with some
  *  MCC-specific extensions.
  * @class ApiObject
- * @param {Object} data Raw cluster data payload from the API.
  */
 export class ApiObject {
-  constructor(data) {
-    DEV_ENV && rtv.verify({ data }, { data: apiObjectTs });
+  /**
+   * @constructor
+   * @param {Object} params
+   * @param {Object} params.data Raw data payload from the API.
+   * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
+   */
+  constructor({ data, cloud }) {
+    DEV_ENV &&
+      rtv.verify(
+        { data, cloud },
+        {
+          data: apiObjectTs,
+          cloud: [rtv.CLASS_OBJECT, { ctor: Cloud }],
+        }
+      );
+
+    /** @member {Cloud} */
+    Object.defineProperty(this, 'cloud', {
+      enumerable: true,
+      get() {
+        return cloud;
+      },
+    });
 
     /** @member {string} */
-    Object.defineProperty(this, 'id', {
+    Object.defineProperty(this, 'uid', {
       enumerable: true,
       get() {
         return data.metadata.uid;
@@ -58,9 +80,29 @@ export class ApiObject {
     });
   }
 
+  /**
+   * Converts this API Object into a Catalog Entity.
+   * @returns {Object} Entity object.
+   */
+  toEntity() {
+    return {
+      metadata: {
+        uid: this.uid,
+        name: this.name,
+        source: consts.catalog.source,
+        description: null,
+        labels: {},
+        cloudUrl: this.cloud.cloudUrl,
+        namespace: null, // required, but to be filled-in by extended classes
+      },
+      spec: {},
+      status: {},
+    };
+  }
+
   /** @returns {string} A string representation of this instance for logging/debugging. */
   toString() {
-    const propStr = `name: "${this.name}", id: "${this.id}"`;
+    const propStr = `name: "${this.name}", uid: "${this.uid}"`;
 
     if (Object.getPrototypeOf(this).constructor === ApiObject) {
       return `{ApiObject ${propStr}}`;

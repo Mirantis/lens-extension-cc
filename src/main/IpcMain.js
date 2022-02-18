@@ -6,18 +6,17 @@ import { promises as fs } from 'fs';
 import { observable } from 'mobx';
 import { Main, Common } from '@k8slens/extensions';
 import * as rtv from 'rtvjs';
-import {
-  clusterEntityModelTs,
-  sshKeyEntityModelTs,
-  credentialEntityModelTs,
-  proxyEntityModelTs,
-} from '../typesets';
+import { clusterEntityModelTs } from '../catalog/catalogEntities';
 import { clusterStore } from '../store/ClusterStore';
 import { logger } from '../util/logger';
 import { ipcEvents } from '../constants';
-import { SshKeyEntity } from '../catalog/SshKeyEntity';
-import { CredentialEntity } from '../catalog/CredentialEntity';
-import { ProxyEntity } from '../catalog/ProxyEntity';
+import { SshKeyEntity, sshKeyEntityModelTs } from '../catalog/SshKeyEntity';
+import {
+  CredentialEntity,
+  credentialEntityModelTs,
+} from '../catalog/CredentialEntity';
+import { ProxyEntity, proxyEntityModelTs } from '../catalog/ProxyEntity';
+import { LicenseEntity, licenseEntityModelTs } from '../catalog/LicenseEntity';
 import * as consts from '../constants';
 
 const {
@@ -250,6 +249,10 @@ export class IpcMain extends Main.Ipc {
           name: 'SSH Key 1',
           namespace: 'lex-ns-1',
           cloudUrl: 'https://container-cloud.acme.com',
+          labels: {
+            managementCluster: 'mcc-1',
+            project: 'project-1',
+          },
         },
         spec: {
           publicKey: 'sshkey-public-key-1',
@@ -265,6 +268,10 @@ export class IpcMain extends Main.Ipc {
           name: 'SSH Key 2',
           namespace: 'lex-ns-2',
           cloudUrl: 'https://container-cloud.acme.com',
+          labels: {
+            managementCluster: 'mcc-1',
+            project: 'project-1',
+          },
         },
         spec: {
           publicKey: 'sshkey-public-key-2',
@@ -296,12 +303,14 @@ export class IpcMain extends Main.Ipc {
           name: 'Credential 1',
           namespace: 'lex-ns-1',
           cloudUrl: 'https://container-cloud.acme.com',
+          labels: {
+            managementCluster: 'mcc-1',
+            project: 'project-1',
+          },
         },
         spec: {
           provider: 'aws',
-          status: {
-            valid: true,
-          },
+          valid: true,
         },
         status: {
           phase: 'available',
@@ -314,12 +323,14 @@ export class IpcMain extends Main.Ipc {
           name: 'Credential 2',
           namespace: 'lex-ns-2',
           cloudUrl: 'https://container-cloud.acme.com',
+          labels: {
+            managementCluster: 'mcc-1',
+            project: 'project-1',
+          },
         },
         spec: {
           provider: 'openstack',
-          status: {
-            valid: false,
-          },
+          valid: false,
         },
         status: {
           phase: 'available',
@@ -348,11 +359,15 @@ export class IpcMain extends Main.Ipc {
           name: 'Proxy 1',
           namespace: 'lex-ns-1',
           cloudUrl: 'https://container-cloud.acme.com',
+          labels: {
+            managementCluster: 'mcc-1',
+            project: 'project-1',
+          },
         },
         spec: {
           region: 'aws-us-east-1',
-          http: 'http://east.proxy.com',
-          https: 'https://east.proxy.com',
+          httpProxy: 'http://east.proxy.com',
+          httpsProxy: 'https://east.proxy.com',
         },
         status: {
           phase: 'available',
@@ -365,11 +380,15 @@ export class IpcMain extends Main.Ipc {
           name: 'Proxy 2',
           namespace: 'lex-ns-2',
           cloudUrl: 'https://container-cloud.acme.com',
+          labels: {
+            managementCluster: 'mcc-1',
+            project: 'project-1',
+          },
         },
         spec: {
           region: 'aws-us-west-1',
-          http: 'http://west.proxy.com',
-          https: 'https://west.proxy.com',
+          httpProxy: 'http://west.proxy.com',
+          httpsProxy: 'https://west.proxy.com',
         },
         status: {
           phase: 'available',
@@ -386,6 +405,56 @@ export class IpcMain extends Main.Ipc {
         `adding proxy to catalog, keyId=${model.metadata.uid}, name=${model.metadata.name}, namespace=${model.metadata.namespace}`
       );
       catalogSource.push(new ProxyEntity(model));
+    });
+
+    //// LICENSES
+
+    const licenseModels = [
+      {
+        metadata: {
+          source: consts.catalog.source,
+          uid: 'license-uid-1',
+          name: 'License 1',
+          namespace: 'lex-ns-1',
+          cloudUrl: 'https://container-cloud.acme.com',
+          labels: {
+            managementCluster: 'mcc-1',
+            project: 'project-1',
+          },
+        },
+        spec: {},
+        status: {
+          phase: 'available',
+        },
+      },
+      {
+        metadata: {
+          source: consts.catalog.source,
+          uid: 'license-uid-2',
+          name: 'License 2',
+          namespace: 'lex-ns-2',
+          cloudUrl: 'https://container-cloud.acme.com',
+          labels: {
+            managementCluster: 'mcc-1',
+            project: 'project-1',
+          },
+        },
+        spec: {},
+        status: {
+          phase: 'available',
+        },
+      },
+    ];
+
+    DEV_ENV && rtv.verify(licenseModels, [[licenseEntityModelTs]]);
+
+    licenseModels.forEach((model) => {
+      this.capture(
+        'log',
+        'addFakeItems()',
+        `adding license to catalog, keyId=${model.metadata.uid}, name=${model.metadata.name}, namespace=${model.metadata.namespace}`
+      );
+      catalogSource.push(new LicenseEntity(model));
     });
   }
 }

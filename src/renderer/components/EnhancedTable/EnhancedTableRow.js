@@ -193,31 +193,6 @@ const namespaceMenuItems = [
     name: 'openInBrowser',
     onClick: (namespace) => {},
   },
-  {
-    title: `(WIP) ${contextMenus.namespace.createCluster()}`,
-    name: 'createCluster',
-    onClick: (namespace) => {},
-  },
-  {
-    title: `(WIP) ${contextMenus.namespace.createSshKey()}`,
-    name: 'createSshKey',
-    onClick: (namespace) => {},
-  },
-  {
-    title: `(WIP) ${contextMenus.namespace.createCredential()}`,
-    name: 'createCredential',
-    onClick: (namespace) => {},
-  },
-  {
-    title: `(WIP) ${contextMenus.namespace.createLicense()}`,
-    name: 'createLicense',
-    onClick: (namespace) => {},
-  },
-  {
-    title: `(WIP) ${contextMenus.namespace.createProxy()}`,
-    name: 'createProxy',
-    onClick: (namespace) => {},
-  },
 ];
 
 export const EnhancedTableRow = ({
