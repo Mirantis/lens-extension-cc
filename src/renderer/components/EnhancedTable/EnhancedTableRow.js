@@ -247,9 +247,10 @@ export const EnhancedTableRow = ({
   const makeNameCell = (name, isParent) => {
     let autoSyncSuffix = '';
     if (withCheckboxes) {
-      autoSyncSuffix = (isParent && !extendedCloud.cloud.connected)
-        ? `( ${connectionStatuses.cloud.disconnected()})`
-        : '';
+      autoSyncSuffix =
+        isParent && !extendedCloud.cloud.connected
+          ? `( ${connectionStatuses.cloud.disconnected()})`
+          : '';
       return (
         <TriStateCheckbox
           label={`${name}${autoSyncSuffix}`}
@@ -412,7 +413,12 @@ EnhancedTableRow.propTypes = {
   isSyncStarted: PropTypes.bool,
   getDataToSync: PropTypes.func,
   namespaces: PropTypes.arrayOf(
-    PropTypes.oneOfType([PropTypes.instanceOf(Namespace), PropTypes.object])
+    PropTypes.oneOfType([
+      PropTypes.instanceOf(Namespace),
+      PropTypes.shape({
+        name: PropTypes.string.isRequired,
+      }),
+    ])
   ).isRequired,
   fetching: PropTypes.bool.isRequired,
 };

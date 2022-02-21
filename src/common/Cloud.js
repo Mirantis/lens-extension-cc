@@ -544,7 +544,7 @@ export class Cloud extends EventDispatcher {
    * @member {Array<string>} returns syncedNamespaces + ignoredNamespaces array
    */
   get allNamespaces() {
-    return this.syncedNamespaces.concat(this.ignoredNamespaces)
+    return this.syncedNamespaces.concat(this.ignoredNamespaces);
   }
 
   /**
