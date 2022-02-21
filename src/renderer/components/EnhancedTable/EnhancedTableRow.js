@@ -94,7 +94,7 @@ const getStatus = (cloud, isFetching) => {
   if (isFetching) {
     return {
       cloudStatus: connectionStatuses.cloud.updating(),
-      namespaceStatus: connectionStatuses.namespace.disconnected(),
+      namespaceStatus: connectionStatuses.namespace.connected(),
       connectColor: colorYellow,
     };
   }
