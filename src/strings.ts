@@ -86,7 +86,7 @@ export const syncView: Dict = {
   synchronizeProjectsButtonLabel: () => 'Synchronize selected projects',
   syncButtonLabel: () => 'Selective sync...',
   connectButtonLabel: () => 'Connect new Management Cluster',
-  autoSync: () => 'auto-sync',
+  autoSync: () => 'Auto-sync',
 };
 export const managementClusters = {
   table: {
@@ -94,7 +94,7 @@ export const managementClusters = {
       name: () => 'Name',
       url: () => 'URL',
       username: () => 'Username',
-      autosync: () => 'Autosync',
+      autosync: () => 'Auto-sync',
       status: () => 'Status',
     },
     tbodyDetailedInfo: {

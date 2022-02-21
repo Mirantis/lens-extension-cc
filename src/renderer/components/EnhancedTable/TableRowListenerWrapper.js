@@ -6,14 +6,19 @@ import { EnhancedTableRow } from './EnhancedTableRow';
 /**
  * @param {ExtendedCloud} extendedCloud
  * @param {'namespaces'|'syncedNamespaces'} usedNamespaces if true and connected - it returns all namespaces to populate in SyncView mode
+ * @param {boolean} withCheckboxes
  * @return {Array<Object>} It might be an array og Namespaces or just {name: _namespaceName_ }, depending on cloud.connected
  */
-const getNamespaces = (extendedCloud, usedNamespaces) => {
+const getNamespaces = ({extendedCloud, usedNamespaces, withCheckboxes}) => {
   // if loaded return Namespaces class object from EC
   if (extendedCloud.loaded) {
     return extendedCloud[usedNamespaces];
   }
-  // if cloud disconnected - return just syncedNamespaces (names) stored in Cloud
+  // if cloud disconnected and Selected view - return allNamespaces stored in Cloud
+  if(withCheckboxes) {
+    return extendedCloud.cloud.allNamespaces.map((name) => ({ name }));
+  }
+  // if cloud disconnected and Sync View - return just syncedNamespaces stored in Cloud
   return extendedCloud.cloud.syncedNamespaces.map((name) => ({ name }));
 };
 
@@ -30,7 +35,7 @@ export const TableRowListenerWrapper = ({
   const usedNamespaces = withCheckboxes ? 'namespaces' : 'syncedNamespaces';
 
   const [actualNamespaces, setActualNamespaces] = useState(
-    getNamespaces(extendedCloud, usedNamespaces)
+    getNamespaces({extendedCloud, usedNamespaces, withCheckboxes})
   );
   const [isFetching, setFetching] = useState(false);
 

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
 import { layout } from '../styles';
+import { Namespace } from '../../../api/types/Namespace';
 import { AdditionalInfoRows } from './AdditionalInfoRows';
 import {
   connectionStatuses,
@@ -243,17 +244,21 @@ export const EnhancedTableRow = ({
    * @param {boolean} [isParent] if true - then it's a main, cloud checkbox
    * @return {JSX.Element|string}
    */
-  const makeCell = (name, isParent) => {
+  const makeNameCell = (name, isParent) => {
+    let autoSyncSuffix = '';
     if (withCheckboxes) {
+      autoSyncSuffix = (isParent && !extendedCloud.cloud.connected)
+        ? `( ${connectionStatuses.cloud.disconnected()})`
+        : '';
       return (
         <TriStateCheckbox
-          label={name}
+          label={`${name}${autoSyncSuffix}`}
           onChange={() => setCheckboxValue({ name, isParent })}
           value={getCheckboxValue({ name, isParent })}
         />
       );
     }
-    const autoSyncSuffix =
+    autoSyncSuffix =
       isParent && extendedCloud.cloud.syncAll
         ? ` (${syncView.autoSync()})`
         : '';
@@ -272,9 +277,10 @@ export const EnhancedTableRow = ({
       return null;
     }
 
-    // SyncView mode - don't show if namespaces not loaded
-    // but if it's Selective Sync  - show the icon (we use syncedNamespaces then)
-    if (!extendedCloud.loaded && !withCheckboxes) {
+    // for SyncView mode:
+    // Don't show the icon if namespaces are not loaded - ???
+    // and don't show if we don't have any syncedNamespaces
+    if (!withCheckboxes && !namespaces.length) {
       return null;
     }
     const material = condition ? 'expand_more' : 'chevron_right';
@@ -282,7 +288,7 @@ export const EnhancedTableRow = ({
   };
 
   const toggleOpenFirstLevel = () => {
-    if (extendedCloud.loaded || withCheckboxes) {
+    if (namespaces.length) {
       setIsOpenFirstLevel(!isOpenFirstLevel);
     }
   };
@@ -358,7 +364,7 @@ export const EnhancedTableRow = ({
           <EnhCollapseBtn onClick={toggleOpenFirstLevel}>
             {getExpandIcon(isOpenFirstLevel)}
           </EnhCollapseBtn>
-          {makeCell(extendedCloud.cloud.name, true)}
+          {makeNameCell(extendedCloud.cloud.name, true)}
         </EnhTableRowCell>
         {withCheckboxes && (
           <EnhTableRowCell>
@@ -383,7 +389,7 @@ export const EnhancedTableRow = ({
                     extendedCloud.loaded
                   )}
                 </EnhCollapseBtn>
-                {makeCell(namespace.name)}
+                {makeNameCell(namespace.name)}
               </EnhTableRowCell>
               {renderNamespaceRows(namespace)}
             </EnhTableRow>
@@ -405,7 +411,9 @@ EnhancedTableRow.propTypes = {
   withCheckboxes: PropTypes.bool,
   isSyncStarted: PropTypes.bool,
   getDataToSync: PropTypes.func,
-  namespaces: PropTypes.arrayOf(PropTypes.object).isRequired,
+  namespaces: PropTypes.arrayOf(
+    PropTypes.oneOfType([PropTypes.instanceOf(Namespace), PropTypes.object])
+  ).isRequired,
   fetching: PropTypes.bool.isRequired,
 };
 

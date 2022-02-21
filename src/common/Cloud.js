@@ -476,7 +476,7 @@ export class Cloud extends EventDispatcher {
       },
     });
 
-    Object.defineProperty(this, 'updateNamespaces', {
+    Object.defineProperty(Object.getPrototypeOf(this), 'updateNamespaces', {
       enumerable: true,
       /**
        * @param {Array<string>} syncedList A list of namespace names in the mgmt cluster that should be synced.
@@ -538,6 +538,13 @@ export class Cloud extends EventDispatcher {
     }
 
     return CONNECTION_STATUSES.DISCONNECTED;
+  }
+
+  /**
+   * @member {Array<string>} returns syncedNamespaces + ignoredNamespaces array
+   */
+  get allNamespaces() {
+    return this.syncedNamespaces.concat(this.ignoredNamespaces)
   }
 
   /**
