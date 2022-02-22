@@ -13,6 +13,7 @@ import {
   useCheckboxes,
   makeCheckboxesInitialState,
 } from '../hooks/useCheckboxes';
+import { sortNamespaces } from '../EnhancedTable/tableUtil';
 
 const { Button, Icon } = Renderer.Component;
 
@@ -171,7 +172,7 @@ export const SynchronizeBlock = ({ extendedCloud, onAdd }) => {
             synchronizeBlock.noProjectsFound()
           ) : (
             <ProjectsList>
-              {projectsList.map((namespace) => (
+              {sortNamespaces(projectsList).map((namespace) => (
                 <li key={namespace.name}>
                   <Accordion
                     title={
