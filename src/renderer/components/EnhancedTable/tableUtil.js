@@ -44,5 +44,29 @@ export const sortData = (obj, sortBy, order, path) => {
 
   const sorted = orderBy(sortByValueArr, Object.keys(obj), [order]);
 
-  return sorted.map((a) => Object.keys(a));
+  return sorted.map(Object.keys);
 };
+
+const compareNamespaces = (first, second) => {
+  const nameA = first.name.toUpperCase();
+  const nameB = second.name.toUpperCase();
+  // sort namespaces alphabetically based on name,
+  // with the exception of always putting the "default" namespace at the top of the list.
+  if (nameA.includes('DEFAULT')) {
+    return -1;
+  }
+  if (nameB.includes('DEFAULT')) {
+    return 1;
+  }
+  if (nameA < nameB) {
+    return -1;
+  }
+  if (nameA > nameB) {
+    return 1;
+  }
+
+  return 0;
+};
+
+export const sortNamespaces = (namespaces) =>
+  namespaces.sort(compareNamespaces);

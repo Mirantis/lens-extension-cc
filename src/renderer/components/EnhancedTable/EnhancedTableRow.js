@@ -22,6 +22,7 @@ import {
 import { CONNECTION_STATUSES } from '../../../common/Cloud';
 import { openBrowser } from '../../../util/netUtil';
 import { cloudStore } from '../../../store/CloudStore';
+import { sortNamespaces } from './tableUtil';
 
 const { Icon, MenuItem, MenuActions, ConfirmDialog } = Renderer.Component;
 
@@ -211,7 +212,7 @@ export const EnhancedTableRow = ({
   );
   const [syncAll, setSyncAll] = useState(extendedCloud.cloud.syncAll);
   const [isOpenFirstLevel, setIsOpenFirstLevel] = useState(false);
-  const [openNamespaceIndexes, setOpenNamespaceIndexes] = useState([]);
+  const [openNamespaces, setOpenNamespaces] = useState([]);
 
   useEffect(() => {
     if (isSyncStarted && typeof getDataToSync === 'function') {
@@ -229,13 +230,11 @@ export const EnhancedTableRow = ({
     extendedCloud.cloud.cloudUrl,
   ]);
 
-  const setOpenedList = (index) => {
-    if (openNamespaceIndexes.includes(index)) {
-      setOpenNamespaceIndexes(
-        openNamespaceIndexes.filter((rowIndex) => rowIndex !== index)
-      );
+  const setOpenedList = (name) => {
+    if (openNamespaces.includes(name)) {
+      setOpenNamespaces(openNamespaces.filter((n) => n !== name));
     } else {
-      setOpenNamespaceIndexes([...openNamespaceIndexes, index]);
+      setOpenNamespaces([...openNamespaces, name]);
     }
   };
 
@@ -278,10 +277,8 @@ export const EnhancedTableRow = ({
       return null;
     }
 
-    // for SyncView mode:
-    // Don't show the icon if namespaces are not loaded - ???
-    // and don't show if we don't have any syncedNamespaces
-    if (!withCheckboxes && !namespaces.length) {
+    // don't show if no namespaces, no matter which mode is it
+    if (!namespaces.length) {
       return null;
     }
     const material = condition ? 'expand_more' : 'chevron_right';
@@ -380,13 +377,13 @@ export const EnhancedTableRow = ({
         {renderRestSyncTableRows()}
       </EnhTableRow>
       {isOpenFirstLevel &&
-        namespaces.map((namespace, index) => (
+        sortNamespaces(namespaces).map((namespace) => (
           <EnhRowsWrapper key={namespace.name}>
             <EnhTableRow>
               <EnhTableRowCell isFirstLevel withCheckboxes={withCheckboxes}>
-                <EnhCollapseBtn onClick={() => setOpenedList(index)}>
+                <EnhCollapseBtn onClick={() => setOpenedList(namespace.name)}>
                   {getExpandIcon(
-                    openNamespaceIndexes.includes(index),
+                    openNamespaces.includes(namespace.name),
                     extendedCloud.loaded
                   )}
                 </EnhCollapseBtn>
@@ -395,7 +392,7 @@ export const EnhancedTableRow = ({
               {renderNamespaceRows(namespace)}
             </EnhTableRow>
 
-            {openNamespaceIndexes.includes(index) && (
+            {openNamespaces.includes(namespace.name) && (
               <AdditionalInfoRows
                 namespace={namespace}
                 emptyCellsCount={withCheckboxes ? 2 : 4}
