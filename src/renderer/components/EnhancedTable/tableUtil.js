@@ -48,24 +48,13 @@ export const sortData = (obj, sortBy, order, path) => {
 };
 
 const compareNamespaces = (first, second) => {
-  const nameA = first.name.toUpperCase();
-  const nameB = second.name.toUpperCase();
-  // sort namespaces alphabetically based on name,
-  // with the exception of always putting the "default" namespace at the top of the list.
-  if (nameA.includes('DEFAULT')) {
+  if (first.name === 'default') {
     return -1;
   }
-  if (nameB.includes('DEFAULT')) {
+  if (second.name === 'default') {
     return 1;
   }
-  if (nameA < nameB) {
-    return -1;
-  }
-  if (nameA > nameB) {
-    return 1;
-  }
-
-  return 0;
+  return first.name.localeCompare(second.name);
 };
 
 export const sortNamespaces = (namespaces) =>
