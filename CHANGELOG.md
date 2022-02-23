@@ -1,8 +1,24 @@
 # ChangeLog
 
+## v4.0.0-alpha.1
+
+⚠️ This is an early alpha build and is not fully functional. Use at your own risk.
+
+- Added __Selective Sync__ mode. Use the aptly-named button at the top/right of the Extension's main view to adjust your project selections across all synced management clusters at once.
+- No syncing actually takes place yet, but project selections across all management clusters are stored on disk and restored after quitting and re-opening Lens.
+- Selective Sync mode work whether the management cluster is connected or not. When disconnected, only known projects can be de/selected.
+- When adding a new management cluster, or updating sync selections in _Selective Sync_ mode, a new __Sync future projects__ option is available.
+    - This determines if any newly-discovered projects are automatically added to your sync selection for that management cluster, or ignored.
+- It's now possible to reconnect a _disconnected_ management cluster.
+    - If you quit Lens for long enough (over 30 minutes), and re-open it, all management clusters will be disconnected because even refresh tokens will have expired. Now you can choose "Reconnect" from a management cluster's context menu to re-establish the connection.
+- Use the new _Disconnect_ management cluster context menu option to remove a management cluster.
+- Choose _Open in browser_ from a management cluster's context menu to open it in the browser.
+- The Lens Catalog is populated with __fake__ items for MCC credentials, SSH keys, proxies, and licenses. Each item has a customized data panel visible by choosing _View details_ from its context menu.
+    - The data panel is not connected to any real data, and is missing many properties yet to be added.
+
 ## v4.0.0-alpha.0
 
-This is an early alpha build and is not fully functional. Use at your own risk.
+⚠️ This is an early alpha build and is not fully functional. Use at your own risk.
 
 - Main Cluster view is replaced with the new SyncView
 - User is prompted to add their first magament cluster
