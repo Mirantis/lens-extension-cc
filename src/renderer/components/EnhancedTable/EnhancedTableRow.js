@@ -248,7 +248,7 @@ export const EnhancedTableRow = ({
     if (withCheckboxes) {
       autoSyncSuffix =
         isParent && !extendedCloud.cloud.connected
-          ? `( ${connectionStatuses.cloud.disconnected()})`
+          ? ` (${connectionStatuses.cloud.disconnected()})`
           : '';
       return (
         <TriStateCheckbox

@@ -3,7 +3,7 @@ import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
 import { layout } from '../styles';
 
-const { Component } = Renderer;
+const { Icon } = Renderer.Component;
 
 const CheckboxItem = styled.div(() => ({
   minWidth: 64,
@@ -69,10 +69,10 @@ export const TriStateCheckbox = ({ label, onChange, value }) => {
       <CheckboxControlPart>
         <CheckboxControl isChecked={value !== checkValues.UNCHECKED}>
           {value === checkValues.MIXED && (
-            <Component.Icon material="remove" style={iconStyles} />
+            <Icon material="remove" style={iconStyles} />
           )}
           {value === checkValues.CHECKED && (
-            <Component.Icon material="check" style={iconStyles} />
+            <Icon material="check" style={iconStyles} />
           )}
         </CheckboxControl>
         <CheckboxLabel>

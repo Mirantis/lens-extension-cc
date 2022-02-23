@@ -65,6 +65,10 @@ export function useCheckboxes(initialState) {
 
   const getParentCheckboxValue = () => {
     const childrenCheckboxes = Object.values(checkboxesState.children);
+    // if no children
+    if (!childrenCheckboxes.length) {
+      return checkValues.UNCHECKED;
+    }
 
     if (
       checkboxesState.parent &&
@@ -100,6 +104,13 @@ export function useCheckboxes(initialState) {
    */
   const setCheckboxValue = ({ name, isParent }) => {
     if (isParent) {
+      // if no children we can't check parent
+      if (
+        !Object.keys(checkboxesState.children).length &&
+        !checkboxesState.parent
+      ) {
+        return;
+      }
       setCheckboxesState({
         parent: !checkboxesState.parent,
         children: getNewChildren(!checkboxesState.parent),
