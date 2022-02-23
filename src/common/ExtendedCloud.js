@@ -609,8 +609,8 @@ export class ExtendedCloud extends EventDispatcher {
    * @member {Array<Namespace>} ignoredNamespaces List of namespaces the Cloud is not syncing;
    */
   get ignoredNamespaces() {
-    return this.namespaces.filter(
-      (namespace) => !this.cloud.ignoredNamespaces.includes(namespace.name)
+    return this.namespaces.filter((namespace) =>
+      this.cloud.ignoredNamespaces.includes(namespace.name)
     );
   }
 
