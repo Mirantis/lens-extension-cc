@@ -46,7 +46,7 @@ export function extractJwtPayload(token) {
   }
 
   const base64Payload = token.split('.')[1];
-  let base64DecodedValue
+  let base64DecodedValue;
   if (typeof atob === 'function') {
     base64DecodedValue = atob(base64Payload);
   } else {
