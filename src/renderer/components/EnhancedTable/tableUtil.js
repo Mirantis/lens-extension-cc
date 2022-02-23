@@ -2,11 +2,13 @@ import { get, orderBy } from 'lodash';
 
 const SELECTIVE_HEAD_CELL_VALUES = {
   NAME: 'Name',
+  AUTOSYNC: 'Autosync',
   URL: 'URL',
 };
 
 const selectivePathToData = {
   [SELECTIVE_HEAD_CELL_VALUES.NAME]: ['cloud', 'name'],
+  [SELECTIVE_HEAD_CELL_VALUES.AUTOSYNC]: ['cloud', 'syncAll'],
   [SELECTIVE_HEAD_CELL_VALUES.URL]: ['cloud', 'cloudUrl'],
 };
 
@@ -42,5 +44,18 @@ export const sortData = (obj, sortBy, order, path) => {
 
   const sorted = orderBy(sortByValueArr, Object.keys(obj), [order]);
 
-  return sorted.map((a) => Object.keys(a));
+  return sorted.map(Object.keys);
 };
+
+const compareNamespaces = (first, second) => {
+  if (first.name === 'default') {
+    return -1;
+  }
+  if (second.name === 'default') {
+    return 1;
+  }
+  return first.name.localeCompare(second.name);
+};
+
+export const sortNamespaces = (namespaces) =>
+  namespaces.sort(compareNamespaces);

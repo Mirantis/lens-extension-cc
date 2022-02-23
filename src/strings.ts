@@ -66,6 +66,7 @@ export const addCloudInstance = {
 export const synchronizeBlock = {
   title: () => 'Select projects to synchronize',
   synchronizeButtonLabel: () => 'Synchronize selected projects',
+  synchronizeFutureProjects: () => 'Synchronize future projects',
   checkAllCheckboxLabel: () => 'Project name',
   noProjectsFound: () =>
     'No projects found. At least one project is required for syncing. Try another management cluster.',
@@ -85,6 +86,7 @@ export const syncView: Dict = {
   synchronizeProjectsButtonLabel: () => 'Synchronize selected projects',
   syncButtonLabel: () => 'Selective sync...',
   connectButtonLabel: () => 'Connect new Management Cluster',
+  autoSync: () => 'Auto-sync',
 };
 export const managementClusters = {
   table: {
@@ -92,6 +94,7 @@ export const managementClusters = {
       name: () => 'Name',
       url: () => 'URL',
       username: () => 'Username',
+      autosync: () => 'Auto-sync',
       status: () => 'Status',
     },
     tbodyDetailedInfo: {

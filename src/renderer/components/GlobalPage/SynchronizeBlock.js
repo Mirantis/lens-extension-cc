@@ -2,7 +2,10 @@ import PropTypes from 'prop-types';
 import { useState } from 'react';
 import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
-import { TriStateCheckbox } from '../TriStateCheckbox/TriStateCheckbox';
+import {
+  checkValues,
+  TriStateCheckbox,
+} from '../TriStateCheckbox/TriStateCheckbox';
 import { Accordion } from '../Accordion/Accordion';
 import { layout } from '../styles';
 import { synchronizeBlock } from '../../../strings';
@@ -10,8 +13,9 @@ import {
   useCheckboxes,
   makeCheckboxesInitialState,
 } from '../hooks/useCheckboxes';
+import { sortNamespaces } from '../EnhancedTable/tableUtil';
 
-const { Notifications, Button, Icon } = Renderer.Component;
+const { Button, Icon } = Renderer.Component;
 
 const Content = styled.div(() => ({
   marginTop: layout.gap * 2,
@@ -21,10 +25,10 @@ const Content = styled.div(() => ({
   flexDirection: 'column',
   width: '100%',
 }));
-
-const Title = styled.h3(() => ({
+const TitleWrapper = styled.div(() => ({
+  display: 'flex',
+  justifyContent: 'space-between',
   marginBottom: layout.pad,
-  alignSelf: 'start',
 }));
 
 const Projects = styled.div(() => ({
@@ -95,6 +99,7 @@ const SortButton = styled.button`
 `;
 
 export const SynchronizeBlock = ({ extendedCloud, onAdd }) => {
+  const [syncAll, setSyncAll] = useState(false);
   const { setCheckboxValue, getCheckboxValue, getSyncedData } = useCheckboxes(
     makeCheckboxesInitialState(extendedCloud)
   );
@@ -127,22 +132,24 @@ export const SynchronizeBlock = ({ extendedCloud, onAdd }) => {
 
   const onSynchronize = () => {
     const { cloud } = extendedCloud;
-    const { syncedNamespaces, syncAll } = getSyncedData();
-
-    if (!syncAll && !syncedNamespaces.length) {
-      Notifications.error(synchronizeBlock.error.noProjects());
-      return;
-    }
+    const { syncedNamespaces, ignoredNamespaces } = getSyncedData();
 
     cloud.syncAll = syncAll;
-    cloud.syncedNamespaces = syncedNamespaces;
+    cloud.updateNamespaces(syncedNamespaces, ignoredNamespaces);
 
     onAdd(cloud);
   };
 
   return (
     <Content>
-      <Title>{synchronizeBlock.title()}</Title>
+      <TitleWrapper>
+        <h3>{synchronizeBlock.title()}</h3>
+        <TriStateCheckbox
+          label={synchronizeBlock.synchronizeFutureProjects()}
+          onChange={() => setSyncAll(!syncAll)}
+          value={syncAll ? checkValues.CHECKED : checkValues.UNCHECKED}
+        />
+      </TitleWrapper>
       <Projects>
         {projectsList.length ? (
           <ProjectsHead>
@@ -165,7 +172,7 @@ export const SynchronizeBlock = ({ extendedCloud, onAdd }) => {
             synchronizeBlock.noProjectsFound()
           ) : (
             <ProjectsList>
-              {projectsList.map((namespace) => (
+              {sortNamespaces(projectsList).map((namespace) => (
                 <li key={namespace.name}>
                   <Accordion
                     title={

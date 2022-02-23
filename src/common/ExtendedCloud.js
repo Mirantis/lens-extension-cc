@@ -600,10 +600,17 @@ export class ExtendedCloud extends EventDispatcher {
    *  empty if none or the namespaces haven't been successfully fetched at least once yet.
    */
   get syncedNamespaces() {
+    return this.namespaces.filter((namespace) =>
+      this.cloud.syncedNamespaces.includes(namespace.name)
+    );
+  }
+
+  /**
+   * @member {Array<Namespace>} ignoredNamespaces List of namespaces the Cloud is not syncing;
+   */
+  get ignoredNamespaces() {
     return this.namespaces.filter(
-      (namespace) =>
-        this.cloud.syncAll ||
-        this.cloud.syncedNamespaces.includes(namespace.name)
+      (namespace) => !this.cloud.ignoredNamespaces.includes(namespace.name)
     );
   }
 
@@ -634,6 +641,32 @@ export class ExtendedCloud extends EventDispatcher {
   /** Trigger an immediate data fetch outside the normal fetch interval. */
   fetchNow() {
     this.dispatchEvent(EXTENDED_CLOUD_EVENTS.FETCH_DATA, this);
+  }
+
+  /**
+   * check if for projects and depending on syncAll we add them to Cloud.syncedNamespaces or Cloud.ignoredNamespaces
+   */
+  updateCloudNamespaceLists() {
+    const syncedList = [];
+    const ignoredList = [];
+
+    this.namespaces.forEach(({ name }) => {
+      if (this.cloud.syncAll) {
+        if (this.cloud.ignoredNamespaces.includes(name)) {
+          ignoredList.push(name);
+        } else {
+          syncedList.push(name);
+        }
+      } else {
+        if (this.cloud.syncedNamespaces.includes(name)) {
+          syncedList.push(name);
+        } else {
+          ignoredList.push(name);
+        }
+      }
+    });
+
+    this.cloud.updateNamespaces(syncedList, ignoredList, true);
   }
 
   /** Called when __this__ ExtendedCloud should fetch new data from its Cloud. */
@@ -713,6 +746,7 @@ export class ExtendedCloud extends EventDispatcher {
       return namespace;
     });
 
+    this.updateCloudNamespaceLists();
     if (!this.loaded) {
       // successfully loaded at least once
       this.loaded = true;

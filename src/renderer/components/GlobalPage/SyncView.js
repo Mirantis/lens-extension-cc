@@ -59,7 +59,7 @@ export const SyncView = () => {
   const {
     state: { extendedClouds },
   } = useExtendedCloudData();
-  const [showAddCloudComponent, setShowAddCloudComponent] = useState();
+  const [showAddCloudComponent, setShowAddCloudComponent] = useState(false);
   const [isSelectiveSyncView, setIsSelectiveSyncView] = useState(false);
   const [isSyncStarted, setIsSyncStarted] = useState(false);
   const [syncedClouds, setSyncedClouds] = useState({});
@@ -77,9 +77,12 @@ export const SyncView = () => {
     setSyncedClouds({});
   };
   const openSelectiveSyncView = () => setIsSelectiveSyncView(true);
+
   /**
+   * @param {Object} data
    * @param {boolean} data.syncAll
    * @param {Array<string>} data.syncedNamespaces
+   * @param {Array<string>} data.ignoredNamespaces
    * @param {string} url - cloudUrl
    */
   const getDataToSync = (data, url) => {
@@ -103,10 +106,11 @@ export const SyncView = () => {
     if (!isSyncStarted && Object.keys(syncedClouds).length) {
       // go through all clouds and update properties
       Object.keys(syncedClouds).map((url) => {
-        const { syncAll, syncedNamespaces } = syncedClouds[url];
+        const { syncAll, syncedNamespaces, ignoredNamespaces } =
+          syncedClouds[url];
         const cloud = cloudStore.clouds[url];
         cloud.syncAll = syncAll;
-        cloud.syncedNamespaces = syncedNamespaces;
+        cloud.updateNamespaces(syncedNamespaces, ignoredNamespaces);
       });
       closeSelectiveSyncView();
     }
@@ -120,7 +124,7 @@ export const SyncView = () => {
   if (!Object.keys(cloudStore.clouds).length) {
     return <WelcomeView openAddCloud={openAddCloud} />;
   }
-  // otherwise show extendedClouds table
+  // otherwise, show extendedClouds table
   if (Object.keys(extendedClouds).length) {
     return (
       <Content>

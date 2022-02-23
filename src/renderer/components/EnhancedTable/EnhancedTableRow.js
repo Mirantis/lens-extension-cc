@@ -3,10 +3,18 @@ import { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
 import { layout } from '../styles';
+import { Namespace } from '../../../api/types/Namespace';
 import { AdditionalInfoRows } from './AdditionalInfoRows';
-import { connectionStatuses, contextMenus } from '../../../strings';
-import { EXTENDED_CLOUD_EVENTS } from '../../../common/ExtendedCloud';
-import { TriStateCheckbox } from '../TriStateCheckbox/TriStateCheckbox';
+import {
+  connectionStatuses,
+  contextMenus,
+  synchronizeBlock,
+  syncView,
+} from '../../../strings';
+import {
+  checkValues,
+  TriStateCheckbox,
+} from '../TriStateCheckbox/TriStateCheckbox';
 import {
   useCheckboxes,
   makeCheckboxesInitialState,
@@ -14,6 +22,7 @@ import {
 import { CONNECTION_STATUSES } from '../../../common/Cloud';
 import { openBrowser } from '../../../util/netUtil';
 import { cloudStore } from '../../../store/CloudStore';
+import { sortNamespaces } from './tableUtil';
 
 const { Icon, MenuItem, MenuActions, ConfirmDialog } = Renderer.Component;
 
@@ -27,7 +36,8 @@ const EnhTableRow = styled.tr`
 `;
 
 const EnhTableRowCell = styled.td`
-  width: ${({ isBigger }) => isBigger && '40%'};
+  width: ${({ isBigger, withCheckboxes }) =>
+    isBigger && !withCheckboxes && '40%'};
   border: 0;
   font-size: var(--font-size);
   line-height: normal;
@@ -139,7 +149,6 @@ const getCloudMenuItems = (extendedCloud) => [
       const {
         name: cloudName,
         cloudUrl,
-        syncAll,
         syncedNamespaces,
         connected,
       } = extendedCloud.cloud;
@@ -147,11 +156,6 @@ const getCloudMenuItems = (extendedCloud) => [
       if (isConnected && !extendedCloud.namespaces.length) {
         cloudStore.removeCloud(cloudUrl);
       } else {
-        const projects = !syncAll
-          ? syncedNamespaces
-          : isConnected
-          ? extendedCloud.namespaces
-          : [];
         ConfirmDialog.open({
           ok: () => {
             cloudStore.removeCloud(cloudUrl);
@@ -162,7 +166,7 @@ const getCloudMenuItems = (extendedCloud) => [
               dangerouslySetInnerHTML={{
                 __html: contextMenus.cloud.confirmDialog.messageHtml(
                   cloudName,
-                  projects
+                  syncedNamespaces
                 ),
               }}
             />
@@ -200,87 +204,133 @@ export const EnhancedTableRow = ({
   withCheckboxes,
   isSyncStarted,
   getDataToSync,
+  namespaces,
+  fetching,
 }) => {
   const { getCheckboxValue, setCheckboxValue, getSyncedData } = useCheckboxes(
-    makeCheckboxesInitialState(extendedCloud, extendedCloud.syncedNamespaces)
+    makeCheckboxesInitialState(extendedCloud)
   );
-  // show all namespaces if selectiveSync table or only syncedNamespaces in this main SyncView table
-  const usedNamespaces = withCheckboxes ? 'namespaces' : 'syncedNamespaces';
-
-  const [isFetching, setFetching] = useState(false);
+  const [syncAll, setSyncAll] = useState(extendedCloud.cloud.syncAll);
   const [isOpenFirstLevel, setIsOpenFirstLevel] = useState(false);
-  const [actualNamespaces, setActualNamespaces] = useState(
-    extendedCloud[usedNamespaces]
-  );
-  const [openedSecondLevelListIndex, setOpenedSecondLevelListIndex] = useState(
-    []
-  );
-  const updateNamespaces = (updatedRow) => {
-    if (updatedRow) {
-      setActualNamespaces(updatedRow[usedNamespaces]);
-    }
-  };
-
-  const listenFetching = (cl) => {
-    setFetching(cl.fetching);
-  };
-
-  useEffect(() => {
-    extendedCloud.addEventListener(
-      EXTENDED_CLOUD_EVENTS.DATA_UPDATED,
-      updateNamespaces
-    );
-    return () => {
-      extendedCloud.removeEventListener(
-        EXTENDED_CLOUD_EVENTS.DATA_UPDATED,
-        updateNamespaces
-      );
-    };
-  });
-
-  useEffect(() => {
-    extendedCloud.addEventListener(
-      EXTENDED_CLOUD_EVENTS.FETCHING_CHANGE,
-      listenFetching
-    );
-    return () => {
-      extendedCloud.removeEventListener(
-        EXTENDED_CLOUD_EVENTS.FETCHING_CHANGE,
-        listenFetching
-      );
-    };
-  });
+  const [openNamespaces, setOpenNamespaces] = useState([]);
 
   useEffect(() => {
     if (isSyncStarted && typeof getDataToSync === 'function') {
-      getDataToSync(getSyncedData(), extendedCloud.cloud.cloudUrl);
+      const { syncedNamespaces, ignoredNamespaces } = getSyncedData();
+      getDataToSync(
+        { syncedNamespaces, ignoredNamespaces, syncAll },
+        extendedCloud.cloud.cloudUrl
+      );
     }
   }, [
     getDataToSync,
     isSyncStarted,
     getSyncedData,
+    syncAll,
     extendedCloud.cloud.cloudUrl,
   ]);
 
-  const setOpenedList = (index) => {
-    if (openedSecondLevelListIndex.includes(index)) {
-      setOpenedSecondLevelListIndex(
-        openedSecondLevelListIndex.filter((rowIndex) => rowIndex !== index)
-      );
+  const setOpenedList = (name) => {
+    if (openNamespaces.includes(name)) {
+      setOpenNamespaces(openNamespaces.filter((n) => n !== name));
     } else {
-      setOpenedSecondLevelListIndex([...openedSecondLevelListIndex, index]);
+      setOpenNamespaces([...openNamespaces, name]);
     }
   };
 
-  const { cloudStatus, namespaceStatus, connectColor } = getStatus(
-    extendedCloud.cloud,
-    isFetching
-  );
+  /**
+   * @param {string} name cloud or namespace name
+   * @param {boolean} [isParent] if true - then it's a main, cloud checkbox
+   * @return {JSX.Element|string}
+   */
+  const makeNameCell = (name, isParent) => {
+    let autoSyncSuffix = '';
+    if (withCheckboxes) {
+      autoSyncSuffix =
+        isParent && !extendedCloud.cloud.connected
+          ? ` (${connectionStatuses.cloud.disconnected()})`
+          : '';
+      return (
+        <TriStateCheckbox
+          label={`${name}${autoSyncSuffix}`}
+          onChange={() => setCheckboxValue({ name, isParent })}
+          value={getCheckboxValue({ name, isParent })}
+        />
+      );
+    }
+    autoSyncSuffix =
+      isParent && extendedCloud.cloud.syncAll
+        ? ` (${syncView.autoSync()})`
+        : '';
 
-  const renderRestOfRow = (namespace) =>
-    withCheckboxes ? (
-      <EnhTableRowCell />
-    ) : (
+    return `${name}${autoSyncSuffix}`;
+  };
+
+  /**
+   * @param {boolean} condition
+   * @param {boolean} [showSecondLevel]
+   * @return {JSX.Element|null}
+   */
+  const getExpandIcon = (condition, showSecondLevel = true) => {
+    // EG when namespace isn't loaded, we show first level but not second
+    if (!showSecondLevel) {
+      return null;
+    }
+
+    // don't show if no namespaces, no matter which mode is it
+    if (!namespaces.length) {
+      return null;
+    }
+    const material = condition ? 'expand_more' : 'chevron_right';
+    return <Icon material={material} style={expandIconStyles} />;
+  };
+
+  const toggleOpenFirstLevel = () => {
+    if (namespaces.length) {
+      setIsOpenFirstLevel(!isOpenFirstLevel);
+    }
+  };
+
+  const renderRestSyncTableRows = () => {
+    if (withCheckboxes) {
+      return null;
+    }
+    const cloudMenuItems = getCloudMenuItems(extendedCloud);
+    const { cloudStatus, connectColor } = getStatus(
+      extendedCloud.cloud,
+      fetching
+    );
+    return (
+      <>
+        <EnhTableRowCell>{extendedCloud.cloud.username}</EnhTableRowCell>
+        <EnhTableRowCell style={connectColor}>{cloudStatus}</EnhTableRowCell>
+        <EnhTableRowCell isRightAligned>
+          <EnhMore>
+            <MenuActions>
+              {cloudMenuItems.map((item) => {
+                return (
+                  <MenuItem
+                    key={`cloud-${item.name}`}
+                    disabled={item.disabled}
+                    onClick={item.onClick}
+                  >
+                    {item.title}
+                  </MenuItem>
+                );
+              })}
+            </MenuActions>
+          </EnhMore>
+        </EnhTableRowCell>
+      </>
+    );
+  };
+
+  const renderNamespaceRows = (namespace) => {
+    if (withCheckboxes) {
+      return <EnhTableRowCell />;
+    }
+    const { namespaceStatus } = getStatus(extendedCloud.cloud, fetching);
+    return (
       <>
         <EnhTableRowCell />
         <EnhTableRowCell />
@@ -303,40 +353,7 @@ export const EnhancedTableRow = ({
         </EnhTableRowCell>
       </>
     );
-
-  /**
-   * @param {string} name cloud or namespace name
-   * @param {boolean?} isParent if true - then it's a main, cloud checkbox
-   * @return {JSX.Element|*}
-   */
-  const makeCell = (name, isParent) => {
-    if (withCheckboxes) {
-      return (
-        <TriStateCheckbox
-          label={name}
-          onChange={() => setCheckboxValue({ name, isParent })}
-          value={getCheckboxValue({ name, isParent })}
-        />
-      );
-    }
-    return name;
   };
-
-  const getExpandIcon = (condition) => {
-    if (!extendedCloud.loaded) {
-      return null;
-    }
-    const material = condition ? 'expand_more' : 'chevron_right';
-    return <Icon material={material} style={expandIconStyles} />;
-  };
-
-  const toggleOpenFirstLevel = () => {
-    if (extendedCloud.loaded) {
-      setIsOpenFirstLevel(!isOpenFirstLevel);
-    }
-  };
-
-  const cloudMenuItems = getCloudMenuItems(extendedCloud);
 
   return (
     <>
@@ -345,52 +362,40 @@ export const EnhancedTableRow = ({
           <EnhCollapseBtn onClick={toggleOpenFirstLevel}>
             {getExpandIcon(isOpenFirstLevel)}
           </EnhCollapseBtn>
-          {makeCell(extendedCloud.cloud.name, true)}
+          {makeNameCell(extendedCloud.cloud.name, true)}
         </EnhTableRowCell>
-        <EnhTableRowCell>{extendedCloud.cloud.cloudUrl}</EnhTableRowCell>
-        {withCheckboxes ? null : (
-          <>
-            <EnhTableRowCell>{extendedCloud.cloud.username}</EnhTableRowCell>
-            <EnhTableRowCell style={connectColor}>
-              {cloudStatus}
-            </EnhTableRowCell>
-            <EnhTableRowCell isRightAligned>
-              <EnhMore>
-                <MenuActions>
-                  {cloudMenuItems.map((item) => {
-                    return (
-                      <MenuItem
-                        key={`cloud-${item.name}`}
-                        disabled={item.disabled}
-                        onClick={item.onClick}
-                      >
-                        {item.title}
-                      </MenuItem>
-                    );
-                  })}
-                </MenuActions>
-              </EnhMore>
-            </EnhTableRowCell>
-          </>
+        {withCheckboxes && (
+          <EnhTableRowCell>
+            <TriStateCheckbox
+              label={synchronizeBlock.synchronizeFutureProjects()}
+              onChange={() => setSyncAll(!syncAll)}
+              value={syncAll ? checkValues.CHECKED : checkValues.UNCHECKED}
+            />
+          </EnhTableRowCell>
         )}
+        <EnhTableRowCell>{extendedCloud.cloud.cloudUrl}</EnhTableRowCell>
+        {renderRestSyncTableRows()}
       </EnhTableRow>
       {isOpenFirstLevel &&
-        actualNamespaces.map((namespace, index) => (
+        sortNamespaces(namespaces).map((namespace) => (
           <EnhRowsWrapper key={namespace.name}>
             <EnhTableRow>
               <EnhTableRowCell isFirstLevel withCheckboxes={withCheckboxes}>
-                <EnhCollapseBtn onClick={() => setOpenedList(index)}>
-                  {getExpandIcon(openedSecondLevelListIndex.includes(index))}
+                <EnhCollapseBtn onClick={() => setOpenedList(namespace.name)}>
+                  {getExpandIcon(
+                    openNamespaces.includes(namespace.name),
+                    extendedCloud.loaded
+                  )}
                 </EnhCollapseBtn>
-                {makeCell(namespace.name)}
+                {makeNameCell(namespace.name)}
               </EnhTableRowCell>
-              {renderRestOfRow(namespace)}
+              {renderNamespaceRows(namespace)}
             </EnhTableRow>
 
-            {openedSecondLevelListIndex.includes(index) && (
+            {openNamespaces.includes(namespace.name) && (
               <AdditionalInfoRows
                 namespace={namespace}
-                emptyCellsCount={withCheckboxes ? 1 : 4}
+                emptyCellsCount={withCheckboxes ? 2 : 4}
               />
             )}
           </EnhRowsWrapper>
@@ -404,6 +409,15 @@ EnhancedTableRow.propTypes = {
   withCheckboxes: PropTypes.bool,
   isSyncStarted: PropTypes.bool,
   getDataToSync: PropTypes.func,
+  namespaces: PropTypes.arrayOf(
+    PropTypes.oneOfType([
+      PropTypes.instanceOf(Namespace),
+      PropTypes.shape({
+        name: PropTypes.string.isRequired,
+      }),
+    ])
+  ).isRequired,
+  fetching: PropTypes.bool.isRequired,
 };
 
 EnhancedTableRow.defaultProps = {

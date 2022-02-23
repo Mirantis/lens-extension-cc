@@ -172,6 +172,7 @@ export class Cloud extends EventDispatcher {
     cloudUrl: [rtv.EXPECTED, rtv.STRING],
 
     syncedNamespaces: [rtv.EXPECTED, rtv.ARRAY, { $: rtv.STRING }],
+    ignoredNamespaces: [rtv.EXPECTED, rtv.ARRAY, { $: rtv.STRING }],
     name: [rtv.EXPECTED, rtv.STRING],
     syncAll: [rtv.EXPECTED, rtv.BOOLEAN],
   };
@@ -190,6 +191,7 @@ export class Cloud extends EventDispatcher {
     let _name = null;
     let _syncAll = false;
     let _syncedNamespaces = [];
+    let _ignoredNamespaces = [];
     let _token = null;
     let _expiresIn = null;
     let _tokenValidTill = null;
@@ -242,24 +244,23 @@ export class Cloud extends EventDispatcher {
 
     /**
      * @member {Array<string>} syncedNamespaces A list of namespace names in the mgmt
-     *  cluster that should be synced. If syncAll is true, this list is ignored and
-     *  all existing/future namespaces are synced.
+     *  cluster that should be synced.
      */
     Object.defineProperty(this, 'syncedNamespaces', {
       enumerable: true,
       get() {
         return _syncedNamespaces;
       },
-      set(newValue) {
-        DEV_ENV &&
-          rtv.verify(
-            { token: newValue },
-            { token: Cloud.specTs.syncedNamespaces }
-          );
-        if (!isEqual(_syncedNamespaces, newValue)) {
-          _syncedNamespaces = newValue;
-          this.dispatchEvent(CLOUD_EVENTS.SYNC_CHANGE, this);
-        }
+    });
+
+    /**
+     * @member {Array<string>} ignoredNamespaces A list of namespace names in the mgmt
+     *  cluster that not synced.
+     */
+    Object.defineProperty(this, 'ignoredNamespaces', {
+      enumerable: true,
+      get() {
+        return _ignoredNamespaces;
       },
     });
 
@@ -475,6 +476,37 @@ export class Cloud extends EventDispatcher {
       },
     });
 
+    Object.defineProperty(Object.getPrototypeOf(this), 'updateNamespaces', {
+      enumerable: true,
+      /**
+       * @param {Array<string>} syncedList A list of namespace names in the mgmt cluster that should be synced.
+       * @param {Array<string>} ignoredList A list of namespace names in the mgmt cluster that not synced.
+       * @param {boolean} [silent] if true we don't dispatch event (thus ExtendedCloud does not fetch its data)
+       */
+      value: function (syncedList, ignoredList, silent = false) {
+        DEV_ENV &&
+          rtv.verify(
+            { syncedList, ignoredList },
+            {
+              syncedList: Cloud.specTs.syncedNamespaces,
+              ignoredList: Cloud.specTs.ignoredNamespaces,
+              silent: [rtv.OPTIONAL, rtv.BOOLEAN],
+            }
+          );
+        const isNewSynced = !isEqual(_syncedNamespaces, syncedList);
+        const isNewIgnored = !isEqual(_ignoredNamespaces, ignoredList);
+        if (isNewSynced) {
+          _syncedNamespaces = syncedList;
+        }
+        if (isNewIgnored) {
+          _ignoredNamespaces = ignoredList;
+        }
+        if (!silent && (isNewSynced || isNewIgnored)) {
+          this.dispatchEvent(CLOUD_EVENTS.SYNC_CHANGE, this);
+        }
+      },
+    });
+
     //// initialize
 
     this.update(spec);
@@ -506,6 +538,13 @@ export class Cloud extends EventDispatcher {
     }
 
     return CONNECTION_STATUSES.DISCONNECTED;
+  }
+
+  /**
+   * @member {Array<string>} returns syncedNamespaces + ignoredNamespaces array
+   */
+  get allNamespaces() {
+    return this.syncedNamespaces.concat(this.ignoredNamespaces);
   }
 
   /**
@@ -597,8 +636,8 @@ export class Cloud extends EventDispatcher {
       this.cloudUrl = spec.cloudUrl;
       this.name = spec.name;
       this.syncAll = spec.syncAll;
-      this.syncedNamespaces = spec.syncedNamespaces;
       this.username = spec.username;
+      this.updateNamespaces(spec.syncedNamespaces, spec.ignoredNamespaces);
 
       if (spec.id_token && spec.refresh_token) {
         this.updateTokens(spec);
@@ -620,6 +659,7 @@ export class Cloud extends EventDispatcher {
       name: this.name,
       syncAll: this.syncAll,
       syncedNamespaces: this.syncedNamespaces.concat(),
+      ignoredNamespaces: this.ignoredNamespaces.concat(),
       username: this.username,
 
       // NOTE: the API-related properties have underscores in them since they do

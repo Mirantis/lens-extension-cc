@@ -15,26 +15,33 @@ const setParentCheckboxState = (children) => {
 };
 
 /**
- *
  * @param {ExtendedCloud} extCloud
- * @param {Array<Namespace>?} syncedNamespaces
  * @return {Object} {[namespaceName]: boolean}
  */
-const makeCheckboxesStateObj = (extCloud, syncedNamespaces) => {
-  const syncedNamespacesNames = syncedNamespaces.map((sn) => sn.name);
-  return (extCloud?.namespaces || []).reduce((acc, namespace) => {
-    acc[namespace.name] = syncedNamespacesNames.includes(namespace.name);
+const makeCheckboxesStateObj = (extCloud) => {
+  // if EC.namespaces aren't loaded yet, we use stored syncedNamespaces names from Cloud
+  if (!extCloud.loaded) {
+    return extCloud.cloud.allNamespaces.reduce((acc, name) => {
+      acc[name] = extCloud.cloud.syncedNamespaces.includes(name);
+      return acc;
+    }, {});
+  }
+  // otherwise, we make state for all EC.namespaces, they have to be present
+  // And use syncedNamespaces to make initial state checked for selected checkboxes
+  return extCloud.namespaces.reduce((acc, namespace) => {
+    acc[namespace.name] = extCloud.cloud.syncedNamespaces.includes(
+      namespace.name
+    );
     return acc;
   }, {});
 };
+
 /**
- *
  * @param {ExtendedCloud} extCloud
- * @param {Array<Namespace>?} syncedNamespaces
  * @return {{parent: (boolean), children: Object}}
  */
-export const makeCheckboxesInitialState = (extCloud, syncedNamespaces = []) => {
-  const children = makeCheckboxesStateObj(extCloud, syncedNamespaces);
+export const makeCheckboxesInitialState = (extCloud) => {
+  const children = makeCheckboxesStateObj(extCloud);
   return {
     parent: setParentCheckboxState(children),
     children,
@@ -47,18 +54,21 @@ export const makeCheckboxesInitialState = (extCloud, syncedNamespaces = []) => {
  */
 export function useCheckboxes(initialState) {
   const [checkboxesState, setCheckboxesState] = useState(initialState);
-
-  const getNewChildren = (parentCheckedStatus) => {
+  const getNewChildren = (newParentStatus) => {
     const newChildren = { ...checkboxesState.children };
 
     Object.keys(checkboxesState.children).forEach((name) => {
-      newChildren[name] = parentCheckedStatus;
+      newChildren[name] = newParentStatus;
     });
     return newChildren;
   };
 
   const getParentCheckboxValue = () => {
     const childrenCheckboxes = Object.values(checkboxesState.children);
+    // if no children
+    if (!childrenCheckboxes.length) {
+      return checkValues.UNCHECKED;
+    }
 
     if (
       checkboxesState.parent &&
@@ -81,22 +91,29 @@ export function useCheckboxes(initialState) {
 
   /**
    *
-   * @param {string?} name has to be present for children (optional for parent)
-   * @param {boolean?} isParent has to be true for parent.
+   * @param {string} [name] has to be present for children (optional for parent)
+   * @param {boolean} [isParent] has to be true for parent.
    * @return {string} one of checkValues
    */
   const getCheckboxValue = ({ name, isParent }) =>
     isParent ? getParentCheckboxValue() : getChildrenCheckboxValue(name);
 
   /**
-   * @param {string?} name has to be present for children (optional for parent)
-   * @param {boolean?} isParent has to be true for parent.
+   * @param {string} [name] has to be present for children (optional for parent)
+   * @param {boolean} [isParent] has to be true for parent.
    */
   const setCheckboxValue = ({ name, isParent }) => {
     if (isParent) {
+      // if no children we can't check parent
+      if (
+        !Object.keys(checkboxesState.children).length &&
+        !checkboxesState.parent
+      ) {
+        return;
+      }
       setCheckboxesState({
         parent: !checkboxesState.parent,
-        children: getNewChildren(!checkboxesState.parent, checkboxesState),
+        children: getNewChildren(!checkboxesState.parent),
       });
     } else {
       const newChildren = { ...checkboxesState.children };
@@ -110,14 +127,18 @@ export function useCheckboxes(initialState) {
   };
 
   const getSyncedData = () => {
-    if (getParentCheckboxValue() === checkValues.CHECKED) {
-      return { syncAll: true, syncedNamespaces: [] };
-    }
+    const ignoredNamespaces = [];
+    const syncedNamespaces = [];
+    Object.keys(checkboxesState.children).forEach((name) => {
+      if (checkboxesState.children[name]) {
+        syncedNamespaces.push(name);
+      } else {
+        ignoredNamespaces.push(name);
+      }
+    });
     return {
-      syncAll: false,
-      syncedNamespaces: Object.keys(checkboxesState.children).filter(
-        (name) => checkboxesState.children[name]
-      ),
+      syncedNamespaces,
+      ignoredNamespaces,
     };
   };
 
