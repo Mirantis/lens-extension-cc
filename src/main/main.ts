@@ -1,8 +1,10 @@
 import { Main } from '@k8slens/extensions';
 import { cloudStore } from '../store/CloudStore';
+import { syncStore } from '../store/SyncStore';
+
 import { IpcMain } from './IpcMain';
 import { logger as loggerUtil } from '../util/logger';
-
+import { SyncManager } from '../common/SyncManager';
 const logger: any = loggerUtil; // get around TS compiler's complaining
 
 // NOTE: This code runs in a separate process from the one that the renderer.tsx
@@ -17,7 +19,9 @@ export default class ExtensionMain extends Main.LensExtension {
   onActivate() {
     logger.log('ExtensionMain.onActivate()', 'extension activated');
     cloudStore.loadExtension(this);
+    syncStore.loadExtension(this);
     IpcMain.createInstance(this); // AFTER load stores
+    SyncManager.createInstance(this);
 
     if (DEV_ENV) {
       IpcMain.getInstance().addFakeItems();

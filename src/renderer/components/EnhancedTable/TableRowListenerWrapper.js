@@ -39,7 +39,7 @@ export const TableRowListenerWrapper = ({
   );
   const [isFetching, setFetching] = useState(false);
 
-  const updateNamespaces = (updatedRow) => {
+  const updateUsedNamespaces = (updatedRow) => {
     if (updatedRow) {
       setActualNamespaces(updatedRow[usedNamespaces]);
     }
@@ -51,7 +51,7 @@ export const TableRowListenerWrapper = ({
     // Listen namespaces update
     dataCloud.addEventListener(
       DATA_CLOUD_EVENTS.DATA_UPDATED,
-      updateNamespaces
+      updateUsedNamespaces
     );
     // Listen fetching status (updating namespaces)
     dataCloud.addEventListener(
@@ -61,7 +61,7 @@ export const TableRowListenerWrapper = ({
     return () => {
       dataCloud.removeEventListener(
         DATA_CLOUD_EVENTS.DATA_UPDATED,
-        updateNamespaces
+        updateUsedNamespaces
       );
       dataCloud.removeEventListener(
         DATA_CLOUD_EVENTS.FETCHING_CHANGE,

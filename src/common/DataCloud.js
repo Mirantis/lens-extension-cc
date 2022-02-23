@@ -666,6 +666,16 @@ export class DataCloud extends EventDispatcher {
     this.cloud.updateNamespaces(syncedList, ignoredList, true);
   }
 
+  /**
+   * @param {'sshKeys'|'credentials'|'proxies'|'licenses'|'clusters'} entityType
+   * @return {Array<Object>} merged array by type from all selected namespaces
+   */
+  getActualEntities(entityType) {
+    return this.syncedNamespaces.reduce((acc, namespace) => {
+      return [...acc, ...namespace[entityType]];
+    }, []);
+  }
+
   /** Called when __this__ DataCloud should fetch new data from its Cloud. */
   onFetchData = () => this.fetchData();
 
