@@ -15,6 +15,7 @@ export const credentialKinds = Object.freeze({
   EQUINIX: 'EquinixMetalCredential',
   AZURE: 'AzureCredential',
   AWS: 'AWSCredential',
+  BYO: 'BYOCredential',
   // TODO: there may be one more kind here for BM credentials (i.e. secrets) but we
   //  first need to test this in an MCC+BM env
 });

@@ -46,8 +46,15 @@ export function extractJwtPayload(token) {
   }
 
   const base64Payload = token.split('.')[1];
+  let base64DecodedValue;
+  if (typeof atob === 'function') {
+    base64DecodedValue = atob(base64Payload);
+  } else {
+    // assume we're in Node.js env and use Buffer
+    base64DecodedValue = Buffer.from(base64Payload, 'base64').toString();
+  }
   const decoded = decodeURIComponent(
-    atob(base64Payload)
+    base64DecodedValue
       .split('')
       .map((char) => '%' + ('00' + char.charCodeAt(0).toString(16)).slice(-2))
       .join('')
