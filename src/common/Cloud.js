@@ -599,6 +599,15 @@ export class Cloud extends EventDispatcher {
     this.token = tokens.id_token;
     this.expiresIn = tokens.expires_in; // SECONDS
 
+    // SECURITY: Be aware that since 3 parties are involved in issuing tokens
+    //  (Keycloak, the issuer; ENZI, the provider; this, the client), clock skew
+    //  must be accounted for between the issuer and provider so they can "agree"
+    //  on the expiry time, which means it's likely that the token will remain
+    //  valid __beyond__ the expected local expiry time, possibly about twice
+    //  as long as what appears to be the validity window. Same likely goes for
+    //  the refresh token's expiry, which may be slightly longer (but not double)
+    //  what it appears to be locally.
+
     if (typeof tokens.tokenExpiresAt === 'number') {
       // since we have this, we're likely restoring from JSON (from disk) after a long
       //  time: use this to calculate until when tokens are valid instead of just using
