@@ -8,30 +8,36 @@ import { licenseEntityModelTs } from '../catalog/LicenseEntity';
 import { proxyEntityModelTs } from '../catalog/ProxyEntity';
 import { sshKeyEntityModelTs } from '../catalog/SshKeyEntity';
 
-// don't know wjy, but structure like [[sshKeyEntityModelTs]] doesn't work
 export const storeTs = {
-  credentials: [
-    rtv.EXPECTED,
-    rtv.ARRAY,
-    { $: [rtv.OBJECT, { ctor: credentialEntityModelTs }] },
-  ],
-  sshKeys: [
-    rtv.EXPECTED,
-    rtv.ARRAY,
-    { $: [rtv.OBJECT, { ctor: sshKeyEntityModelTs }] },
-  ],
-  clusters: [rtv.ARRAY, rtv.ANY], // for now
-  licenses: [
-    rtv.EXPECTED,
-    rtv.ARRAY,
-    { $: [rtv.OBJECT, { ctor: licenseEntityModelTs }] },
-  ],
-  proxies: [
-    rtv.EXPECTED,
-    rtv.ARRAY,
-    { $: [rtv.OBJECT, { ctor: proxyEntityModelTs }] },
-  ],
+  credentials: [[credentialEntityModelTs]],
+  sshKeys: [[sshKeyEntityModelTs]],
+  clusters: [[rtv.ANY]], // eventually: [[clusterEntityModelTs]],
+  licenses: [[licenseEntityModelTs]],
+  proxies: [[proxyEntityModelTs]],
 };
+// export const storeTs = {
+//   credentials: [
+//     rtv.EXPECTED,
+//     rtv.ARRAY,
+//     { $: [rtv.OBJECT, { ctor: credentialEntityModelTs }] },
+//   ],
+//   sshKeys: [
+//     rtv.EXPECTED,
+//     rtv.ARRAY,
+//     { $: [rtv.OBJECT, { ctor: sshKeyEntityModelTs }] },
+//   ],
+//   clusters: [rtv.ARRAY, rtv.ANY], // for now
+//   licenses: [
+//     rtv.EXPECTED,
+//     rtv.ARRAY,
+//     { $: [rtv.OBJECT, { ctor: licenseEntityModelTs }] },
+//   ],
+//   proxies: [
+//     rtv.EXPECTED,
+//     rtv.ARRAY,
+//     { $: [rtv.OBJECT, { ctor: proxyEntityModelTs }] },
+//   ],
+// };
 
 export class SyncStore extends Common.Store.ExtensionStore {
   // NOTE: See main.ts#onActivate() and renderer.tsx#onActivate() where this.loadExtension()
@@ -69,7 +75,7 @@ export class SyncStore extends Common.Store.ExtensionStore {
     makeObservable(this);
   }
 
-  /** Reset clouds to default empty object */
+  /** Reset properties to default empty object */
   reset() {
     const defaults = SyncStore.getDefaults();
     Object.keys(this).forEach((key) => (this[key] = defaults[key]));

@@ -102,6 +102,7 @@ export class Proxy extends ApiObject {
 
     return merge({}, entity, {
       metadata: {
+        namespace: this.namespace.name,
         labels: {
           managementCluster: this.cloud.name,
           project: this.namespace.name,

@@ -670,8 +670,15 @@ export class DataCloud extends EventDispatcher {
    * @param {'sshKeys'|'credentials'|'proxies'|'licenses'|'clusters'} entityType
    * @return {Array<Object>} merged array by type from all selected namespaces
    */
-  getActualEntities(entityType) {
+  getEntities(entityType) {
     return this.syncedNamespaces.reduce((acc, namespace) => {
+      if (!namespace[entityType]) {
+        logger.error(
+          'ExtendedCloud.getEntities()',
+          `The namespace="${namespace}", doesn't contain entityType="${entityType}", extCloud=${this}`
+        );
+        return acc;
+      }
       return [...acc, ...namespace[entityType]];
     }, []);
   }

@@ -4,9 +4,10 @@ import { syncStore } from '../store/SyncStore';
 
 import { autorun, observable } from 'mobx';
 import { isEqual } from 'lodash';
-import * as consts from '../constants';
+// import * as consts from '../constants';
 import { Common } from '@k8slens/extensions';
 const { Singleton } = Common.Util;
+
 const entityTypes = [
   'sshKeys',
   'credentials',
@@ -34,7 +35,7 @@ const listenFetchData = (extCloud) => {
   entityTypes.map((type) => {
     syncStore.findAndUpdateEntities(
       type,
-      extCloud.getActualEntities(type),
+      extCloud.getEntities(type),
       extCloud.cloud.cloudUrl
     );
   });
