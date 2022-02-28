@@ -29,6 +29,10 @@ export class IpcMain extends Main.Ipc {
   //
   // SINGLETON
   //
+  constructor(extension) {
+    super(extension);
+    extension.addCatalogSource(consts.catalog.source, catalogSource);
+  }
 
   /**
    * @param {Main.LensExtension} extension
@@ -88,6 +92,7 @@ export class IpcMain extends Main.Ipc {
           },
         },
         spec: {
+          created: '2021-08-12  (4 months)',
           publicKey: 'sshkey-public-key-1',
         },
         status: {
@@ -107,6 +112,7 @@ export class IpcMain extends Main.Ipc {
           },
         },
         spec: {
+          created: '2021-09-12  (3 months)',
           publicKey: 'sshkey-public-key-2',
         },
         status: {
@@ -143,7 +149,9 @@ export class IpcMain extends Main.Ipc {
         },
         spec: {
           provider: 'aws',
-          valid: true,
+          region: 'eu',
+          status: 'Processing',
+          created: '2021-08-12  (4 months)',
         },
         status: {
           phase: 'available',
@@ -162,8 +170,10 @@ export class IpcMain extends Main.Ipc {
           },
         },
         spec: {
-          provider: 'openstack',
-          valid: false,
+          provider: 'azure',
+          region: 'cz',
+          status: 'Processing',
+          created: '2021-10-12  (2 months)',
         },
         status: {
           phase: 'available',
@@ -201,6 +211,7 @@ export class IpcMain extends Main.Ipc {
           region: 'aws-us-east-1',
           httpProxy: 'http://east.proxy.com',
           httpsProxy: 'https://east.proxy.com',
+          created: '2021-10-12  (2 months)',
         },
         status: {
           phase: 'available',
@@ -222,6 +233,7 @@ export class IpcMain extends Main.Ipc {
           region: 'aws-us-west-1',
           httpProxy: 'http://west.proxy.com',
           httpsProxy: 'https://west.proxy.com',
+          created: '2021-10-12  (2 months)',
         },
         status: {
           phase: 'available',
@@ -255,7 +267,9 @@ export class IpcMain extends Main.Ipc {
             project: 'project-1',
           },
         },
-        spec: {},
+        spec: {
+          created: '2021-10-12  (2 months)',
+        },
         status: {
           phase: 'available',
         },
@@ -272,7 +286,9 @@ export class IpcMain extends Main.Ipc {
             project: 'project-1',
           },
         },
-        spec: {},
+        spec: {
+          created: '2021-09-12  (3 months)',
+        },
         status: {
           phase: 'available',
         },

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Common, Renderer } from '@k8slens/extensions';
+import { Renderer } from '@k8slens/extensions';
 import { GlobalPage, GlobalPageIcon } from './components/GlobalPage/GlobalPage';
 import {
   ClusterPage,
@@ -12,36 +12,19 @@ import { dispatchExtEvent } from './eventBus';
 import { cloudStore } from '../store/CloudStore';
 import { logger as loggerUtil } from '../util/logger';
 import { IpcRenderer } from './IpcRenderer';
-import { SshKeyEntity } from '../catalog/SshKeyEntity';
-import { CredentialEntity } from '../catalog/CredentialEntity';
-import { ProxyEntity } from '../catalog/ProxyEntity';
-import { LicenseEntity } from '../catalog/LicenseEntity';
 import { getLensClusters } from './rendererUtil';
 import { mkClusterContextName } from '../util/templates';
 import { EXT_EVENT_OAUTH_CODE, EXT_EVENT_ACTIVATE_CLUSTER } from './eventBus';
-
-// NOTE: The following interface _should_ be exported by the Lens extension package
-//  as `Common.Types.CatalogEntityDetailsProps`, but it's not, which is a known bug
-//  that will hopefully be fixed "soon". In the meantime, we define it ourselves here.
-interface CatalogEntityDetailsProps<T extends Common.Catalog.CatalogEntity> {
-  entity: T;
-}
+import catalogEntityDetails from './catalogEntityDetails';
 
 const {
   LensExtension,
   Catalog,
-  Component: { Notifications, DrawerTitle, DrawerItem },
+  Component: { Notifications },
 } = Renderer;
 
 const logger: any = loggerUtil; // get around TS compiler's complaining
 const statusItemColor = 'white'; // CSS color; Lens hard-codes the color of the workspace indicator item to 'white' also
-const {
-  catalog: {
-    entities: {
-      common: { details: unknownValue },
-    },
-  },
-} = strings;
 
 declare const FEAT_CLUSTER_PAGE_ENABLED: any; // TODO[clusterpage]: remove
 
@@ -102,100 +85,7 @@ export default class ExtensionRenderer extends LensExtension {
     },
   ];
 
-  catalogEntityDetailItems = [
-    {
-      kind: SshKeyEntity.kind,
-      apiVersions: [SshKeyEntity.apiVersion],
-      components: {
-        Details: (props: CatalogEntityDetailsProps<SshKeyEntity>) => (
-          <>
-            <DrawerTitle
-              title={strings.catalog.entities.common.details.title()}
-            />
-            <DrawerItem
-              name={strings.catalog.entities.common.details.props.uid()}
-            >
-              {props.entity.metadata.uid || unknownValue()}
-            </DrawerItem>
-            <DrawerItem
-              name={strings.catalog.entities.sshKey.details.props.publicKey()}
-            >
-              {props.entity.spec.publicKey || unknownValue()}
-            </DrawerItem>
-          </>
-        ),
-      },
-    },
-    {
-      kind: CredentialEntity.kind,
-      apiVersions: [CredentialEntity.apiVersion],
-      components: {
-        Details: (props: CatalogEntityDetailsProps<CredentialEntity>) => (
-          <>
-            <DrawerTitle
-              title={strings.catalog.entities.common.details.title()}
-            />
-            <DrawerItem
-              name={strings.catalog.entities.common.details.props.uid()}
-            >
-              {props.entity.metadata.uid || unknownValue()}
-            </DrawerItem>
-            <DrawerItem
-              name={strings.catalog.entities.credential.details.props.provider()}
-            >
-              {props.entity.spec.region || unknownValue()}
-            </DrawerItem>
-            <DrawerItem
-              name={strings.catalog.entities.credential.details.props.provider()}
-            >
-              {props.entity.spec.provider || unknownValue()}
-            </DrawerItem>
-          </>
-        ),
-      },
-    },
-    {
-      kind: ProxyEntity.kind,
-      apiVersions: [ProxyEntity.apiVersion],
-      components: {
-        Details: (props: CatalogEntityDetailsProps<ProxyEntity>) => (
-          <>
-            <DrawerTitle
-              title={strings.catalog.entities.common.details.title()}
-            />
-            <DrawerItem
-              name={strings.catalog.entities.common.details.props.uid()}
-            >
-              {props.entity.metadata.uid || unknownValue()}
-            </DrawerItem>
-            <DrawerItem
-              name={strings.catalog.entities.proxy.details.props.region()}
-            >
-              {props.entity.spec.region || unknownValue()}
-            </DrawerItem>
-          </>
-        ),
-      },
-    },
-    {
-      kind: LicenseEntity.kind,
-      apiVersions: [LicenseEntity.apiVersion],
-      components: {
-        Details: (props: CatalogEntityDetailsProps<LicenseEntity>) => (
-          <>
-            <DrawerTitle
-              title={strings.catalog.entities.common.details.title()}
-            />
-            <DrawerItem
-              name={strings.catalog.entities.common.details.props.uid()}
-            >
-              {props.entity.metadata.uid || unknownValue()}
-            </DrawerItem>
-          </>
-        ),
-      },
-    },
-  ];
+  catalogEntityDetailItems = catalogEntityDetails;
 
   protected handleProtocolActivateCluster = ({ search }) => {
     const { username, namespace, clusterName } = search;
