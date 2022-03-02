@@ -31,6 +31,15 @@ export class IpcMain extends Main.Ipc {
   //
 
   /**
+   * @param {Main.LensExtension} extension
+   */
+  constructor(extension) {
+    super(extension);
+
+    extension.addCatalogSource(consts.catalog.source, catalogSource);
+  }
+
+  /**
    * Logs a message to the `logger` and broadcasts it to the Renderer so that it can
    *  be seen in the Renderer's DevTools console, which can be seen even in the installed
    *  version of Lens (as opposed to having to run Lens locally from source to access
