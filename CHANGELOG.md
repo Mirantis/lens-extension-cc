@@ -1,5 +1,12 @@
 # ChangeLog
 
+## v4.0.0-alpha.2
+
+⚠️ This is an early alpha build and is not fully functional. Use at your own risk.
+
+- Updated dependencies for [Lens 5.4](https://github.com/lensapp/lens/releases/tag/v5.4.0) official release.
+- Fixed fake Catalog items not showing up.
+
 ## v4.0.0-alpha.1
 
 ⚠️ This is an early alpha build and is not fully functional. Use at your own risk.
