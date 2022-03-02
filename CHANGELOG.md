@@ -1,5 +1,12 @@
 # ChangeLog
 
+## UNRELEASED
+
+### Patch
+
+- Updated `@k8slens/extensions` dependency to v5.4.0 for Lens v5.4 official release.
+- Updated `electron` dependency to v14.2.4 to match version used by Lens v5.4.
+
 ## v3.1.1
 
 ### Patch
@@ -18,7 +25,7 @@
 
 ### Patch
 
-- Updated @k8slens/extensions dependency to v5.3.0
+- Updated `@k8slens/extensions` dependency to v5.3.0
 - Updated the Container Cloud icon to have a thicker/bolder appearance, which is better balanced with Material icons used by Lens.
 
 ## v3.0.3

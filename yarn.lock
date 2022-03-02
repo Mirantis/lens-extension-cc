@@ -1177,10 +1177,10 @@
   resolved "https://registry.yarnpkg.com/@humanwhocodes/object-schema/-/object-schema-1.2.0.tgz#87de7af9c231826fdd68ac7258f77c429e0e5fcf"
   integrity sha512-wdppn25U8z/2yiaT6YGquE6X8sSv7hNMWSXYSSU1jGv/yd6XqjXgTDJ8KP4NgjTXfJ3GbRjeeb8RTV7a/VpM+w==
 
-"@k8slens/extensions@^5.3.0":
-  version "5.3.0"
-  resolved "https://registry.yarnpkg.com/@k8slens/extensions/-/extensions-5.3.0.tgz#c5a1ab37a6e44cfbbdcb519c4e607eaac9b4d594"
-  integrity sha512-kZee2wsB2QOtxnxyyPNj4bVrerk+flu0TdpLzbJjMSlEpBQal6/Ni1i7EGQkx7a445y7GXZ6GCVK8sM5eWJEMg==
+"@k8slens/extensions@^5.4.0":
+  version "5.4.0"
+  resolved "https://registry.yarnpkg.com/@k8slens/extensions/-/extensions-5.4.0.tgz#813a2fd0353162131d942449ea3946977806a7f8"
+  integrity sha512-d/zSUHlfGGiPBz+hDUfSuwo1wB7jgIdY8ZhPR6EYc4h2g6QVn4hFT2dV0j0WEKyCzsVxwnTiJC68PJr7BNv6sw==
   dependencies:
     "@material-ui/core" "4.12.3"
     "@types/node" "14.17.14"
@@ -2250,10 +2250,10 @@ electron-to-chromium@^1.3.896:
   resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.4.5.tgz#912e8fd1645edee2f0f212558f40916eb538b1f9"
   integrity sha512-YKaB+t8ul5crdh6OeqT2qXdxJGI0fAYb6/X8pDIyye+c3a7ndOCk5gVeKX+ABwivCGNS56vOAif3TN0qJMpEHw==
 
-electron@^13.6.1:
-  version "13.6.1"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-13.6.1.tgz#f61c4f269b57c7dc27e0d5476216a988caa9c752"
-  integrity sha512-rZ6Y7RberigruefQpWOiI4bA9ppyT88GQF8htY6N1MrAgal5RrBc+Mh92CcGU7zT9QO+XO3DarSgZafNTepffQ==
+electron@^14.2.4:
+  version "14.2.6"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-14.2.6.tgz#d134da424d79f2ea59758899a9ba0cf18170bbec"
+  integrity sha512-yTPmuBO6/7baUUjhQ1E2URsNjEPsj+DMcleLf3VexVPU1Py0mXc5OpwI6LCq/jvuwyGiXOLK2Vx6h4bel6DoEw==
   dependencies:
     "@electron/get" "^1.0.1"
     "@types/node" "^14.6.2"
