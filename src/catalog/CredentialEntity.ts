@@ -54,8 +54,7 @@ export const credentialEntityModelTs = mergeRtvShapes(
         },
       ],
       region: [rtv.OPTIONAL, rtv.STRING],
-      status: [rtv.OPTIONAL, rtv.STRING],
-      created: [rtv.OPTIONAL, rtv.STRING],
+      valid: rtv.BOOLEAN,
     },
     status: {
       phase: [rtv.STRING, { oneOf: Object.values(credentialEntityPhases) }],
@@ -66,8 +65,8 @@ export const credentialEntityModelTs = mergeRtvShapes(
 export interface CredentialSpec {
   provider?: string;
   region?: string;
-  status?: string;
-  created?: string;
+  valid: boolean;
+  createdAt: string;
 }
 
 export const credentialIconName = 'verified_user'; // must be a Material Icon name

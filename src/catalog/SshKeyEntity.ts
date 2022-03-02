@@ -33,7 +33,6 @@ export const sshKeyEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
     labels: requiredLabelTs,
   },
   spec: {
-    created: rtv.STRING,
     publicKey: rtv.STRING,
   },
   status: {
@@ -42,8 +41,8 @@ export const sshKeyEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
 });
 
 export type SshKeySpec = {
-  created?: string; // see typesets.js for possible values
-  publicKey?: string; // see typesets.js for possible values
+  createdAt: string;
+  publicKey: string;
 };
 
 export const sshKeyIconName = 'vpn_key'; // must be a Material Icon name

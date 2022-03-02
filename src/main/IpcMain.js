@@ -26,14 +26,6 @@ const captureTs = {
 export const catalogSource = observable.array([]);
 
 export class IpcMain extends Main.Ipc {
-  //
-  // SINGLETON
-  //
-  constructor(extension) {
-    super(extension);
-    extension.addCatalogSource(consts.catalog.source, catalogSource);
-  }
-
   /**
    * @param {Main.LensExtension} extension
    */
@@ -92,7 +84,7 @@ export class IpcMain extends Main.Ipc {
           },
         },
         spec: {
-          created: '2021-08-12  (4 months)',
+          createdAt: '2021-12-03T20:38:04Z',
           publicKey: 'sshkey-public-key-1',
         },
         status: {
@@ -112,7 +104,7 @@ export class IpcMain extends Main.Ipc {
           },
         },
         spec: {
-          created: '2021-09-12  (3 months)',
+          createdAt: '2021-12-03T20:38:04Z',
           publicKey: 'sshkey-public-key-2',
         },
         status: {
@@ -150,8 +142,8 @@ export class IpcMain extends Main.Ipc {
         spec: {
           provider: 'aws',
           region: 'eu',
-          status: 'Processing',
-          created: '2021-08-12  (4 months)',
+          valid: true,
+          createdAt: '2021-12-03T20:38:04Z',
         },
         status: {
           phase: 'available',
@@ -172,8 +164,8 @@ export class IpcMain extends Main.Ipc {
         spec: {
           provider: 'azure',
           region: 'cz',
-          status: 'Processing',
-          created: '2021-10-12  (2 months)',
+          valid: false,
+          createdAt: '2021-12-03T20:38:04Z',
         },
         status: {
           phase: 'available',
@@ -211,7 +203,7 @@ export class IpcMain extends Main.Ipc {
           region: 'aws-us-east-1',
           httpProxy: 'http://east.proxy.com',
           httpsProxy: 'https://east.proxy.com',
-          created: '2021-10-12  (2 months)',
+          createdAt: '2021-12-03T20:38:04Z',
         },
         status: {
           phase: 'available',
@@ -233,7 +225,7 @@ export class IpcMain extends Main.Ipc {
           region: 'aws-us-west-1',
           httpProxy: 'http://west.proxy.com',
           httpsProxy: 'https://west.proxy.com',
-          created: '2021-10-12  (2 months)',
+          createdAt: '2021-12-03T20:38:04Z',
         },
         status: {
           phase: 'available',
@@ -268,7 +260,7 @@ export class IpcMain extends Main.Ipc {
           },
         },
         spec: {
-          created: '2021-10-12  (2 months)',
+          createdAt: '2021-12-03T20:38:04Z',
         },
         status: {
           phase: 'available',
@@ -287,7 +279,7 @@ export class IpcMain extends Main.Ipc {
           },
         },
         spec: {
-          created: '2021-09-12  (3 months)',
+          createdAt: '2021-12-03T20:38:04Z',
         },
         status: {
           phase: 'available',

@@ -1,10 +1,14 @@
 import React from 'react';
 import { Common, Renderer } from '@k8slens/extensions';
+import dayjs from 'dayjs';
+import dayjsRelativeTimePlugin from 'dayjs/plugin/relativeTime';
 import { SshKeyEntity } from '../catalog/SshKeyEntity';
 import { CredentialEntity } from '../catalog/CredentialEntity';
 import { ProxyEntity } from '../catalog/ProxyEntity';
 import { LicenseEntity } from '../catalog/LicenseEntity';
 import * as strings from '../strings';
+
+dayjs.extend(dayjsRelativeTimePlugin);
 
 // NOTE: The following interface _should_ be exported by the Lens extension package
 //  as `Common.Types.CatalogEntityDetailsProps`, but it's not, which is a known bug
@@ -12,6 +16,12 @@ import * as strings from '../strings';
 interface CatalogEntityDetailsProps<T extends Common.Catalog.CatalogEntity> {
   entity: T;
 }
+
+const getCreatedValue = (createdAt) => {
+  return `${dayjs(createdAt).format('MMMM DD, YYYY')} (${dayjs(
+    createdAt
+  ).fromNow(true)})`;
+};
 
 const {
   Component: { DrawerTitle, DrawerItem },
@@ -25,7 +35,7 @@ const {
   },
 } = strings;
 
-const catalogEntityDetails = [
+export const catalogEntityDetails = [
   {
     kind: SshKeyEntity.kind,
     apiVersions: [SshKeyEntity.apiVersion],
@@ -41,9 +51,9 @@ const catalogEntityDetails = [
             {props.entity.metadata.uid || unknownValue()}
           </DrawerItem>
           <DrawerItem
-            name={strings.catalog.entities.sshKey.details.props.dateCreated()}
+            name={strings.catalog.entities.common.details.props.dateCreated()}
           >
-            {props.entity.spec.created || unknownValue()}
+            {getCreatedValue(props.entity.spec.createdAt)}
           </DrawerItem>
           <DrawerItem
             name={strings.catalog.entities.sshKey.details.props.publicKey()}
@@ -81,12 +91,14 @@ const catalogEntityDetails = [
           <DrawerItem
             name={strings.catalog.entities.credential.details.props.mccStatus()}
           >
-            {props.entity.spec.status || unknownValue()}
+            {strings.catalog.entities.credential.details.info.status(
+              props.entity.spec.valid
+            )}
           </DrawerItem>
           <DrawerItem
-            name={strings.catalog.entities.credential.details.props.dateCreated()}
+            name={strings.catalog.entities.common.details.props.dateCreated()}
           >
-            {props.entity.spec.created || unknownValue()}
+            {getCreatedValue(props.entity.spec.createdAt)}
           </DrawerItem>
         </>
       ),
@@ -122,9 +134,9 @@ const catalogEntityDetails = [
             {props.entity.spec.httpsProxy || unknownValue()}
           </DrawerItem>
           <DrawerItem
-            name={strings.catalog.entities.proxy.details.props.dateCreated()}
+            name={strings.catalog.entities.common.details.props.dateCreated()}
           >
-            {props.entity.spec.created || unknownValue()}
+            {getCreatedValue(props.entity.spec.createdAt)}
           </DrawerItem>
         </>
       ),
@@ -145,14 +157,12 @@ const catalogEntityDetails = [
             {props.entity.metadata.uid || unknownValue()}
           </DrawerItem>
           <DrawerItem
-            name={strings.catalog.entities.license.details.props.dateCreated()}
+            name={strings.catalog.entities.common.details.props.dateCreated()}
           >
-            {props.entity.spec.created || unknownValue()}
+            {getCreatedValue(props.entity.spec.createdAt)}
           </DrawerItem>
         </>
       ),
     },
   },
 ];
-
-export default catalogEntityDetails;

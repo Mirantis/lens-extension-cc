@@ -48,7 +48,9 @@ export const catalogEntityModelTs = {
   // spec is specific to the type of entity being added to the Catalog; e.g. for a cluster,
   //  it requires `kubeconfigPath: string` and `kubeconfigContext: string`, but for an
   //  SSH key, it requires `publicKey: string`...
-  spec: {},
+  spec: {
+    createdAt: rtv.STRING,
+  },
 
   // all entities must have a status with a phase
   // based on Common.Types.CatalogEntityStatus

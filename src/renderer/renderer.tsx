@@ -15,7 +15,7 @@ import { IpcRenderer } from './IpcRenderer';
 import { getLensClusters } from './rendererUtil';
 import { mkClusterContextName } from '../util/templates';
 import { EXT_EVENT_OAUTH_CODE, EXT_EVENT_ACTIVATE_CLUSTER } from './eventBus';
-import catalogEntityDetails from './catalogEntityDetails';
+import { catalogEntityDetails } from './catalogEntityDetails';
 
 const {
   LensExtension,

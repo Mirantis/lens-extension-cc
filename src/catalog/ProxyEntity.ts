@@ -36,7 +36,6 @@ export const proxyEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
     region: [rtv.OPTIONAL, rtv.STRING],
     httpProxy: rtv.STRING,
     httpsProxy: rtv.STRING,
-    created: rtv.STRING,
   },
   status: {
     phase: [rtv.STRING, { oneOf: Object.values(proxyEntityPhases) }],
@@ -45,9 +44,9 @@ export const proxyEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
 
 export interface ProxySpec {
   region?: string;
-  httpProxy?: string;
-  httpsProxy?: string;
-  created?: string;
+  httpProxy: string;
+  httpsProxy: string;
+  createdAt: string;
 }
 
 export const proxyIconName = 'assistant_direction'; // must be a Material Icon name

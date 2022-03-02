@@ -226,7 +226,6 @@ export const catalog: Dict = {
       // details panel
       details: {
         props: {
-          dateCreated: () => 'Date created',
           publicKey: () => 'Public key',
         },
       },
@@ -248,7 +247,9 @@ export const catalog: Dict = {
           provider: () => 'Provider',
           region: () => 'Region',
           mccStatus: () => 'MCC Status',
-          dateCreated: () => 'Date created',
+        },
+        info: {
+          status: (valid) => (valid ? 'Valid' : 'Invalid'),
         },
       },
     },
@@ -269,7 +270,6 @@ export const catalog: Dict = {
           region: () => 'Region',
           httpProxy: () => 'HTTP Proxy',
           httpsProxy: () => 'HTTPS Proxy',
-          dateCreated: () => 'Date created',
         },
       },
     },
@@ -281,13 +281,6 @@ export const catalog: Dict = {
       catalogMenu: {
         create: {
           title: () => `New ${mccCodeName} RHEL License...`,
-        },
-      },
-
-      // details panel
-      details: {
-        props: {
-          dateCreated: () => 'Date created',
         },
       },
     },
