@@ -333,6 +333,7 @@ export class Cluster extends ApiObject {
 
     return merge({}, entity, {
       metadata: {
+        namespace: this.namespace.name,
         labels: {
           ...(this.isManagementCluster
             ? {}
@@ -347,8 +348,8 @@ export class Cluster extends ApiObject {
         },
       },
       spec: {
-        kubeconfigPath: 'wip', // TODO[PRODX-21909]
-        kubeconfigContext: 'wip', // TODO[PRODX-21909]
+        kubeconfigPath: 'todo-path', // TODO[PRODX-21909]
+        kubeconfigContext: 'todo-context', // TODO[PRODX-21909]
         isManagementCluster: this.isManagementCluster,
         ready: this.ready,
       },

@@ -221,7 +221,9 @@ export default class ExtensionRenderer extends LensExtension {
 
     cloudStore.loadExtension(this);
     syncStore.loadExtension(this);
-    IpcRenderer.createInstance(this); // AFTER load stores
+
+    // AFTER load stores
+    IpcRenderer.createInstance(this);
 
     const category = Catalog.catalogCategories.getForGroupKind(
       consts.catalog.entities.kubeCluster.group,

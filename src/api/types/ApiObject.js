@@ -93,7 +93,6 @@ export class ApiObject {
         description: null,
         labels: {},
         cloudUrl: this.cloud.cloudUrl,
-        namespace: null, // required, but to be filled-in by extended classes
       },
       spec: {},
       status: {},

@@ -641,9 +641,11 @@ export class DataCloud extends EventDispatcher {
   }
 
   /**
-   * check if for projects and depending on syncAll we add them to Cloud.syncedNamespaces or Cloud.ignoredNamespaces
+   * Update the Cloud's list of namespaces given all known namespaces and the Cloud's
+   *  `syncAll` flag (i.e. add any new namespaces to its synced or ignored list, and
+   *  remove any old ones).
    */
-  updateCloudNamespaceLists() {
+  updateCloudNamespaces() {
     const syncedList = [];
     const ignoredList = [];
 
@@ -667,18 +669,17 @@ export class DataCloud extends EventDispatcher {
   }
 
   /**
+   * Generates an array of all entities of the specified type across all synced namespaces.
    * @param {'sshKeys'|'credentials'|'proxies'|'licenses'|'clusters'} entityType
-   * @return {Array<Object>} merged array by type from all selected namespaces
+   * @return {Array<ApiObject>} List of entities. Empty if none.
    */
   getEntities(entityType) {
+    rtv.verify({ entityType }, { entityType: [rtv.STRING, { oneOf: [
+      // these are really just properties of the Namespace API class
+      'sshKeys', 'credentials', 'proxies', 'licenses', 'clusters'
+    ] }] });
+
     return this.syncedNamespaces.reduce((acc, namespace) => {
-      if (!namespace[entityType]) {
-        logger.error(
-          'ExtendedCloud.getEntities()',
-          `The namespace="${namespace}", doesn't contain entityType="${entityType}", extCloud=${this}`
-        );
-        return acc;
-      }
       return [...acc, ...namespace[entityType]];
     }, []);
   }
@@ -757,7 +758,8 @@ export class DataCloud extends EventDispatcher {
       return namespace;
     });
 
-    this.updateCloudNamespaceLists();
+    this.updateCloudNamespaces();
+
     if (!this.loaded) {
       // successfully loaded at least once
       this.loaded = true;

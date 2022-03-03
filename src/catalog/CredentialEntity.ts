@@ -57,7 +57,7 @@ export const credentialEntityModelTs = mergeRtvShapes(
         },
       ],
       region: [rtv.OPTIONAL, rtv.STRING],
-      valid: [rtv.OPTIONAL, rtv.BOOLEAN],
+      valid: rtv.BOOLEAN,
     },
     status: {
       phase: [rtv.STRING, { oneOf: Object.values(credentialEntityPhases) }],

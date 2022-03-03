@@ -11,33 +11,10 @@ import { sshKeyEntityModelTs } from '../catalog/SshKeyEntity';
 export const storeTs = {
   credentials: [[credentialEntityModelTs]],
   sshKeys: [[sshKeyEntityModelTs]],
-  clusters: [[rtv.ANY]], // eventually: [[clusterEntityModelTs]],
+  clusters: [[rtv.ANY]], // DEBUG TODO: [[clusterEntityModelTs]],
   licenses: [[licenseEntityModelTs]],
   proxies: [[proxyEntityModelTs]],
 };
-// export const storeTs = {
-//   credentials: [
-//     rtv.EXPECTED,
-//     rtv.ARRAY,
-//     { $: [rtv.OBJECT, { ctor: credentialEntityModelTs }] },
-//   ],
-//   sshKeys: [
-//     rtv.EXPECTED,
-//     rtv.ARRAY,
-//     { $: [rtv.OBJECT, { ctor: sshKeyEntityModelTs }] },
-//   ],
-//   clusters: [rtv.ARRAY, rtv.ANY], // for now
-//   licenses: [
-//     rtv.EXPECTED,
-//     rtv.ARRAY,
-//     { $: [rtv.OBJECT, { ctor: licenseEntityModelTs }] },
-//   ],
-//   proxies: [
-//     rtv.EXPECTED,
-//     rtv.ARRAY,
-//     { $: [rtv.OBJECT, { ctor: proxyEntityModelTs }] },
-//   ],
-// };
 
 export class SyncStore extends Common.Store.ExtensionStore {
   // NOTE: See main.ts#onActivate() and renderer.tsx#onActivate() where this.loadExtension()
@@ -47,14 +24,19 @@ export class SyncStore extends Common.Store.ExtensionStore {
   //  Lens gives the extension, but we don't know what it is until later
   // static defaultSavePath = null;
 
+  /** @member {Array} credentials List of entity objects that match `credentialEntityModelTs`. */
   @observable credentials;
 
+  /** @member {Array} sshKeys List of entity objects that match `sshKeyEntityModelTs`. */
   @observable sshKeys;
 
+  /** @member {Array} clusters List of entity objects that match `clusterEntityModelTs`. */
   @observable clusters;
 
+  /** @member {Array} licenses List of entity objects that match `licenseEntityModelTs`. */
   @observable licenses;
 
+  /** @member {Array} proxies List of entity objects that match `proxyEntityModelTs`. */
   @observable proxies;
 
   static getDefaults() {
