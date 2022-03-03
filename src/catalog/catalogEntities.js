@@ -34,10 +34,8 @@ export const catalogEntityModelTs = {
       },
     ],
 
-    //
-    // CUSTOM PROPERTIES
+    //// CUSTOM PROPERTIES
     // can also contain any other custom properties as `name: value` pairs
-    //
 
     // enough info to relate this entity to a namespace in a Cloud in `CloudStore.clouds`
     //  if necessary

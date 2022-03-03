@@ -6,14 +6,17 @@ import { Common, Renderer, Main } from '@k8slens/extensions';
 import * as rtv from 'rtvjs';
 import { mergeRtvShapes } from '../util/mergeRtvShapes';
 import { catalogEntityModelTs, requiredLabelTs } from './catalogEntities';
+import {
+  CatalogEntityMetadata,
+  CatalogEntitySpec,
+  CatalogEntityStatus,
+} from './catalogEntityTypes';
 import * as consts from '../constants';
 import * as strings from '../strings';
 import { logger as loggerUtil } from '../util/logger';
 
 type CatalogEntityContextMenuContext =
   Common.Catalog.CatalogEntityContextMenuContext;
-type CatalogEntityMetadata = Common.Catalog.CatalogEntityMetadata;
-type CatalogEntityStatus = Common.Catalog.CatalogEntityStatus;
 type CatalogEntityActionContext = Common.Catalog.CatalogEntityActionContext;
 
 const logger: any = loggerUtil; // get around TS compiler's complaining
@@ -40,10 +43,9 @@ export const sshKeyEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
   },
 });
 
-export type SshKeySpec = {
-  createdAt: string;
+export interface SshKeySpec extends CatalogEntitySpec {
   publicKey: string;
-};
+}
 
 export const sshKeyIconName = 'vpn_key'; // must be a Material Icon name
 

@@ -6,14 +6,17 @@ import { Common, Renderer, Main } from '@k8slens/extensions';
 import * as rtv from 'rtvjs';
 import { mergeRtvShapes } from '../util/mergeRtvShapes';
 import { catalogEntityModelTs, requiredLabelTs } from './catalogEntities';
+import {
+  CatalogEntityMetadata,
+  CatalogEntitySpec,
+  CatalogEntityStatus,
+} from './catalogEntityTypes';
 import * as consts from '../constants';
 import * as strings from '../strings';
 import { logger as loggerUtil } from '../util/logger';
 
 type CatalogEntityContextMenuContext =
   Common.Catalog.CatalogEntityContextMenuContext;
-type CatalogEntityMetadata = Common.Catalog.CatalogEntityMetadata;
-type CatalogEntityStatus = Common.Catalog.CatalogEntityStatus;
 type CatalogEntityActionContext = Common.Catalog.CatalogEntityActionContext;
 
 const logger: any = loggerUtil; // get around TS compiler's complaining
@@ -32,15 +35,12 @@ export const licenseEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
   metadata: {
     labels: requiredLabelTs,
   },
-  spec: {},
   status: {
     phase: [rtv.STRING, { oneOf: Object.values(licenseEntityPhases) }],
   },
 });
 
-export interface LicenseSpec {
-  createdAt: string;
-}
+export interface LicenseSpec extends CatalogEntitySpec {}
 
 export const licenseIconName = 'card_membership'; // must be a Material Icon name
 

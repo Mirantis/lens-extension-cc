@@ -79,6 +79,11 @@ export const catalogEntityDetails = [
             {props.entity.metadata.uid || unknownValue()}
           </DrawerItem>
           <DrawerItem
+            name={strings.catalog.entities.common.details.props.dateCreated()}
+          >
+            {getCreatedValue(props.entity.spec.createdAt)}
+          </DrawerItem>
+          <DrawerItem
             name={strings.catalog.entities.credential.details.props.provider()}
           >
             {props.entity.spec.provider || unknownValue()}
@@ -94,11 +99,6 @@ export const catalogEntityDetails = [
             {strings.catalog.entities.credential.details.info.status(
               props.entity.spec.valid
             )}
-          </DrawerItem>
-          <DrawerItem
-            name={strings.catalog.entities.common.details.props.dateCreated()}
-          >
-            {getCreatedValue(props.entity.spec.createdAt)}
           </DrawerItem>
         </>
       ),
@@ -119,6 +119,11 @@ export const catalogEntityDetails = [
             {props.entity.metadata.uid || unknownValue()}
           </DrawerItem>
           <DrawerItem
+            name={strings.catalog.entities.common.details.props.dateCreated()}
+          >
+            {getCreatedValue(props.entity.spec.createdAt)}
+          </DrawerItem>
+          <DrawerItem
             name={strings.catalog.entities.proxy.details.props.region()}
           >
             {props.entity.spec.region || unknownValue()}
@@ -132,11 +137,6 @@ export const catalogEntityDetails = [
             name={strings.catalog.entities.proxy.details.props.httpsProxy()}
           >
             {props.entity.spec.httpsProxy || unknownValue()}
-          </DrawerItem>
-          <DrawerItem
-            name={strings.catalog.entities.common.details.props.dateCreated()}
-          >
-            {getCreatedValue(props.entity.spec.createdAt)}
           </DrawerItem>
         </>
       ),
