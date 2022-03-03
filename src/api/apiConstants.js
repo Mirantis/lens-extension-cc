@@ -48,3 +48,39 @@ export const apiCredentialEntities = Object.freeze(
     'METAL_CREDENTIAL',
   ])
 );
+
+/**
+ * Map of API kind to kube spec `kind` property value in API data objects.
+ * @type {{ [index: string], string }}
+ */
+export const apiKinds = Object.freeze({
+  NAMESPACE: 'Namespace',
+  CLUSTER: 'Cluster',
+  PUBLIC_KEY: 'PublicKey',
+  OPENSTACK_CREDENTIAL: 'OpenStackCredential',
+  AWS_CREDENTIAL: 'AWSCredential',
+  EQUINIX_CREDENTIAL: 'EquinixMetalCredential',
+  VSPHERE_CREDENTIAL: 'VsphereCredential',
+  AZURE_CREDENTIAL: 'AzureCredential',
+  BYO_CREDENTIAL: 'BYOCredential',
+  METAL_CREDENTIAL: 'Secret', // TODO: not sure of the actual kind in kube spec
+  RHEL_LICENSE: 'RHELLicense',
+  PROXY: 'Proxy',
+});
+
+/**
+ * Map of credential API kind to kube spec `kind` property value in API data objects.
+ * @type {{ [index: string], string }}
+ */
+export const apiCredentialKinds = Object.freeze(
+  pick(apiKinds, [
+    // NOTE: these are KEYS from the apiEntities map
+    'OPENSTACK_CREDENTIAL',
+    'AWS_CREDENTIAL',
+    'EQUINIX_CREDENTIAL',
+    'VSPHERE_CREDENTIAL',
+    'AZURE_CREDENTIAL',
+    'BYO_CREDENTIAL',
+    'METAL_CREDENTIAL',
+  ])
+);

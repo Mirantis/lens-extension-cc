@@ -8,6 +8,7 @@ import { SshKey } from './SshKey';
 import { Proxy } from './Proxy';
 import { License } from './License';
 import { clusterEntityPhases } from '../../catalog/catalogEntities';
+import { apiKinds } from '../apiConstants';
 
 const isManagementCluster = function (data) {
   const kaas = get(data.spec, 'providerSpec.value.kaas', {});
@@ -26,6 +27,7 @@ export const apiClusterTs = mergeRtvShapes({}, apiObjectTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
   //  related to what we expect to find in order to create a `Credential` class instance
 
+  kind: [rtv.STRING, { oneOf: apiKinds.CLUSTER }],
   metadata: {
     labels: [
       rtv.OPTIONAL,
@@ -55,20 +57,24 @@ export const apiClusterTs = mergeRtvShapes({}, apiObjectTs, {
       },
     },
   },
-  status: {
-    providerStatus: {
-      oidc: {
-        certificate: rtv.STRING,
-        clientId: rtv.STRING,
-        groupsClaim: rtv.STRING,
-        issuerUrl: rtv.STRING,
-        ready: rtv.BOOLEAN,
+  // NOTE: BYO clusters don't have status at all, or at least may not have it
+  status: [
+    rtv.OPTIONAL,
+    {
+      providerStatus: {
+        oidc: {
+          certificate: rtv.STRING,
+          clientId: rtv.STRING,
+          groupsClaim: rtv.STRING,
+          issuerUrl: rtv.STRING,
+          ready: rtv.BOOLEAN,
+        },
+        apiServerCertificate: rtv.STRING,
+        ucpDashboard: [rtv.OPTIONAL, rtv.STRING], // if managed by UCP, the URL
+        loadBalancerHost: [rtv.OPTIONAL, rtv.STRING],
       },
-      apiServerCertificate: rtv.STRING,
-      ucpDashboard: [rtv.OPTIONAL, rtv.STRING], // if managed by UCP, the URL
-      loadBalancerHost: [rtv.OPTIONAL, rtv.STRING],
     },
-  },
+  ],
 });
 
 /**
@@ -85,15 +91,14 @@ export class Cluster extends ApiObject {
    * @param {string} params.username Username used to access the Cloud.
    */
   constructor({ data, namespace, cloud, username }) {
-    super({ data, cloud });
+    super({ data, cloud, typeset: apiClusterTs });
 
     // just testing for what is Cluster-specific
     DEV_ENV &&
       rtv.verify(
-        { data, namespace },
+        { namespace },
         {
           namespace: [rtv.CLASS_OBJECT, { ctor: Namespace }],
-          data: apiClusterTs,
         }
       );
 

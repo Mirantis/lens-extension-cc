@@ -5,6 +5,7 @@ import { ApiObject, apiObjectTs } from './ApiObject';
 import { get } from 'lodash';
 import { Namespace } from './Namespace';
 import { proxyEntityPhases } from '../../catalog/ProxyEntity';
+import { apiKinds } from '../apiConstants';
 
 /**
  * Typeset for an MCC Proxy object.
@@ -13,7 +14,7 @@ export const apiProxyTs = mergeRtvShapes({}, apiObjectTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
   //  related to what we expect to find in order to create a `Credential` class instance
 
-  kind: [rtv.STRING, { oneOf: 'Proxy' }],
+  kind: [rtv.STRING, { oneOf: apiKinds.PROXY }],
   metadata: {
     labels: [
       rtv.OPTIONAL,
@@ -43,15 +44,15 @@ export class Proxy extends ApiObject {
    * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
    */
   constructor({ data, namespace, cloud }) {
-    super({ data, cloud });
+    super({ data, cloud, typeset: apiProxyTs });
 
     DEV_ENV &&
       rtv.verify(
-        { data, namespace },
-        { data: apiProxyTs, namespace: [rtv.CLASS_OBJECT, { ctor: Namespace }] }
+        { namespace },
+        { namespace: [rtv.CLASS_OBJECT, { ctor: Namespace }] }
       );
 
-    /** @member {Namespace} */
+    /** @member {Namespace} namespace */
     Object.defineProperty(this, 'namespace', {
       enumerable: true,
       get() {
@@ -59,15 +60,7 @@ export class Proxy extends ApiObject {
       },
     });
 
-    /** @member {string} */
-    Object.defineProperty(this, 'kind', {
-      enumerable: true,
-      get() {
-        return data.kind;
-      },
-    });
-
-    /** @member {string} */
+    /** @member {string} region */
     Object.defineProperty(this, 'region', {
       enumerable: true,
       get() {
@@ -75,7 +68,7 @@ export class Proxy extends ApiObject {
       },
     });
 
-    /** @member {string} */
+    /** @member {string} httpProxy */
     Object.defineProperty(this, 'httpProxy', {
       enumerable: true,
       get() {
@@ -83,7 +76,7 @@ export class Proxy extends ApiObject {
       },
     });
 
-    /** @member {string} */
+    /** @member {string} httpsProxy */
     Object.defineProperty(this, 'httpsProxy', {
       enumerable: true,
       get() {
@@ -121,7 +114,7 @@ export class Proxy extends ApiObject {
 
   /** @returns {string} A string representation of this instance for logging/debugging. */
   toString() {
-    const propStr = `${super.toString()}, kind: "${this.kind}", namespace: "${
+    const propStr = `${super.toString()}, namespace: "${
       this.namespace.name
     }", http: "${this.httpProxy}", https: "${this.httpsProxy}"`;
 

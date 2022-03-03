@@ -1,5 +1,5 @@
 import * as rtv from 'rtvjs';
-import { EXTENDED_CLOUD_EVENTS, ExtendedCloud } from '../common/ExtendedCloud';
+import { DATA_CLOUD_EVENTS, DataCloud } from '../common/DataCloud';
 import { cloudStore } from '../store/CloudStore';
 import { syncStore } from '../store/SyncStore';
 
@@ -29,7 +29,7 @@ export class SyncManager extends Singleton {
     extension.addCatalogSource(consts.catalog.source, catalogSource);
 
     let _cloudTokens = {};
-    let _extendedClouds = {};
+    let _dataClouds = {};
 
     /**
      * @member {{ [index: string]: string }} cloudTokens Map of Cloud URL to Cloud
@@ -42,27 +42,28 @@ export class SyncManager extends Singleton {
       },
       set(newValue) {
         if (newValue !== _cloudTokens || !isEqual(newValue, _cloudTokens)) {
-          DEV_ENV && rtv.verify(
-            { cloudTokens: newValue },
-            { cloudTokens: [rtv.HASH_MAP, { $values: rtv.STRING }] }
-          );
+          DEV_ENV &&
+            rtv.verify(
+              { cloudTokens: newValue },
+              { cloudTokens: [rtv.HASH_MAP, { $values: rtv.STRING }] }
+            );
           _cloudTokens = newValue;
         }
-      }
+      },
     });
 
     /**
      * @readonly
-     * @member {{ [index: string]: ExtendedCloud }} extendedClouds Map of Cloud URL to
-     *  ExtendedCloud instance.
+     * @member {{ [index: string]: DataCloud }} dataClouds Map of Cloud URL to
+     *  DataCloud instance.
      *
      *  __READONLY__: Assign/delete properties on the object, but don't set the entire
      *   property as a whole.
      */
-    Object.defineProperty(this, 'extendedClouds', {
+    Object.defineProperty(this, 'dataClouds', {
       enumerable: true,
       get() {
-        return _extendedClouds;
+        return _dataClouds;
       },
     });
 
@@ -88,7 +89,6 @@ export class SyncManager extends Singleton {
         });
       }
     });
-
   }
 
   /**
@@ -108,7 +108,7 @@ export class SyncManager extends Singleton {
     Object.keys(this.cloudTokens).forEach((providerUrl) => {
       if (cloudStoreTokens[providerUrl]) {
         // provider URL is also in CloudStore set of URLs: if the token has changed,
-        //  it's updated (as far as we're concerned here in ExtendedCloudProvider)
+        //  it's updated (as far as we're concerned here in DataCloudProvider)
         if (cloudStoreTokens[providerUrl] !== this.cloudTokens[providerUrl]) {
           cloudUrlsToUpdate.push(providerUrl);
         }
@@ -155,33 +155,33 @@ export class SyncManager extends Singleton {
     this.cloudTokens = cloudStoreTokens;
 
     cloudUrlsToRemove.forEach((url) => {
-      // destroy and remove ExtendedCloud
-      this.extendedClouds[url].removeEventListener(
-        EXTENDED_CLOUD_EVENTS.DATA_UPDATED,
+      // destroy and remove DataCloud
+      this.dataClouds[url].removeEventListener(
+        DATA_CLOUD_EVENTS.DATA_UPDATED,
         this.onDataUpdated
       );
-      this.extendedClouds[url].destroy();
-      delete this.extendedClouds[url];
+      this.dataClouds[url].destroy();
+      delete this.dataClouds[url];
     });
 
     cloudUrlsToAdd.concat(cloudUrlsToUpdate).forEach((url) => {
       const cloud = cloudStore.clouds[url];
 
-      // if extendedCloud exists - update extendedCloud.cloud
-      if (this.extendedClouds[url]) {
+      // if dataCloud exists - update dataCloud.cloud
+      if (this.dataClouds[url]) {
         // NOTE: updating the EC's Cloud instance will cause the EC to fetch new data,
         //  IIF the `cloud` is actually a new instance at the same URL; it's not always
         //  new as the CloudStore listens for changes on each Cloud and triggers the
         //  `autorun()` Mobx binding in the SyncManager declaration whenever
         //  that happens, but we still make the assignment just in case it's new and
-        //  leave it to the ExtendedCloud to optimize what it does if the instance is
+        //  leave it to the DataCloud to optimize what it does if the instance is
         //  the same as it already has
-        this.extendedClouds[url].cloud = cloud;
+        this.dataClouds[url].cloud = cloud;
       } else {
         // add new EC to store
-        const extCloud = new ExtendedCloud(cloud);
-        extCloud.addEventListener(EXTENDED_CLOUD_EVENTS.DATA_UPDATED, this.onDataUpdated);
-        this.extendedClouds[url] = extCloud;
+        const dc = new DataCloud(cloud);
+        dc.addEventListener(DATA_CLOUD_EVENTS.DATA_UPDATED, this.onDataUpdated);
+        this.dataClouds[url] = dc;
       }
     });
   }
@@ -189,13 +189,21 @@ export class SyncManager extends Singleton {
   // DEBUG TODO: this part now needs to look at all EC.syncedNamespaces and create items
   //  in the catalog for everything, looking for items that exist purely by
   //  cloudUrl, namespace, and name, and replacing them with new instances
-  onDataUpdated = (extCloud) => {
-    entityTypes.map((type) => {
-      syncStore.findAndUpdateEntities(
-        type,
-        extCloud.getEntities(type),
-        extCloud.cloud.cloudUrl
-      );
-    });
+  /**
+   * Called whenever a DataCloud's data has been updated.
+   * @param {DataCloud} dc The updated DataCloud.
+   */
+  onDataUpdated = (dc) => {
+    ['sshKeys', 'credentials', 'proxies', 'licenses', 'clusters'].forEach(
+      (type) => {}
+    );
+
+    // entityTypes.map((type) => {
+    //   syncStore.findAndUpdateEntities(
+    //     type,
+    //     dc.getEntities(type),
+    //     dc.cloud.cloudUrl
+    //   );
+    // });
   };
 }

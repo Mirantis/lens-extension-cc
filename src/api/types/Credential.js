@@ -1,24 +1,10 @@
 import * as rtv from 'rtvjs';
-import { get, merge } from 'lodash';
+import { get, merge, pick } from 'lodash';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
+import { apiCredentialKinds } from '../apiConstants';
 import { ApiObject, apiObjectTs } from './ApiObject';
 import { Namespace } from './Namespace';
 import { credentialEntityPhases } from '../../catalog/CredentialEntity';
-
-/**
- * Map of name to credential kind values as used by the API in a Credential object
- *  payload.
- */
-export const credentialKinds = Object.freeze({
-  OPENSTACK: 'OpenStackCredential',
-  VSPHERE: 'VsphereCredential',
-  EQUINIX: 'EquinixMetalCredential',
-  AZURE: 'AzureCredential',
-  AWS: 'AWSCredential',
-  BYO: 'BYOCredential',
-  // TODO: there may be one more kind here for BM credentials (i.e. secrets) but we
-  //  first need to test this in an MCC+BM env
-});
 
 /**
  * Typeset for an MCC Credential object.
@@ -27,7 +13,7 @@ export const apiCredentialTs = mergeRtvShapes({}, apiObjectTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
   //  related to what we expect to find in order to create a `Credential` class instance
 
-  kind: [rtv.STRING, { oneOf: Object.values(credentialKinds) }],
+  kind: [rtv.STRING, { oneOf: Object.values(apiCredentialKinds) }],
   metadata: {
     labels: [
       rtv.OPTIONAL,
@@ -51,25 +37,24 @@ export class Credential extends ApiObject {
    * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
    */
   constructor({ data, namespace, cloud }) {
-    super({ data, cloud });
+    super({
+      data,
+      cloud,
+      // NOTE: BYOCredential objects do not have a `status` for some reason
+      typeset:
+        data.kind === apiCredentialKinds.BYO_CREDENTIAL
+          ? pick(apiCredentialTs, ['metadata', 'spec'])
+          : apiCredentialTs,
+    });
 
     // now we have check only for openStack. It's hard to predict other types
     DEV_ENV &&
       rtv.verify(
-        { data, namespace },
+        { namespace },
         {
-          data: apiCredentialTs,
           namespace: [rtv.CLASS_OBJECT, { ctor: Namespace }],
         }
       );
-
-    /** @member {string} kind  */
-    Object.defineProperty(this, 'kind', {
-      enumerable: true,
-      get() {
-        return data.kind;
-      },
-    });
 
     /** @member {Namespace} namespace */
     Object.defineProperty(this, 'namespace', {
@@ -99,7 +84,8 @@ export class Credential extends ApiObject {
     Object.defineProperty(this, 'valid', {
       enumerable: true,
       get() {
-        return !!data.status.valid;
+        // NOTE: BYOCredential objects do not have a `status` for some reason
+        return !!data.status?.valid;
       },
     });
   }
@@ -133,7 +119,7 @@ export class Credential extends ApiObject {
 
   /** @returns {string} A string representation of this instance for logging/debugging. */
   toString() {
-    const propStr = `${super.toString()}, kind: "${this.kind}", namespace: "${
+    const propStr = `${super.toString()}, namespace: "${
       this.namespace.name
     }", valid: ${this.valid}`;
 

@@ -8,6 +8,7 @@ type LensCatalogEntityMetadata = Common.Catalog.CatalogEntityMetadata;
 type LensCatalogEntityStatus = Common.Catalog.CatalogEntityStatus;
 
 export interface CatalogEntityMetadata extends LensCatalogEntityMetadata {
+  kind: string;
   namespace: string;
   cloudUrl: string;
 }

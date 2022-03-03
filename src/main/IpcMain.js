@@ -72,6 +72,7 @@ export class IpcMain extends Main.Ipc {
 
     const sshKeyModels = [
       {
+        kind: 'PublicKey',
         metadata: {
           source: consts.catalog.source,
           uid: 'sshkey-uid-1',
@@ -92,6 +93,7 @@ export class IpcMain extends Main.Ipc {
         },
       },
       {
+        kind: 'PublicKey',
         metadata: {
           source: consts.catalog.source,
           uid: 'sshkey-uid-2',
@@ -128,6 +130,7 @@ export class IpcMain extends Main.Ipc {
 
     const credentialModels = [
       {
+        kind: 'AWSCredential',
         metadata: {
           source: consts.catalog.source,
           uid: 'credential-uid-1',
@@ -150,6 +153,7 @@ export class IpcMain extends Main.Ipc {
         },
       },
       {
+        kind: 'AzureCredential',
         metadata: {
           source: consts.catalog.source,
           uid: 'credential-uid-2',
@@ -188,6 +192,7 @@ export class IpcMain extends Main.Ipc {
 
     const proxyModels = [
       {
+        kind: 'Proxy',
         metadata: {
           source: consts.catalog.source,
           uid: 'proxy-uid-1',
@@ -210,6 +215,7 @@ export class IpcMain extends Main.Ipc {
         },
       },
       {
+        kind: 'Proxy',
         metadata: {
           source: consts.catalog.source,
           uid: 'proxy-uid-2',
@@ -248,6 +254,7 @@ export class IpcMain extends Main.Ipc {
 
     const licenseModels = [
       {
+        kind: 'RHELLicense',
         metadata: {
           source: consts.catalog.source,
           uid: 'license-uid-1',
@@ -267,6 +274,7 @@ export class IpcMain extends Main.Ipc {
         },
       },
       {
+        kind: 'RHELLicense',
         metadata: {
           source: consts.catalog.source,
           uid: 'license-uid-2',

@@ -4,6 +4,7 @@ import { mergeRtvShapes } from '../../util/mergeRtvShapes';
 import { ApiObject, apiObjectTs } from './ApiObject';
 import { Namespace } from './Namespace';
 import { sshKeyEntityPhases } from '../../catalog/SshKeyEntity';
+import { apiKinds } from '../apiConstants';
 
 /**
  * Typeset for an MCC SSH Key object.
@@ -12,7 +13,7 @@ export const apiSshKeyTs = mergeRtvShapes({}, apiObjectTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
   //  related to what we expect to find in order to create a `Credential` class instance
 
-  kind: [rtv.STRING, { oneOf: 'PublicKey' }],
+  kind: [rtv.STRING, { oneOf: apiKinds.PUBLIC_KEY }],
   spec: {
     publicKey: rtv.STRING,
   },
@@ -33,13 +34,12 @@ export class SshKey extends ApiObject {
    * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
    */
   constructor({ data, namespace, cloud }) {
-    super({ data, cloud });
+    super({ data, cloud, typeset: apiSshKeyTs });
 
     DEV_ENV &&
       rtv.verify(
-        { data, namespace },
+        { namespace },
         {
-          data: apiSshKeyTs,
           namespace: [rtv.CLASS_OBJECT, { ctor: Namespace }],
         }
       );
@@ -49,14 +49,6 @@ export class SshKey extends ApiObject {
       enumerable: true,
       get() {
         return namespace;
-      },
-    });
-
-    /** @member {string} */
-    Object.defineProperty(this, 'kind', {
-      enumerable: true,
-      get() {
-        return data.kind;
       },
     });
 
@@ -96,7 +88,7 @@ export class SshKey extends ApiObject {
 
   /** @returns {string} A string representation of this instance for logging/debugging. */
   toString() {
-    const propStr = `${super.toString()}, kind: "${this.kind}", namespace: "${
+    const propStr = `${super.toString()}, namespace: "${
       this.namespace.name
     }", publicKey: "${this.publicKey.slice(0, 15)}..${this.publicKey.slice(
       -15

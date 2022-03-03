@@ -4,6 +4,7 @@ import { mergeRtvShapes } from '../../util/mergeRtvShapes';
 import { ApiObject, apiObjectTs } from './ApiObject';
 import { Namespace } from './Namespace';
 import { licenseEntityPhases } from '../../catalog/LicenseEntity';
+import { apiKinds } from '../apiConstants';
 
 /**
  * Typeset for an MCC License object.
@@ -12,7 +13,7 @@ export const apiLicenseTs = mergeRtvShapes({}, apiObjectTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
   //  related to what we expect to find in order to create a `Credential` class instance
 
-  kind: [rtv.STRING, { oneOf: 'RHELLicense' }],
+  kind: [rtv.STRING, { oneOf: apiKinds.RHEL_LICENSE }],
 });
 
 /**
@@ -30,13 +31,12 @@ export class License extends ApiObject {
    * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
    */
   constructor({ data, namespace, cloud }) {
-    super({ data, cloud });
+    super({ data, cloud, typeset: apiLicenseTs });
 
     DEV_ENV &&
       rtv.verify(
-        { data, namespace },
+        { namespace },
         {
-          data: apiLicenseTs,
           namespace: [rtv.CLASS_OBJECT, { ctor: Namespace }],
         }
       );
@@ -46,14 +46,6 @@ export class License extends ApiObject {
       enumerable: true,
       get() {
         return namespace;
-      },
-    });
-
-    /** @member {string} */
-    Object.defineProperty(this, 'kind', {
-      enumerable: true,
-      get() {
-        return data.kind;
       },
     });
   }
@@ -82,9 +74,7 @@ export class License extends ApiObject {
 
   /** @returns {string} A string representation of this instance for logging/debugging. */
   toString() {
-    const propStr = `${super.toString()}, kind: "${this.kind}", namespace: "${
-      this.namespace.name
-    }"`;
+    const propStr = `${super.toString()}, namespace: "${this.namespace.name}"`;
 
     if (Object.getPrototypeOf(this).constructor === License) {
       return `{License ${propStr}}`;

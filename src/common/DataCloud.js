@@ -102,6 +102,9 @@ const _deserializeEntityList = function (entity, body, namespace, create) {
 
   return body.items
     .map((data, idx) => {
+      if (namespace?.name === 'imc-k8s-team' && idx === 0) {
+        console.log('get data'); // DEBUG REMOVE
+      }
       try {
         return create({ data, namespace });
       } catch (err) {
@@ -666,22 +669,6 @@ export class DataCloud extends EventDispatcher {
     });
 
     this.cloud.updateNamespaces(syncedList, ignoredList, true);
-  }
-
-  /**
-   * Generates an array of all entities of the specified type across all synced namespaces.
-   * @param {'sshKeys'|'credentials'|'proxies'|'licenses'|'clusters'} entityType
-   * @return {Array<ApiObject>} List of entities. Empty if none.
-   */
-  getEntities(entityType) {
-    rtv.verify({ entityType }, { entityType: [rtv.STRING, { oneOf: [
-      // these are really just properties of the Namespace API class
-      'sshKeys', 'credentials', 'proxies', 'licenses', 'clusters'
-    ] }] });
-
-    return this.syncedNamespaces.reduce((acc, namespace) => {
-      return [...acc, ...namespace[entityType]];
-    }, []);
   }
 
   /** Called when __this__ DataCloud should fetch new data from its Cloud. */

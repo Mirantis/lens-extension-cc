@@ -18,6 +18,7 @@ export const apiNamespaceTs = mergeRtvShapes({}, apiObjectTs, {
     phase: rtv.STRING,
   },
 });
+delete apiNamespaceTs.kind; // Namespace API objects don't have `kind` property for some reason
 
 /**
  * MCC project/namespace.
@@ -26,9 +27,7 @@ export const apiNamespaceTs = mergeRtvShapes({}, apiObjectTs, {
  */
 export class Namespace extends ApiObject {
   constructor({ data, cloud }) {
-    super({ data, cloud });
-
-    DEV_ENV && rtv.verify({ data }, { data: apiNamespaceTs });
+    super({ data, cloud, typeset: apiNamespaceTs });
 
     let _clusters = [];
     let _sshKeys = [];
