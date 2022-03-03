@@ -5,7 +5,7 @@
 import * as rtv from 'rtvjs';
 import * as consts from '../constants';
 import { mergeRtvShapes } from '../util/mergeRtvShapes';
-import { apiKinds } from '../api/apiConstants';
+import { apiKinds, apiCredentialKinds } from '../api/apiConstants';
 
 /**
  * Typeset representing the required labels for all entity types (except a mgmt
@@ -137,3 +137,26 @@ export const clusterEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
     phase: [rtv.STRING, { oneOf: Object.values(clusterEntityPhases) }],
   },
 });
+
+/**
+ * Generate URL for single entity.
+ * @param {object} entity Single entity.
+ */
+export const generateEntityUrl = (entity) => {
+  const url = `${entity.metadata.cloudUrl}/projects/${entity.metadata.namespace}`;
+
+  if (Object.values(apiCredentialKinds).includes(entity.metadata.kind)) {
+    return `${url}/creds?name=${entity.metadata.name}`;
+  }
+
+  switch (entity.metadata.kind) {
+    case apiKinds.RHEL_LICENSE:
+      return `${url}/rhel?name=${entity.metadata.name}`;
+    case apiKinds.PROXY:
+      return `${url}/proxies?name=${entity.metadata.name}`;
+    case apiKinds.PUBLIC_KEY:
+      return `${url}/keypairs?name=${entity.metadata.name}`;
+    default:
+      return `${url}/clusters`;
+  }
+};

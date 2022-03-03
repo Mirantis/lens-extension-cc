@@ -13,13 +13,13 @@ import {
 } from './catalogEntityTypes';
 import * as consts from '../constants';
 import * as strings from '../strings';
-import { logger as loggerUtil } from '../util/logger';
+import { logger } from '../util/logger';
+import { openBrowser } from '../util/netUtil';
+import { generateEntityUrl } from './catalogEntities';
 
 type CatalogEntityContextMenuContext =
   Common.Catalog.CatalogEntityContextMenuContext;
 type CatalogEntityActionContext = Common.Catalog.CatalogEntityActionContext;
-
-const logger: any = loggerUtil; // get around TS compiler's complaining
 
 /** Map of phase name to phase value as understood by Lens. */
 export const sshKeyEntityPhases = Object.freeze({
@@ -102,14 +102,10 @@ export class SshKeyEntity extends Common.Catalog.CatalogEntity<
   async onContextMenuOpen(context: CatalogEntityContextMenuContext) {
     if (this.metadata.source === consts.catalog.source) {
       context.menuItems.push({
-        title: `(WIP) ${strings.catalog.entities.common.contextMenu.browserOpen.title()}`,
+        title: strings.catalog.entities.common.contextMenu.browserOpen.title(),
         icon: 'launch', // NOTE: must be a string; cannot be a component that renders an icon
         onClick: async () => {
-          logger.log(
-            'SshKeyEntity/SshKeyEntity.onContextMenuOpen.browserOpen',
-            'opening SSH key %s in browser...',
-            this.metadata.name
-          );
+          openBrowser(generateEntityUrl(this));
         },
       });
     }
