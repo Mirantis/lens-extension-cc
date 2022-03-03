@@ -245,6 +245,11 @@ export const catalog: Dict = {
       details: {
         props: {
           provider: () => 'Provider',
+          region: () => 'Region',
+          mccStatus: () => 'MCC Status',
+        },
+        info: {
+          status: (valid) => (valid ? 'Valid' : 'Invalid'),
         },
       },
     },
@@ -263,6 +268,8 @@ export const catalog: Dict = {
       details: {
         props: {
           region: () => 'Region',
+          httpProxy: () => 'HTTP Proxy',
+          httpsProxy: () => 'HTTPS Proxy',
         },
       },
     },

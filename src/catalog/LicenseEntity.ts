@@ -32,12 +32,15 @@ export const licenseEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
   metadata: {
     labels: requiredLabelTs,
   },
+  spec: {},
   status: {
     phase: [rtv.STRING, { oneOf: Object.values(licenseEntityPhases) }],
   },
 });
 
-export interface LicenseSpec {}
+export interface LicenseSpec {
+  createdAt: string;
+}
 
 export const licenseIconName = 'card_membership'; // must be a Material Icon name
 

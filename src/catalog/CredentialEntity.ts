@@ -66,6 +66,7 @@ export interface CredentialSpec {
   provider?: string;
   region?: string;
   valid: boolean;
+  createdAt: string;
 }
 
 export const credentialIconName = 'verified_user'; // must be a Material Icon name
