@@ -15,21 +15,21 @@ const setParentCheckboxState = (children) => {
 };
 
 /**
- * @param {ExtendedCloud} extCloud
+ * @param {DataCloud} dataCloud
  * @return {Object} {[namespaceName]: boolean}
  */
-const makeCheckboxesStateObj = (extCloud) => {
+const makeCheckboxesStateObj = (dataCloud) => {
   // if EC.namespaces aren't loaded yet, we use stored syncedNamespaces names from Cloud
-  if (!extCloud.loaded) {
-    return extCloud.cloud.allNamespaces.reduce((acc, name) => {
-      acc[name] = extCloud.cloud.syncedNamespaces.includes(name);
+  if (!dataCloud.loaded) {
+    return dataCloud.cloud.allNamespaces.reduce((acc, name) => {
+      acc[name] = dataCloud.cloud.syncedNamespaces.includes(name);
       return acc;
     }, {});
   }
   // otherwise, we make state for all EC.namespaces, they have to be present
   // And use syncedNamespaces to make initial state checked for selected checkboxes
-  return extCloud.namespaces.reduce((acc, namespace) => {
-    acc[namespace.name] = extCloud.cloud.syncedNamespaces.includes(
+  return dataCloud.namespaces.reduce((acc, namespace) => {
+    acc[namespace.name] = dataCloud.cloud.syncedNamespaces.includes(
       namespace.name
     );
     return acc;
@@ -37,11 +37,11 @@ const makeCheckboxesStateObj = (extCloud) => {
 };
 
 /**
- * @param {ExtendedCloud} extCloud
+ * @param {DataCloud} dataCloud
  * @return {{parent: (boolean), children: Object}}
  */
-export const makeCheckboxesInitialState = (extCloud) => {
-  const children = makeCheckboxesStateObj(extCloud);
+export const makeCheckboxesInitialState = (dataCloud) => {
+  const children = makeCheckboxesStateObj(dataCloud);
   return {
     parent: setParentCheckboxState(children),
     children,

@@ -3,7 +3,7 @@ import { Renderer } from '@k8slens/extensions';
 import styled from '@emotion/styled';
 import { layout } from '../styles';
 import { AddCloudInstance } from './AddCloudInstance.js';
-import { useExtendedCloudData } from '../../store/ExtendedCloudProvider';
+import { useDataCloudData } from '../../store/DataCloudProvider';
 import { WelcomeView } from './WelcomeView';
 import { cloudStore } from '../../../store/CloudStore';
 import { syncView } from '../../../strings';
@@ -58,7 +58,7 @@ const ButtonWrapper = styled.div`
 export const SyncView = () => {
   const {
     state: { extendedClouds },
-  } = useExtendedCloudData();
+  } = useDataCloudData();
   const [showAddCloudComponent, setShowAddCloudComponent] = useState(false);
   const [isSelectiveSyncView, setIsSelectiveSyncView] = useState(false);
   const [isSyncStarted, setIsSyncStarted] = useState(false);

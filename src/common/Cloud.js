@@ -481,7 +481,7 @@ export class Cloud extends EventDispatcher {
       /**
        * @param {Array<string>} syncedList A list of namespace names in the mgmt cluster that should be synced.
        * @param {Array<string>} ignoredList A list of namespace names in the mgmt cluster that not synced.
-       * @param {boolean} [silent] if true we don't dispatch event (thus ExtendedCloud does not fetch its data)
+       * @param {boolean} [silent] if true we don't dispatch event (thus DataCloud does not fetch its data)
        */
       value: function (syncedList, ignoredList, silent = false) {
         DEV_ENV &&

@@ -5,10 +5,7 @@ import { layout } from '../styles';
 import { ConnectionBlock } from './ConnectionBlock';
 import { SynchronizeBlock } from './SynchronizeBlock';
 import { CloseButton } from '../CloseButton/CloseButton';
-import {
-  ExtendedCloud,
-  EXTENDED_CLOUD_EVENTS,
-} from '../../../common/ExtendedCloud';
+import { DataCloud, DATA_CLOUD_EVENTS } from '../../../common/DataCloud';
 import { Renderer } from '@k8slens/extensions';
 import { normalizeUrl } from '../../../util/netUtil';
 import { addCloudInstance } from '../../../strings';
@@ -56,57 +53,51 @@ const MainColumn = styled.div(function () {
 
 export const AddCloudInstance = ({ onAdd, onCancel }) => {
   const [cloud, setCloud] = useState(null);
-  const [extCloud, setExtCloud] = useState(null);
+  const [dataCloud, setDataCloud] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const makeExtCloud = useCallback(() => {
+  const makeDataCloud = useCallback(() => {
     setLoading(true);
 
     // just use a minimal preview instance since it's throw-away
-    const extCl = new ExtendedCloud(cloud, true);
+    const dc = new DataCloud(cloud, true);
 
     const loadingListener = () => {
-      // when extCl loaded, it means extCl contains all needed data
-      // so we store it as extCloud in local state
-      if (extCl && !extCl.loading && !extCloud) {
-        if (extCl.error) {
-          Notifications.error(extCl.error);
+      // when DataCloud loaded, it means it contains all needed data
+      // so we store it as dataCloud in local state
+      if (dc && !dc.loading && !dataCloud) {
+        if (dc.error) {
+          Notifications.error(dc.error);
         }
-        setExtCloud(extCl);
+        setDataCloud(dc);
 
-        extCl.removeEventListener(
-          EXTENDED_CLOUD_EVENTS.LOADED,
-          loadingListener
-        );
-        extCl.removeEventListener(
-          EXTENDED_CLOUD_EVENTS.ERROR_CHANGE,
-          loadingListener
-        );
+        dc.removeEventListener(DATA_CLOUD_EVENTS.LOADED, loadingListener);
+        dc.removeEventListener(DATA_CLOUD_EVENTS.ERROR_CHANGE, loadingListener);
       }
-      setLoading(extCl.loading);
+      setLoading(dc.loading);
     };
 
-    extCl.addEventListener(EXTENDED_CLOUD_EVENTS.LOADED, loadingListener);
-    extCl.addEventListener(EXTENDED_CLOUD_EVENTS.ERROR_CHANGE, loadingListener);
-  }, [extCloud, cloud]);
+    dc.addEventListener(DATA_CLOUD_EVENTS.LOADED, loadingListener);
+    dc.addEventListener(DATA_CLOUD_EVENTS.ERROR_CHANGE, loadingListener);
+  }, [dataCloud, cloud]);
 
   const cleanCloudsState = () => {
     setCloud(null);
 
-    extCloud?.destroy();
-    setExtCloud(null);
+    dataCloud?.destroy();
+    setDataCloud(null);
   };
 
   useEffect(() => {
-    if (cloud && !loading && !extCloud) {
-      makeExtCloud();
+    if (cloud && !loading && !dataCloud) {
+      makeDataCloud();
     }
-  }, [cloud, loading, extCloud, makeExtCloud]);
+  }, [cloud, loading, dataCloud, makeDataCloud]);
 
-  // propertly destroy the ExtendedCloud object on unmount
+  // propertly destroy the DataCloud object on unmount
   useEffect(() => {
-    return () => extCloud?.destroy();
-  }, [extCloud]);
+    return () => dataCloud?.destroy();
+  }, [dataCloud]);
 
   const checkConnectionError = () => {
     Notifications.error(addCloudInstance.connectionError());
@@ -149,9 +140,9 @@ export const AddCloudInstance = ({ onAdd, onCancel }) => {
         {loading ? (
           <Spinner />
         ) : (
-          extCloud &&
-          !extCloud.error && (
-            <SynchronizeBlock extendedCloud={extCloud} onAdd={onAdd} />
+          dataCloud &&
+          !dataCloud.error && (
+            <SynchronizeBlock extendedCloud={dataCloud} onAdd={onAdd} />
           )
         )}
       </MainColumn>

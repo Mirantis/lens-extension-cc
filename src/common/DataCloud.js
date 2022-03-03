@@ -12,11 +12,11 @@ import { logger } from '../util/logger';
 import { EventDispatcher } from './EventDispatcher';
 import { apiEntities, apiCredentialEntities } from '../api/apiConstants';
 
-export const EXTENDED_CLOUD_EVENTS = Object.freeze({
+export const DATA_CLOUD_EVENTS = Object.freeze({
   /**
    * Initial data load (fetch) only, either starting or finished.
    *
-   * Expected signature: `(extCloud: ExtendedCloud) => void`
+   * Expected signature: `(dataCloud: DataCloud) => void`
    */
   LOADED: 'loaded',
 
@@ -24,28 +24,28 @@ export const EXTENDED_CLOUD_EVENTS = Object.freeze({
    * Whenever new data is being fetched, or done fetching (even on the initial
    *  data load, which means there's overlap with the `LOADED` event).
    *
-   * Expected signature: `(extCloud: ExtendedCloud) => void`
+   * Expected signature: `(dataCloud: DataCloud) => void`
    */
   FETCHING_CHANGE: 'fetchingChange',
 
   /**
    * When new data will be fetched.
    *
-   * Expected signature: `(extCloud: ExtendedCloud) => void`
+   * Expected signature: `(dataCloud: DataCloud) => void`
    */
   FETCH_DATA: 'fetchData',
 
   /**
    * Whenever the `error` property changes.
    *
-   * Expected signature: `(extCloud: ExtendedCloud) => void`
+   * Expected signature: `(dataCloud: DataCloud) => void`
    */
   ERROR_CHANGE: 'errorChange',
 
   /**
    * When any data-related property (e.g. `namespaces`) has been updated.
    *
-   * Expected signature: `(extCloud: ExtendedCloud) => void`
+   * Expected signature: `(dataCloud: DataCloud) => void`
    */
   DATA_UPDATED: 'dataUpdated',
 });
@@ -94,7 +94,7 @@ const getErrorMessage = (error) => {
 const _deserializeEntityList = function (entity, body, namespace, create) {
   if (!body || !Array.isArray(body.items)) {
     logger.error(
-      'ExtendedCloud._deserializeEntityList()',
+      'DataCloud._deserializeEntityList()',
       `Failed to parse "${entity}" payload: Unexpected data format`
     );
     return [];
@@ -106,7 +106,7 @@ const _deserializeEntityList = function (entity, body, namespace, create) {
         return create({ data, namespace });
       } catch (err) {
         logger.warn(
-          'ExtendedCloud._deserializeEntityList()',
+          'DataCloud._deserializeEntityList()',
           `Ignoring "${entity}" entity ${idx}${
             namespace ? ` from namespace "${namespace.name}"` : ''
           }: Could not be deserialized, error="${getErrorMessage(err)}"`,
@@ -171,7 +171,7 @@ const _fetchEntityList = async function ({
       //  a user from accessing certain entities in the API (disabled components,
       //  permissions, etc.)
       logger[status === 403 ? 'log' : 'error'](
-        'ExtendedCloud._fetchEntityList',
+        'DataCloud._fetchEntityList',
         `${
           status === 403 ? '(IGNORED: Access denied) ' : ''
         }Failed to get "${entity}" entities, namespace=${
@@ -375,7 +375,7 @@ const _fetchClusters = async function (cloud, namespaces) {
  */
 const _fetchNamespaces = async function (cloud) {
   // NOTE: we always fetch ALL known namespaces because when we display metadata
-  //  about this ExtendedCloud, we always need to show the actual total, not just
+  //  about this DataCloud, we always need to show the actual total, not just
   //  what we're syncing
   const {
     entities: { [apiEntities.NAMESPACE]: namespaces },
@@ -406,12 +406,12 @@ const _fetchNamespaces = async function (cloud) {
 
 /**
  * Performs scheduled and on-demand data fetching of a given Cloud.
- * @class ExtendedCloud
+ * @class DataCloud
  */
-export class ExtendedCloud extends EventDispatcher {
+export class DataCloud extends EventDispatcher {
   /**
    * @constructor
-   * @param {Cloud} cloud The Cloud that provides backing for the ExtendedCloud to access
+   * @param {Cloud} cloud The Cloud that provides backing for the DataCloud to access
    *  the API and determines which namespaces are synced.
    * @param {boolean} [preview] If truthy, declares this instance is only for preview
    *  purposes, which reduces the amount of data fetched from the Cloud in order to
@@ -460,10 +460,10 @@ export class ExtendedCloud extends EventDispatcher {
           );
 
           logger.log(
-            'ExtendedCloud.[set]cloud',
-            `Received new Cloud: Scheduling new data fetch; extCloud=${this}`
+            'DataCloud.[set]cloud',
+            `Received new Cloud: Scheduling new data fetch; dataCloud=${this}`
           );
-          this.dispatchEvent(EXTENDED_CLOUD_EVENTS.FETCH_DATA, this);
+          this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA, this);
         }
       },
     });
@@ -471,7 +471,7 @@ export class ExtendedCloud extends EventDispatcher {
     /**
      * @member {boolean} loaded True if we have __successfully__ fetched Cloud data at least once;
      *  false otherwise.
-     * @see {@link ExtendedCloud.loading}
+     * @see {@link DataCloud.loading}
      */
     Object.defineProperty(this, 'loaded', {
       enumerable: true,
@@ -482,7 +482,7 @@ export class ExtendedCloud extends EventDispatcher {
         // only change it once from false -> true because we only load once; after that, we fetch
         if (!_loaded && !!newValue) {
           _loaded = true;
-          this.dispatchEvent(EXTENDED_CLOUD_EVENTS.LOADED, this);
+          this.dispatchEvent(DATA_CLOUD_EVENTS.LOADED, this);
         }
       },
     });
@@ -499,7 +499,7 @@ export class ExtendedCloud extends EventDispatcher {
       set(newValue) {
         if (!!newValue !== _fetching) {
           _fetching = !!newValue;
-          this.dispatchEvent(EXTENDED_CLOUD_EVENTS.FETCHING_CHANGE, this);
+          this.dispatchEvent(DATA_CLOUD_EVENTS.FETCHING_CHANGE, this);
         }
       },
     });
@@ -523,7 +523,7 @@ export class ExtendedCloud extends EventDispatcher {
               { namespaces: [[rtv.CLASS_OBJECT, { ctor: Namespace }]] }
             );
           _namespaces = newValue;
-          this.dispatchEvent(EXTENDED_CLOUD_EVENTS.DATA_UPDATED, this);
+          this.dispatchEvent(DATA_CLOUD_EVENTS.DATA_UPDATED, this);
         }
       },
     });
@@ -540,7 +540,7 @@ export class ExtendedCloud extends EventDispatcher {
       set(newValue) {
         if (newValue !== _error) {
           _error = newValue || null;
-          this.dispatchEvent(EXTENDED_CLOUD_EVENTS.ERROR_CHANGE, this);
+          this.dispatchEvent(DATA_CLOUD_EVENTS.ERROR_CHANGE, this);
         }
       },
     });
@@ -570,7 +570,7 @@ export class ExtendedCloud extends EventDispatcher {
     // listen to our own event to fetch new data; this allows us to de-duplicate calls
     //  to fetchData() when the Cloud's properties get updated multiple times in
     //  succession because of CloudStore updates or expired tokens that got refreshed
-    this.addEventListener(EXTENDED_CLOUD_EVENTS.FETCH_DATA, this.onFetchData);
+    this.addEventListener(DATA_CLOUD_EVENTS.FETCH_DATA, this.onFetchData);
 
     // start fetching new data on a regular interval (i.e. don't just rely on
     //  `cloud` properties changing to trigger a fetch) so we discover changes
@@ -579,17 +579,17 @@ export class ExtendedCloud extends EventDispatcher {
       // NOTE: dispatch the event instead of calling fetchData() directly so that
       //  we don't duplicate an existing request to fetch the data if one has
       //  just been scheduled
-      this.dispatchEvent(EXTENDED_CLOUD_EVENTS.FETCH_DATA, this);
+      this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA, this);
     }, FETCH_INTERVAL);
 
     // schedule the initial data load/fetch
-    this.dispatchEvent(EXTENDED_CLOUD_EVENTS.FETCH_DATA, this);
+    this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA, this);
   }
 
   /**
    * @member {boolean} loading True if we're loading/fetching Cloud data for the __first__ time;
    *  false otherwise.
-   * @see {@link ExtendedCloud.fetching}
+   * @see {@link DataCloud.fetching}
    */
   get loading() {
     return !this.loaded && this.fetching;
@@ -616,10 +616,7 @@ export class ExtendedCloud extends EventDispatcher {
 
   /** Called when this instance is being deleted/destroyed. */
   destroy() {
-    this.removeEventListener(
-      EXTENDED_CLOUD_EVENTS.FETCH_DATA,
-      this.onFetchData
-    );
+    this.removeEventListener(DATA_CLOUD_EVENTS.FETCH_DATA, this.onFetchData);
     this.cloud.removeEventListener(
       CLOUD_EVENTS.SYNC_CHANGE,
       this.onCloudSyncChange
@@ -632,15 +629,15 @@ export class ExtendedCloud extends EventDispatcher {
   /** Called when the Cloud's sync-related properties have changed. */
   onCloudSyncChange = () => {
     logger.log(
-      'ExtendedCloud.onCloudSyncChange()',
-      `Cloud sync props have changed: Scheduling new data fetch on next frame; extCloud=${this}`
+      'DataCloud.onCloudSyncChange()',
+      `Cloud sync props have changed: Scheduling new data fetch on next frame; dataCloud=${this}`
     );
-    this.dispatchEvent(EXTENDED_CLOUD_EVENTS.FETCH_DATA, this);
+    this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA, this);
   };
 
   /** Trigger an immediate data fetch outside the normal fetch interval. */
   fetchNow() {
-    this.dispatchEvent(EXTENDED_CLOUD_EVENTS.FETCH_DATA, this);
+    this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA, this);
   }
 
   /**
@@ -669,7 +666,7 @@ export class ExtendedCloud extends EventDispatcher {
     this.cloud.updateNamespaces(syncedList, ignoredList, true);
   }
 
-  /** Called when __this__ ExtendedCloud should fetch new data from its Cloud. */
+  /** Called when __this__ DataCloud should fetch new data from its Cloud. */
   onFetchData = () => this.fetchData();
 
   /**
@@ -696,8 +693,8 @@ export class ExtendedCloud extends EventDispatcher {
     // if we're still not connected, stop the fetch before it starts
     if (!this.cloud.connected) {
       logger.log(
-        'ExtendedCloud.fetchData()',
-        `Cannot fetch data for extCloud=${this}: Cloud is ${
+        'DataCloud.fetchData()',
+        `Cannot fetch data for dataCloud=${this}: Cloud is ${
           this.cloud ? this.cloud.status : 'unknown'
         }`
       );
@@ -706,10 +703,7 @@ export class ExtendedCloud extends EventDispatcher {
 
     this.fetching = true;
 
-    logger.log(
-      'ExtendedCloud.fetchData()',
-      `Fetching data for extCloud=${this}`
-    );
+    logger.log('DataCloud.fetchData()', `Fetching data for dataCloud=${this}`);
 
     const nsResults = await _fetchNamespaces(this.cloud);
     const clusterResults = await _fetchClusters(
@@ -729,8 +723,8 @@ export class ExtendedCloud extends EventDispatcher {
       licenseResults = await _fetchLicenses(this.cloud, nsResults.namespaces);
     } else {
       logger.log(
-        'ExtendedCloud.fetchData()',
-        `Skipping proxy and license fetch for preview instance, extCloud=${this}`
+        'DataCloud.fetchData()',
+        `Skipping proxy and license fetch for preview instance, dataCloud=${this}`
       );
     }
 
@@ -751,8 +745,8 @@ export class ExtendedCloud extends EventDispatcher {
       // successfully loaded at least once
       this.loaded = true;
       logger.log(
-        'ExtendedCloud.fetchData()',
-        `Initial data load successful, extCloud=${this}`
+        'DataCloud.fetchData()',
+        `Initial data load successful, dataCloud=${this}`
       );
     }
 
@@ -771,22 +765,22 @@ export class ExtendedCloud extends EventDispatcher {
       const handler = () => {
         if (this.cloud.connected) {
           this.cloud.removeEventListener(CLOUD_EVENTS.STATUS_CHANGE, handler);
-          this.dispatchEvent(EXTENDED_CLOUD_EVENTS.FETCH_DATA, this);
+          this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA, this);
         }
       };
       this.cloud.addEventListener(CLOUD_EVENTS.STATUS_CHANGE, handler);
     } else {
       this.error = getErrorMessage(this.cloud.connectError);
       logger.error(
-        'ExtendedCloud.reconnect()',
-        `Cloud connection failed, error="${this.error}", extCloud=${this}`
+        'DataCloud.reconnect()',
+        `Cloud connection failed, error="${this.error}", dataCloud=${this}`
       );
     }
   }
 
-  /** @returns {string} String representation of this ExtendedCloud for logging/debugging. */
+  /** @returns {string} String representation of this DataCloud for logging/debugging. */
   toString() {
-    return `{ExtendedCloud loaded: ${this.loaded}, fetching: ${
+    return `{DataCloud loaded: ${this.loaded}, fetching: ${
       this.fetching
     }, preview: ${this.preview}, namespaces: ${
       this.loaded ? this.namespaces.length : '??'

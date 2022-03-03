@@ -1,4 +1,4 @@
-export const mockExtCloud = {
+export const mockDataCloud = {
   cloud: {
     id_token:
       'id-token-1',
@@ -79,7 +79,7 @@ export const mockExtCloud = {
   ],
 };
 
-export const mockExtCloud2 = {
+export const mockDataCloud2 = {
   cloud: {
     id_token:
       'id-token-1',
@@ -160,7 +160,7 @@ export const mockExtCloud2 = {
   ],
 };
 
-export const mockedExtendedClouds = {
-  'https://cloud-url.com': mockExtCloud,
-  'https://cloud-url-2.com': mockExtCloud2,
+export const mockedDataClouds = {
+  'https://cloud-url.com': mockDataCloud,
+  'https://cloud-url-2.com': mockDataCloud2,
 }

@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import { EXTENDED_CLOUD_EVENTS } from '../../../common/ExtendedCloud';
+import { DATA_CLOUD_EVENTS } from '../../../common/DataCloud';
 import { EnhancedTableRow } from './EnhancedTableRow';
 
 /**
- * @param {ExtendedCloud} extendedCloud
+ * @param {DataCloud} extendedCloud
  * @param {'namespaces'|'syncedNamespaces'} usedNamespaces if true and connected - it returns all namespaces to populate in SyncView mode
  * @param {boolean} withCheckboxes
  * @return {Array<Object>} It might be an array og Namespaces or just {name: _namespaceName_ }, depending on cloud.connected
@@ -50,21 +50,21 @@ export const TableRowListenerWrapper = ({
   useEffect(() => {
     // Listen namespaces update
     extendedCloud.addEventListener(
-      EXTENDED_CLOUD_EVENTS.DATA_UPDATED,
+      DATA_CLOUD_EVENTS.DATA_UPDATED,
       updateNamespaces
     );
     // Listen fetching status (updating namespaces)
     extendedCloud.addEventListener(
-      EXTENDED_CLOUD_EVENTS.FETCHING_CHANGE,
+      DATA_CLOUD_EVENTS.FETCHING_CHANGE,
       listenFetching
     );
     return () => {
       extendedCloud.removeEventListener(
-        EXTENDED_CLOUD_EVENTS.DATA_UPDATED,
+        DATA_CLOUD_EVENTS.DATA_UPDATED,
         updateNamespaces
       );
       extendedCloud.removeEventListener(
-        EXTENDED_CLOUD_EVENTS.FETCHING_CHANGE,
+        DATA_CLOUD_EVENTS.FETCHING_CHANGE,
         listenFetching
       );
     };
