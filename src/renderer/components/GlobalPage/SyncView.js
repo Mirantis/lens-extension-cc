@@ -57,7 +57,7 @@ const ButtonWrapper = styled.div`
 
 export const SyncView = () => {
   const {
-    state: { extendedClouds },
+    state: { dataClouds },
   } = useDataCloudData();
   const [showAddCloudComponent, setShowAddCloudComponent] = useState(false);
   const [isSelectiveSyncView, setIsSelectiveSyncView] = useState(false);
@@ -89,9 +89,7 @@ export const SyncView = () => {
     // store data from each cloud in the local object 'syncedClouds'
     setSyncedClouds({ ...syncedClouds, [url]: data });
     // when clouds count in local object === count ECs, preparation is done and we can use syncedClouds
-    if (
-      Object.keys(syncedClouds).length === Object.keys(extendedClouds).length
-    ) {
+    if (Object.keys(syncedClouds).length === Object.keys(dataClouds).length) {
       setIsSyncStarted(false);
     }
   };
@@ -124,8 +122,8 @@ export const SyncView = () => {
   if (!Object.keys(cloudStore.clouds).length) {
     return <WelcomeView openAddCloud={openAddCloud} />;
   }
-  // otherwise, show extendedClouds table
-  if (Object.keys(extendedClouds).length) {
+  // otherwise, show dataClouds table
+  if (Object.keys(dataClouds).length) {
     return (
       <Content>
         <ContentTop>
@@ -156,7 +154,7 @@ export const SyncView = () => {
 
         <TableWrapper>
           <EnhancedTable
-            extendedClouds={extendedClouds}
+            dataClouds={dataClouds}
             isSelectiveSyncView={isSelectiveSyncView}
             isSyncStarted={isSyncStarted}
             getDataToSync={getDataToSync}
@@ -177,6 +175,6 @@ export const SyncView = () => {
   }
 
   // Just in case. Show loader only while initial loading.
-  // Eg when we have clouds on disk, but they are not transformed to extendedClouds yet
+  // Eg when we have clouds on disk, but they are not transformed to dataClouds yet
   return <Spinner />;
 };

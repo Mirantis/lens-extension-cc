@@ -98,15 +98,15 @@ const SortButton = styled.button`
     isRotated ? 'rotate(180deg)' : 'rotate(0deg)'};
 `;
 
-export const SynchronizeBlock = ({ extendedCloud, onAdd }) => {
+export const SynchronizeBlock = ({ dataCloud, onAdd }) => {
   const [syncAll, setSyncAll] = useState(false);
   const { setCheckboxValue, getCheckboxValue, getSyncedData } = useCheckboxes(
-    makeCheckboxesInitialState(extendedCloud)
+    makeCheckboxesInitialState(dataCloud)
   );
 
   // @type {object} sorted object of projects
   const [projectsList, setProjectsList] = useState([
-    ...(extendedCloud.namespaces || []),
+    ...(dataCloud.namespaces || []),
   ]);
 
   // @type {string} sort by name order
@@ -131,7 +131,7 @@ export const SynchronizeBlock = ({ extendedCloud, onAdd }) => {
   };
 
   const onSynchronize = () => {
-    const { cloud } = extendedCloud;
+    const { cloud } = dataCloud;
     const { syncedNamespaces, ignoredNamespaces } = getSyncedData();
 
     cloud.syncAll = syncAll;
@@ -225,6 +225,6 @@ export const SynchronizeBlock = ({ extendedCloud, onAdd }) => {
 };
 
 SynchronizeBlock.propTypes = {
-  extendedCloud: PropTypes.object.isRequired,
+  dataCloud: PropTypes.object.isRequired,
   onAdd: PropTypes.func.isRequired,
 };

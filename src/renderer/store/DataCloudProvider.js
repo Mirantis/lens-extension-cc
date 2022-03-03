@@ -10,7 +10,7 @@ class DataCloudProviderStore extends ProviderStore {
   // @override
   makeNew() {
     return {
-      extendedClouds: {},
+      dataClouds: {},
       tokens: {},
     };
   }
@@ -22,7 +22,7 @@ class DataCloudProviderStore extends ProviderStore {
       {
         'DataCloudProvider.store': {
           // map of cloudUrl -> DataCloud instance
-          extendedClouds: [
+          dataClouds: [
             rtv.HASH_MAP,
             { $values: [rtv.CLASS_OBJECT, { ctor: DataCloud }] },
           ],
@@ -38,7 +38,7 @@ class DataCloudProviderStore extends ProviderStore {
   // @override
   clone() {
     return cloneDeepWith(this.store, (value, key) => {
-      if (key === 'extendedClouds') {
+      if (key === 'dataClouds') {
         // instead of letting Lodash dig deep into this object, shallow-clone it
         //  since we don't actively set any properties beneath it's immediate ones
         return { ...value };
@@ -118,15 +118,15 @@ const _updateStore = function ({
 
   cloudUrlsToRemove.forEach((url) => {
     // destroy and remove DataCloud
-    pr.store.extendedClouds[url].destroy();
-    delete pr.store.extendedClouds[url];
+    pr.store.dataClouds[url].destroy();
+    delete pr.store.dataClouds[url];
   });
 
   cloudUrlsToAdd.concat(cloudUrlsToUpdate).forEach((url) => {
     const cloud = cloudStore.clouds[url];
 
-    // if extendedCloud exists - update extendedCloud.cloud
-    if (pr.store.extendedClouds[url]) {
+    // if dataCloud exists - update dataCloud.cloud
+    if (pr.store.dataClouds[url]) {
       // NOTE: updating the EC's Cloud instance will cause the EC to fetch new data,
       //  IIF the `cloud` is actually a new instance at the same URL; it's not always
       //  new as the CloudStore listens for changes on each Cloud and triggers the
@@ -134,12 +134,12 @@ const _updateStore = function ({
       //  that happens, but we still make the assignment just in case it's new and
       //  leave it to the DataCloud to optimize what it does if the instance is
       //  the same as it already has
-      pr.store.extendedClouds[url].cloud = cloud;
+      pr.store.dataClouds[url].cloud = cloud;
     } else {
       // otherwise create new DataCloud
       const dc = new DataCloud(cloud);
       // add new EC to store
-      pr.store.extendedClouds[url] = dc;
+      pr.store.dataClouds[url] = dc;
     }
   });
 

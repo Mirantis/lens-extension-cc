@@ -134,12 +134,12 @@ const getStatus = (cloud, isFetching) => {
   }
 };
 
-const getCloudMenuItems = (extendedCloud) => [
+const getCloudMenuItems = (dataCloud) => [
   {
     title: contextMenus.cloud.reconnect(),
     name: 'reconnect',
-    disabled: extendedCloud.cloud.status === CONNECTION_STATUSES.CONNECTED,
-    onClick: () => extendedCloud.reconnect(),
+    disabled: dataCloud.cloud.status === CONNECTION_STATUSES.CONNECTED,
+    onClick: () => dataCloud.reconnect(),
   },
   {
     title: contextMenus.cloud.remove(),
@@ -151,9 +151,9 @@ const getCloudMenuItems = (extendedCloud) => [
         cloudUrl,
         syncedNamespaces,
         connected,
-      } = extendedCloud.cloud;
-      const isConnected = connected && extendedCloud.loaded;
-      if (isConnected && !extendedCloud.namespaces.length) {
+      } = dataCloud.cloud;
+      const isConnected = connected && dataCloud.loaded;
+      if (isConnected && !dataCloud.namespaces.length) {
         cloudStore.removeCloud(cloudUrl);
       } else {
         ConfirmDialog.open({
@@ -178,15 +178,15 @@ const getCloudMenuItems = (extendedCloud) => [
   {
     title: contextMenus.cloud.sync(),
     name: 'sync',
-    disabled: extendedCloud.cloud.status === CONNECTION_STATUSES.DISCONNECTED,
-    onClick: () => extendedCloud.fetchNow(),
+    disabled: dataCloud.cloud.status === CONNECTION_STATUSES.DISCONNECTED,
+    onClick: () => dataCloud.fetchNow(),
   },
   {
     title: contextMenus.cloud.openInBrowser(),
     name: 'openInBrowser',
     disabled: false,
     onClick: () => {
-      openBrowser(extendedCloud.cloud.cloudUrl);
+      openBrowser(dataCloud.cloud.cloudUrl);
     },
   },
 ];
@@ -200,7 +200,7 @@ const namespaceMenuItems = [
 ];
 
 export const EnhancedTableRow = ({
-  extendedCloud,
+  dataCloud,
   withCheckboxes,
   isSyncStarted,
   getDataToSync,
@@ -208,9 +208,9 @@ export const EnhancedTableRow = ({
   fetching,
 }) => {
   const { getCheckboxValue, setCheckboxValue, getSyncedData } = useCheckboxes(
-    makeCheckboxesInitialState(extendedCloud)
+    makeCheckboxesInitialState(dataCloud)
   );
-  const [syncAll, setSyncAll] = useState(extendedCloud.cloud.syncAll);
+  const [syncAll, setSyncAll] = useState(dataCloud.cloud.syncAll);
   const [isOpenFirstLevel, setIsOpenFirstLevel] = useState(false);
   const [openNamespaces, setOpenNamespaces] = useState([]);
 
@@ -219,7 +219,7 @@ export const EnhancedTableRow = ({
       const { syncedNamespaces, ignoredNamespaces } = getSyncedData();
       getDataToSync(
         { syncedNamespaces, ignoredNamespaces, syncAll },
-        extendedCloud.cloud.cloudUrl
+        dataCloud.cloud.cloudUrl
       );
     }
   }, [
@@ -227,7 +227,7 @@ export const EnhancedTableRow = ({
     isSyncStarted,
     getSyncedData,
     syncAll,
-    extendedCloud.cloud.cloudUrl,
+    dataCloud.cloud.cloudUrl,
   ]);
 
   const setOpenedList = (name) => {
@@ -247,7 +247,7 @@ export const EnhancedTableRow = ({
     let autoSyncSuffix = '';
     if (withCheckboxes) {
       autoSyncSuffix =
-        isParent && !extendedCloud.cloud.connected
+        isParent && !dataCloud.cloud.connected
           ? ` (${connectionStatuses.cloud.disconnected()})`
           : '';
       return (
@@ -259,9 +259,7 @@ export const EnhancedTableRow = ({
       );
     }
     autoSyncSuffix =
-      isParent && extendedCloud.cloud.syncAll
-        ? ` (${syncView.autoSync()})`
-        : '';
+      isParent && dataCloud.cloud.syncAll ? ` (${syncView.autoSync()})` : '';
 
     return `${name}${autoSyncSuffix}`;
   };
@@ -295,14 +293,11 @@ export const EnhancedTableRow = ({
     if (withCheckboxes) {
       return null;
     }
-    const cloudMenuItems = getCloudMenuItems(extendedCloud);
-    const { cloudStatus, connectColor } = getStatus(
-      extendedCloud.cloud,
-      fetching
-    );
+    const cloudMenuItems = getCloudMenuItems(dataCloud);
+    const { cloudStatus, connectColor } = getStatus(dataCloud.cloud, fetching);
     return (
       <>
-        <EnhTableRowCell>{extendedCloud.cloud.username}</EnhTableRowCell>
+        <EnhTableRowCell>{dataCloud.cloud.username}</EnhTableRowCell>
         <EnhTableRowCell style={connectColor}>{cloudStatus}</EnhTableRowCell>
         <EnhTableRowCell isRightAligned>
           <EnhMore>
@@ -329,7 +324,7 @@ export const EnhancedTableRow = ({
     if (withCheckboxes) {
       return <EnhTableRowCell />;
     }
-    const { namespaceStatus } = getStatus(extendedCloud.cloud, fetching);
+    const { namespaceStatus } = getStatus(dataCloud.cloud, fetching);
     return (
       <>
         <EnhTableRowCell />
@@ -362,7 +357,7 @@ export const EnhancedTableRow = ({
           <EnhCollapseBtn onClick={toggleOpenFirstLevel}>
             {getExpandIcon(isOpenFirstLevel)}
           </EnhCollapseBtn>
-          {makeNameCell(extendedCloud.cloud.name, true)}
+          {makeNameCell(dataCloud.cloud.name, true)}
         </EnhTableRowCell>
         {withCheckboxes && (
           <EnhTableRowCell>
@@ -373,7 +368,7 @@ export const EnhancedTableRow = ({
             />
           </EnhTableRowCell>
         )}
-        <EnhTableRowCell>{extendedCloud.cloud.cloudUrl}</EnhTableRowCell>
+        <EnhTableRowCell>{dataCloud.cloud.cloudUrl}</EnhTableRowCell>
         {renderRestSyncTableRows()}
       </EnhTableRow>
       {isOpenFirstLevel &&
@@ -384,7 +379,7 @@ export const EnhancedTableRow = ({
                 <EnhCollapseBtn onClick={() => setOpenedList(namespace.name)}>
                   {getExpandIcon(
                     openNamespaces.includes(namespace.name),
-                    extendedCloud.loaded
+                    dataCloud.loaded
                   )}
                 </EnhCollapseBtn>
                 {makeNameCell(namespace.name)}
@@ -405,7 +400,7 @@ export const EnhancedTableRow = ({
 };
 
 EnhancedTableRow.propTypes = {
-  extendedCloud: PropTypes.object.isRequired,
+  dataCloud: PropTypes.object.isRequired,
   withCheckboxes: PropTypes.bool,
   isSyncStarted: PropTypes.bool,
   getDataToSync: PropTypes.func,

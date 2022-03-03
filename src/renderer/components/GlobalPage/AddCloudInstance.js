@@ -142,7 +142,7 @@ export const AddCloudInstance = ({ onAdd, onCancel }) => {
         ) : (
           dataCloud &&
           !dataCloud.error && (
-            <SynchronizeBlock extendedCloud={dataCloud} onAdd={onAdd} />
+            <SynchronizeBlock dataCloud={dataCloud} onAdd={onAdd} />
           )
         )}
       </MainColumn>
