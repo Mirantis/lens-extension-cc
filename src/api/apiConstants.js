@@ -57,13 +57,13 @@ export const apiKinds = Object.freeze({
   NAMESPACE: 'Namespace',
   CLUSTER: 'Cluster',
   PUBLIC_KEY: 'PublicKey',
-  OPENSTACK_CREDENTIAL: 'OpenStackCredential',
   AWS_CREDENTIAL: 'AWSCredential',
-  EQUINIX_CREDENTIAL: 'EquinixMetalCredential',
-  VSPHERE_CREDENTIAL: 'VsphereCredential',
   AZURE_CREDENTIAL: 'AzureCredential',
   BYO_CREDENTIAL: 'BYOCredential',
-  METAL_CREDENTIAL: 'Secret', // TODO: not sure of the actual kind in kube spec
+  EQUINIX_CREDENTIAL: 'EquinixMetalCredential',
+  METAL_CREDENTIAL: 'Secret', // TODO: not sure of the actual kind in kube spec, need MCC+BM env
+  OPENSTACK_CREDENTIAL: 'OpenStackCredential',
+  VSPHERE_CREDENTIAL: 'VsphereCredential',
   RHEL_LICENSE: 'RHELLicense',
   PROXY: 'Proxy',
 });
@@ -75,12 +75,29 @@ export const apiKinds = Object.freeze({
 export const apiCredentialKinds = Object.freeze(
   pick(apiKinds, [
     // NOTE: these are KEYS from the apiEntities map
-    'OPENSTACK_CREDENTIAL',
     'AWS_CREDENTIAL',
-    'EQUINIX_CREDENTIAL',
-    'VSPHERE_CREDENTIAL',
     'AZURE_CREDENTIAL',
     'BYO_CREDENTIAL',
+    'EQUINIX_CREDENTIAL',
     'METAL_CREDENTIAL',
+    'OPENSTACK_CREDENTIAL',
+    'VSPHERE_CREDENTIAL',
   ])
 );
+
+/**
+ * Map of credential API kind to provider (set as its 'kaas.mirantis.com/provider' label's value)
+ *  as used in the API.
+ * @type {{ [index: string], string }}
+ */
+export const apiCredentialProviders = Object.freeze({
+  AWS_CREDENTIAL: 'aws',
+  AZURE_CREDENTIAL: 'azure',
+  BYO_CREDENTIAL: 'byo',
+  EQUINIX_CREDENTIAL: 'equinixmetal',
+  // TODO: there may be one more kind here for BM credentials (i.e. secrets)
+  //  but we first need to test this in an MCC+BM env
+  // METAL_CREDENTIAL: '',
+  OPENSTACK_CREDENTIAL: 'openstack',
+  VSPHERE_CREDENTIAL: 'vsphere',
+});

@@ -1,6 +1,7 @@
 import * as rtv from 'rtvjs';
 import * as consts from '../../constants';
 import { Cloud } from '../../common/Cloud';
+import { logString } from '../../util/logger';
 
 /**
  * Typeset for a basic MCC API Object.
@@ -76,7 +77,7 @@ export class ApiObject {
     });
 
     /** @member {Date} */
-    Object.defineProperty(this, 'creationDate', {
+    Object.defineProperty(this, 'createdDate', {
       enumerable: true,
       get() {
         return new Date(data.metadata.creationTimestamp);
@@ -107,16 +108,18 @@ export class ApiObject {
         cloudUrl: this.cloud.cloudUrl,
         kind: this.kind,
       },
-      spec: {},
+      spec: {
+        createdAt: this.createdDate.toISOString(),
+      },
       status: {},
     };
   }
 
   /** @returns {string} A string representation of this instance for logging/debugging. */
   toString() {
-    const propStr = `name: "${this.name}", uid: "${this.uid}", kind: ${
-      this.kind ? `"${this.kind}"` : this.kind
-    }`;
+    const propStr = `name: ${logString(this.name)}, uid: ${logString(
+      this.uid
+    )}, kind: ${logString(this.kind)}`;
 
     if (Object.getPrototypeOf(this).constructor === ApiObject) {
       return `{ApiObject ${propStr}}`;

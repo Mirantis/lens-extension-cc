@@ -5,7 +5,8 @@ import { isEqual } from 'lodash';
 import { DATA_CLOUD_EVENTS, DataCloud } from '../common/DataCloud';
 import { cloudStore } from '../store/CloudStore';
 import { apiKinds } from '../api/apiConstants';
-import { IpcMain } from './IpcMain';
+import { logString } from '../util/logger';
+import * as consts from '../constants';
 
 const { Singleton } = Common.Util;
 
@@ -34,9 +35,10 @@ const kindtoNamespaceProp = {
 export class SyncManager extends Singleton {
   /**
    * @param {Array<CatalogEntity>} catalogSource Registered Lens Catalog source.
+   * @param {IpcMain} ipcMain Singleton instance for sending/receiving messages to/from Renderer.
    * @constructor
    */
-  constructor(catalogSource) {
+  constructor(catalogSource, ipcMain) {
     super();
 
     let _cloudTokens = {};
@@ -88,6 +90,22 @@ export class SyncManager extends Singleton {
         return catalogSource;
       },
     });
+
+    /**
+     * @readonly
+     * @member {IpcMain} ipcMain Singleton instance for sending/receiving messages
+     *  to/from Renderer.
+     */
+    Object.defineProperty(this, 'ipcMain', {
+      enumerable: true,
+      get() {
+        return ipcMain;
+      },
+    });
+
+    //// Initialize
+
+    ipcMain.handle(consts.ipcEvents.invoke.SYNC_NOW, this.onSyncNow);
 
     // mobx binding called whenever the CloudStore's `clouds` property changes
     autorun(() => {
@@ -186,10 +204,6 @@ export class SyncManager extends Singleton {
       delete this.dataClouds[url];
     });
 
-    // TODO[SyncManager]: need something on this side that detects when Cloud is now connected
-    //  and triggers an immediate data fetch on it if it wasn't before because tokens will
-    //  come from RENDERER, written to disk, and updated here from CloudStore in this case
-
     cloudUrlsToAdd.concat(cloudUrlsToUpdate).forEach((url) => {
       const cloud = cloudStore.clouds[url];
 
@@ -203,29 +217,85 @@ export class SyncManager extends Singleton {
         //  leave it to the DataCloud to optimize what it does if the instance is
         //  the same as it already has
         this.dataClouds[url].cloud = cloud;
+
+        // NOTE: for the SyncManager (on the MAIN thread), there's no UI to cause an update
+        //  to a Cloud, so if we're here, it's because something happened on the RENDERER
+        //  thread, that cause a Cloud to be updated, which cause the CloudStore to be
+        //  updated, which caused a write to cloud-store.json, which Lens then synced
+        //  (over IPC) to MAIN, which cause the CloudStore on MAIN to pick-up the change
+        //  on disk, which cause our `autorun()` mobx hook to fire, and we ended-up here;
+        //  all that to say, something presumably important about the Cloud has changed,
+        //  so we best sync right away, if possible (maybe it was disconnected, and now
+        //  we finally have new tokens and we're reconnected)
+        const updatedDC = this.dataClouds[url];
+        this.ipcMain.capture(
+          'log',
+          'SyncManager.updateStore()',
+          `DataCloud updated, will fetch data now if connected; dataCloud=${updatedDC}`
+        );
+        if (updatedDC.cloud.connected) {
+          // NOTE: if the `cloud` was actually new, then the earlier assignment into
+          //  the DC will have triggered a data fetch; otherwise, `cloud` is the same
+          //  instance the DC already has and the assignment will have been a noop; either
+          //  way, we trigger a data fetch now, and the DC will just ignore it if it's
+          //  already fetching, so we won't double-up in the end
+          updatedDC.fetchNow();
+        }
       } else {
-        // add new DC to store
+        // add new DC to store (initial fetch is scheduled by the DC itself)
         const dc = new DataCloud(cloud);
-        // TODO[SyncManager]: dc.addEventListener(DATA_CLOUD_EVENTS.DATA_UPDATED, this.onDataUpdated);
+        dc.addEventListener(DATA_CLOUD_EVENTS.DATA_UPDATED, this.onDataUpdated);
         this.dataClouds[url] = dc;
       }
     });
   }
 
   /**
+   * Called to trigger an immediate sync of the specified Cloud if it's known and
+   *  isn't currently fetching data.
+   * @param {string} event ID provided by Lens.
+   * @param {string} cloudUrl URL for the Cloud to sync.
+   */
+  onSyncNow = (event, cloudUrl) => {
+    if (cloudUrl && this.dataClouds[cloudUrl]) {
+      const dc = this.dataClouds[cloudUrl];
+      if (dc.cloud.connected && !dc.fetching) {
+        this.ipcMain.capture(
+          'log',
+          'SyncManager.onSyncNow()',
+          `Syncing now; dataCloud=${dc}`
+        );
+        dc.fetchNow();
+      } else {
+        this.ipcMain.capture(
+          'log',
+          'SyncManager.onSyncNow()',
+          `Cannot sync now: Cloud is either not connected or currently syncing; dataCloud=${dc}`
+        );
+      }
+    } else {
+      this.ipcMain.capture(
+        'error',
+        'SyncManager.onSyncNow()',
+        `Unknown Cloud; cloudUrl=${logString(cloudUrl)}`
+      );
+    }
+  };
+
+  /**
    * Called whenever a DataCloud's data has been updated.
    * @param {DataCloud} dc The updated DataCloud.
    */
   onDataUpdated = (dc) => {
-    IpcMain.getInstance().capture(
+    this.ipcMain.capture(
       'log',
       'SyncManager.onDataUpdated()',
       `Updating Catalog entities for dataCloud=${dc}...`
     );
 
     // TODO[PRODX-22269]: make this a lot more efficient
-    ['sshKeys'].forEach(
-      // TODO[SyncManager] , 'credentials', 'proxies', 'licenses', 'clusters'].forEach(
+    ['sshKeys', 'credentials', 'proxies', 'licenses'].forEach(
+      // TODO[SyncManager] add 'clusters'
       (type) => {
         const newEntities = dc.syncedNamespaces.flatMap((ns) =>
           ns[type].map((apiType) => apiType.toEntity())
@@ -244,7 +314,7 @@ export class SyncManager extends Singleton {
           this.catalogSource.splice(idx, 1);
         }
 
-        IpcMain.getInstance().capture(
+        this.ipcMain.capture(
           'log',
           'SyncManager.onDataUpdated()',
           `Adding ${newEntities.length} "${type}" entities to Catalog; dataCloud=${dc}`
@@ -255,7 +325,7 @@ export class SyncManager extends Singleton {
       }
     );
 
-    IpcMain.getInstance().capture(
+    this.ipcMain.capture(
       'log',
       'SyncManager.onDataUpdated()',
       `Updated Catalog entities for dataCloud=${dc}`

@@ -23,6 +23,8 @@ import { CONNECTION_STATUSES } from '../../../common/Cloud';
 import { openBrowser } from '../../../util/netUtil';
 import { cloudStore } from '../../../store/CloudStore';
 import { sortNamespaces } from './tableUtil';
+import { IpcRenderer } from '../../IpcRenderer';
+import * as consts from '../../../constants';
 
 const { Icon, MenuItem, MenuActions, ConfirmDialog } = Renderer.Component;
 
@@ -144,7 +146,7 @@ const getCloudMenuItems = (dataCloud) => [
   {
     title: contextMenus.cloud.remove(),
     name: 'remove',
-    disabled: false,
+    disabled: dataCloud.fetching,
     onClick: () => {
       const {
         name: cloudName,
@@ -178,9 +180,18 @@ const getCloudMenuItems = (dataCloud) => [
   {
     title: contextMenus.cloud.sync(),
     name: 'sync',
-    disabled: dataCloud.cloud.status === CONNECTION_STATUSES.DISCONNECTED,
-    // TODO[SyncManager]: need to send IPC message to main ALSO, except will be kind of race condition...
-    onClick: () => dataCloud.fetchNow(),
+    disabled:
+      dataCloud.cloud.status === CONNECTION_STATUSES.DISCONNECTED ||
+      dataCloud.fetching,
+    onClick: async () => {
+      dataCloud.fetchNow();
+
+      // NOTE: this returns a promise, but we don't care about the result
+      IpcRenderer.getInstance().invoke(
+        consts.ipcEvents.invoke.SYNC_NOW,
+        dataCloud.cloud.cloudUrl
+      );
+    },
   },
   {
     title: contextMenus.cloud.openInBrowser(),

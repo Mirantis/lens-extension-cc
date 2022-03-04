@@ -9,6 +9,7 @@ import { Proxy } from './Proxy';
 import { License } from './License';
 import { clusterEntityPhases } from '../../catalog/catalogEntities';
 import { apiKinds } from '../apiConstants';
+import { logString } from '../../util/logger';
 
 const isManagementCluster = function (data) {
   const kaas = get(data.spec, 'providerSpec.value.kaas', {});
@@ -374,14 +375,14 @@ export class Cluster extends ApiObject {
    * @returns {Common.Catalog.KubernetesCluster}
    */
   toEntity() {
-    return null; // TODO[SyncManager]
+    return null; // TODO[SyncManager] TODO
   }
 
   /** @returns {string} A string representation of this instance for logging/debugging. */
   toString() {
-    const propStr = `${super.toString()}, ready: ${this.ready}, region: ${
-      typeof this.region === 'string' ? `"${this.region}"` : this.region
-    }`;
+    const propStr = `${super.toString()}, ready: ${
+      this.ready
+    }, region: ${logString(this.region)}`;
 
     if (Object.getPrototypeOf(this).constructor === Cluster) {
       return `{Cluster ${propStr}}`;

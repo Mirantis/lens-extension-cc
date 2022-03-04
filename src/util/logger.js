@@ -36,3 +36,15 @@ export const logger = (function () {
     return def;
   }, {});
 })();
+
+/**
+ * Formats a string value for logging.
+ * @param {string} [str] A string value which may not be defined.
+ * @returns {string} Always returns a string. If it's an actual string, empty or
+ *  not, the value is returned in double quotes, `"foo"`. If it's null/undefined,
+ *  it's returned as-is and string-cast, which will be the string `null` or
+ *  `undefined`.
+ */
+export const logString = function (str) {
+  return `${typeof str === 'string' ? `"${str}"` : str}`;
+};

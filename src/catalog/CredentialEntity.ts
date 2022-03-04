@@ -14,6 +14,7 @@ import {
 import * as consts from '../constants';
 import * as strings from '../strings';
 import { logger as loggerUtil } from '../util/logger';
+import { apiCredentialProviders } from '../api/apiConstants';
 
 type CatalogEntityContextMenuContext =
   Common.Catalog.CatalogEntityContextMenuContext;
@@ -26,20 +27,13 @@ export const credentialEntityPhases = Object.freeze({
   AVAILABLE: 'available',
 });
 
-export const credentialProviders = Object.freeze({
-  OPENSTACK: 'openstack',
-  VSPHERE: 'vsphere',
-  EQUINIX: 'equinix',
-  AZURE: 'azure',
-  AWS: 'aws',
-  // TODO: there may be one more kind here for BM credentials (i.e. secrets) but we
-  //  first need to test this in an MCC+BM env
-});
-
 /**
  * Typeset for an object used to create a new instance of a `./catalog/CredentialEntity`
  *  object that gets added to the Lens Catalog. Also describes the shape of the entity
  *  object we get from iterating "entities" of this type in the Catalog.
+ *
+ * NOTE: As this is meant for Lens to consume, it will NOT MATCH the kube spec object
+ *  retrieved from the MCC API for the same object.
  */
 export const credentialEntityModelTs = mergeRtvShapes(
   {},
@@ -53,7 +47,7 @@ export const credentialEntityModelTs = mergeRtvShapes(
         rtv.OPTIONAL,
         rtv.STRING,
         {
-          oneOf: Object.values(credentialProviders),
+          oneOf: Object.values(apiCredentialProviders),
         },
       ],
       region: [rtv.OPTIONAL, rtv.STRING],
@@ -94,11 +88,20 @@ export class CredentialEntity extends Common.Catalog.CatalogEntity<
     >
   ) {
     super(data);
-    DEV_ENV &&
-      rtv.verify(
+
+    if (DEV_ENV) {
+      // NOTE: something (probably IPC) sometimes swallows this exception and code
+      //  execution silently stops without any log out from this exception, so check
+      //  and log before throwing
+      const result = rtv.check(
         { credentialEntityData: data },
         { credentialEntityData: credentialEntityModelTs }
       );
+      if (!result.valid) {
+        logger.error('CredentialEntity.constructor()', result.message, data);
+        throw result;
+      }
+    }
   }
 
   // "runs" the entity; called when the user just clicks on the item in the Catalog
