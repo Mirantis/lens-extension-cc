@@ -1,6 +1,6 @@
 # ChangeLog
 
-## UNRELEASED
+## v4.0.0-alpha.3
 
 ⚠️ This is an early alpha build and is not fully functional. Use at your own risk.
 
