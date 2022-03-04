@@ -161,15 +161,14 @@ export const SyncView = () => {
           />
         </TableWrapper>
 
-        {!isSelectiveSyncView && (
-          <ButtonWrapper>
-            <Button
-              primary
-              label={syncView.connectButtonLabel()}
-              onClick={openAddCloud}
-            />
-          </ButtonWrapper>
-        )}
+        <ButtonWrapper>
+          <Button
+            primary
+            label={syncView.connectButtonLabel()}
+            onClick={openAddCloud}
+            disabled={isSelectiveSyncView}
+          />
+        </ButtonWrapper>
       </Content>
     );
   }
