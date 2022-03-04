@@ -61,10 +61,6 @@ export class IpcMain extends Main.Ipc {
    * @param {Array<CatalogEntity>} catalogSource Registered Lens Catalog source.
    */
   addFakeItems(catalogSource) {
-    if (!DEV_ENV) {
-      return;
-    }
-
     //// SSH KEYS
 
     const sshKeyModels = [

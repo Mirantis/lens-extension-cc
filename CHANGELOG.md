@@ -1,5 +1,12 @@
 # ChangeLog
 
+## UNRELEASED
+
+⚠️ This is an early alpha build and is not fully functional. Use at your own risk.
+
+- For real, this time, fix the fake Catalog items not showing up.
+- Add additional custom details to the "Details panel" (choose `View details` from a Catalog item's context menu) for Proxies, SSH Keys, Credentials, and Licenses. Clusters aren't supported yet.
+
 ## v4.0.0-alpha.2
 
 ⚠️ This is an early alpha build and is not fully functional. Use at your own risk.
