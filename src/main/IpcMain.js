@@ -2,7 +2,6 @@
 // Main Process IPC API
 //
 
-import { observable } from 'mobx';
 import { Main } from '@k8slens/extensions';
 import * as rtv from 'rtvjs';
 import { logger } from '../util/logger';
@@ -23,17 +22,14 @@ const captureTs = {
   message: rtv.STRING,
 };
 
-export const catalogSource = observable.array([]);
-
+/**
+ * Singleton Main thread IPC endpoint.
+ * @class IpcMain
+ */
 export class IpcMain extends Main.Ipc {
-  /**
-   * @param {Main.LensExtension} extension
-   */
-  constructor(extension) {
-    super(extension);
-
-    extension.addCatalogSource(consts.catalog.source, catalogSource);
-  }
+  //
+  // SINGLETON
+  //
 
   /**
    * Logs a message to the `logger` and broadcasts it to the Renderer so that it can
@@ -59,11 +55,12 @@ export class IpcMain extends Main.Ipc {
     this.broadcast(ipcEvents.broadcast.LOGGER, level, ...params);
   }
 
-  // DEBUG REMOVE
+  // TODO[SyncManager]: REMOVE
   /**
    * Adds fake/dummy items to the Catalog for testing.
+   * @param {Array<CatalogEntity>} catalogSource Registered Lens Catalog source.
    */
-  addFakeItems() {
+  addFakeItems(catalogSource) {
     if (!DEV_ENV) {
       return;
     }
@@ -72,8 +69,8 @@ export class IpcMain extends Main.Ipc {
 
     const sshKeyModels = [
       {
-        kind: 'PublicKey',
         metadata: {
+          kind: 'PublicKey',
           source: consts.catalog.source,
           uid: 'sshkey-uid-1',
           name: 'SSH Key 1',
@@ -93,8 +90,8 @@ export class IpcMain extends Main.Ipc {
         },
       },
       {
-        kind: 'PublicKey',
         metadata: {
+          kind: 'PublicKey',
           source: consts.catalog.source,
           uid: 'sshkey-uid-2',
           name: 'SSH Key 2',
@@ -130,8 +127,8 @@ export class IpcMain extends Main.Ipc {
 
     const credentialModels = [
       {
-        kind: 'AWSCredential',
         metadata: {
+          kind: 'AWSCredential',
           source: consts.catalog.source,
           uid: 'credential-uid-1',
           name: 'Credential 1',
@@ -153,8 +150,8 @@ export class IpcMain extends Main.Ipc {
         },
       },
       {
-        kind: 'AzureCredential',
         metadata: {
+          kind: 'AzureCredential',
           source: consts.catalog.source,
           uid: 'credential-uid-2',
           name: 'Credential 2',
@@ -192,8 +189,8 @@ export class IpcMain extends Main.Ipc {
 
     const proxyModels = [
       {
-        kind: 'Proxy',
         metadata: {
+          kind: 'Proxy',
           source: consts.catalog.source,
           uid: 'proxy-uid-1',
           name: 'Proxy 1',
@@ -215,8 +212,8 @@ export class IpcMain extends Main.Ipc {
         },
       },
       {
-        kind: 'Proxy',
         metadata: {
+          kind: 'Proxy',
           source: consts.catalog.source,
           uid: 'proxy-uid-2',
           name: 'Proxy 2',
@@ -254,8 +251,8 @@ export class IpcMain extends Main.Ipc {
 
     const licenseModels = [
       {
-        kind: 'RHELLicense',
         metadata: {
+          kind: 'RHELLicense',
           source: consts.catalog.source,
           uid: 'license-uid-1',
           name: 'License 1',
@@ -274,8 +271,8 @@ export class IpcMain extends Main.Ipc {
         },
       },
       {
-        kind: 'RHELLicense',
         metadata: {
+          kind: 'RHELLicense',
           source: consts.catalog.source,
           uid: 'license-uid-2',
           name: 'License 2',

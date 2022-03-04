@@ -374,7 +374,7 @@ export class Cluster extends ApiObject {
    * @returns {Common.Catalog.KubernetesCluster}
    */
   toEntity() {
-    return null; // DEBUG TODO
+    return null; // TODO[SyncManager]
   }
 
   /** @returns {string} A string representation of this instance for logging/debugging. */

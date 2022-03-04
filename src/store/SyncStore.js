@@ -1,5 +1,4 @@
 import { observable, action, toJS, makeObservable } from 'mobx';
-import { difference } from 'lodash';
 import { Common } from '@k8slens/extensions';
 import * as rtv from 'rtvjs';
 import { logger } from '../util/logger';

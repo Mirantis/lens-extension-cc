@@ -10,13 +10,7 @@ import { Proxy } from '../api/types/Proxy';
 import { License } from '../api/types/License';
 import { logger } from '../util/logger';
 import { EventDispatcher } from './EventDispatcher';
-import { apiKindTs } from '../catalog/catalogEntities';
-import {
-  apiEntities,
-  apiCredentialEntities,
-  apiKinds,
-  apiCredentialKinds,
-} from '../api/apiConstants';
+import { apiEntities, apiCredentialEntities } from '../api/apiConstants';
 
 export const DATA_CLOUD_EVENTS = Object.freeze({
   /**
@@ -73,6 +67,12 @@ export const DATA_CLOUD_EVENTS = Object.freeze({
  */
 const FETCH_INTERVAL = 4.85 * 60 * 1000; // 4:51 minutes (AVOID exactly 5 minutes)
 
+/**
+ * Gets the error message from an error, or returns the error as-is if it's already a string.
+ * @param {Error|string} error
+ * @returns {string|null} Error message. Either `error.message` or `error` itself; null if
+ *  `error` is falsy.
+ */
 const getErrorMessage = (error) => {
   if (!error) {
     return null;

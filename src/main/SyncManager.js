@@ -1,11 +1,9 @@
 import { Common } from '@k8slens/extensions';
-import { autorun, observable } from 'mobx';
+import { autorun } from 'mobx';
 import * as rtv from 'rtvjs';
 import { isEqual } from 'lodash';
 import { DATA_CLOUD_EVENTS, DataCloud } from '../common/DataCloud';
 import { cloudStore } from '../store/CloudStore';
-import { syncStore } from '../store/SyncStore';
-import * as consts from '../constants';
 import { apiKinds } from '../api/apiConstants';
 import { IpcMain } from './IpcMain';
 
@@ -29,13 +27,17 @@ const kindtoNamespaceProp = {
   [apiKinds.PROXY]: 'proxies',
 };
 
-export const catalogSource = observable.array([]);
-
+/**
+ * Synchronizes MCC namespaces with the Lens Catalog.
+ * @class SyncManager
+ */
 export class SyncManager extends Singleton {
-  constructor(extension) {
+  /**
+   * @param {Array<CatalogEntity>} catalogSource Registered Lens Catalog source.
+   * @constructor
+   */
+  constructor(catalogSource) {
     super();
-
-    extension.addCatalogSource(consts.catalog.source, catalogSource);
 
     let _cloudTokens = {};
     let _dataClouds = {};
@@ -73,6 +75,17 @@ export class SyncManager extends Singleton {
       enumerable: true,
       get() {
         return _dataClouds;
+      },
+    });
+
+    /**
+     * @readonly
+     * @member {Array<CatalogEntity>} catalogSource Registered Lens Catalog source.
+     */
+    Object.defineProperty(this, 'catalogSource', {
+      enumerable: true,
+      get() {
+        return catalogSource;
       },
     });
 
@@ -173,9 +186,9 @@ export class SyncManager extends Singleton {
       delete this.dataClouds[url];
     });
 
-    // DEBUG TODO: need something on this side that detects when Cloud is now connected
-    //  and triggers an immediate data fetch on it if it wasn't before because tokens
-    //  will come from RENDERER, written to disk, and updated here from CloudStore...
+    // TODO[SyncManager]: need something on this side that detects when Cloud is now connected
+    //  and triggers an immediate data fetch on it if it wasn't before because tokens will
+    //  come from RENDERER, written to disk, and updated here from CloudStore in this case
 
     cloudUrlsToAdd.concat(cloudUrlsToUpdate).forEach((url) => {
       const cloud = cloudStore.clouds[url];
@@ -193,7 +206,7 @@ export class SyncManager extends Singleton {
       } else {
         // add new EC to store
         const dc = new DataCloud(cloud);
-        dc.addEventListener(DATA_CLOUD_EVENTS.DATA_UPDATED, this.onDataUpdated);
+        // TODO[SyncManager]: dc.addEventListener(DATA_CLOUD_EVENTS.DATA_UPDATED, this.onDataUpdated);
         this.dataClouds[url] = dc;
       }
     });
@@ -212,34 +225,33 @@ export class SyncManager extends Singleton {
 
     // TODO[PRODX-22269]: make this a lot more efficient
     ['sshKeys'].forEach(
-      // DEBUG , 'credentials', 'proxies', 'licenses', 'clusters'].forEach(
+      // TODO[SyncManager] , 'credentials', 'proxies', 'licenses', 'clusters'].forEach(
       (type) => {
         const newEntities = dc.syncedNamespaces.flatMap((ns) =>
           ns[type].map((apiType) => apiType.toEntity())
         );
 
         // first, remove all entities from the Catalog of this type
-        // DEBUG
-        // let idx;
-        // while (
-        //   (idx = catalogSource.findIndex((entity) => {
-        //     // NOTE: since it's our Catalog Source, it only contains our items, so we should
-        //     //  never encounter a case where there's no mapped property
-        //     const prop = kindtoNamespaceProp[entity.metadata.kind];
-        //     return type === prop;
-        //   })) >= 0
-        // ) {
-        //   catalogSource.splice(idx, 1);
-        // }
+        let idx;
+        while (
+          (idx = this.catalogSource.findIndex((entity) => {
+            // NOTE: since it's our Catalog Source, it only contains our items, so we should
+            //  never encounter a case where there's no mapped property
+            const prop = kindtoNamespaceProp[entity.metadata.kind];
+            return type === prop;
+          })) >= 0
+        ) {
+          this.catalogSource.splice(idx, 1);
+        }
 
         IpcMain.getInstance().capture(
           'log',
           'SyncManager.onDataUpdated()',
-          `Adding ${newEntities.length} ${type} entities to Catalog; dataCloud=${dc}`
+          `Adding ${newEntities.length} "${type}" entities to Catalog; dataCloud=${dc}`
         );
 
         // then, add all the new ones
-        newEntities.forEach((entity) => catalogSource.push(entity));
+        newEntities.forEach((entity) => this.catalogSource.push(entity));
       }
     );
 
