@@ -650,6 +650,8 @@ export class Cloud extends EventDispatcher {
 
       if (spec.id_token && spec.refresh_token) {
         this.updateTokens(spec);
+      } else {
+        this.resetTokens();
       }
     }
 

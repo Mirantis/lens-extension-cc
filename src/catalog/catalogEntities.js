@@ -5,6 +5,7 @@
 import * as rtv from 'rtvjs';
 import * as consts from '../constants';
 import { mergeRtvShapes } from '../util/mergeRtvShapes';
+import { apiKinds } from '../api/apiConstants';
 
 /**
  * Typeset representing the required labels for all entity types (except a mgmt
@@ -14,6 +15,11 @@ export const requiredLabelTs = {
   managementCluster: rtv.STRING,
   project: rtv.STRING,
 };
+
+/**
+ * Typeset for a required value from the apiKinds enumeration.
+ */
+export const apiKindTs = [rtv.STRING, { oneOf: Object.values(apiKinds) }];
 
 /**
  * Typeset for a basic object used to create a new instance of an entity that will
@@ -36,6 +42,8 @@ export const catalogEntityModelTs = {
 
     //// CUSTOM PROPERTIES
     // can also contain any other custom properties as `name: value` pairs
+
+    kind: apiKindTs,
 
     // enough info to relate this entity to a namespace in a Cloud in `CloudStore.clouds`
     //  if necessary

@@ -3,7 +3,11 @@ import { merge } from 'lodash';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
 import { ApiObject, apiObjectTs } from './ApiObject';
 import { Namespace } from './Namespace';
-import { licenseEntityPhases } from '../../catalog/LicenseEntity';
+import {
+  LicenseEntity,
+  licenseEntityPhases,
+} from '../../catalog/LicenseEntity';
+import { apiKinds } from '../apiConstants';
 
 /**
  * Typeset for an MCC License object.
@@ -12,7 +16,7 @@ export const apiLicenseTs = mergeRtvShapes({}, apiObjectTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
   //  related to what we expect to find in order to create a `Credential` class instance
 
-  kind: [rtv.STRING, { oneOf: 'RHELLicense' }],
+  kind: [rtv.STRING, { oneOf: apiKinds.RHEL_LICENSE }],
 });
 
 /**
@@ -30,44 +34,37 @@ export class License extends ApiObject {
    * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
    */
   constructor({ data, namespace, cloud }) {
-    super({ data, cloud });
+    super({ data, cloud, typeset: apiLicenseTs });
 
     DEV_ENV &&
       rtv.verify(
-        { data, namespace },
+        { namespace },
         {
-          data: apiLicenseTs,
           namespace: [rtv.CLASS_OBJECT, { ctor: Namespace }],
         }
       );
 
-    /** @member {Namespace} */
+    /** @member {Namespace} namespace */
     Object.defineProperty(this, 'namespace', {
       enumerable: true,
       get() {
         return namespace;
       },
     });
-
-    /** @member {string} */
-    Object.defineProperty(this, 'kind', {
-      enumerable: true,
-      get() {
-        return data.kind;
-      },
-    });
   }
 
   /**
-   * Converts this API Object into a Catalog Entity.
-   * @returns {Object} Entity object.
+   * Converts this API Object into a Catalog Entity Model.
+   * @returns {{ metadata: Object, spec: Object, status: Object }} Catalog Entity Model
+   *  (use to create new Catalog Entity).
    * @override
    */
-  toEntity() {
-    const entity = super.toEntity();
+  toModel() {
+    const entity = super.toModel();
 
     return merge({}, entity, {
       metadata: {
+        namespace: this.namespace.name,
         labels: {
           managementCluster: this.cloud.name,
           project: this.namespace.name,
@@ -79,11 +76,17 @@ export class License extends ApiObject {
     });
   }
 
+  /**
+   * Converts this API Object into a Catalog Entity that can be inserted into a Catalog Source.
+   * @returns {LicenseEntity}
+   */
+  toEntity() {
+    return new LicenseEntity(this.toModel());
+  }
+
   /** @returns {string} A string representation of this instance for logging/debugging. */
   toString() {
-    const propStr = `${super.toString()}, kind: "${this.kind}", namespace: "${
-      this.namespace.name
-    }"`;
+    const propStr = `${super.toString()}, namespace: "${this.namespace.name}"`;
 
     if (Object.getPrototypeOf(this).constructor === License) {
       return `{License ${propStr}}`;

@@ -9,6 +9,9 @@ export const apiObjectTs = {
   // NOTE: this is not intended to be fully-representative; we only list the properties
   //  related to what we expect to find in order to create a `Credential` class instance
 
+  // NOTE: not all API objects have a `kind` property (e.g. namespaces do not)
+  kind: [rtv.OPTIONAL, rtv.STRING],
+
   metadata: {
     uid: rtv.STRING,
     name: rtv.STRING,
@@ -28,13 +31,14 @@ export class ApiObject {
    * @param {Object} params
    * @param {Object} params.data Raw data payload from the API.
    * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
+   * @param {rtv.Typeset} params.typeset Typeset for verifying the data.
    */
-  constructor({ data, cloud }) {
+  constructor({ data, cloud, typeset = null }) {
     DEV_ENV &&
       rtv.verify(
         { data, cloud },
         {
-          data: apiObjectTs,
+          data: typeset,
           cloud: [rtv.CLASS_OBJECT, { ctor: Cloud }],
         }
       );
@@ -52,6 +56,14 @@ export class ApiObject {
       enumerable: true,
       get() {
         return data.metadata.uid;
+      },
+    });
+
+    /** @member {string} */
+    Object.defineProperty(this, 'kind', {
+      enumerable: true,
+      get() {
+        return data.kind;
       },
     });
 
@@ -81,10 +93,10 @@ export class ApiObject {
   }
 
   /**
-   * Converts this API Object into a Catalog Entity.
-   * @returns {Object} Entity object.
+   * Converts this API Object into a Catalog Entity Model.
+   * @returns {{ metadata: Object, spec: Object, status: Object }} Catalog Entity Model (use to create new Catalog Entity).
    */
-  toEntity() {
+  toModel() {
     return {
       metadata: {
         uid: this.uid,
@@ -93,7 +105,7 @@ export class ApiObject {
         description: null,
         labels: {},
         cloudUrl: this.cloud.cloudUrl,
-        namespace: null, // required, but to be filled-in by extended classes
+        kind: this.kind,
       },
       spec: {},
       status: {},
@@ -102,7 +114,9 @@ export class ApiObject {
 
   /** @returns {string} A string representation of this instance for logging/debugging. */
   toString() {
-    const propStr = `name: "${this.name}", uid: "${this.uid}"`;
+    const propStr = `name: "${this.name}", uid: "${this.uid}", kind: ${
+      this.kind ? `"${this.kind}"` : this.kind
+    }`;
 
     if (Object.getPrototypeOf(this).constructor === ApiObject) {
       return `{ApiObject ${propStr}}`;

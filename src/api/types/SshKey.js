@@ -3,7 +3,8 @@ import { merge } from 'lodash';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
 import { ApiObject, apiObjectTs } from './ApiObject';
 import { Namespace } from './Namespace';
-import { sshKeyEntityPhases } from '../../catalog/SshKeyEntity';
+import { SshKeyEntity, sshKeyEntityPhases } from '../../catalog/SshKeyEntity';
+import { apiKinds } from '../apiConstants';
 
 /**
  * Typeset for an MCC SSH Key object.
@@ -12,7 +13,7 @@ export const apiSshKeyTs = mergeRtvShapes({}, apiObjectTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
   //  related to what we expect to find in order to create a `Credential` class instance
 
-  kind: [rtv.STRING, { oneOf: 'PublicKey' }],
+  kind: [rtv.STRING, { oneOf: apiKinds.PUBLIC_KEY }],
   spec: {
     publicKey: rtv.STRING,
   },
@@ -33,18 +34,17 @@ export class SshKey extends ApiObject {
    * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
    */
   constructor({ data, namespace, cloud }) {
-    super({ data, cloud });
+    super({ data, cloud, typeset: apiSshKeyTs });
 
     DEV_ENV &&
       rtv.verify(
-        { data, namespace },
+        { namespace },
         {
-          data: apiSshKeyTs,
           namespace: [rtv.CLASS_OBJECT, { ctor: Namespace }],
         }
       );
 
-    /** @member {Namespace} */
+    /** @member {Namespace} namespace */
     Object.defineProperty(this, 'namespace', {
       enumerable: true,
       get() {
@@ -52,15 +52,7 @@ export class SshKey extends ApiObject {
       },
     });
 
-    /** @member {string} */
-    Object.defineProperty(this, 'kind', {
-      enumerable: true,
-      get() {
-        return data.kind;
-      },
-    });
-
-    /** @member {string} */
+    /** @member {string} publicKey */
     Object.defineProperty(this, 'publicKey', {
       enumerable: true,
       get() {
@@ -70,15 +62,17 @@ export class SshKey extends ApiObject {
   }
 
   /**
-   * Converts this API Object into a Catalog Entity.
-   * @returns {Object} Entity object.
+   * Converts this API Object into a Catalog Entity Model.
+   * @returns {{ metadata: Object, spec: Object, status: Object }} Catalog Entity Model
+   *  (use to create new Catalog Entity).
    * @override
    */
-  toEntity() {
-    const entity = super.toEntity();
+  toModel() {
+    const entity = super.toModel();
 
     return merge({}, entity, {
       metadata: {
+        namespace: this.namespace.name,
         labels: {
           managementCluster: this.cloud.name,
           project: this.namespace.name,
@@ -93,9 +87,17 @@ export class SshKey extends ApiObject {
     });
   }
 
+  /**
+   * Converts this API Object into a Catalog Entity that can be inserted into a Catalog Source.
+   * @returns {SshKeyEntity}
+   */
+  toEntity() {
+    return new SshKeyEntity(this.toModel());
+  }
+
   /** @returns {string} A string representation of this instance for logging/debugging. */
   toString() {
-    const propStr = `${super.toString()}, kind: "${this.kind}", namespace: "${
+    const propStr = `${super.toString()}, namespace: "${
       this.namespace.name
     }", publicKey: "${this.publicKey.slice(0, 15)}..${this.publicKey.slice(
       -15

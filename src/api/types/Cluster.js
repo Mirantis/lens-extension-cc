@@ -8,6 +8,7 @@ import { SshKey } from './SshKey';
 import { Proxy } from './Proxy';
 import { License } from './License';
 import { clusterEntityPhases } from '../../catalog/catalogEntities';
+import { apiKinds } from '../apiConstants';
 
 const isManagementCluster = function (data) {
   const kaas = get(data.spec, 'providerSpec.value.kaas', {});
@@ -26,6 +27,7 @@ export const apiClusterTs = mergeRtvShapes({}, apiObjectTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
   //  related to what we expect to find in order to create a `Credential` class instance
 
+  kind: [rtv.STRING, { oneOf: apiKinds.CLUSTER }],
   metadata: {
     labels: [
       rtv.OPTIONAL,
@@ -55,20 +57,24 @@ export const apiClusterTs = mergeRtvShapes({}, apiObjectTs, {
       },
     },
   },
-  status: {
-    providerStatus: {
-      oidc: {
-        certificate: rtv.STRING,
-        clientId: rtv.STRING,
-        groupsClaim: rtv.STRING,
-        issuerUrl: rtv.STRING,
-        ready: rtv.BOOLEAN,
+  // NOTE: BYO clusters don't have status at all, or at least may not have it
+  status: [
+    rtv.OPTIONAL,
+    {
+      providerStatus: {
+        oidc: {
+          certificate: rtv.STRING,
+          clientId: rtv.STRING,
+          groupsClaim: rtv.STRING,
+          issuerUrl: rtv.STRING,
+          ready: rtv.BOOLEAN,
+        },
+        apiServerCertificate: rtv.STRING,
+        ucpDashboard: [rtv.OPTIONAL, rtv.STRING], // if managed by UCP, the URL
+        loadBalancerHost: [rtv.OPTIONAL, rtv.STRING],
       },
-      apiServerCertificate: rtv.STRING,
-      ucpDashboard: [rtv.OPTIONAL, rtv.STRING], // if managed by UCP, the URL
-      loadBalancerHost: [rtv.OPTIONAL, rtv.STRING],
     },
-  },
+  ],
 });
 
 /**
@@ -85,15 +91,14 @@ export class Cluster extends ApiObject {
    * @param {string} params.username Username used to access the Cloud.
    */
   constructor({ data, namespace, cloud, username }) {
-    super({ data, cloud });
+    super({ data, cloud, typeset: apiClusterTs });
 
     // just testing for what is Cluster-specific
     DEV_ENV &&
       rtv.verify(
-        { data, namespace },
+        { namespace },
         {
           namespace: [rtv.CLASS_OBJECT, { ctor: Namespace }],
-          data: apiClusterTs,
         }
       );
 
@@ -194,7 +199,7 @@ export class Cluster extends ApiObject {
       },
     });
 
-    /** @member {string} */
+    /** @member {string} username */
     Object.defineProperty(this, 'username', {
       enumerable: true,
       get() {
@@ -202,7 +207,7 @@ export class Cluster extends ApiObject {
       },
     });
 
-    /** @member {boolean} */
+    /** @member {boolean} isManagementCluster */
     Object.defineProperty(this, 'isManagementCluster', {
       enumerable: true,
       get() {
@@ -210,11 +215,12 @@ export class Cluster extends ApiObject {
       },
     });
 
-    // NOTE: cluster is ready/provisioned (and we can generate a kubeConfig for it) if
-    //  these fields are all available and defined, and cluster isn't being deleted
+    /** @member {boolean} ready */
     Object.defineProperty(this, 'ready', {
       enumerable: true,
       get() {
+        // NOTE: cluster is ready/provisioned (and we can generate a kubeConfig for it) if
+        //  these fields are all available and defined, and cluster isn't being deleted
         return !!(
           !this.deleteInProgress &&
           data.status?.providerStatus?.loadBalancerHost &&
@@ -226,7 +232,7 @@ export class Cluster extends ApiObject {
       },
     });
 
-    /** @member {string|null} */
+    /** @member {string|null} serverUrl */
     Object.defineProperty(this, 'serverUrl', {
       enumerable: true,
       get() {
@@ -236,7 +242,7 @@ export class Cluster extends ApiObject {
 
     /**
      * IDP Certificate Authority Data (OIDC)
-     * @member {string|null}
+     * @member {string|null} idpIssuerUrl
      */
     Object.defineProperty(this, 'idpIssuerUrl', {
       enumerable: true,
@@ -245,7 +251,7 @@ export class Cluster extends ApiObject {
       },
     });
 
-    /** @member {string|null} */
+    /** @member {string|null} idpCertificate */
     Object.defineProperty(this, 'idpCertificate', {
       enumerable: true,
       get() {
@@ -253,7 +259,7 @@ export class Cluster extends ApiObject {
       },
     });
 
-    /** @member {string|null} */
+    /** @member {string|null} idpClientId */
     Object.defineProperty(this, 'idpClientId', {
       enumerable: true,
       get() {
@@ -261,7 +267,7 @@ export class Cluster extends ApiObject {
       },
     });
 
-    /** @member {string|null} */
+    /** @member {string|null} apiCertificate */
     Object.defineProperty(this, 'apiCertificate', {
       enumerable: true,
       get() {
@@ -273,7 +279,7 @@ export class Cluster extends ApiObject {
 
     /**
      * e.g. 'aws'
-     * @member {string|null}
+     * @member {string|null} ucpUrl
      */
     Object.defineProperty(this, 'ucpUrl', {
       enumerable: true,
@@ -284,7 +290,7 @@ export class Cluster extends ApiObject {
 
     /**
      * e.g. 'region-one'
-     * @member {string|null}
+     * @member {string|null} provider
      */
     Object.defineProperty(this, 'provider', {
       enumerable: true,
@@ -297,7 +303,7 @@ export class Cluster extends ApiObject {
 
     /**
      * e.g. 'us-west-2'
-     * @member {string|null}
+     * @member {string|null} region
      */
     Object.defineProperty(this, 'region', {
       enumerable: true,
@@ -308,7 +314,7 @@ export class Cluster extends ApiObject {
       },
     });
 
-    /** @member {sting|null} */
+    /** @member {sting|null} awsRegion */
     Object.defineProperty(this, 'awsRegion', {
       enumerable: true,
       get() {
@@ -324,15 +330,17 @@ export class Cluster extends ApiObject {
   }
 
   /**
-   * Converts this API Object into a Catalog Entity.
-   * @returns {Object} Entity object.
+   * Converts this API Object into a Catalog Entity Model.
+   * @returns {{ metadata: Object, spec: Object, status: Object }} Catalog Entity Model
+   *  (use to create new Catalog Entity).
    * @override
    */
-  toEntity() {
-    const entity = super.toEntity();
+  toModel() {
+    const entity = super.toModel();
 
     return merge({}, entity, {
       metadata: {
+        namespace: this.namespace.name,
         labels: {
           ...(this.isManagementCluster
             ? {}
@@ -347,8 +355,8 @@ export class Cluster extends ApiObject {
         },
       },
       spec: {
-        kubeconfigPath: 'wip', // TODO[PRODX-21909]
-        kubeconfigContext: 'wip', // TODO[PRODX-21909]
+        kubeconfigPath: 'todo-path', // TODO[PRODX-21909]
+        kubeconfigContext: 'todo-context', // TODO[PRODX-21909]
         isManagementCluster: this.isManagementCluster,
         ready: this.ready,
       },
@@ -359,6 +367,14 @@ export class Cluster extends ApiObject {
         phase: clusterEntityPhases.DISCONNECTED,
       },
     });
+  }
+
+  /**
+   * Converts this API Object into a Catalog Entity that can be inserted into a Catalog Source.
+   * @returns {Common.Catalog.KubernetesCluster}
+   */
+  toEntity() {
+    return null; // TODO[SyncManager]
   }
 
   /** @returns {string} A string representation of this instance for logging/debugging. */

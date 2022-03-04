@@ -67,6 +67,12 @@ export const DATA_CLOUD_EVENTS = Object.freeze({
  */
 const FETCH_INTERVAL = 4.85 * 60 * 1000; // 4:51 minutes (AVOID exactly 5 minutes)
 
+/**
+ * Gets the error message from an error, or returns the error as-is if it's already a string.
+ * @param {Error|string} error
+ * @returns {string|null} Error message. Either `error.message` or `error` itself; null if
+ *  `error` is falsy.
+ */
 const getErrorMessage = (error) => {
   if (!error) {
     return null;
@@ -558,6 +564,16 @@ export class DataCloud extends EventDispatcher {
       },
     });
 
+    /**
+     * @member {null|TimerID} _updateInterval Data fetch interval timer ID; null if
+     *  not active.
+     * @private
+     */
+    Object.defineProperty(this, '_updateInterval', {
+      writable: true,
+      value: null,
+    });
+
     //// initialize
 
     this.cloud = cloud;
@@ -575,12 +591,7 @@ export class DataCloud extends EventDispatcher {
     // start fetching new data on a regular interval (i.e. don't just rely on
     //  `cloud` properties changing to trigger a fetch) so we discover changes
     //  in the Cloud (e.g. new clusters, namespaces removed, etc)
-    this._updateInterval = setInterval(() => {
-      // NOTE: dispatch the event instead of calling fetchData() directly so that
-      //  we don't duplicate an existing request to fetch the data if one has
-      //  just been scheduled
-      this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA, this);
-    }, FETCH_INTERVAL);
+    this.resetInterval();
 
     // schedule the initial data load/fetch
     this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA, this);
@@ -614,6 +625,28 @@ export class DataCloud extends EventDispatcher {
     );
   }
 
+  /**
+   * Clears the data fetch interval if it's active, and optionally establishes a new
+   *  interval.
+   * @param {boolean} [restart] If true, a new interval is established. Either way,
+   *  the existing interval, if any, is stopped/cleared.
+   */
+  resetInterval(restart = true) {
+    if (this._updateInterval) {
+      clearInterval(this._updateInterval);
+      this._updateInterval = null;
+    }
+
+    if (restart) {
+      this._updateInterval = setInterval(() => {
+        // NOTE: dispatch the event instead of calling fetchData() directly so that
+        //  we don't duplicate an existing request to fetch the data if one has
+        //  just been scheduled
+        this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA, this);
+      }, FETCH_INTERVAL);
+    }
+  }
+
   /** Called when this instance is being deleted/destroyed. */
   destroy() {
     this.removeEventListener(DATA_CLOUD_EVENTS.FETCH_DATA, this.onFetchData);
@@ -621,9 +654,7 @@ export class DataCloud extends EventDispatcher {
       CLOUD_EVENTS.SYNC_CHANGE,
       this.onCloudSyncChange
     );
-    if (this._updateInterval) {
-      clearInterval(this._updateInterval);
-    }
+    this.resetInterval(false);
   }
 
   /** Called when the Cloud's sync-related properties have changed. */
@@ -635,15 +666,21 @@ export class DataCloud extends EventDispatcher {
     this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA, this);
   };
 
-  /** Trigger an immediate data fetch outside the normal fetch interval. */
+  /**
+   * Trigger an immediate data fetch outside the normal fetch interval, causing the
+   *  interval to be reset to X minutes after this fetch.
+   */
   fetchNow() {
+    this.resetInterval();
     this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA, this);
   }
 
   /**
-   * check if for projects and depending on syncAll we add them to Cloud.syncedNamespaces or Cloud.ignoredNamespaces
+   * Update the Cloud's list of namespaces given all known namespaces and the Cloud's
+   *  `syncAll` flag (i.e. add any new namespaces to its synced or ignored list, and
+   *  remove any old ones).
    */
-  updateCloudNamespaceLists() {
+  updateCloudNamespaces() {
     const syncedList = [];
     const ignoredList = [];
 
@@ -740,7 +777,8 @@ export class DataCloud extends EventDispatcher {
       return namespace;
     });
 
-    this.updateCloudNamespaceLists();
+    this.updateCloudNamespaces();
+
     if (!this.loaded) {
       // successfully loaded at least once
       this.loaded = true;

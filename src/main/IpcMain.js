@@ -2,7 +2,6 @@
 // Main Process IPC API
 //
 
-import { observable } from 'mobx';
 import { Main } from '@k8slens/extensions';
 import * as rtv from 'rtvjs';
 import { logger } from '../util/logger';
@@ -23,17 +22,14 @@ const captureTs = {
   message: rtv.STRING,
 };
 
-export const catalogSource = observable.array([]);
-
+/**
+ * Singleton Main thread IPC endpoint.
+ * @class IpcMain
+ */
 export class IpcMain extends Main.Ipc {
-  /**
-   * @param {Main.LensExtension} extension
-   */
-  constructor(extension) {
-    super(extension);
-
-    extension.addCatalogSource(consts.catalog.source, catalogSource);
-  }
+  //
+  // SINGLETON
+  //
 
   /**
    * Logs a message to the `logger` and broadcasts it to the Renderer so that it can
@@ -47,7 +43,6 @@ export class IpcMain extends Main.Ipc {
    *
    * @param {string} level Logger/console method, e.g. 'log' or 'warn'.
    * @param {string} context Identifies where the message came from, e.g. 'methodName()'.
-   *  The prefix "IpcMain." is added to this string.
    * @param {string} message Log message.
    * @param {...any} rest Anything else to pass to the Logger to be printed as data
    *  or parsed with '%s' placeholders in the message (same as `console` API).
@@ -55,15 +50,17 @@ export class IpcMain extends Main.Ipc {
   capture(level, context, message, ...rest) {
     DEV_ENV && rtv.verify({ level, context, message }, captureTs);
 
-    const params = [`IpcMain.${context}`, message, ...rest];
+    const params = [`[MAIN] ${context}`, message, ...rest];
     logger[level](...params);
     this.broadcast(ipcEvents.broadcast.LOGGER, level, ...params);
   }
 
+  // TODO[SyncManager]: REMOVE
   /**
    * Adds fake/dummy items to the Catalog for testing.
+   * @param {Array<CatalogEntity>} catalogSource Registered Lens Catalog source.
    */
-  addFakeItems() {
+  addFakeItems(catalogSource) {
     if (!DEV_ENV) {
       return;
     }
@@ -73,6 +70,7 @@ export class IpcMain extends Main.Ipc {
     const sshKeyModels = [
       {
         metadata: {
+          kind: 'PublicKey',
           source: consts.catalog.source,
           uid: 'sshkey-uid-1',
           name: 'SSH Key 1',
@@ -93,6 +91,7 @@ export class IpcMain extends Main.Ipc {
       },
       {
         metadata: {
+          kind: 'PublicKey',
           source: consts.catalog.source,
           uid: 'sshkey-uid-2',
           name: 'SSH Key 2',
@@ -129,6 +128,7 @@ export class IpcMain extends Main.Ipc {
     const credentialModels = [
       {
         metadata: {
+          kind: 'AWSCredential',
           source: consts.catalog.source,
           uid: 'credential-uid-1',
           name: 'Credential 1',
@@ -151,6 +151,7 @@ export class IpcMain extends Main.Ipc {
       },
       {
         metadata: {
+          kind: 'AzureCredential',
           source: consts.catalog.source,
           uid: 'credential-uid-2',
           name: 'Credential 2',
@@ -189,6 +190,7 @@ export class IpcMain extends Main.Ipc {
     const proxyModels = [
       {
         metadata: {
+          kind: 'Proxy',
           source: consts.catalog.source,
           uid: 'proxy-uid-1',
           name: 'Proxy 1',
@@ -211,6 +213,7 @@ export class IpcMain extends Main.Ipc {
       },
       {
         metadata: {
+          kind: 'Proxy',
           source: consts.catalog.source,
           uid: 'proxy-uid-2',
           name: 'Proxy 2',
@@ -249,6 +252,7 @@ export class IpcMain extends Main.Ipc {
     const licenseModels = [
       {
         metadata: {
+          kind: 'RHELLicense',
           source: consts.catalog.source,
           uid: 'license-uid-1',
           name: 'License 1',
@@ -268,6 +272,7 @@ export class IpcMain extends Main.Ipc {
       },
       {
         metadata: {
+          kind: 'RHELLicense',
           source: consts.catalog.source,
           uid: 'license-uid-2',
           name: 'License 2',

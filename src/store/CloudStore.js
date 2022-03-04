@@ -14,6 +14,7 @@ export const storeTs = {
   clouds: [rtv.HASH_MAP, { $values: Cloud.specTs }],
 };
 
+/** Stores Clouds. */
 export class CloudStore extends Common.Store.ExtensionStore {
   // NOTE: See main.ts#onActivate() and renderer.tsx#onActivate() where this.loadExtension()
   //  is called on the store instance in order to get Lens to load it from storage.
@@ -52,7 +53,7 @@ export class CloudStore extends Common.Store.ExtensionStore {
     const result = rtv.check({ store }, { store: storeTs });
 
     if (!result.valid) {
-      logger.error(
+      logger.log(
         'CloudStore.fromStore()',
         `Invalid data found, error="${result.message}"`
       );

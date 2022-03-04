@@ -6,6 +6,10 @@ import { Renderer } from '@k8slens/extensions';
 import { logger } from '../util/logger';
 import { ipcEvents } from '../constants';
 
+/**
+ * Singleton Renderer thread IPC endpoint.
+ * @class IpcMain
+ */
 export class IpcRenderer extends Renderer.Ipc {
   //
   // HANDLERS

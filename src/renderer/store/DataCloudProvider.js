@@ -1,10 +1,10 @@
 import { createContext, useContext, useMemo, useState } from 'react';
 import * as rtv from 'rtvjs';
+import { autorun } from 'mobx';
 import { ProviderStore } from './ProviderStore';
 import { cloneDeepWith, isEqual } from 'lodash';
 import { cloudStore } from '../../store/CloudStore';
 import { DataCloud } from '../../common/DataCloud';
-import { autorun } from 'mobx';
 
 class DataCloudProviderStore extends ProviderStore {
   // @override
@@ -180,6 +180,7 @@ export const DataCloudProvider = function (props) {
   const value = useMemo(() => [state, setState], [state]);
 
   pr.setState = setState;
+
   // autorun calls on any cloudStore update (to often)
   autorun(() => {
     // @type {{ [index: string]: string }} Map of Cloud URL to token for
@@ -197,6 +198,7 @@ export const DataCloudProvider = function (props) {
     if (!isEqual(pr.store.tokens, cloudStoreTokens)) {
       const { cloudUrlsToAdd, cloudUrlsToUpdate, cloudUrlsToRemove } =
         _triageCloudUrls(cloudStoreTokens);
+
       _updateStore({
         cloudStoreTokens,
         cloudUrlsToAdd,
