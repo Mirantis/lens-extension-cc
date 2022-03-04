@@ -3,7 +3,7 @@ import { merge } from 'lodash';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
 import { ApiObject, apiObjectTs } from './ApiObject';
 import { Namespace } from './Namespace';
-import { sshKeyEntityPhases } from '../../catalog/SshKeyEntity';
+import { SshKeyEntity, sshKeyEntityPhases } from '../../catalog/SshKeyEntity';
 import { apiKinds } from '../apiConstants';
 
 /**
@@ -44,7 +44,7 @@ export class SshKey extends ApiObject {
         }
       );
 
-    /** @member {Namespace} */
+    /** @member {Namespace} namespace */
     Object.defineProperty(this, 'namespace', {
       enumerable: true,
       get() {
@@ -52,7 +52,7 @@ export class SshKey extends ApiObject {
       },
     });
 
-    /** @member {string} */
+    /** @member {string} publicKey */
     Object.defineProperty(this, 'publicKey', {
       enumerable: true,
       get() {
@@ -62,12 +62,13 @@ export class SshKey extends ApiObject {
   }
 
   /**
-   * Converts this API Object into a Catalog Entity.
-   * @returns {Object} Entity object.
+   * Converts this API Object into a Catalog Entity Model.
+   * @returns {{ metadata: Object, spec: Object, status: Object }} Catalog Entity Model
+   *  (use to create new Catalog Entity).
    * @override
    */
-  toEntity() {
-    const entity = super.toEntity();
+  toModel() {
+    const entity = super.toModel();
 
     return merge({}, entity, {
       metadata: {
@@ -84,6 +85,14 @@ export class SshKey extends ApiObject {
         phase: sshKeyEntityPhases.AVAILABLE,
       },
     });
+  }
+
+  /**
+   * Converts this API Object into a Catalog Entity that can be inserted into a Catalog Source.
+   * @returns {SshKeyEntity}
+   */
+  toEntity() {
+    return new SshKeyEntity(this.toModel());
   }
 
   /** @returns {string} A string representation of this instance for logging/debugging. */

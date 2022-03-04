@@ -4,7 +4,7 @@ import { mergeRtvShapes } from '../../util/mergeRtvShapes';
 import { ApiObject, apiObjectTs } from './ApiObject';
 import { get } from 'lodash';
 import { Namespace } from './Namespace';
-import { proxyEntityPhases } from '../../catalog/ProxyEntity';
+import { ProxyEntity, proxyEntityPhases } from '../../catalog/ProxyEntity';
 import { apiKinds } from '../apiConstants';
 
 /**
@@ -86,12 +86,13 @@ export class Proxy extends ApiObject {
   }
 
   /**
-   * Converts this API Object into a Catalog Entity.
-   * @returns {Object} Entity object.
+   * Converts this API Object into a Catalog Entity Model.
+   * @returns {{ metadata: Object, spec: Object, status: Object }} Catalog Entity Model
+   *  (use to create new Catalog Entity).
    * @override
    */
-  toEntity() {
-    const entity = super.toEntity();
+  toModel() {
+    const entity = super.toModel();
 
     return merge({}, entity, {
       metadata: {
@@ -110,6 +111,14 @@ export class Proxy extends ApiObject {
         phase: proxyEntityPhases.AVAILABLE,
       },
     });
+  }
+
+  /**
+   * Converts this API Object into a Catalog Entity that can be inserted into a Catalog Source.
+   * @returns {ProxyEntity}
+   */
+  toEntity() {
+    return new ProxyEntity(this.toModel());
   }
 
   /** @returns {string} A string representation of this instance for logging/debugging. */

@@ -26,7 +26,7 @@ export default class ExtensionMain extends Main.LensExtension {
     SyncManager.createInstance(this);
 
     if (DEV_ENV) {
-      IpcMain.getInstance().addFakeItems();
+      // DEBUG REMOVE IpcMain.getInstance().addFakeItems();
     }
   }
 

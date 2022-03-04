@@ -199,7 +199,7 @@ export class Cluster extends ApiObject {
       },
     });
 
-    /** @member {string} */
+    /** @member {string} username */
     Object.defineProperty(this, 'username', {
       enumerable: true,
       get() {
@@ -207,7 +207,7 @@ export class Cluster extends ApiObject {
       },
     });
 
-    /** @member {boolean} */
+    /** @member {boolean} isManagementCluster */
     Object.defineProperty(this, 'isManagementCluster', {
       enumerable: true,
       get() {
@@ -215,11 +215,12 @@ export class Cluster extends ApiObject {
       },
     });
 
-    // NOTE: cluster is ready/provisioned (and we can generate a kubeConfig for it) if
-    //  these fields are all available and defined, and cluster isn't being deleted
+    /** @member {boolean} ready */
     Object.defineProperty(this, 'ready', {
       enumerable: true,
       get() {
+        // NOTE: cluster is ready/provisioned (and we can generate a kubeConfig for it) if
+        //  these fields are all available and defined, and cluster isn't being deleted
         return !!(
           !this.deleteInProgress &&
           data.status?.providerStatus?.loadBalancerHost &&
@@ -231,7 +232,7 @@ export class Cluster extends ApiObject {
       },
     });
 
-    /** @member {string|null} */
+    /** @member {string|null} serverUrl */
     Object.defineProperty(this, 'serverUrl', {
       enumerable: true,
       get() {
@@ -241,7 +242,7 @@ export class Cluster extends ApiObject {
 
     /**
      * IDP Certificate Authority Data (OIDC)
-     * @member {string|null}
+     * @member {string|null} idpIssuerUrl
      */
     Object.defineProperty(this, 'idpIssuerUrl', {
       enumerable: true,
@@ -250,7 +251,7 @@ export class Cluster extends ApiObject {
       },
     });
 
-    /** @member {string|null} */
+    /** @member {string|null} idpCertificate */
     Object.defineProperty(this, 'idpCertificate', {
       enumerable: true,
       get() {
@@ -258,7 +259,7 @@ export class Cluster extends ApiObject {
       },
     });
 
-    /** @member {string|null} */
+    /** @member {string|null} idpClientId */
     Object.defineProperty(this, 'idpClientId', {
       enumerable: true,
       get() {
@@ -266,7 +267,7 @@ export class Cluster extends ApiObject {
       },
     });
 
-    /** @member {string|null} */
+    /** @member {string|null} apiCertificate */
     Object.defineProperty(this, 'apiCertificate', {
       enumerable: true,
       get() {
@@ -278,7 +279,7 @@ export class Cluster extends ApiObject {
 
     /**
      * e.g. 'aws'
-     * @member {string|null}
+     * @member {string|null} ucpUrl
      */
     Object.defineProperty(this, 'ucpUrl', {
       enumerable: true,
@@ -289,7 +290,7 @@ export class Cluster extends ApiObject {
 
     /**
      * e.g. 'region-one'
-     * @member {string|null}
+     * @member {string|null} provider
      */
     Object.defineProperty(this, 'provider', {
       enumerable: true,
@@ -302,7 +303,7 @@ export class Cluster extends ApiObject {
 
     /**
      * e.g. 'us-west-2'
-     * @member {string|null}
+     * @member {string|null} region
      */
     Object.defineProperty(this, 'region', {
       enumerable: true,
@@ -313,7 +314,7 @@ export class Cluster extends ApiObject {
       },
     });
 
-    /** @member {sting|null} */
+    /** @member {sting|null} awsRegion */
     Object.defineProperty(this, 'awsRegion', {
       enumerable: true,
       get() {
@@ -329,12 +330,13 @@ export class Cluster extends ApiObject {
   }
 
   /**
-   * Converts this API Object into a Catalog Entity.
-   * @returns {Object} Entity object.
+   * Converts this API Object into a Catalog Entity Model.
+   * @returns {{ metadata: Object, spec: Object, status: Object }} Catalog Entity Model
+   *  (use to create new Catalog Entity).
    * @override
    */
-  toEntity() {
-    const entity = super.toEntity();
+  toModel() {
+    const entity = super.toModel();
 
     return merge({}, entity, {
       metadata: {
@@ -365,6 +367,14 @@ export class Cluster extends ApiObject {
         phase: clusterEntityPhases.DISCONNECTED,
       },
     });
+  }
+
+  /**
+   * Converts this API Object into a Catalog Entity that can be inserted into a Catalog Source.
+   * @returns {Common.Catalog.KubernetesCluster}
+   */
+  toEntity() {
+    return null; // DEBUG TODO
   }
 
   /** @returns {string} A string representation of this instance for logging/debugging. */

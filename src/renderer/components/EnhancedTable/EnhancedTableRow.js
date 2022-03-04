@@ -179,6 +179,7 @@ const getCloudMenuItems = (dataCloud) => [
     title: contextMenus.cloud.sync(),
     name: 'sync',
     disabled: dataCloud.cloud.status === CONNECTION_STATUSES.DISCONNECTED,
+    // DEBUG TODO: need to send IPC message to main ALSO, except will be kind of race condition...
     onClick: () => dataCloud.fetchNow(),
   },
   {

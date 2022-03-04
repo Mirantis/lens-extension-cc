@@ -4,7 +4,10 @@ import { mergeRtvShapes } from '../../util/mergeRtvShapes';
 import { apiCredentialKinds } from '../apiConstants';
 import { ApiObject, apiObjectTs } from './ApiObject';
 import { Namespace } from './Namespace';
-import { credentialEntityPhases } from '../../catalog/CredentialEntity';
+import {
+  CredentialEntity,
+  credentialEntityPhases,
+} from '../../catalog/CredentialEntity';
 
 /**
  * Typeset for an MCC Credential object.
@@ -91,12 +94,13 @@ export class Credential extends ApiObject {
   }
 
   /**
-   * Converts this API Object into a Catalog Entity.
-   * @returns {Object} Entity object.
+   * Converts this API Object into a Catalog Entity Model.
+   * @returns {{ metadata: Object, spec: Object, status: Object }} Catalog Entity Model
+   *  (use to create new Catalog Entity).
    * @override
    */
-  toEntity() {
-    const entity = super.toEntity();
+  toModel() {
+    const entity = super.toModel();
 
     return merge({}, entity, {
       metadata: {
@@ -115,6 +119,14 @@ export class Credential extends ApiObject {
         phase: credentialEntityPhases.AVAILABLE,
       },
     });
+  }
+
+  /**
+   * Converts this API Object into a Catalog Entity that can be inserted into a Catalog Source.
+   * @returns {CredentialEntity}
+   */
+  toEntity() {
+    return new CredentialEntity(this.toModel());
   }
 
   /** @returns {string} A string representation of this instance for logging/debugging. */

@@ -47,7 +47,6 @@ export class IpcMain extends Main.Ipc {
    *
    * @param {string} level Logger/console method, e.g. 'log' or 'warn'.
    * @param {string} context Identifies where the message came from, e.g. 'methodName()'.
-   *  The prefix "IpcMain." is added to this string.
    * @param {string} message Log message.
    * @param {...any} rest Anything else to pass to the Logger to be printed as data
    *  or parsed with '%s' placeholders in the message (same as `console` API).
@@ -55,11 +54,12 @@ export class IpcMain extends Main.Ipc {
   capture(level, context, message, ...rest) {
     DEV_ENV && rtv.verify({ level, context, message }, captureTs);
 
-    const params = [`IpcMain.${context}`, message, ...rest];
+    const params = [`[MAIN] ${context}`, message, ...rest];
     logger[level](...params);
     this.broadcast(ipcEvents.broadcast.LOGGER, level, ...params);
   }
 
+  // DEBUG REMOVE
   /**
    * Adds fake/dummy items to the Catalog for testing.
    */

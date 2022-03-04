@@ -10,7 +10,13 @@ import { Proxy } from '../api/types/Proxy';
 import { License } from '../api/types/License';
 import { logger } from '../util/logger';
 import { EventDispatcher } from './EventDispatcher';
-import { apiEntities, apiCredentialEntities } from '../api/apiConstants';
+import { apiKindTs } from '../catalog/catalogEntities';
+import {
+  apiEntities,
+  apiCredentialEntities,
+  apiKinds,
+  apiCredentialKinds,
+} from '../api/apiConstants';
 
 export const DATA_CLOUD_EVENTS = Object.freeze({
   /**
@@ -102,9 +108,6 @@ const _deserializeEntityList = function (entity, body, namespace, create) {
 
   return body.items
     .map((data, idx) => {
-      if (namespace?.name === 'imc-k8s-team' && idx === 0) {
-        console.log('get data'); // DEBUG REMOVE
-      }
       try {
         return create({ data, namespace });
       } catch (err) {
@@ -561,6 +564,16 @@ export class DataCloud extends EventDispatcher {
       },
     });
 
+    /**
+     * @member {null|TimerID} _updateInterval Data fetch interval timer ID; null if
+     *  not active.
+     * @private
+     */
+    Object.defineProperty(this, '_updateInterval', {
+      writable: true,
+      value: null,
+    });
+
     //// initialize
 
     this.cloud = cloud;
@@ -578,12 +591,7 @@ export class DataCloud extends EventDispatcher {
     // start fetching new data on a regular interval (i.e. don't just rely on
     //  `cloud` properties changing to trigger a fetch) so we discover changes
     //  in the Cloud (e.g. new clusters, namespaces removed, etc)
-    this._updateInterval = setInterval(() => {
-      // NOTE: dispatch the event instead of calling fetchData() directly so that
-      //  we don't duplicate an existing request to fetch the data if one has
-      //  just been scheduled
-      this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA, this);
-    }, FETCH_INTERVAL);
+    this.resetInterval();
 
     // schedule the initial data load/fetch
     this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA, this);
@@ -617,6 +625,28 @@ export class DataCloud extends EventDispatcher {
     );
   }
 
+  /**
+   * Clears the data fetch interval if it's active, and optionally establishes a new
+   *  interval.
+   * @param {boolean} [restart] If true, a new interval is established. Either way,
+   *  the existing interval, if any, is stopped/cleared.
+   */
+  resetInterval(restart = true) {
+    if (this._updateInterval) {
+      clearInterval(this._updateInterval);
+      this._updateInterval = null;
+    }
+
+    if (restart) {
+      this._updateInterval = setInterval(() => {
+        // NOTE: dispatch the event instead of calling fetchData() directly so that
+        //  we don't duplicate an existing request to fetch the data if one has
+        //  just been scheduled
+        this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA, this);
+      }, FETCH_INTERVAL);
+    }
+  }
+
   /** Called when this instance is being deleted/destroyed. */
   destroy() {
     this.removeEventListener(DATA_CLOUD_EVENTS.FETCH_DATA, this.onFetchData);
@@ -624,9 +654,7 @@ export class DataCloud extends EventDispatcher {
       CLOUD_EVENTS.SYNC_CHANGE,
       this.onCloudSyncChange
     );
-    if (this._updateInterval) {
-      clearInterval(this._updateInterval);
-    }
+    this.resetInterval(false);
   }
 
   /** Called when the Cloud's sync-related properties have changed. */
@@ -638,8 +666,12 @@ export class DataCloud extends EventDispatcher {
     this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA, this);
   };
 
-  /** Trigger an immediate data fetch outside the normal fetch interval. */
+  /**
+   * Trigger an immediate data fetch outside the normal fetch interval, causing the
+   *  interval to be reset to X minutes after this fetch.
+   */
   fetchNow() {
+    this.resetInterval();
     this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA, this);
   }
 

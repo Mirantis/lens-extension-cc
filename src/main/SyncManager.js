@@ -1,24 +1,33 @@
+import { Common } from '@k8slens/extensions';
+import { autorun, observable } from 'mobx';
 import * as rtv from 'rtvjs';
+import { isEqual } from 'lodash';
 import { DATA_CLOUD_EVENTS, DataCloud } from '../common/DataCloud';
 import { cloudStore } from '../store/CloudStore';
 import { syncStore } from '../store/SyncStore';
-
-import { autorun, observable } from 'mobx';
-import { isEqual } from 'lodash';
 import * as consts from '../constants';
-import { Common } from '@k8slens/extensions';
+import { apiKinds } from '../api/apiConstants';
+import { IpcMain } from './IpcMain';
 
 const { Singleton } = Common.Util;
 
-// DEBUG TODO: this should be better defined; it's the name of entity property lists
-//  on the API Namespace class...
-const entityTypes = [
-  'sshKeys',
-  'credentials',
-  'proxies',
-  'licenses',
-  'clusters',
-];
+/**
+ * API kind to Namespace property for kinds that are supported.
+ * @type {{ [index: string]: string }}
+ */
+const kindtoNamespaceProp = {
+  [apiKinds.CLUSTER]: 'clusters',
+  [apiKinds.PUBLIC_KEY]: 'sshKeys',
+  [apiKinds.OPENSTACK_CREDENTIAL]: 'credentials',
+  [apiKinds.AWS_CREDENTIAL]: 'credentials',
+  [apiKinds.EQUINIX_CREDENTIAL]: 'credentials',
+  [apiKinds.VSPHERE_CREDENTIAL]: 'credentials',
+  [apiKinds.AZURE_CREDENTIAL]: 'credentials',
+  [apiKinds.BYO_CREDENTIAL]: 'credentials',
+  [apiKinds.METAL_CREDENTIAL]: 'credentials',
+  [apiKinds.RHEL_LICENSE]: 'licenses',
+  [apiKinds.PROXY]: 'proxies',
+};
 
 export const catalogSource = observable.array([]);
 
@@ -164,12 +173,16 @@ export class SyncManager extends Singleton {
       delete this.dataClouds[url];
     });
 
+    // DEBUG TODO: need something on this side that detects when Cloud is now connected
+    //  and triggers an immediate data fetch on it if it wasn't before because tokens
+    //  will come from RENDERER, written to disk, and updated here from CloudStore...
+
     cloudUrlsToAdd.concat(cloudUrlsToUpdate).forEach((url) => {
       const cloud = cloudStore.clouds[url];
 
       // if dataCloud exists - update dataCloud.cloud
       if (this.dataClouds[url]) {
-        // NOTE: updating the EC's Cloud instance will cause the EC to fetch new data,
+        // NOTE: updating the DC's Cloud instance will cause the DC to fetch new data,
         //  IIF the `cloud` is actually a new instance at the same URL; it's not always
         //  new as the CloudStore listens for changes on each Cloud and triggers the
         //  `autorun()` Mobx binding in the SyncManager declaration whenever
@@ -186,24 +199,54 @@ export class SyncManager extends Singleton {
     });
   }
 
-  // DEBUG TODO: this part now needs to look at all EC.syncedNamespaces and create items
-  //  in the catalog for everything, looking for items that exist purely by
-  //  cloudUrl, namespace, and name, and replacing them with new instances
   /**
    * Called whenever a DataCloud's data has been updated.
    * @param {DataCloud} dc The updated DataCloud.
    */
   onDataUpdated = (dc) => {
-    ['sshKeys', 'credentials', 'proxies', 'licenses', 'clusters'].forEach(
-      (type) => {}
+    IpcMain.getInstance().capture(
+      'log',
+      'SyncManager.onDataUpdated()',
+      `Updating Catalog entities for dataCloud=${dc}...`
     );
 
-    // entityTypes.map((type) => {
-    //   syncStore.findAndUpdateEntities(
-    //     type,
-    //     dc.getEntities(type),
-    //     dc.cloud.cloudUrl
-    //   );
-    // });
+    // TODO[PRODX-22269]: make this a lot more efficient
+    ['sshKeys'].forEach(
+      // DEBUG , 'credentials', 'proxies', 'licenses', 'clusters'].forEach(
+      (type) => {
+        const newEntities = dc.syncedNamespaces.flatMap((ns) =>
+          ns[type].map((apiType) => apiType.toEntity())
+        );
+
+        // first, remove all entities from the Catalog of this type
+        // DEBUG
+        // let idx;
+        // while (
+        //   (idx = catalogSource.findIndex((entity) => {
+        //     // NOTE: since it's our Catalog Source, it only contains our items, so we should
+        //     //  never encounter a case where there's no mapped property
+        //     const prop = kindtoNamespaceProp[entity.metadata.kind];
+        //     return type === prop;
+        //   })) >= 0
+        // ) {
+        //   catalogSource.splice(idx, 1);
+        // }
+
+        IpcMain.getInstance().capture(
+          'log',
+          'SyncManager.onDataUpdated()',
+          `Adding ${newEntities.length} ${type} entities to Catalog; dataCloud=${dc}`
+        );
+
+        // then, add all the new ones
+        newEntities.forEach((entity) => catalogSource.push(entity));
+      }
+    );
+
+    IpcMain.getInstance().capture(
+      'log',
+      'SyncManager.onDataUpdated()',
+      `Updated Catalog entities for dataCloud=${dc}`
+    );
   };
 }

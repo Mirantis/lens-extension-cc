@@ -3,7 +3,10 @@ import { merge } from 'lodash';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
 import { ApiObject, apiObjectTs } from './ApiObject';
 import { Namespace } from './Namespace';
-import { licenseEntityPhases } from '../../catalog/LicenseEntity';
+import {
+  LicenseEntity,
+  licenseEntityPhases,
+} from '../../catalog/LicenseEntity';
 import { apiKinds } from '../apiConstants';
 
 /**
@@ -41,7 +44,7 @@ export class License extends ApiObject {
         }
       );
 
-    /** @member {Namespace} */
+    /** @member {Namespace} namespace */
     Object.defineProperty(this, 'namespace', {
       enumerable: true,
       get() {
@@ -51,12 +54,13 @@ export class License extends ApiObject {
   }
 
   /**
-   * Converts this API Object into a Catalog Entity.
-   * @returns {Object} Entity object.
+   * Converts this API Object into a Catalog Entity Model.
+   * @returns {{ metadata: Object, spec: Object, status: Object }} Catalog Entity Model
+   *  (use to create new Catalog Entity).
    * @override
    */
-  toEntity() {
-    const entity = super.toEntity();
+  toModel() {
+    const entity = super.toModel();
 
     return merge({}, entity, {
       metadata: {
@@ -70,6 +74,14 @@ export class License extends ApiObject {
         phase: licenseEntityPhases.AVAILABLE,
       },
     });
+  }
+
+  /**
+   * Converts this API Object into a Catalog Entity that can be inserted into a Catalog Source.
+   * @returns {LicenseEntity}
+   */
+  toEntity() {
+    return new LicenseEntity(this.toModel());
   }
 
   /** @returns {string} A string representation of this instance for logging/debugging. */

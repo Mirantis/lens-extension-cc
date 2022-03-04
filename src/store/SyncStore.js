@@ -3,6 +3,7 @@ import { difference } from 'lodash';
 import { Common } from '@k8slens/extensions';
 import * as rtv from 'rtvjs';
 import { logger } from '../util/logger';
+import { clusterEntityModelTs } from '../catalog/catalogEntities';
 import { credentialEntityModelTs } from '../catalog/CredentialEntity';
 import { licenseEntityModelTs } from '../catalog/LicenseEntity';
 import { proxyEntityModelTs } from '../catalog/ProxyEntity';
@@ -11,11 +12,12 @@ import { sshKeyEntityModelTs } from '../catalog/SshKeyEntity';
 export const storeTs = {
   credentials: [[credentialEntityModelTs]],
   sshKeys: [[sshKeyEntityModelTs]],
-  clusters: [[rtv.ANY]], // DEBUG TODO: [[clusterEntityModelTs]],
+  clusters: [[clusterEntityModelTs]],
   licenses: [[licenseEntityModelTs]],
   proxies: [[proxyEntityModelTs]],
 };
 
+/** Stores Catalog Entity Models sorted by type. */
 export class SyncStore extends Common.Store.ExtensionStore {
   // NOTE: See main.ts#onActivate() and renderer.tsx#onActivate() where this.loadExtension()
   //  is called on the store instance in order to get Lens to load it from storage.
@@ -96,42 +98,6 @@ export class SyncStore extends Common.Store.ExtensionStore {
     // return a deep-clone that is no longer observable
     return toJS(observableThis);
   }
-
-  /**
-   *
-   * @param {string} type entity type
-   * @param {Array<Object>} items array of entity items
-   * @param {string} cloudUrl
-   */
-  findAndUpdateEntities = (type, items, cloudUrl) => {
-    const existingCloudEntities = this[type].reduce((acc, en, index) => {
-      if (en.metadata.cloudUrl === cloudUrl) {
-        acc[en.metadata.uid] = { index, ...en };
-        return acc;
-      }
-      return acc;
-    }, {});
-    const updatedEntities = [];
-
-    items.forEach((item) => {
-      const entity = item.toEntity();
-      const { uid } = entity.metadata;
-      if (existingCloudEntities[uid]) {
-        updatedEntities.push(uid);
-        this[type].splice(existingCloudEntities[uid].index, 1, entity);
-      } else {
-        this[type].push(entity);
-      }
-    });
-
-    const uidToRemove = difference(
-      Object.keys(existingCloudEntities),
-      updatedEntities
-    );
-    this[type] = this[type].filter(
-      (en) => !uidToRemove.includes(en.metadata.uid)
-    );
-  };
 }
 
 // create singleton instance, and export it for convenience (otherwise, one can also

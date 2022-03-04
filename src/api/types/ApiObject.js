@@ -1,7 +1,6 @@
 import * as rtv from 'rtvjs';
 import * as consts from '../../constants';
 import { Cloud } from '../../common/Cloud';
-import { apiKinds } from '../apiConstants';
 
 /**
  * Typeset for a basic MCC API Object.
@@ -11,6 +10,7 @@ export const apiObjectTs = {
   //  related to what we expect to find in order to create a `Credential` class instance
 
   // NOTE: not all API objects have a `kind` property (e.g. namespaces do not)
+  kind: [rtv.OPTIONAL, rtv.STRING],
 
   metadata: {
     uid: rtv.STRING,
@@ -93,10 +93,10 @@ export class ApiObject {
   }
 
   /**
-   * Converts this API Object into a Catalog Entity.
-   * @returns {Object} Entity object.
+   * Converts this API Object into a Catalog Entity Model.
+   * @returns {{ metadata: Object, spec: Object, status: Object }} Catalog Entity Model (use to create new Catalog Entity).
    */
-  toEntity() {
+  toModel() {
     return {
       metadata: {
         uid: this.uid,
@@ -114,7 +114,9 @@ export class ApiObject {
 
   /** @returns {string} A string representation of this instance for logging/debugging. */
   toString() {
-    const propStr = `name: "${this.name}", uid: "${this.uid}", kind: "${this.kind}"`;
+    const propStr = `name: "${this.name}", uid: "${this.uid}", kind: ${
+      this.kind ? `"${this.kind}"` : this.kind
+    }`;
 
     if (Object.getPrototypeOf(this).constructor === ApiObject) {
       return `{ApiObject ${propStr}}`;

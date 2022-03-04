@@ -17,6 +17,11 @@ export const requiredLabelTs = {
 };
 
 /**
+ * Typeset for a required value from the apiKinds enumeration.
+ */
+export const apiKindTs = [rtv.STRING, { oneOf: Object.values(apiKinds) }];
+
+/**
  * Typeset for a basic object used to create a new instance of an entity that will
  *  be added to the Lens Catalog.
  */
@@ -38,7 +43,7 @@ export const catalogEntityModelTs = {
     //// CUSTOM PROPERTIES
     // can also contain any other custom properties as `name: value` pairs
 
-    kind: [rtv.STRING, { oneOf: Object.values(apiKinds) }],
+    kind: apiKindTs,
 
     // enough info to relate this entity to a namespace in a Cloud in `CloudStore.clouds`
     //  if necessary
