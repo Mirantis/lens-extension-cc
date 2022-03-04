@@ -792,7 +792,7 @@ export class DataCloud extends EventDispatcher {
   }
 
   /**
-   * @desc reconnect cloud and fetch data for EC
+   * @desc reconnect cloud and fetch data for DC
    * @return {Promise<void>}
    */
   async reconnect() {

@@ -204,7 +204,7 @@ export class SyncManager extends Singleton {
         //  the same as it already has
         this.dataClouds[url].cloud = cloud;
       } else {
-        // add new EC to store
+        // add new DC to store
         const dc = new DataCloud(cloud);
         // TODO[SyncManager]: dc.addEventListener(DATA_CLOUD_EVENTS.DATA_UPDATED, this.onDataUpdated);
         this.dataClouds[url] = dc;

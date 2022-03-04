@@ -88,7 +88,7 @@ export const SyncView = () => {
   const getDataToSync = (data, url) => {
     // store data from each cloud in the local object 'syncedClouds'
     setSyncedClouds({ ...syncedClouds, [url]: data });
-    // when clouds count in local object === count ECs, preparation is done and we can use syncedClouds
+    // when clouds count in local object === count DCs, preparation is done and we can use syncedClouds
     if (Object.keys(syncedClouds).length === Object.keys(dataClouds).length) {
       setIsSyncStarted(false);
     }

@@ -10,7 +10,7 @@ import { EnhancedTableRow } from './EnhancedTableRow';
  * @return {Array<Object>} It might be an array og Namespaces or just {name: _namespaceName_ }, depending on cloud.connected
  */
 const getNamespaces = ({ dataCloud, usedNamespaces, withCheckboxes }) => {
-  // if loaded return Namespaces class object from EC
+  // if loaded return Namespaces class object from DC
   if (dataCloud.loaded) {
     return dataCloud[usedNamespaces];
   }
@@ -23,7 +23,7 @@ const getNamespaces = ({ dataCloud, usedNamespaces, withCheckboxes }) => {
 };
 
 // We need this level of abstraction mostly for 'key' prop for `EnhancedTableRow`.
-// When EC is connecting or fetch data, we use EC.cloud.syncedNamespaces in selective mode (we don't know namespaces yet)
+// When DC is connecting or fetch data, we use DC.cloud.syncedNamespaces in selective mode (we don't know namespaces yet)
 // When they come by updateNamespaces listener - we have to fully rerender row component to force useCheckboxes hook to take new dataCloud data
 // without that we have incorrect checkboxes state in Selected Sync view
 // besides - keep useEffect listeners in separate level looks not so bad. Code become more readable

@@ -127,7 +127,7 @@ const _updateStore = function ({
 
     // if dataCloud exists - update dataCloud.cloud
     if (pr.store.dataClouds[url]) {
-      // NOTE: updating the EC's Cloud instance will cause the EC to fetch new data,
+      // NOTE: updating the DC's Cloud instance will cause the DC to fetch new data,
       //  IIF the `cloud` is actually a new instance at the same URL; it's not always
       //  new as the CloudStore listens for changes on each Cloud and triggers the
       //  `autorun()` Mobx binding in the DataCloudProvider declaration whenever
@@ -138,7 +138,7 @@ const _updateStore = function ({
     } else {
       // otherwise create new DataCloud
       const dc = new DataCloud(cloud);
-      // add new EC to store
+      // add new DC to store
       pr.store.dataClouds[url] = dc;
     }
   });
