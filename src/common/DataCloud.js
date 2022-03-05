@@ -668,11 +668,14 @@ export class DataCloud extends EventDispatcher {
 
   /**
    * Trigger an immediate data fetch outside the normal fetch interval, causing the
-   *  interval to be reset to X minutes after this fetch.
+   *  interval to be reset to X minutes after this fetch. Does nothing if currently
+   *  fetching data.
    */
   fetchNow() {
-    this.resetInterval();
-    this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA, this);
+    if (!this.fetching) {
+      this.resetInterval();
+      this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA, this);
+    }
   }
 
   /**

@@ -55,7 +55,12 @@ export const catalogEntityModelTs = {
   //  it requires `kubeconfigPath: string` and `kubeconfigContext: string`, but for an
   //  SSH key, it requires `publicKey: string`...
   spec: {
-    createdAt: rtv.STRING,
+    // ISO-8601 timestamp (e.g. 2022-03-04T21:33:27.716Z), milliseconds are optional
+    //  (MCC API doesn't return milliseconds, so we don't always expect them)
+    createdAt: [
+      rtv.STRING,
+      { exp: '^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z$' },
+    ],
   },
 
   // all entities must have a status with a phase
@@ -79,9 +84,12 @@ export const clusterEntityPhases = Object.freeze({
 });
 
 /**
- * Typeset for an object used to create a new instance of a `Common.Catalog.KubernetesCluster`
+ * Typeset for an object used to create a new instance of a Lens `Common.Catalog.KubernetesCluster`
  *  object that gets added to the Lens Catalog. Also describes the shape of the entity
  *  object we get from iterating "entities" of this type in the Catalog.
+ *
+ * NOTE: As this is meant for Lens to consume, it will NOT MATCH the kube spec object
+ *  retrieved from the MCC API for the same object.
  */
 export const clusterEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
   metadata: {

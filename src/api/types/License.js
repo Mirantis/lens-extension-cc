@@ -8,6 +8,7 @@ import {
   licenseEntityPhases,
 } from '../../catalog/LicenseEntity';
 import { apiKinds } from '../apiConstants';
+import { logString } from '../../util/logger';
 
 /**
  * Typeset for an MCC License object.
@@ -86,7 +87,9 @@ export class License extends ApiObject {
 
   /** @returns {string} A string representation of this instance for logging/debugging. */
   toString() {
-    const propStr = `${super.toString()}, namespace: "${this.namespace.name}"`;
+    const propStr = `${super.toString()}, namespace: ${logString(
+      this.namespace.name
+    )}`;
 
     if (Object.getPrototypeOf(this).constructor === License) {
       return `{License ${propStr}}`;

@@ -79,20 +79,12 @@ export const ipcEvents = deepFreeze({
   broadcast: {
     /** Signature: (event: string, level: string, context: string, message: string, ...args: Array) => void */
     LOGGER: 'logger',
-    /** Signature: (event: string, clusterIds: Array<string>) => void */
-    CLUSTERS_ADDED: 'clustersAdded',
-    /** Signature: (event: string, clusterIds: Array<string>) => void */
-    CLUSTERS_REMOVED: 'clustersRemoved',
   },
 
   /** Invoked on the `main` process only. Returns a promise to be awaited. */
   invoke: {
-    /** Signature: (event: string, models: Array<ClusterModel>) => void */
-    ADD_CLUSTERS: 'addClusters',
-    /** Signature: (event: string, clusterId: string) => void */
-    REMOVE_CLUSTER: 'removeCluster',
-    /** Signature: (event: string, clusterId: string) => void */
-    DELETE_CLUSTER: 'deleteCluster',
+    /** Signature: (event: string, cloudUrl: string) => void */
+    SYNC_NOW: 'syncNow',
   },
 });
 

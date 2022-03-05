@@ -30,6 +30,9 @@ export const proxyEntityPhases = Object.freeze({
  * Typeset for an object used to create a new instance of a `ProxyEntity` object
  *  that gets added to the Lens Catalog. Also describes the shape of the entity
  *  object we get from iterating "entities" of this type in the Catalog.
+ *
+ * NOTE: As this is meant for Lens to consume, it will NOT MATCH the kube spec object
+ *  retrieved from the MCC API for the same object.
  */
 export const proxyEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
   metadata: {
@@ -74,11 +77,20 @@ export class ProxyEntity extends Common.Catalog.CatalogEntity<
     >
   ) {
     super(data);
-    DEV_ENV &&
-      rtv.verify(
+
+    if (DEV_ENV) {
+      // NOTE: something (probably IPC) sometimes swallows this exception and code
+      //  execution silently stops without any log out from this exception, so check
+      //  and log before throwing
+      const result = rtv.check(
         { proxyEntityData: data },
         { proxyEntityData: proxyEntityModelTs }
       );
+      if (!result.valid) {
+        logger.error('ProxyEntity.constructor()', result.message, data);
+        throw result;
+      }
+    }
   }
 
   // "runs" the entity; called when the user just clicks on the item in the Catalog

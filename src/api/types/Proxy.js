@@ -1,11 +1,11 @@
 import * as rtv from 'rtvjs';
-import { merge } from 'lodash';
+import { merge, get } from 'lodash';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
 import { ApiObject, apiObjectTs } from './ApiObject';
-import { get } from 'lodash';
 import { Namespace } from './Namespace';
 import { ProxyEntity, proxyEntityPhases } from '../../catalog/ProxyEntity';
 import { apiKinds } from '../apiConstants';
+import { logString } from '../../util/logger';
 
 /**
  * Typeset for an MCC Proxy object.
@@ -123,9 +123,11 @@ export class Proxy extends ApiObject {
 
   /** @returns {string} A string representation of this instance for logging/debugging. */
   toString() {
-    const propStr = `${super.toString()}, namespace: "${
+    const propStr = `${super.toString()}, namespace: ${logString(
       this.namespace.name
-    }", http: "${this.httpProxy}", https: "${this.httpsProxy}"`;
+    )}, http: ${logString(this.httpProxy)}, https: ${logString(
+      this.httpsProxy
+    )}`;
 
     if (Object.getPrototypeOf(this).constructor === Proxy) {
       return `{Proxy ${propStr}}`;

@@ -5,6 +5,7 @@ import { ApiObject, apiObjectTs } from './ApiObject';
 import { Namespace } from './Namespace';
 import { SshKeyEntity, sshKeyEntityPhases } from '../../catalog/SshKeyEntity';
 import { apiKinds } from '../apiConstants';
+import { logString } from '../../util/logger';
 
 /**
  * Typeset for an MCC SSH Key object.
@@ -97,9 +98,9 @@ export class SshKey extends ApiObject {
 
   /** @returns {string} A string representation of this instance for logging/debugging. */
   toString() {
-    const propStr = `${super.toString()}, namespace: "${
+    const propStr = `${super.toString()}, namespace: ${logString(
       this.namespace.name
-    }", publicKey: "${this.publicKey.slice(0, 15)}..${this.publicKey.slice(
+    )}, publicKey: "${this.publicKey.slice(0, 15)}..${this.publicKey.slice(
       -15
     )}"`;
 
