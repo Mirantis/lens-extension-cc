@@ -44,14 +44,14 @@ export class ApiClient {
    * @param {Object} [config.options] Request configuration options.
    * @param {Array<number>} [config.expectedStatuses] List of expected success
    *  statuses.
-   * @param {string} [config.extractDataMethod] Name of a method on a fetch
+   * @param {string} [config.extractBodyMethod] Name of a method on a fetch
    *  response object to call to deserialize/extract/parse data from the response.
    *  Defaults to "json".
    * @returns {Promise<Object>} See netUtil.request() for response shape.
    */
   request(
     endpoint,
-    { options = {}, expectedStatuses = [200], errorMessage, extractDataMethod }
+    { options = {}, expectedStatuses = [200], errorMessage, extractBodyMethod }
   ) {
     const headers = {
       Accept: 'application/json',
@@ -64,7 +64,7 @@ export class ApiClient {
         ...options,
         headers: { ...headers, ...((options && options.headers) || {}) },
       },
-      { expectedStatuses, errorMessage, extractDataMethod }
+      { expectedStatuses, errorMessage, extractBodyMethod }
     );
   }
 
@@ -170,7 +170,7 @@ export class ApiClient {
       },
       errorMessage: strings.apiClient.error.failedToLogout(),
       expectedStatuses: [200, 204],
-      extractDataMethod: null,
+      extractBodyMethod: null,
     });
   }
 }

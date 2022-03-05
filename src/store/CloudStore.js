@@ -182,6 +182,7 @@ export class CloudStore extends Common.Store.ExtensionStore {
     const cloud = this.clouds[cloudUrl];
     if (cloud) {
       this.stopListeningForChanges(cloud);
+      cloud.destroy();
       delete this.clouds[cloudUrl];
     }
   }

@@ -9,6 +9,7 @@ const mccEntityGroup = `entity.${mccCodeName}.dev`.toLowerCase();
 const lensCatalogGroup = 'catalog.k8slens.dev';
 const lensEntityGroup = 'entity.k8slens.dev';
 const v1alpha1 = 'v1alpha1';
+const v1alpha2 = 'v1alpha2';
 
 /** Catalog-related constants. */
 export const catalog = deepFreeze({
@@ -52,6 +53,7 @@ export const catalog = deepFreeze({
       group: mccEntityGroup,
       versions: {
         v1alpha1,
+        v1alpha2, // Equinix Metal has v1 and v2
       },
     },
     /** MCC Proxy (custom) */

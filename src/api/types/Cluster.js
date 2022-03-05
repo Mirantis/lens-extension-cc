@@ -1,5 +1,6 @@
 import * as rtv from 'rtvjs';
 import { get, merge } from 'lodash';
+import { Common } from '@k8slens/extensions';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
 import { ApiObject, apiObjectTs } from './ApiObject';
 import { Namespace } from './Namespace';
@@ -10,6 +11,11 @@ import { License } from './License';
 import { clusterEntityPhases } from '../../catalog/catalogEntities';
 import { apiKinds } from '../apiConstants';
 import { logString } from '../../util/logger';
+import { mkKubeConfig } from '../../util/templates';
+
+const {
+  Catalog: { KubernetesCluster },
+} = Common;
 
 const isManagementCluster = function (data) {
   const kaas = get(data.spec, 'providerSpec.value.kaas', {});
@@ -89,9 +95,8 @@ export class Cluster extends ApiObject {
    * @param {Object} params.data Raw data payload from the API.
    * @param {Namespace} params.namespace Namespace to which the object belongs.
    * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
-   * @param {string} params.username Username used to access the Cloud.
    */
-  constructor({ data, namespace, cloud, username }) {
+  constructor({ data, namespace, cloud }) {
     super({ data, cloud, typeset: apiClusterTs });
 
     // just testing for what is Cluster-specific
@@ -197,14 +202,6 @@ export class Cluster extends ApiObject {
         if (newValue !== _license) {
           _license = newValue || null;
         }
-      },
-    });
-
-    /** @member {string} username */
-    Object.defineProperty(this, 'username', {
-      enumerable: true,
-      get() {
-        return username;
       },
     });
 
@@ -327,37 +324,65 @@ export class Cluster extends ApiObject {
   /** @member {string} contextName Kubeconfig context name for this cluster. */
   get contextName() {
     // NOTE: this mirrors how MCC generates kubeconfig context names
-    return `${this.username}@${this.namespace.name}@${this.name}`;
+    return `${this.cloud.username}@${this.namespace.name}@${this.name}`;
+  }
+
+  /**
+   * Generates a kube config object for this cluster.
+   * @returns {Object} Kube config for this cluster, as JSON.
+   */
+  getKubeConfig() {
+    return mkKubeConfig({
+      cluster: this,
+      username: this.cloud.username,
+    });
   }
 
   /**
    * Converts this API Object into a Catalog Entity Model.
+   * @param {string} kubeconfigPath Path to the cluster's kube config file.
    * @returns {{ metadata: Object, spec: Object, status: Object }} Catalog Entity Model
    *  (use to create new Catalog Entity).
    * @override
    */
-  toModel() {
+  toModel(kubeconfigPath) {
     const entity = super.toModel();
+
+    DEV_ENV && rtv.verify({ kubeconfigPath }, { kubeconfigPath: rtv.STRING });
+
+    // NOTE: only add a label if it should be there; add a label to the object
+    //  and giving it a value of `undefined` will result in the entity getting
+    //  a label with a value of "undefined" (rather than ignoring it)
+    const labels = {};
+    if (!this.isManagementCluster) {
+      labels.managementCluster = this.cloud.name;
+      labels.project = this.namespace.name;
+
+      if (this.sshKey) {
+        labels.sshKey = this.sshKey.name;
+      }
+
+      if (this.credential) {
+        labels.credential = this.credential.name;
+      }
+
+      if (this.proxy) {
+        labels.proxy = this.proxy.name;
+      }
+
+      if (this.license) {
+        labels.license = this.license.name;
+      }
+    }
 
     return merge({}, entity, {
       metadata: {
         namespace: this.namespace.name,
-        labels: {
-          ...(this.isManagementCluster
-            ? {}
-            : {
-                managementCluster: this.cloud.name,
-                project: this.namespace.name,
-                sshKey: this.sshKey?.name || undefined,
-                credential: this.credential?.name || undefined,
-                proxy: this.proxy?.name || undefined,
-                license: this.license?.name || undefined,
-              }),
-        },
+        labels,
       },
       spec: {
-        kubeconfigPath: 'todo-path', // TODO[PRODX-21909]
-        kubeconfigContext: 'todo-context', // TODO[PRODX-21909]
+        kubeconfigPath,
+        kubeconfigContext: this.contextName, // must be same context name used in file
         isManagementCluster: this.isManagementCluster,
         ready: this.ready,
       },
@@ -372,10 +397,11 @@ export class Cluster extends ApiObject {
 
   /**
    * Converts this API Object into a Catalog Entity that can be inserted into a Catalog Source.
+   * @param {string} kubeconfigPath Path to the kube config file the entity will use.
    * @returns {Common.Catalog.KubernetesCluster}
    */
-  toEntity() {
-    return null; // TODO[SyncManager] TODO
+  toEntity(kubeconfigPath) {
+    return new KubernetesCluster(this.toModel(kubeconfigPath));
   }
 
   /** @returns {string} A string representation of this instance for logging/debugging. */

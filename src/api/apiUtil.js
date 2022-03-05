@@ -112,10 +112,10 @@ export async function cloudLogout(cloud) {
     baseUrl: cloud.cloudUrl,
     config: cloud.config,
   });
-  const { error: refreshError } = await apiClient.logout(cloud.refreshToken);
+  const { error: logoutError } = await apiClient.logout(cloud.refreshToken);
 
-  if (refreshError) {
-    return refreshError;
+  if (logoutError) {
+    return logoutError;
   }
 
   return null;

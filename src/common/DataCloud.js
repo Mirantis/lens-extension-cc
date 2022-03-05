@@ -466,7 +466,7 @@ export class DataCloud extends EventDispatcher {
           );
 
           logger.log(
-            'DataCloud.[set]cloud',
+            'DataCloud.cloud:set',
             `Received new Cloud: Scheduling new data fetch; dataCloud=${this}`
           );
           this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA, this);

@@ -174,7 +174,7 @@ export const catalog: Dict = {
 
       // details panel
       details: {
-        title: () => 'More Information',
+        title: () => mccFullName,
         unknownValue: () => '<Unknown>', // when a value is null/undefined/empty
         props: {
           dateCreated: () => 'Date created',

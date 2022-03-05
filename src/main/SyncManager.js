@@ -1,7 +1,10 @@
-import { Common } from '@k8slens/extensions';
+import * as fs from 'fs/promises';
+import path from 'path';
 import { autorun } from 'mobx';
 import * as rtv from 'rtvjs';
 import { isEqual } from 'lodash';
+import YAML from 'yaml';
+import { Common } from '@k8slens/extensions';
 import { DATA_CLOUD_EVENTS, DataCloud } from '../common/DataCloud';
 import { cloudStore } from '../store/CloudStore';
 import { apiKinds } from '../api/apiConstants';
@@ -34,15 +37,17 @@ const kindtoNamespaceProp = {
  */
 export class SyncManager extends Singleton {
   /**
+   * @param {LensExtension} extension Extension instance.
    * @param {Array<CatalogEntity>} catalogSource Registered Lens Catalog source.
    * @param {IpcMain} ipcMain Singleton instance for sending/receiving messages to/from Renderer.
    * @constructor
    */
-  constructor(catalogSource, ipcMain) {
+  constructor(extension, catalogSource, ipcMain) {
     super();
 
     let _cloudTokens = {};
     let _dataClouds = {};
+    let _baseKubeConfigPath = null;
 
     /**
      * @member {{ [index: string]: string }} cloudTokens Map of Cloud URL to Cloud
@@ -58,7 +63,15 @@ export class SyncManager extends Singleton {
           DEV_ENV &&
             rtv.verify(
               { cloudTokens: newValue },
-              { cloudTokens: [rtv.HASH_MAP, { $values: rtv.STRING }] }
+              {
+                // map of cloudUrl -> Cloud access token (could be `null` if the Cloud
+                //  doesn't have any tokens yet, or its tokens get reset after
+                //  getting disconnected)
+                cloudTokens: [
+                  rtv.HASH_MAP,
+                  { $values: [rtv.EXPECTED, rtv.STRING] },
+                ],
+              }
             );
           _cloudTokens = newValue;
         }
@@ -77,6 +90,27 @@ export class SyncManager extends Singleton {
       enumerable: true,
       get() {
         return _dataClouds;
+      },
+    });
+
+    /**
+     * @member {string|null} baseKubeConfigPath Base path for generated cluster kubeconfig
+     *  files. `null` until determined. Does not end with a slash.
+     */
+    Object.defineProperty(this, 'baseKubeConfigPath', {
+      enumerable: true,
+      get() {
+        return _baseKubeConfigPath;
+      },
+      set(newValue) {
+        if (newValue !== _baseKubeConfigPath) {
+          DEV_ENV &&
+            rtv.verify(
+              { baseKubeConfigPath: newValue },
+              { baseKubeConfigPath: [rtv.STRING, (v) => !v.endsWith('/')] }
+            );
+          _baseKubeConfigPath = newValue;
+        }
       },
     });
 
@@ -100,6 +134,17 @@ export class SyncManager extends Singleton {
       enumerable: true,
       get() {
         return ipcMain;
+      },
+    });
+
+    /**
+     * @readonly
+     * @member {LensExtension} extension The extension instance.
+     */
+    Object.defineProperty(this, 'extension', {
+      enumerable: true,
+      get() {
+        return extension;
       },
     });
 
@@ -133,8 +178,12 @@ export class SyncManager extends Singleton {
 
   /**
    * Triages current Cloud URLs into 3 lists: new, updated, and deleted.
-   * @param {{ [index: string]: string }} cloudStoreTokens Map of Cloud URL to token for
+   * @param {{ [index: string]: string|null }} cloudStoreTokens Map of Cloud URL to token for
    *  the current set of known Clouds stored on disk.
+   *
+   *  CAREFUL: Clouds that are not connected may have `null` tokens if they were explicitly
+   *   disconnected (and tokens reset).
+   *
    * @return {{ cloudUrlsToAdd: Array<string>, cloudUrlsToUpdate: Array<string>, cloudUrlsToRemove: Array<string> }}
    *  An object with `cloudUrlsToAdd` being a list of new Cloud URLs to add, `cloudUrlsToRemove` a list
    *  of old Clouds to remove (deleted), and `cloudUrlsToUpdate` a list of Clouds that have
@@ -146,7 +195,7 @@ export class SyncManager extends Singleton {
     const cloudUrlsToRemove = [];
 
     Object.keys(this.cloudTokens).forEach((providerUrl) => {
-      if (cloudStoreTokens[providerUrl]) {
+      if (cloudStoreTokens[providerUrl] !== undefined) {
         // provider URL is also in CloudStore set of URLs: if the token has changed,
         //  it's updated (as far as we're concerned here in DataCloudProvider)
         if (cloudStoreTokens[providerUrl] !== this.cloudTokens[providerUrl]) {
@@ -165,7 +214,7 @@ export class SyncManager extends Singleton {
     ) {
       // there's at least one new URL (or none) in `currentTokens`
       Object.keys(cloudStoreTokens).forEach((curUrl) => {
-        if (!this.cloudTokens[curUrl]) {
+        if (this.cloudTokens[curUrl] === undefined) {
           // not a stored/known URL: must be new
           cloudUrlsToAdd.push(curUrl);
         }
@@ -195,12 +244,16 @@ export class SyncManager extends Singleton {
     this.cloudTokens = cloudStoreTokens;
 
     cloudUrlsToRemove.forEach((url) => {
+      // TODO[PRODX-22269]: for each DC we're removing, we need to clean-up its kubeconfig files
+
       // destroy and remove DataCloud
-      this.dataClouds[url].removeEventListener(
+      const dc = this.dataClouds[url];
+      dc.removeEventListener(
         DATA_CLOUD_EVENTS.DATA_UPDATED,
         this.onDataUpdated
       );
-      this.dataClouds[url].destroy();
+      dc.cloud.destroy();
+      dc.destroy();
       delete this.dataClouds[url];
     });
 
@@ -251,6 +304,158 @@ export class SyncManager extends Singleton {
   }
 
   /**
+   * Determines where a kubeconfig file will be stored.
+   * @param {Cluster} cluster
+   * @returns {string} Absolute path to the cluster's kubeconfig file.
+   */
+  getKubeConfigFilePath(cluster) {
+    if (!this.baseKubeConfigPath) {
+      throw new Error(
+        `Unable to generate kubeconfig path for ${cluster}: Base path is unknown`
+      );
+    }
+
+    const url = new URL(cluster.cloud.cloudUrl);
+    return path.resolve(
+      this.baseKubeConfigPath,
+      'kubeconfigs',
+      // NOTE: we're using the host because the user might change the Cloud's name, which
+      //  would be difficult to sync up to in order not to lose files, and also keep them
+      //  valid from Lens' standpoint; but the host should never change (if it did, the user
+      //  would have to add a new Cloud with the new host, and remove the old one, which we
+      //  handle just fine)
+      url.host.replace(':', '-'), // includes port if specified
+      cluster.namespace.name,
+      `${cluster.name}--${cluster.uid}.yaml`
+    );
+  }
+
+  /**
+   * [ASYNC] Updates a DataCloud's clusters in the Catalog.
+   * @param {DataCloud} dataCloud
+   */
+  async updateClusters(dataCloud) {
+    this.ipcMain.capture(
+      'log',
+      'SyncManager.updateClusters()',
+      `Updating Catalog cluster entities; dataCloud=${dataCloud}`
+    );
+
+    // the base path can only be obtained from Lens asynchronously and isn't specific to any
+    //  DataCloud; we determine it on first need to know it, and then we store it so we don't
+    //  have to keep doing this
+    if (!this.baseKubeConfigPath) {
+      try {
+        this.baseKubeConfigPath = await this.extension.getExtensionFileFolder();
+      } catch (err) {
+        this.ipcMain.capture(
+          'error',
+          'SyncManager.updateClusters()',
+          `Failed to get Lens-designated extension file folder path; error="${err.message}"`
+        );
+        return;
+      }
+    }
+
+    // promises resolve to `KubernetesCluster` entities, or reject to `Error` objects
+    const promises = dataCloud.syncedNamespaces.flatMap((ns) =>
+      ns.clusters.map((cluster) => {
+        if (!cluster.ready) {
+          return Promise.reject(
+            new Error(
+              `Cannot add/update cluster that is not ready; cluster=${cluster}`
+            )
+          );
+        }
+
+        const kubeConfig = cluster.getKubeConfig();
+        const configFilePath = path.join(this.getKubeConfigFilePath(cluster));
+        const entity = cluster.toEntity(configFilePath);
+        const configDirPath = path.dirname(configFilePath);
+        return fs.mkdir(configDirPath, { recursive: true }).then(
+          () =>
+            fs
+              .writeFile(
+                configFilePath,
+                // NOTE: the 'simpleKeys' YAML option ensures that the output uses implicit vs
+                //  explicit notation, which appears to fix the issue where if all of an object's
+                //  properties are `null`, the resulting notation for the object is such that each
+                //  key is preceded by a `?` YAML operator, which Lens doesn't support/expect
+                YAML.stringify(kubeConfig, { simpleKeys: true })
+              )
+              .then(
+                () => entity,
+                (err) => {
+                  throw new Error(
+                    `Failed to write kubeconfig file: Unable to add cluster; filePath=${logString(
+                      configFilePath
+                    )}, error=${logString(err.message)}, cluster=${cluster}`
+                  );
+                }
+              ),
+          (err) => {
+            throw new Error(
+              `Failed to create kubeconfig directory: Unable to add cluster; path=${logString(
+                configDirPath
+              )}, error=${logString(err.message)}, cluster=${cluster}`
+            );
+          }
+        );
+      })
+    );
+
+    return Promise.allSettled(promises).then((results) => {
+      const newEntities = results
+        .map((result) => {
+          if (result.status === 'fulfilled') {
+            return result.value;
+          }
+
+          this.ipcMain.capture(
+            'warn',
+            'SyncManager.updateClusters()',
+            `(Ignoring cluster) ${result.reason.message}`
+          );
+          return undefined;
+        })
+        .filter((entity) => !!entity); // remove the duds
+
+      // TODO[PRODX-22269]: make this a lot more efficient; need to delete old kubeconfig files too
+      // first, remove all cluster entities from the Catalog
+      let idx;
+      while (
+        (idx = this.catalogSource.findIndex((entity) => {
+          // NOTE: since it's our Catalog Source, it only contains our items, so we should
+          //  never encounter a case where there's no mapped property
+          const prop = kindtoNamespaceProp[entity.metadata.kind];
+          return 'clusters' === prop;
+        })) >= 0
+      ) {
+        this.catalogSource.splice(idx, 1);
+        // TODO[PRODX-22269]: also need to delete old kubeconfig files no longer used
+      }
+
+      this.ipcMain.capture(
+        'log',
+        'SyncManager.updateClusters()',
+        `Adding ${newEntities.length} cluster entities to Catalog; dataCloud=${dataCloud}`
+      );
+
+      // then, add all the new ones
+      newEntities.forEach((entity) => {
+        this.catalogSource.push(entity);
+      });
+
+      this.ipcMain.capture(
+        'log',
+        'SyncManager.updateClusters()',
+        `Done: Updated Catalog cluster entities for dataCloud=${dataCloud}`
+      );
+    });
+    // NOTE: Promise.allSettled() does not fail
+  }
+
+  /**
    * Called to trigger an immediate sync of the specified Cloud if it's known and
    *  isn't currently fetching data.
    * @param {string} event ID provided by Lens.
@@ -284,51 +489,55 @@ export class SyncManager extends Singleton {
 
   /**
    * Called whenever a DataCloud's data has been updated.
-   * @param {DataCloud} dc The updated DataCloud.
+   * @param {DataCloud} dataCloud The updated DataCloud.
    */
-  onDataUpdated = (dc) => {
+  onDataUpdated = (dataCloud) => {
+    const types = ['sshKeys', 'credentials', 'proxies', 'licenses'];
     this.ipcMain.capture(
       'log',
       'SyncManager.onDataUpdated()',
-      `Updating Catalog entities for dataCloud=${dc}...`
+      `Updating Catalog [${types.join(
+        ', '
+      )}] entities for dataCloud=${dataCloud}`
     );
 
     // TODO[PRODX-22269]: make this a lot more efficient
-    ['sshKeys', 'credentials', 'proxies', 'licenses'].forEach(
-      // TODO[SyncManager] add 'clusters'
-      (type) => {
-        const newEntities = dc.syncedNamespaces.flatMap((ns) =>
-          ns[type].map((apiType) => apiType.toEntity())
-        );
+    types.forEach((type) => {
+      const newEntities = dataCloud.syncedNamespaces.flatMap((ns) =>
+        ns[type].map((apiType) => apiType.toEntity())
+      );
 
-        // first, remove all entities from the Catalog of this type
-        let idx;
-        while (
-          (idx = this.catalogSource.findIndex((entity) => {
-            // NOTE: since it's our Catalog Source, it only contains our items, so we should
-            //  never encounter a case where there's no mapped property
-            const prop = kindtoNamespaceProp[entity.metadata.kind];
-            return type === prop;
-          })) >= 0
-        ) {
-          this.catalogSource.splice(idx, 1);
-        }
-
-        this.ipcMain.capture(
-          'log',
-          'SyncManager.onDataUpdated()',
-          `Adding ${newEntities.length} "${type}" entities to Catalog; dataCloud=${dc}`
-        );
-
-        // then, add all the new ones
-        newEntities.forEach((entity) => this.catalogSource.push(entity));
+      // first, remove all entities from the Catalog of this type
+      let idx;
+      while (
+        (idx = this.catalogSource.findIndex((entity) => {
+          // NOTE: since it's our Catalog Source, it only contains our items, so we should
+          //  never encounter a case where there's no mapped property
+          const prop = kindtoNamespaceProp[entity.metadata.kind];
+          return type === prop;
+        })) >= 0
+      ) {
+        this.catalogSource.splice(idx, 1);
       }
-    );
+
+      this.ipcMain.capture(
+        'log',
+        'SyncManager.onDataUpdated()',
+        `Adding ${newEntities.length} ${type} entities to Catalog; dataCloud=${dataCloud}`
+      );
+
+      // then, add all the new ones
+      newEntities.forEach((entity) => this.catalogSource.push(entity));
+    });
 
     this.ipcMain.capture(
       'log',
       'SyncManager.onDataUpdated()',
-      `Updated Catalog entities for dataCloud=${dc}`
+      `Done: Updated Catalog [${types.join(
+        ', '
+      )}] entities for dataCloud=${dataCloud}`
     );
+
+    this.updateClusters(dataCloud);
   };
 }

@@ -42,8 +42,13 @@ export class IpcMain extends Main.Ipc {
   capture(level, context, message, ...rest) {
     DEV_ENV && rtv.verify({ level, context, message }, captureTs);
 
-    const params = [`__MAIN__/${context}`, message, ...rest];
-    logger[level](...params);
-    this.broadcast(ipcEvents.broadcast.LOGGER, level, ...params);
+    logger[level](context, message, ...rest);
+    this.broadcast(
+      ipcEvents.broadcast.LOGGER,
+      level,
+      `__MAIN__/${context}`,
+      message,
+      ...rest
+    );
   }
 }

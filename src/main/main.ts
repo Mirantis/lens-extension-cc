@@ -31,7 +31,7 @@ export default class ExtensionMain extends Main.LensExtension {
 
     // AFTER load stores
     IpcMain.createInstance(this);
-    SyncManager.createInstance(catalogSource, IpcMain.getInstance());
+    SyncManager.createInstance(this, catalogSource, IpcMain.getInstance());
   }
 
   onDeactivate() {
