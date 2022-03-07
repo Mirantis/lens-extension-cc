@@ -4,6 +4,7 @@
 
 import * as rtv from 'rtvjs';
 import * as consts from '../constants';
+import { logger, logString } from '../util/logger';
 import { mergeRtvShapes } from '../util/mergeRtvShapes';
 import { apiKinds, apiCredentialKinds } from '../api/apiConstants';
 
@@ -156,7 +157,13 @@ export const generateEntityUrl = (entity) => {
       return `${url}/proxies?name=${entity.metadata.name}`;
     case apiKinds.PUBLIC_KEY:
       return `${url}/keypairs?name=${entity.metadata.name}`;
+    case apiKinds.CLUSTER:
+      return `${url}/clusters/${entity.metadata.name}`;
     default:
-      return `${url}/clusters`;
+      logger.error(
+        'catalogEntities.generateEntityUrl()',
+        `Unknown entity kind=${logString(entity.metadata.kind)}`
+      );
+      return url;
   }
 };
