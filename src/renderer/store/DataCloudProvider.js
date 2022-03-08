@@ -53,8 +53,12 @@ const DataCloudContext = createContext();
 
 /**
  * Triages current Cloud URLs into 3 lists: new, updated, and deleted.
- * @param {{ [index: string]: string }} cloudStoreTokens Map of Cloud URL to token for
+ * @param {{ [index: string]: string|null }} cloudStoreTokens Map of Cloud URL to token for
  *  the current set of known Clouds stored on disk.
+ *
+ *  CAREFUL: Clouds that are not connected may have `null` tokens if they were explicitly
+ *   disconnected (and tokens reset).
+ *
  * @return {{ cloudUrlsToAdd: Array<string>, cloudUrlsToUpdate: Array<string>, cloudUrlsToRemove: Array<string> }}
  *  An object with `cloudUrlsToAdd` being a list of new Cloud URLs to add, `cloudUrlsToRemove` a list
  *  of old Clouds to remove (deleted), and `cloudUrlsToUpdate` a list of Clouds that have
@@ -68,7 +72,7 @@ const _triageCloudUrls = (cloudStoreTokens) => {
   const providerTokens = pr.store.tokens;
 
   Object.keys(providerTokens).forEach((providerUrl) => {
-    if (cloudStoreTokens[providerUrl]) {
+    if (cloudStoreTokens[providerUrl] !== undefined) {
       // provider URL is also in CloudStore set of URLs: if the token has changed,
       //  it's updated (as far as we're concerned here in DataCloudProvider)
       if (cloudStoreTokens[providerUrl] !== providerTokens[providerUrl]) {
@@ -87,7 +91,7 @@ const _triageCloudUrls = (cloudStoreTokens) => {
   ) {
     // there's at least one new URL (or none) in `currentTokens`
     Object.keys(cloudStoreTokens).forEach((curUrl) => {
-      if (!providerTokens[curUrl]) {
+      if (providerTokens[curUrl] === undefined) {
         // not a stored/known URL: must be new
         cloudUrlsToAdd.push(curUrl);
       }
@@ -117,7 +121,8 @@ const _updateStore = function ({
   pr.store.tokens = cloudStoreTokens;
 
   cloudUrlsToRemove.forEach((url) => {
-    // destroy and remove DataCloud
+    // destroy and remove DataCloud and the Cloud it contains
+    pr.store.dataClouds[url].cloud.destroy();
     pr.store.dataClouds[url].destroy();
     delete pr.store.dataClouds[url];
   });

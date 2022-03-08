@@ -11,6 +11,8 @@ import {
   removeExtEventHandler,
 } from '../renderer/eventBus';
 import { EventDispatcher } from './EventDispatcher';
+import { normalizeUrl } from '../util/netUtil';
+import * as apiUtil from '../api/apiUtil';
 
 /**
  * Determines if a date has passed.
@@ -168,8 +170,8 @@ export class Cloud extends EventDispatcher {
 
     username: [rtv.EXPECTED, rtv.STRING],
 
-    // URL to the MCC instance
-    cloudUrl: [rtv.EXPECTED, rtv.STRING],
+    // URL to the MCC instance (no trailing slash)
+    cloudUrl: [rtv.EXPECTED, rtv.STRING, (v) => !v.endsWith('/')],
 
     syncedNamespaces: [rtv.EXPECTED, rtv.ARRAY, { $: rtv.STRING }],
     ignoredNamespaces: [rtv.EXPECTED, rtv.ARRAY, { $: rtv.STRING }],
@@ -243,6 +245,7 @@ export class Cloud extends EventDispatcher {
     });
 
     /**
+     * @readonly
      * @member {Array<string>} syncedNamespaces A list of namespace names in the mgmt
      *  cluster that should be synced.
      */
@@ -254,6 +257,7 @@ export class Cloud extends EventDispatcher {
     });
 
     /**
+     * @readonly
      * @member {Array<string>} ignoredNamespaces A list of namespace names in the mgmt
      *  cluster that not synced.
      */
@@ -458,12 +462,14 @@ export class Cloud extends EventDispatcher {
         return _cloudUrl;
       },
       set(newValue) {
-        const normalizedNewValue = newValue || null; // '' or undefined -> null
+        const normalizedNewValue = normalizeUrl(newValue || '') || null; // '' or undefined -> null
+
         DEV_ENV &&
           rtv.verify(
             { cloudUrl: normalizedNewValue },
             { cloudUrl: Cloud.specTs.cloudUrl }
           );
+
         if (_cloudUrl !== normalizedNewValue) {
           if (_cloudUrl) {
             // the URL has changed after being set: any tokens we have are invalid
@@ -476,13 +482,20 @@ export class Cloud extends EventDispatcher {
       },
     });
 
-    Object.defineProperty(Object.getPrototypeOf(this), 'updateNamespaces', {
-      enumerable: true,
-      /**
-       * @param {Array<string>} syncedList A list of namespace names in the mgmt cluster that should be synced.
-       * @param {Array<string>} ignoredList A list of namespace names in the mgmt cluster that not synced.
-       * @param {boolean} [silent] if true we don't dispatch event (thus DataCloud does not fetch its data)
-       */
+    /**
+     * Updates the Cloud's synced and ignored namespaces.
+     * @method
+     * @param {Array<string>} syncedList A list of namespace names in the mgmt cluster that
+     *  should be synced.
+     * @param {Array<string>} ignoredList A list of namespace names in the mgmt cluster that
+     *  should not be synced.
+     * @param {boolean} [silent] If true, we don't notify about the change.
+     */
+    Object.defineProperty(this, 'updateNamespaces', {
+      // non-enumerable since normally, methods are hidden on the prototype, but in this case,
+      //  since we bind to the private context of the constructor, we have to define it on
+      //  the instance itself
+      enumerable: false,
       value: function (syncedList, ignoredList, silent = false) {
         DEV_ENV &&
           rtv.verify(
@@ -697,15 +710,17 @@ export class Cloud extends EventDispatcher {
   /** @returns {string} String representation of this Cloud for logging/debugging. */
   toString() {
     const validTillStr = logDate(this.tokenValidTill);
-    return `{Cloud url: ${logString(this.cloudUrl)}, token: ${
+    return `{Cloud url: ${logString(this.cloudUrl)}, status: ${logString(
+      this.status
+    )}, token: ${
       this.token
         ? `"${this.token.slice(0, 15)}..${this.token.slice(-15)}"`
         : this.token
     }, valid: ${this.tokenValid}, validTill: ${
       validTillStr ? `"${validTillStr}"` : validTillStr
-    }, refreshValid: ${this.refreshTokenValid}, status: ${logString(
-      this.status
-    )}, connectError: ${logString(this.connectError)}}`;
+    }, refreshValid: ${this.refreshTokenValid}, connectError: ${logString(
+      this.connectError
+    )}}`;
   }
 
   /**
@@ -793,14 +808,22 @@ export class Cloud extends EventDispatcher {
     }
   }
 
+  /**
+   * Disconnects from the MCC server, killing the current session, if any.
+   */
   disconnect() {
-    if (this.connecting) {
-      throw new Error('Cannot disconnect while trying to connect');
+    if (this.connected) {
+      apiUtil.cloudLogout(this); // try but don't block on waiting for response
     }
 
     this.config = null;
     this.connectError = null;
     this.connecting = false;
     this.resetTokens();
+  }
+
+  /** Called when this instance is being deleted/destroyed. */
+  destroy() {
+    this.disconnect();
   }
 }

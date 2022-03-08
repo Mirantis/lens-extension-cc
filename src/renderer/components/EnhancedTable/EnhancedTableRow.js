@@ -5,12 +5,7 @@ import { Renderer } from '@k8slens/extensions';
 import { layout } from '../styles';
 import { Namespace } from '../../../api/types/Namespace';
 import { AdditionalInfoRows } from './AdditionalInfoRows';
-import {
-  connectionStatuses,
-  contextMenus,
-  synchronizeBlock,
-  syncView,
-} from '../../../strings';
+import * as strings from '../../../strings';
 import {
   checkValues,
   TriStateCheckbox,
@@ -82,69 +77,15 @@ const expandIconStyles = {
   fontSize: 'calc(var(--font-size) * 1.8)',
 };
 
-const colorGreen = {
-  color: 'var(--colorSuccess)',
-};
-
-const colorYellow = {
-  color: 'var(--colorWarning)',
-};
-
-const colorGray = {
-  color: 'var(--halfGray)',
-};
-
-/**
- * Determines the connection status of the Cloud.
- * @param {Cloud} cloud
- * @param {boolean} isFetching
- * @return {{cloudStatus: string, namespaceStatus: string, connectColor: Object}}
- *  where `cloudStatus` and `namespaceStatus` are labels, and `connectColor` is
- *  a style object to apply to the label.
- */
-const getStatus = (cloud, isFetching) => {
-  if (isFetching) {
-    return {
-      cloudStatus: connectionStatuses.cloud.updating(),
-      namespaceStatus: connectionStatuses.namespace.connected(),
-      connectColor: colorYellow,
-    };
-  }
-  switch (cloud.status) {
-    case CONNECTION_STATUSES.CONNECTED:
-      return {
-        cloudStatus: connectionStatuses.cloud.connected(),
-        namespaceStatus: connectionStatuses.namespace.connected(),
-        connectColor: colorGreen,
-      };
-
-    case CONNECTION_STATUSES.CONNECTING:
-      return {
-        cloudStatus: connectionStatuses.cloud.connecting(),
-        // NOTE: namespace is disconnected until Cloud is connected
-        namespaceStatus: connectionStatuses.namespace.disconnected(),
-        connectColor: colorYellow,
-      };
-
-    case CONNECTION_STATUSES.DISCONNECTED: // fall-through
-    default:
-      return {
-        cloudStatus: connectionStatuses.cloud.disconnected(),
-        namespaceStatus: connectionStatuses.namespace.disconnected(),
-        connectColor: colorGray,
-      };
-  }
-};
-
 const getCloudMenuItems = (dataCloud) => [
   {
-    title: contextMenus.cloud.reconnect(),
+    title: strings.contextMenus.cloud.reconnect(),
     name: 'reconnect',
     disabled: dataCloud.cloud.status === CONNECTION_STATUSES.CONNECTED,
     onClick: () => dataCloud.reconnect(),
   },
   {
-    title: contextMenus.cloud.remove(),
+    title: strings.contextMenus.cloud.remove(),
     name: 'remove',
     disabled: dataCloud.fetching,
     onClick: () => {
@@ -162,11 +103,12 @@ const getCloudMenuItems = (dataCloud) => [
           ok: () => {
             cloudStore.removeCloud(cloudUrl);
           },
-          labelOk: contextMenus.cloud.confirmDialog.confirmButtonLabel(),
+          labelOk:
+            strings.contextMenus.cloud.confirmDialog.confirmButtonLabel(),
           message: (
             <div
               dangerouslySetInnerHTML={{
-                __html: contextMenus.cloud.confirmDialog.messageHtml(
+                __html: strings.contextMenus.cloud.confirmDialog.messageHtml(
                   cloudName,
                   syncedNamespaces
                 ),
@@ -178,7 +120,7 @@ const getCloudMenuItems = (dataCloud) => [
     },
   },
   {
-    title: contextMenus.cloud.sync(),
+    title: strings.contextMenus.cloud.sync(),
     name: 'sync',
     disabled:
       dataCloud.cloud.status === CONNECTION_STATUSES.DISCONNECTED ||
@@ -194,7 +136,7 @@ const getCloudMenuItems = (dataCloud) => [
     },
   },
   {
-    title: contextMenus.cloud.openInBrowser(),
+    title: strings.contextMenus.cloud.openInBrowser(),
     name: 'openInBrowser',
     disabled: false,
     onClick: () => {
@@ -203,11 +145,13 @@ const getCloudMenuItems = (dataCloud) => [
   },
 ];
 
-const namespaceMenuItems = [
+const getNamespaceMenuItems = (dataCloud, namespace) => [
   {
-    title: `(WIP) ${contextMenus.namespace.openInBrowser()}`,
+    title: strings.contextMenus.namespace.openInBrowser(),
     name: 'openInBrowser',
-    onClick: (namespace) => {},
+    onClick: () => {
+      openBrowser(`${dataCloud.cloud.cloudUrl}/projects/${namespace.name}`);
+    },
   },
 ];
 
@@ -217,7 +161,7 @@ export const EnhancedTableRow = ({
   isSyncStarted,
   getDataToSync,
   namespaces,
-  fetching,
+  status,
 }) => {
   const { getCheckboxValue, setCheckboxValue, getSyncedData } = useCheckboxes(
     makeCheckboxesInitialState(dataCloud)
@@ -260,7 +204,7 @@ export const EnhancedTableRow = ({
     if (withCheckboxes) {
       autoSyncSuffix =
         isParent && !dataCloud.cloud.connected
-          ? ` (${connectionStatuses.cloud.disconnected()})`
+          ? ` (${strings.connectionStatuses.cloud.disconnected()})`
           : '';
       return (
         <TriStateCheckbox
@@ -271,7 +215,9 @@ export const EnhancedTableRow = ({
       );
     }
     autoSyncSuffix =
-      isParent && dataCloud.cloud.syncAll ? ` (${syncView.autoSync()})` : '';
+      isParent && dataCloud.cloud.syncAll
+        ? ` (${strings.syncView.autoSync()})`
+        : '';
 
     return `${name}${autoSyncSuffix}`;
   };
@@ -306,11 +252,11 @@ export const EnhancedTableRow = ({
       return null;
     }
     const cloudMenuItems = getCloudMenuItems(dataCloud);
-    const { cloudStatus, connectColor } = getStatus(dataCloud.cloud, fetching);
+    const { cloudStatus, styles } = status;
     return (
       <>
         <EnhTableRowCell>{dataCloud.cloud.username}</EnhTableRowCell>
-        <EnhTableRowCell style={connectColor}>{cloudStatus}</EnhTableRowCell>
+        <EnhTableRowCell style={styles}>{cloudStatus}</EnhTableRowCell>
         <EnhTableRowCell isRightAligned>
           <EnhMore>
             <MenuActions>
@@ -336,7 +282,8 @@ export const EnhancedTableRow = ({
     if (withCheckboxes) {
       return <EnhTableRowCell />;
     }
-    const { namespaceStatus } = getStatus(dataCloud.cloud, fetching);
+    const namespaceMenuItems = getNamespaceMenuItems(dataCloud, namespace);
+    const { namespaceStatus } = status;
     return (
       <>
         <EnhTableRowCell />
@@ -349,7 +296,7 @@ export const EnhancedTableRow = ({
                 return (
                   <MenuItem
                     key={`${namespace.name}-${item.name}`}
-                    onClick={() => item.onClick(namespace)}
+                    onClick={item.onClick}
                   >
                     {item.title}
                   </MenuItem>
@@ -374,7 +321,7 @@ export const EnhancedTableRow = ({
         {withCheckboxes && (
           <EnhTableRowCell>
             <TriStateCheckbox
-              label={synchronizeBlock.synchronizeFutureProjects()}
+              label={strings.synchronizeBlock.synchronizeFutureProjects()}
               onChange={() => setSyncAll(!syncAll)}
               value={syncAll ? checkValues.CHECKED : checkValues.UNCHECKED}
             />
@@ -424,7 +371,11 @@ EnhancedTableRow.propTypes = {
       }),
     ])
   ).isRequired,
-  fetching: PropTypes.bool.isRequired,
+  status: PropTypes.shape({
+    cloudStatus: PropTypes.string.isRequired,
+    namespaceStatus: PropTypes.string.isRequired,
+    styles: PropTypes.object.isRequired,
+  }).isRequired,
 };
 
 EnhancedTableRow.defaultProps = {

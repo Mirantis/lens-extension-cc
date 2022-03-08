@@ -1,7 +1,65 @@
 import { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { DATA_CLOUD_EVENTS } from '../../../common/DataCloud';
+import { CLOUD_EVENTS } from '../../../common/Cloud';
 import { EnhancedTableRow } from './EnhancedTableRow';
+import { CONNECTION_STATUSES } from '../../../common/Cloud';
+import * as strings from '../../../strings';
+
+const colorGreen = {
+  color: 'var(--colorSuccess)',
+};
+
+const colorYellow = {
+  color: 'var(--colorWarning)',
+};
+
+const colorGray = {
+  color: 'var(--halfGray)',
+};
+
+/**
+ * Determines the connection status of the Cloud.
+ * @param {Cloud} cloud
+ * @param {boolean} isFetching
+ * @return {{cloudStatus: string, namespaceStatus: string, styles: Object}}
+ *  where `cloudStatus` and `namespaceStatus` are labels, and `styles` is
+ *  a style object to apply to the label.
+ */
+const getStatus = (cloud, isFetching) => {
+  if (isFetching) {
+    return {
+      cloudStatus: strings.connectionStatuses.cloud.updating(),
+      namespaceStatus: strings.connectionStatuses.namespace.connected(),
+      styles: colorYellow,
+    };
+  }
+
+  switch (cloud.status) {
+    case CONNECTION_STATUSES.CONNECTED:
+      return {
+        cloudStatus: strings.connectionStatuses.cloud.connected(),
+        namespaceStatus: strings.connectionStatuses.namespace.connected(),
+        styles: colorGreen,
+      };
+
+    case CONNECTION_STATUSES.CONNECTING:
+      return {
+        cloudStatus: strings.connectionStatuses.cloud.connecting(),
+        // NOTE: namespace is disconnected until Cloud is connected
+        namespaceStatus: strings.connectionStatuses.namespace.disconnected(),
+        styles: colorYellow,
+      };
+
+    case CONNECTION_STATUSES.DISCONNECTED: // fall-through
+    default:
+      return {
+        cloudStatus: strings.connectionStatuses.cloud.disconnected(),
+        namespaceStatus: strings.connectionStatuses.namespace.disconnected(),
+        styles: colorGray,
+      };
+  }
+};
 
 /**
  * @param {DataCloud} dataCloud
@@ -37,35 +95,50 @@ export const TableRowListenerWrapper = ({
   const [actualNamespaces, setActualNamespaces] = useState(
     getNamespaces({ dataCloud, usedNamespaces, withCheckboxes })
   );
-  const [isFetching, setFetching] = useState(false);
+  const [isFetching, setFetching] = useState(dataCloud.fetching);
+  const [status, setStatus] = useState(getStatus(dataCloud.cloud, isFetching));
 
-  const updateUsedNamespaces = (updatedRow) => {
-    if (updatedRow) {
-      setActualNamespaces(updatedRow[usedNamespaces]);
-    }
+  const onDataCloudDataUpdated = (dc) => {
+    setActualNamespaces(dc[usedNamespaces]);
   };
 
-  const listenFetching = (cl) => setFetching(cl.fetching);
+  const onDataCloudFetchingChange = (dc) => {
+    setFetching(dc.fetching);
+    setStatus(getStatus(dc.cloud, dc.fetching));
+  };
+
+  const onCloudStatusChange = (cl) => {
+    setStatus(getStatus(cl, isFetching));
+  };
 
   useEffect(() => {
     // Listen namespaces update
     dataCloud.addEventListener(
       DATA_CLOUD_EVENTS.DATA_UPDATED,
-      updateUsedNamespaces
+      onDataCloudDataUpdated
     );
     // Listen fetching status (updating namespaces)
     dataCloud.addEventListener(
       DATA_CLOUD_EVENTS.FETCHING_CHANGE,
-      listenFetching
+      onDataCloudFetchingChange
     );
+    dataCloud.cloud.addEventListener(
+      CLOUD_EVENTS.STATUS_CHANGE,
+      onCloudStatusChange
+    );
+
     return () => {
       dataCloud.removeEventListener(
         DATA_CLOUD_EVENTS.DATA_UPDATED,
-        updateUsedNamespaces
+        onDataCloudDataUpdated
       );
       dataCloud.removeEventListener(
         DATA_CLOUD_EVENTS.FETCHING_CHANGE,
-        listenFetching
+        onDataCloudFetchingChange
+      );
+      dataCloud.cloud.removeEventListener(
+        CLOUD_EVENTS.STATUS_CHANGE,
+        onCloudStatusChange
       );
     };
   });
@@ -76,7 +149,7 @@ export const TableRowListenerWrapper = ({
       dataCloud={dataCloud}
       withCheckboxes={withCheckboxes}
       namespaces={actualNamespaces}
-      fetching={isFetching}
+      status={status}
       {...rest}
     />
   );
@@ -85,4 +158,6 @@ export const TableRowListenerWrapper = ({
 TableRowListenerWrapper.propTypes = {
   dataCloud: PropTypes.object.isRequired,
   withCheckboxes: PropTypes.bool.isRequired,
+  isSyncStarted: PropTypes.bool,
+  getDataToSync: PropTypes.func,
 };

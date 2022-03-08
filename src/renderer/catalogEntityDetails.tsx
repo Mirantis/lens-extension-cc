@@ -6,7 +6,9 @@ import { SshKeyEntity } from '../catalog/SshKeyEntity';
 import { CredentialEntity } from '../catalog/CredentialEntity';
 import { ProxyEntity } from '../catalog/ProxyEntity';
 import { LicenseEntity } from '../catalog/LicenseEntity';
+import { LensKubernetesCluster } from '../catalog/catalogEntityTypes';
 import * as strings from '../strings';
+import * as consts from '../constants';
 
 dayjs.extend(dayjsRelativeTimePlugin);
 
@@ -36,6 +38,31 @@ const {
 } = strings;
 
 export const catalogEntityDetails = [
+  {
+    kind: consts.catalog.entities.kubeCluster.kind,
+    apiVersions: [
+      `${consts.catalog.entities.kubeCluster.group}/${consts.catalog.entities.kubeCluster.versions.v1alpha1}`,
+    ],
+    components: {
+      Details: (props: CatalogEntityDetailsProps<LensKubernetesCluster>) => (
+        <>
+          <DrawerTitle
+            title={strings.catalog.entities.common.details.title()}
+          />
+          <DrawerItem
+            name={strings.catalog.entities.common.details.props.uid()}
+          >
+            {props.entity.metadata.uid || unknownValue()}
+          </DrawerItem>
+          <DrawerItem
+            name={strings.catalog.entities.common.details.props.dateCreated()}
+          >
+            {getCreatedValue(props.entity.spec.createdAt)}
+          </DrawerItem>
+        </>
+      ),
+    },
+  },
   {
     kind: SshKeyEntity.kind,
     apiVersions: [SshKeyEntity.apiVersion],

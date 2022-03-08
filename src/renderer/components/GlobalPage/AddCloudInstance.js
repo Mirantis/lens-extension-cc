@@ -82,10 +82,11 @@ export const AddCloudInstance = ({ onAdd, onCancel }) => {
   }, [dataCloud, cloud]);
 
   const cleanCloudsState = () => {
-    setCloud(null);
-
     dataCloud?.destroy();
     setDataCloud(null);
+
+    cloud?.destroy();
+    setCloud(null);
   };
 
   useEffect(() => {
@@ -94,7 +95,8 @@ export const AddCloudInstance = ({ onAdd, onCancel }) => {
     }
   }, [cloud, loading, dataCloud, makeDataCloud]);
 
-  // propertly destroy the DataCloud object on unmount
+  // propertly destroy the DataCloud object on unmount, but NOT the Cloud because
+  //  we may have passed it back through `onAdd()`
   useEffect(() => {
     return () => dataCloud?.destroy();
   }, [dataCloud]);

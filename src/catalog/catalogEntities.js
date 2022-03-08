@@ -49,7 +49,7 @@ export const catalogEntityModelTs = {
     // enough info to relate this entity to a namespace in a Cloud in `CloudStore.clouds`
     //  if necessary
     namespace: rtv.STRING,
-    cloudUrl: rtv.STRING,
+    cloudUrl: [rtv.STRING, (v) => !v.endsWith('/')], // no trailing slash
   },
 
   // spec is specific to the type of entity being added to the Catalog; e.g. for a cluster,
@@ -80,6 +80,7 @@ export const catalogEntityModelTs = {
 export const clusterEntityPhases = Object.freeze({
   CONNECTING: 'connecting',
   CONNECTED: 'connected',
+  DELETING: 'deleting',
   DISCONNECTING: 'disconnecting',
   DISCONNECTED: 'disconnected',
 });
@@ -91,9 +92,17 @@ export const clusterEntityPhases = Object.freeze({
  *
  * NOTE: As this is meant for Lens to consume, it will NOT MATCH the kube spec object
  *  retrieved from the MCC API for the same object.
+ *
+ * @see node_modules/@k8slens/extensions/dist/src/common/catalog-entities/kubernetes-cluster.d.ts
  */
 export const clusterEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
+  // based on Lens `KubernetesClusterMetadata` type
   metadata: {
+    distro: [rtv.OPTIONAL, rtv.STRING],
+    kubeVersion: [rtv.OPTIONAL, rtv.STRING],
+
+    //// CUSTOM PROPERTIES
+
     labels: [
       // either it's a mgmt cluster and we no labels
       rtv.HASH_MAP,
@@ -128,12 +137,27 @@ export const clusterEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
       },
     ],
   },
+
+  // based on Lens `KubernetesClusterSpec` type
   spec: {
     kubeconfigPath: rtv.STRING, // absolute path
     kubeconfigContext: rtv.STRING,
+    icon: [
+      rtv.OPTIONAL,
+      {
+        src: [rtv.OPTIONAL, rtv.STRING],
+        material: [rtv.OPTIONAL, rtv.STRING],
+        background: [rtv.OPTIONAL, rtv.STRING],
+      },
+    ],
+
+    //// CUSTOM PROPERTIES
+
     isManagementCluster: rtv.BOOLEAN,
     ready: rtv.BOOLEAN,
   },
+
+  // based on Lens `KubernetesClusterStatus` type
   status: {
     phase: [rtv.STRING, { oneOf: Object.values(clusterEntityPhases) }],
   },

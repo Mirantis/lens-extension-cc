@@ -119,7 +119,9 @@ export class ApiObject {
   toString() {
     const propStr = `name: ${logString(this.name)}, uid: ${logString(
       this.uid
-    )}, kind: ${logString(this.kind)}`;
+    )}, kind: ${logString(this.kind)}, cloudUrl=${logString(
+      this.cloud?.cloudUrl
+    )}`;
 
     if (Object.getPrototypeOf(this).constructor === ApiObject) {
       return `{ApiObject ${propStr}}`;
