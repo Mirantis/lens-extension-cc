@@ -171,22 +171,24 @@ export const generateEntityUrl = (entity) => {
   const url = `${entity.metadata.cloudUrl}/projects/${entity.metadata.namespace}`;
 
   if (Object.values(apiCredentialKinds).includes(entity.metadata.kind)) {
-    return `${url}/creds?name=${entity.metadata.name}`;
+    return `${url}/creds?name=${entity.metadata.name}&details`;
   }
 
   switch (entity.metadata.kind) {
     case apiKinds.RHEL_LICENSE:
-      return `${url}/rhel?name=${entity.metadata.name}`;
+      return `${url}/rhel?name=${entity.metadata.name}&details`;
     case apiKinds.PROXY:
-      return `${url}/proxies?name=${entity.metadata.name}`;
+      return `${url}/proxies?name=${entity.metadata.name}&details`;
     case apiKinds.PUBLIC_KEY:
-      return `${url}/keypairs?name=${entity.metadata.name}`;
+      return `${url}/keypairs?name=${entity.metadata.name}&details`;
     case apiKinds.CLUSTER:
       return `${url}/clusters/${entity.metadata.name}`;
     default:
       logger.error(
         'catalogEntities.generateEntityUrl()',
-        `Unknown entity kind=${logString(entity.metadata.kind)}`
+        `Unknown entity kind=${logString(
+          entity.metadata.kind
+        )}: Falling back to namespace URL`
       );
       return url;
   }
