@@ -1,17 +1,25 @@
 import * as fs from 'fs/promises';
 import path from 'path';
-import { autorun } from 'mobx';
+import { reaction } from 'mobx';
 import * as rtv from 'rtvjs';
 import { isEqual } from 'lodash';
 import YAML from 'yaml';
 import { Common } from '@k8slens/extensions';
 import { DATA_CLOUD_EVENTS, DataCloud } from '../common/DataCloud';
 import { cloudStore } from '../store/CloudStore';
-import { apiKinds } from '../api/apiConstants';
+import { syncStore } from '../store/SyncStore';
+import { apiCredentialKinds, apiKinds } from '../api/apiConstants';
 import { logString } from '../util/logger';
 import * as consts from '../constants';
+import { SshKeyEntity } from '../catalog/SshKeyEntity';
+import { LicenseEntity } from '../catalog/LicenseEntity';
+import { ProxyEntity } from '../catalog/ProxyEntity';
+import { CredentialEntity } from '../catalog/CredentialEntity';
 
-const { Singleton } = Common.Util;
+const {
+  Catalog: { KubernetesCluster },
+  Util: { Singleton },
+} = Common;
 
 /**
  * API kind to Namespace property for kinds that are supported.
@@ -30,6 +38,12 @@ const kindtoNamespaceProp = {
   [apiKinds.RHEL_LICENSE]: 'licenses',
   [apiKinds.PROXY]: 'proxies',
 };
+
+/**
+ * API kind to SyncStore property for kinds that are supported.
+ * @type {{ [index: string]: string }}
+ */
+const kindToSyncStoreProp = { ...kindtoNamespaceProp }; // happens to use same prop names for now
 
 /**
  * Synchronizes MCC namespaces with the Lens Catalog.
@@ -152,28 +166,39 @@ export class SyncManager extends Singleton {
 
     ipcMain.handle(consts.ipcEvents.invoke.SYNC_NOW, this.onSyncNow);
 
-    // mobx binding called whenever the CloudStore's `clouds` property changes
-    autorun(() => {
-      const cloudStoreTokens = Object.values(cloudStore.clouds).reduce(
-        (acc, cloud) => {
-          acc[cloud.cloudUrl] = cloud.token;
-          return acc;
-        },
-        {}
-      );
-
-      if (!isEqual(this.cloudTokens, cloudStoreTokens)) {
-        const { cloudUrlsToAdd, cloudUrlsToUpdate, cloudUrlsToRemove } =
-          this.triageCloudUrls(cloudStoreTokens);
-
-        this.updateStore({
-          cloudStoreTokens,
-          cloudUrlsToAdd,
-          cloudUrlsToUpdate,
-          cloudUrlsToRemove,
-        });
+    // @see https://mobx.js.org/reactions.html#reaction
+    reaction(
+      // react to changes in `clouds` array
+      () => cloudStore.clouds,
+      this.onCloudStoreChange,
+      {
+        // fire right away because it's unclear if the SyncStore will be loaded by now
+        //  or now, and we don't want to sit there waiting for it when it's already
+        //  loaded (meaning that `SyncStore.fromStore()` has been called by Lens at
+        //  least once)
+        fireImmediately: true,
       }
-    });
+    );
+
+    // @see https://mobx.js.org/reactions.html#reaction
+    reaction(
+      // react to changes in `clouds` array
+      () => ({
+        credentials: syncStore.credentials,
+        sshKeys: syncStore.sshKeys,
+        clusters: syncStore.clusters,
+        licenses: syncStore.licenses,
+        proxies: syncStore.proxies,
+      }),
+      this.onSyncStoreChange,
+      {
+        // fire right away because it's unclear if the SyncStore will be loaded by now
+        //  or now, and we don't want to sit there waiting for it when it's already
+        //  loaded (meaning that `SyncStore.fromStore()` has been called by Lens at
+        //  least once)
+        fireImmediately: true,
+      }
+    );
   }
 
   /**
@@ -326,8 +351,33 @@ export class SyncManager extends Singleton {
       //  handle just fine)
       url.host.replace(':', '-'), // includes port if specified
       cluster.namespace.name,
-      `${cluster.name}--${cluster.uid}.yaml`
+      `${cluster.name}_${cluster.uid}.yaml`
     );
+  }
+
+  /**
+   * Makes a new Catalog Entity from a given Catalog Entity Model, based on its kind.
+   * @param {Object} model
+   * @returns {CatalogEntity} New Catalog Entity.
+   */
+  mkEntity(model) {
+    switch (model.metadata.kind) {
+      case apiKinds.CLUSTER:
+        return new KubernetesCluster(model);
+      case apiKinds.PUBLIC_KEY:
+        return new SshKeyEntity(model);
+      case apiKinds.RHEL_LICENSE:
+        return new LicenseEntity(model);
+      case apiKinds.PROXY:
+        return new ProxyEntity(model);
+      default:
+        if (Object.values(apiCredentialKinds).includes(model.metadata.kind)) {
+          return new CredentialEntity(model);
+        }
+        throw new Error(
+          `Unknown catalog model kind=${logString(model.metadata.kind)}`
+        );
+    }
   }
 
   /**
@@ -357,7 +407,7 @@ export class SyncManager extends Singleton {
       }
     }
 
-    // promises resolve to `KubernetesCluster` entities, or reject to `Error` objects
+    // promises resolve to `KubernetesCluster` entity MODELS, or reject to `Error` objects
     const promises = dataCloud.syncedNamespaces.flatMap((ns) =>
       ns.clusters.map((cluster) => {
         if (!cluster.ready) {
@@ -370,7 +420,7 @@ export class SyncManager extends Singleton {
 
         const kubeConfig = cluster.getKubeConfig();
         const configFilePath = path.join(this.getKubeConfigFilePath(cluster));
-        const entity = cluster.toEntity(configFilePath);
+        const model = cluster.toModel(configFilePath);
         const configDirPath = path.dirname(configFilePath);
         return fs.mkdir(configDirPath, { recursive: true }).then(
           () =>
@@ -384,7 +434,7 @@ export class SyncManager extends Singleton {
                 YAML.stringify(kubeConfig, { simpleKeys: true })
               )
               .then(
-                () => entity,
+                () => model,
                 (err) => {
                   throw new Error(
                     `Failed to write kubeconfig file: Unable to add cluster; filePath=${logString(
@@ -404,11 +454,17 @@ export class SyncManager extends Singleton {
       })
     );
 
+    // TODO[PRODX-22269]: make sync a lot more efficient instead of blind replace on every sync;
+    //  need to delete old kubeconfig files too
     return Promise.allSettled(promises).then((results) => {
-      const newEntities = results
+      // @type {Array<{ model: Object, entity: KubernetesCluster }>}
+      const newSpecs = results
         .map((result) => {
           if (result.status === 'fulfilled') {
-            return result.value;
+            return {
+              model: result.value,
+              entity: this.mkEntity(result.value),
+            };
           }
 
           this.ipcMain.capture(
@@ -418,9 +474,8 @@ export class SyncManager extends Singleton {
           );
           return undefined;
         })
-        .filter((entity) => !!entity); // remove the duds
+        .filter((spec) => !!spec); // remove the duds
 
-      // TODO[PRODX-22269]: make this a lot more efficient; need to delete old kubeconfig files too
       // first, remove all cluster entities from the Catalog
       let idx;
       while (
@@ -438,13 +493,17 @@ export class SyncManager extends Singleton {
       this.ipcMain.capture(
         'log',
         'SyncManager.updateClusters()',
-        `Adding ${newEntities.length} cluster entities to Catalog; dataCloud=${dataCloud}`
+        `Adding ${newSpecs.length} cluster entities to Catalog; dataCloud=${dataCloud}`
       );
 
       // then, add all the new ones
-      newEntities.forEach((entity) => {
+      newSpecs.forEach(({ entity }) => {
         this.catalogSource.push(entity);
       });
+
+      // finally, save the models in the store
+      // TODO[PRODX-22269]: not great that we're looping the same list (newSpecs) twice...
+      syncStore.clusters = newSpecs.map((spec) => spec.model);
 
       this.ipcMain.capture(
         'log',
@@ -454,6 +513,99 @@ export class SyncManager extends Singleton {
     });
     // NOTE: Promise.allSettled() does not fail
   }
+
+  /**
+   * Called whenever the `clouds` property of the CloudStore changes in some way
+   *  (shallow or deep).
+   * @param {Array<Cloud>} clouds Current/new CloudStore.clouds value (as configured
+   *  by the reaction()).
+   * @see https://mobx.js.org/reactions.html#reaction
+   */
+  onCloudStoreChange = (clouds) => {
+    const cloudStoreTokens = Object.values(clouds).reduce((acc, cloud) => {
+      acc[cloud.cloudUrl] = cloud.token;
+      return acc;
+    }, {});
+
+    if (!isEqual(this.cloudTokens, cloudStoreTokens)) {
+      this.ipcMain.capture(
+        'log',
+        'SyncManager.onCloudStoreChange()',
+        'CloudStore.clouds has changed: Updating DataClouds'
+      );
+
+      const { cloudUrlsToAdd, cloudUrlsToUpdate, cloudUrlsToRemove } =
+        this.triageCloudUrls(cloudStoreTokens);
+
+      this.updateStore({
+        cloudStoreTokens,
+        cloudUrlsToAdd,
+        cloudUrlsToUpdate,
+        cloudUrlsToRemove,
+      });
+
+      this.ipcMain.capture(
+        'log',
+        'SyncManager.onCloudStoreChange()',
+        'Done: DataClouds updated'
+      );
+    }
+  };
+
+  /**
+   * Called whenever properties of the SyncStore change (shallow or deep).
+   * @param {{
+   *   credentials: Array,
+   *   sshKeys: Array,
+   *   clusters: Array,
+   *   licenses: Array,
+   *   proxies: Array,
+   * }} state State of the SyncStore (value generated by configured reaction()).
+   * @see https://mobx.js.org/reactions.html#reaction
+   */
+  onSyncStoreChange = (state) => {
+    // TODO[PRODX-22269]: this type of update will need to coordinate with DataCloud data updates
+    this.ipcMain.capture(
+      'log',
+      'SyncManager.onSyncStoreChange()',
+      'SyncStore state has changed: Updating Catalog'
+    );
+
+    Object.keys(state).forEach((type) => {
+      const models = state[type];
+
+      // first, remove all entities from the Catalog of this type
+      let idx;
+      while (
+        (idx = this.catalogSource.findIndex((entity) => {
+          // NOTE: since it's our Catalog Source, it only contains our items, so we should
+          //  never encounter a case where there's no mapped property
+          const prop = kindToSyncStoreProp[entity.metadata.kind];
+          return type === prop;
+        })) >= 0
+      ) {
+        this.catalogSource.splice(idx, 1);
+      }
+
+      this.ipcMain.capture(
+        'log',
+        'SyncManager.onSyncStoreChange()',
+        `Adding ${models.length} ${type} entities to Catalog`
+      );
+
+      // then, add new entities into the Catalog
+      models.forEach((model) => {
+        const entity = this.mkEntity(model);
+        this.catalogSource.push(entity);
+      });
+    });
+
+    this.ipcMain.capture(
+      'log',
+      'SyncManager.onSyncStoreChange()',
+      'Done: Catalog updated'
+    );
+  };
 
   /**
    * Called to trigger an immediate sync of the specified Cloud if it's known and
@@ -501,10 +653,15 @@ export class SyncManager extends Singleton {
       )}] entities for dataCloud=${dataCloud}`
     );
 
-    // TODO[PRODX-22269]: make this a lot more efficient
+    // TODO[PRODX-22269]: make sync a lot more efficient instead of blind replace on every sync
     types.forEach((type) => {
+      const newModels = [];
       const newEntities = dataCloud.syncedNamespaces.flatMap((ns) =>
-        ns[type].map((apiType) => apiType.toEntity())
+        ns[type].map((apiType) => {
+          const model = apiType.toModel();
+          newModels.push(model);
+          return this.mkEntity(model);
+        })
       );
 
       // first, remove all entities from the Catalog of this type
@@ -528,6 +685,9 @@ export class SyncManager extends Singleton {
 
       // then, add all the new ones
       newEntities.forEach((entity) => this.catalogSource.push(entity));
+
+      // save the models in the store
+      syncStore[type] = newModels;
     });
 
     this.ipcMain.capture(

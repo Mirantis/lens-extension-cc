@@ -69,9 +69,9 @@ export class SshKey extends ApiObject {
    * @override
    */
   toModel() {
-    const entity = super.toModel();
+    const model = super.toModel();
 
-    return merge({}, entity, {
+    return merge({}, model, {
       metadata: {
         namespace: this.namespace.name,
         labels: {

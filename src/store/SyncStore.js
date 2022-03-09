@@ -25,19 +25,34 @@ export class SyncStore extends Common.Store.ExtensionStore {
   //  Lens gives the extension, but we don't know what it is until later
   // static defaultSavePath = null;
 
-  /** @member {Array} credentials List of entity objects that match `credentialEntityModelTs`. */
+  /**
+   * @member {Array} credentials List of Catalog Entity Models that match
+   *  `credentialEntityModelTs`.
+   */
   @observable credentials;
 
-  /** @member {Array} sshKeys List of entity objects that match `sshKeyEntityModelTs`. */
+  /**
+   * @member {Array} sshKeys List of Catalog Entity Models that match
+   *  `sshKeyEntityModelTs`.
+   */
   @observable sshKeys;
 
-  /** @member {Array} clusters List of entity objects that match `clusterEntityModelTs`. */
+  /**
+   * @member {Array} clusters List of Catalog Entity Models that match
+   *  `clusterEntityModelTs`.
+   */
   @observable clusters;
 
-  /** @member {Array} licenses List of entity objects that match `licenseEntityModelTs`. */
+  /**
+   * @member {Array} licenses List of Catalog Entity Models that match
+   *  `licenseEntityModelTs`.
+   */
   @observable licenses;
 
-  /** @member {Array} proxies List of entity objects that match `proxyEntityModelTs`. */
+  /**
+   * @member {Array} proxies List of Catalog Entity Models that match
+   *  `proxyEntityModelTs`.
+   */
   @observable proxies;
 
   static getDefaults() {
@@ -80,9 +95,23 @@ export class SyncStore extends Common.Store.ExtensionStore {
 
     const json = result.valid ? store : SyncStore.getDefaults();
 
+    logger.log(
+      'SyncStore.fromStore()',
+      `Updating store: ${Object.entries(json)
+        .map(([key, value]) => `${key}=${value.length}`)
+        .join(', ')}`
+    );
+
     Object.keys(json).forEach((key) => {
       this[key] = json[key];
     });
+
+    logger.log(
+      'SyncStore.fromStore()',
+      `Store updated: ${Object.entries(json)
+        .map(([key, value]) => `${key}=${value.length}`)
+        .join(', ')}`
+    );
   }
 
   toJSON() {
