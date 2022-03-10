@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo, useState } from 'react';
 import * as rtv from 'rtvjs';
-import { autorun } from 'mobx';
+import { reaction } from 'mobx';
 import { ProviderStore } from './ProviderStore';
 import { cloneDeepWith, isEqual } from 'lodash';
 import { cloudStore } from '../../store/CloudStore';
@@ -186,32 +186,42 @@ export const DataCloudProvider = function (props) {
 
   pr.setState = setState;
 
-  // autorun calls on any cloudStore update (to often)
-  autorun(() => {
-    // @type {{ [index: string]: string }} Map of Cloud URL to token for
-    //   the new (current) set of known Clouds stored on disk.
-    const cloudStoreTokens = Object.values(cloudStore.clouds).reduce(
-      (acc, cloud) => {
-        acc[cloud.cloudUrl] = cloud.token;
-        return acc;
-      },
-      {}
-    );
+  // @see https://mobx.js.org/reactions.html#reaction
+  reaction(
+    // reaction called on any `cloudStore.clouds` updates
+    () => cloudStore.clusters,
+    () => {
+      // @type {{ [index: string]: string }} Map of Cloud URL to token for
+      //   the new (current) set of known Clouds stored on disk.
+      const cloudStoreTokens = Object.values(cloudStore.clouds).reduce(
+        (acc, cloud) => {
+          acc[cloud.cloudUrl] = cloud.token;
+          return acc;
+        },
+        {}
+      );
 
-    // compare tokens from cloudStore.clouds and tokens in DataCloudProvider state
-    //  at previous change in context
-    if (!isEqual(pr.store.tokens, cloudStoreTokens)) {
-      const { cloudUrlsToAdd, cloudUrlsToUpdate, cloudUrlsToRemove } =
-        _triageCloudUrls(cloudStoreTokens);
+      // compare tokens from cloudStore.clouds and tokens in DataCloudProvider state
+      //  at previous change in context
+      if (!isEqual(pr.store.tokens, cloudStoreTokens)) {
+        const { cloudUrlsToAdd, cloudUrlsToUpdate, cloudUrlsToRemove } =
+          _triageCloudUrls(cloudStoreTokens);
 
-      _updateStore({
-        cloudStoreTokens,
-        cloudUrlsToAdd,
-        cloudUrlsToUpdate,
-        cloudUrlsToRemove,
-      });
+        _updateStore({
+          cloudStoreTokens,
+          cloudUrlsToAdd,
+          cloudUrlsToUpdate,
+          cloudUrlsToRemove,
+        });
+      }
+    },
+    {
+      // most likely the ClusterStore has been loaded already by the time this
+      //  provider is rendered for the first, so make sure we run this reaction
+      //  at least once right away
+      fireImmediately: true,
     }
-  });
+  );
 
   return <DataCloudContext.Provider value={value} {...props} />;
 };

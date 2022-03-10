@@ -61,6 +61,11 @@ export class CloudStore extends Common.Store.ExtensionStore {
 
     const json = result.valid ? store : CloudStore.getDefaults();
 
+    logger.log(
+      'CloudStore.fromStore()',
+      `Updating store: clouds=[${Object.keys(store.clouds).join(', ')}]`
+    );
+
     Object.keys(json).forEach((key) => {
       if (key === 'clouds') {
         // restore from a map of cloudUrl to JSON object -> into a map of cloudUrl
@@ -98,6 +103,11 @@ export class CloudStore extends Common.Store.ExtensionStore {
         this[key] = json[key];
       }
     });
+
+    logger.log(
+      'CloudStore.fromStore()',
+      `Store updated: clouds=[${Object.keys(store.clouds).join(', ')}]`
+    );
   }
 
   toJSON() {

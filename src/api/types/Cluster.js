@@ -346,7 +346,7 @@ export class Cluster extends ApiObject {
    * @override
    */
   toModel(kubeconfigPath) {
-    const entity = super.toModel();
+    const model = super.toModel();
 
     DEV_ENV && rtv.verify({ kubeconfigPath }, { kubeconfigPath: rtv.STRING });
 
@@ -375,7 +375,7 @@ export class Cluster extends ApiObject {
       }
     }
 
-    return merge({}, entity, {
+    return merge({}, model, {
       metadata: {
         namespace: this.namespace.name,
         labels,

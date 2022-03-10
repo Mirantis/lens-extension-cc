@@ -104,7 +104,7 @@ export const clusterEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
     //// CUSTOM PROPERTIES
 
     labels: [
-      // either it's a mgmt cluster and we no labels
+      // either it's a mgmt cluster and we have no labels
       rtv.HASH_MAP,
       { length: 0 },
 
@@ -113,27 +113,11 @@ export const clusterEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
       {
         $: {
           ...requiredLabelTs,
-          sshKey: [rtv.OPTIONAL, rtv.STRING, (value) => !!value], // either no label, or non-empty string
-          credential: [rtv.OPTIONAL, rtv.STRING, (value) => !!value], // either no label, or non-empty string
-          proxy: [rtv.OPTIONAL, rtv.STRING, (value) => !!value], // either no label, or non-empty string
-          license: [rtv.OPTIONAL, rtv.STRING, (value) => !!value], // either no label, or non-empty string
+          sshKey: [rtv.OPTIONAL, rtv.STRING, (value) => value !== ''], // either no label, or non-empty string
+          credential: [rtv.OPTIONAL, rtv.STRING, (value) => value !== ''], // either no label, or non-empty string
+          proxy: [rtv.OPTIONAL, rtv.STRING, (value) => value !== ''], // either no label, or non-empty string
+          license: [rtv.OPTIONAL, rtv.STRING, (value) => value !== ''], // either no label, or non-empty string
         },
-      },
-
-      // custom validator (called as long as at least one of the previous types
-      //  is a match) reinforces the mgmt cluster check based on the actual
-      //  properties of the entity being validated
-      (value, match, ts, { originalValue: entity, parent }) => {
-        if (entity.spec.isManagementCluster) {
-          if (Object.keys(parent.labels).length > 0) {
-            // mgmt cluster has no labels at this time
-            throw new Error(
-              `Unexpected labels for management cluster: [${Object.keys(
-                parent.labels
-              ).join(', ')}]`
-            );
-          }
-        }
       },
     ],
   },
