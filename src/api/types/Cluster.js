@@ -2,7 +2,7 @@ import * as rtv from 'rtvjs';
 import { get, merge } from 'lodash';
 import { Common } from '@k8slens/extensions';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
-import { ApiObject, apiObjectTs } from './ApiObject';
+import { Resource, resourceTs } from './Resource';
 import { Namespace } from './Namespace';
 import { Credential } from './Credential';
 import { SshKey } from './SshKey';
@@ -30,7 +30,7 @@ const getServerUrl = function (data) {
 /**
  * Typeset for an MCC Cluster object.
  */
-export const apiClusterTs = mergeRtvShapes({}, apiObjectTs, {
+export const clusterTs = mergeRtvShapes({}, resourceTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
   //  related to what we expect to find in order to create a `Credential` class instance
 
@@ -88,7 +88,7 @@ export const apiClusterTs = mergeRtvShapes({}, apiObjectTs, {
  * MCC cluster.
  * @class Cluster
  */
-export class Cluster extends ApiObject {
+export class Cluster extends Resource {
   /**
    * @constructor
    * @param {Object} params
@@ -97,7 +97,7 @@ export class Cluster extends ApiObject {
    * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
    */
   constructor({ data, namespace, cloud }) {
-    super({ data, cloud, typeset: apiClusterTs });
+    super({ data, cloud, typeset: clusterTs });
 
     // just testing for what is Cluster-specific
     DEV_ENV &&

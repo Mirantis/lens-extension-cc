@@ -1,7 +1,7 @@
 import * as rtv from 'rtvjs';
 import { merge, get } from 'lodash';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
-import { ApiObject, apiObjectTs } from './ApiObject';
+import { Resource, resourceTs } from './Resource';
 import { Namespace } from './Namespace';
 import { ProxyEntity, proxyEntityPhases } from '../../catalog/ProxyEntity';
 import { apiKinds } from '../apiConstants';
@@ -10,7 +10,7 @@ import { logString } from '../../util/logger';
 /**
  * Typeset for an MCC Proxy object.
  */
-export const apiProxyTs = mergeRtvShapes({}, apiObjectTs, {
+export const proxyTs = mergeRtvShapes({}, resourceTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
   //  related to what we expect to find in order to create a `Credential` class instance
 
@@ -35,7 +35,7 @@ export const apiProxyTs = mergeRtvShapes({}, apiObjectTs, {
  * @param {Object} data Raw cluster data payload from the API.
  * @param {Namespace} namespace Namespace to which this object belongs.
  */
-export class Proxy extends ApiObject {
+export class Proxy extends Resource {
   /**
    * @constructor
    * @param {Object} params
@@ -44,7 +44,7 @@ export class Proxy extends ApiObject {
    * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
    */
   constructor({ data, namespace, cloud }) {
-    super({ data, cloud, typeset: apiProxyTs });
+    super({ data, cloud, typeset: proxyTs });
 
     DEV_ENV &&
       rtv.verify(

@@ -2,7 +2,7 @@ import * as rtv from 'rtvjs';
 import { get, merge, pick } from 'lodash';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
 import { apiCredentialKinds } from '../apiConstants';
-import { ApiObject, apiObjectTs } from './ApiObject';
+import { Resource, resourceTs } from './Resource';
 import { Namespace } from './Namespace';
 import {
   CredentialEntity,
@@ -12,7 +12,7 @@ import {
 /**
  * Typeset for an MCC Credential object.
  */
-export const apiCredentialTs = mergeRtvShapes({}, apiObjectTs, {
+export const credentialTs = mergeRtvShapes({}, resourceTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
   //  related to what we expect to find in order to create a `Credential` class instance
 
@@ -31,7 +31,7 @@ export const apiCredentialTs = mergeRtvShapes({}, apiObjectTs, {
   },
 });
 
-export class Credential extends ApiObject {
+export class Credential extends Resource {
   /**
    * @constructor
    * @param {Object} params
@@ -46,8 +46,8 @@ export class Credential extends ApiObject {
       // NOTE: BYOCredential objects do not have a `status` for some reason
       typeset:
         data.kind === apiCredentialKinds.BYO_CREDENTIAL
-          ? pick(apiCredentialTs, ['metadata', 'spec'])
-          : apiCredentialTs,
+          ? pick(credentialTs, ['metadata', 'spec'])
+          : credentialTs,
     });
 
     // now we have check only for openStack. It's hard to predict other types

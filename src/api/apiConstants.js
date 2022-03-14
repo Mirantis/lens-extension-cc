@@ -5,10 +5,10 @@
 import { pick } from 'lodash';
 
 /**
- * Map of API entity type to name/endpoint used in MCC API calls.
+ * Map of API resource type to name/endpoint used in Kube API calls.
  * @type {{ [index: string], string }}
  */
-export const apiEntities = Object.freeze({
+export const apiResourceTypes = Object.freeze({
   CLUSTER: 'clusters',
   MACHINE: 'machines',
   PUBLIC_KEY: 'publickeys', // "SSH keys"
@@ -33,12 +33,12 @@ export const apiEntities = Object.freeze({
 });
 
 /**
- * Map of credential entity type to name/endpoint used in MCC API calls.
+ * Map of credential entity type to name/endpoint used in Kube API calls.
  * @type {{ [index: string], string }}
  */
-export const apiCredentialEntities = Object.freeze(
-  pick(apiEntities, [
-    // NOTE: these are KEYS from the apiEntities map
+export const apiCredentialTypes = Object.freeze(
+  pick(apiResourceTypes, [
+    // NOTE: these are KEYS from the apiResourceTypes map
     'OPENSTACK_CREDENTIAL',
     'AWS_CREDENTIAL',
     'EQUINIX_CREDENTIAL',
@@ -74,7 +74,7 @@ export const apiKinds = Object.freeze({
  */
 export const apiCredentialKinds = Object.freeze(
   pick(apiKinds, [
-    // NOTE: these are KEYS from the apiEntities map
+    // NOTE: these are KEYS from the apiResourceTypes map
     'AWS_CREDENTIAL',
     'AZURE_CREDENTIAL',
     'BYO_CREDENTIAL',

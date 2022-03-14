@@ -130,14 +130,18 @@ export const apiClient: Dict = {
     failedToGetToken: () => 'Failed to get token',
     failedToRefreshToken: () => 'Failed to refresh token',
     failedToLogout: () => 'Failed to log out',
-    failedUserPerms: (entity = 'unknown') =>
-      `Failed to get user permissions for "${entity}"`,
+    failedUserPerms: (resourceType = 'unknown') =>
+      `Failed to get user permissions for ${resourceType}`,
     failedProjectPerms: () => 'Failed to get user permissions for projects',
-    failedToGet: (entity = 'unknown') => `Failed to get ${entity}`,
-    failedToGetList: (entity = 'unknown') => `Failed to get ${entity} list`,
-    failedToCreate: (entity = 'unknown') => `Failed to create ${entity}`,
-    failedToUpdate: (entity = 'unknown') => `Failed to update ${entity}`,
-    failedToDelete: (entity = 'unknown') => `Failed to delete ${entity}`,
+    failedToGet: (resourceType = 'unknown') => `Failed to get ${resourceType}`,
+    failedToGetList: (resourceType = 'unknown') =>
+      `Failed to get ${resourceType} collection`,
+    failedToCreate: (resourceType = 'unknown') =>
+      `Failed to create ${resourceType}`,
+    failedToUpdate: (resourceType = 'unknown') =>
+      `Failed to update ${resourceType}`,
+    failedToDelete: (resourceType = 'unknown') =>
+      `Failed to delete ${resourceType}`,
   },
 };
 

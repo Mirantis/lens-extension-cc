@@ -1,7 +1,7 @@
 import * as rtv from 'rtvjs';
 import { merge } from 'lodash';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
-import { ApiObject, apiObjectTs } from './ApiObject';
+import { Resource, resourceTs } from './Resource';
 import { Namespace } from './Namespace';
 import { SshKeyEntity, sshKeyEntityPhases } from '../../catalog/SshKeyEntity';
 import { apiKinds } from '../apiConstants';
@@ -10,7 +10,7 @@ import { logString } from '../../util/logger';
 /**
  * Typeset for an MCC SSH Key object.
  */
-export const apiSshKeyTs = mergeRtvShapes({}, apiObjectTs, {
+export const sshKeyTs = mergeRtvShapes({}, resourceTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
   //  related to what we expect to find in order to create a `Credential` class instance
 
@@ -26,7 +26,7 @@ export const apiSshKeyTs = mergeRtvShapes({}, apiObjectTs, {
  * @param {Object} data Raw cluster data payload from the API.
  * @param {Namespace} namespace Namespace to which this object belongs.
  */
-export class SshKey extends ApiObject {
+export class SshKey extends Resource {
   /**
    * @constructor
    * @param {Object} params
@@ -35,7 +35,7 @@ export class SshKey extends ApiObject {
    * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
    */
   constructor({ data, namespace, cloud }) {
-    super({ data, cloud, typeset: apiSshKeyTs });
+    super({ data, cloud, typeset: sshKeyTs });
 
     DEV_ENV &&
       rtv.verify(

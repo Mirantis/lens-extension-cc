@@ -2,10 +2,11 @@ import { request } from '../../util/netUtil';
 import * as strings from '../../strings';
 
 /**
+ * Used for authenticating with a Kubernetes cluster (i.e. management cluster).
  * @param {string} baseUrl The MCC base URL (i.e. the URL to the MCC UI). Expected to
  *  be "http[s]://<host>" and to NOT end with a slash.
  */
-export class KubernetesAuthorizationClient {
+export class AuthorizationClient {
   static apiPrefix = 'apis/authorization.k8s.io/v1'; // no start nor end slashes
 
   constructor(baseUrl, token) {
@@ -24,7 +25,7 @@ export class KubernetesAuthorizationClient {
 
   request(url, { options = {}, expectedStatuses = [200], errorMessage }) {
     return request(
-      `${this.baseUrl}/${KubernetesAuthorizationClient.apiPrefix}/${url}`,
+      `${this.baseUrl}/${AuthorizationClient.apiPrefix}/${url}`,
       {
         credentials: 'same-origin',
         ...options,

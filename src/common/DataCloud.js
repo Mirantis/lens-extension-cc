@@ -10,7 +10,7 @@ import { Proxy } from '../api/types/Proxy';
 import { License } from '../api/types/License';
 import { logger } from '../util/logger';
 import { EventDispatcher } from './EventDispatcher';
-import { apiEntities, apiCredentialEntities } from '../api/apiConstants';
+import { apiResourceTypes, apiCredentialTypes } from '../api/apiConstants';
 
 export const DATA_CLOUD_EVENTS = Object.freeze({
   /**
@@ -84,24 +84,29 @@ const getErrorMessage = (error) => {
 };
 
 /**
- * Deserialize a raw list of API entity objects into `ApiObject` instances.
- * @param {string} entity API entity name to fetch from the `apiConstants.apiEntities` enum.
- * @param {Object} body Data response from `/list/{entity}` API.
+ * Deserialize a raw list of API resources into `Resource` instances.
+ * @param {string} resourceType API resourceType name to fetch from the `apiConstants.apiResourceTypes` enum.
+ * @param {Object} body Data response from `/list/{resourceType}` API.
  * @param {Namespace} [namespace] The related Namespace; `undefined` if fetching
- *  namespaces themselves (i.e. `entity === apiEntities.NAMESPACE`).
- * @param {(params: { data: Object, namespace?: Namespace }) => ApiObject} params.create Function
- *  called to create new instance of an `ApiObject`-based class that represents the API entity.
- *  - `data` is the raw object returned from the API for the entity
+ *  namespaces themselves (i.e. `resourceType === apiResourceTypes.NAMESPACE`).
+ * @param {(params: { data: Object, namespace?: Namespace }) => Resource} params.create Function
+ *  called to create new instance of an `Resource`-based class that represents the API resourceType.
+ *  - `data` is the raw object returned from the API for the resourceType
  *  - `namespace` is the related Namespace (`undefined` when fetching namespaces themselves
- *      with `entity === apiEntities.NAMESPACE`)
- * @returns {Array<ApiObject>} Array of API objects. Empty list if none. Any
+ *      with `resourceType === apiResourceTypes.NAMESPACE`)
+ * @returns {Array<Resource>} Array of API objects. Empty list if none. Any
  *  item that can't be deserialized is ignored and not returned in the list.
  */
-const _deserializeEntityList = function (entity, body, namespace, create) {
+const _deserializeCollection = function (
+  resourceType,
+  body,
+  namespace,
+  create
+) {
   if (!body || !Array.isArray(body.items)) {
     logger.error(
-      'DataCloud._deserializeEntityList()',
-      `Failed to parse "${entity}" payload: Unexpected data format`
+      'DataCloud._deserializeCollection()',
+      `Failed to parse "${resourceType}" collection payload: Unexpected data format`
     );
     return [];
   }
@@ -112,8 +117,8 @@ const _deserializeEntityList = function (entity, body, namespace, create) {
         return create({ data, namespace });
       } catch (err) {
         logger.warn(
-          'DataCloud._deserializeEntityList()',
-          `Ignoring "${entity}" entity ${idx}${
+          'DataCloud._deserializeCollection()',
+          `Ignoring "${resourceType}" resource type ${idx}${
             namespace ? ` from namespace "${namespace.name}"` : ''
           }: Could not be deserialized, error="${getErrorMessage(err)}"`,
           err
@@ -125,39 +130,40 @@ const _deserializeEntityList = function (entity, body, namespace, create) {
 };
 
 /**
- * [ASYNC] Best-try to get all existing entities of a given type from the management cluster,
+ * [ASYNC] Best-try to get all existing resources of a given type from the management cluster,
  *  for each namespace specified.
  * @param {Object} params
- * @param {string} params.entity API entity name to fetch from the `apiConstants.apiEntities` enum.
+ * @param {string} params.resourceType API resource type to fetch (one of
+ *  `apiConstants.apiResourceTypes` enum values).
  * @param {Cloud} params.cloud An Cloud object. Tokens will be updated/cleared
  *  if necessary.
- * @param {Array<Namespace>} [params.namespaces] List of namespaces in which to get the entities.
- *  __REQUIRED__ unless `entity === apiEntities.NAMESPACE`, in which case this parameter is
+ * @param {Array<Namespace>} [params.namespaces] List of namespaces in which to get the resources.
+ *  __REQUIRED__ unless `resourceType === apiResourceTypes.NAMESPACE`, in which case this parameter is
  *  ignored because we're fetching the namespaces themselves.
- * @param {(params: { data: Object, namespace?: Namespace }) => ApiObject} params.create Function
- *  called to create new instance of an `ApiObject`-based class that represents the API entity.
- *  - `data` is the raw object returned from the API for the entity
+ * @param {(params: { data: Object, namespace?: Namespace }) => Resource} params.create Function
+ *  called to create new instance of an `Resource`-based class that represents the API resourceType.
+ *  - `data` is the raw object returned from the API for the resourceType
  *  - `namespace` is the related Namespace (`undefined` when fetching namespaces themselves
- *      with `entity === apiEntities.NAMESPACE`)
+ *      with `resourceType === apiResourceTypes.NAMESPACE`)
  * @returns {Promise<Object>} Never fails, always resolves in
- *  `{ entities: { [index: string]: Array<ApiObject> }, tokensRefreshed: boolean }`,
- *  where `entities` is a map of namespace name to list of `ApiObject`-based instances
- *  as returned by `create()`. If an error occurs trying to get an entity or deserialize
+ *  `{ resources: { [index: string]: Array<Resource> }, tokensRefreshed: boolean }`,
+ *  where `resources` is a map of namespace name to list of `Resource`-based instances
+ *  as returned by `create()`. If an error occurs trying to get an resourceType or deserialize
  *  it, it is ignored/skipped.
  *
- *  NOTE: If `entity === apiEntities.NAMESPACE` (i.e. fetching namespaces themselves),
- *   `entities` is a map with a single key which is the `apiEntities.NAMESPACE` entity
+ *  NOTE: If `resourceType === apiResourceTypes.NAMESPACE` (i.e. fetching namespaces themselves),
+ *   `resources` is a map with a single key which is the `apiResourceTypes.NAMESPACE` type
  *   mapped to the list of all namespaces in the Cloud.
  */
-const _fetchEntityList = async function ({
-  entity,
+const _fetchCollection = async function ({
+  resourceType,
   cloud,
   namespaces,
   create,
 }) {
   rtv.verify(
-    { entity },
-    { entity: [rtv.STRING, { oneOf: Object.values(apiEntities) }] }
+    { resourceType: resourceType },
+    { resourceType: [rtv.STRING, { oneOf: Object.values(apiResourceTypes) }] }
   );
 
   let tokensRefreshed = false;
@@ -174,18 +180,18 @@ const _fetchEntityList = async function ({
     if (error) {
       // if it's a 403 "access denied" issue, just log it but don't flag it
       //  as an error since there are various mechianisms that could prevent
-      //  a user from accessing certain entities in the API (disabled components,
+      //  a user from accessing certain resources in the API (disabled components,
       //  permissions, etc.)
       logger[status === 403 ? 'log' : 'error'](
-        'DataCloud._fetchEntityList',
+        'DataCloud._fetchCollection',
         `${
           status === 403 ? '(IGNORED: Access denied) ' : ''
-        }Failed to get "${entity}" entities, namespace=${
-          namespace?.name || namespace // undefined if `entity === apiEntities.NAMESPACE`
+        }Failed to get "${resourceType}" resources, namespace=${
+          namespace?.name || namespace // undefined if `resourceType === apiResourceTypes.NAMESPACE`
         }, status=${status}, error="${getErrorMessage(error)}"`
       );
     } else {
-      items = _deserializeEntityList(entity, body, namespace, create);
+      items = _deserializeCollection(resourceType, body, namespace, create);
     }
 
     return {
@@ -195,11 +201,11 @@ const _fetchEntityList = async function ({
   };
 
   let results;
-  if (entity === apiEntities.NAMESPACE) {
+  if (resourceType === apiResourceTypes.NAMESPACE) {
     const result = await cloudRequest({
       cloud,
       method: 'list',
-      entity: apiEntities.NAMESPACE,
+      resourceType: apiResourceTypes.NAMESPACE,
     });
     results = [processResult(result)];
   } else {
@@ -208,7 +214,7 @@ const _fetchEntityList = async function ({
         const result = await cloudRequest({
           cloud,
           method: 'list',
-          entity,
+          resourceType,
           args: { namespaceName: namespace.name }, // extra args
         });
 
@@ -220,11 +226,11 @@ const _fetchEntityList = async function ({
   // NOTE: the loop above ensures that there are no error results; all items in
   //  `results` have the same shape
 
-  let entities;
-  if (entity === apiEntities.NAMESPACE) {
-    entities = { [apiEntities.NAMESPACE]: results[0].items };
+  let resources;
+  if (resourceType === apiResourceTypes.NAMESPACE) {
+    resources = { [apiResourceTypes.NAMESPACE]: results[0].items };
   } else {
-    entities = results.reduce((acc, val) => {
+    resources = results.reduce((acc, val) => {
       const {
         namespace: { name: nsName },
         items,
@@ -234,7 +240,7 @@ const _fetchEntityList = async function ({
     }, {});
   }
 
-  return { entities, tokensRefreshed };
+  return { resources, tokensRefreshed };
 };
 
 /**
@@ -250,9 +256,9 @@ const _fetchEntityList = async function ({
  */
 const _fetchCredentials = async function (cloud, namespaces) {
   const results = await Promise.all(
-    Object.values(apiCredentialEntities).map((entity) =>
-      _fetchEntityList({
-        entity,
+    Object.values(apiCredentialTypes).map((resourceType) =>
+      _fetchCollection({
+        resourceType,
         cloud,
         namespaces,
         create: ({ data, namespace }) =>
@@ -261,19 +267,19 @@ const _fetchCredentials = async function (cloud, namespaces) {
     )
   );
 
-  // NOTE: `results` will be an array of `{ entities, tokensRefreshed }` because of each credential
+  // NOTE: `results` will be an array of `{ resources, tokensRefreshed }` because of each credential
   //  type that was retrieved for each namespace
-  // NOTE: _fetchEntityList() ensures there are no error results; all items in
+  // NOTE: _fetchCollection() ensures there are no error results; all items in
   //  `results` have the same shape
 
   let tokensRefreshed = false;
   const credentials = results.reduce((acc, result) => {
-    const { entities, tokensRefreshed: refreshed } = result;
+    const { resources, tokensRefreshed: refreshed } = result;
 
     tokensRefreshed = tokensRefreshed || refreshed;
 
-    Object.keys(entities).forEach((nsName) => {
-      const creds = entities[nsName];
+    Object.keys(resources).forEach((nsName) => {
+      const creds = resources[nsName];
       if (acc[nsName]) {
         acc[nsName] = [...acc[nsName], ...creds];
       } else {
@@ -299,8 +305,8 @@ const _fetchCredentials = async function (cloud, namespaces) {
  *  any license, it will be ignored/skipped.
  */
 const _fetchLicenses = async function (cloud, namespaces) {
-  const { entities: licenses, tokensRefreshed } = await _fetchEntityList({
-    entity: apiEntities.RHEL_LICENSE,
+  const { resources: licenses, tokensRefreshed } = await _fetchCollection({
+    resourceType: apiResourceTypes.RHEL_LICENSE,
     cloud,
     namespaces,
     create: ({ data, namespace }) => new License({ data, namespace, cloud }),
@@ -320,8 +326,8 @@ const _fetchLicenses = async function (cloud, namespaces) {
  *  any proxy, it will be ignored/skipped.
  */
 const _fetchProxies = async function (cloud, namespaces) {
-  const { entities: proxies, tokensRefreshed } = await _fetchEntityList({
-    entity: apiEntities.PROXY,
+  const { resources: proxies, tokensRefreshed } = await _fetchCollection({
+    resourceType: apiResourceTypes.PROXY,
     cloud,
     namespaces,
     create: ({ data, namespace }) => new Proxy({ data, namespace, cloud }),
@@ -341,8 +347,8 @@ const _fetchProxies = async function (cloud, namespaces) {
  *  any SSH key, it will be ignored/skipped.
  */
 const _fetchSshKeys = async function (cloud, namespaces) {
-  const { entities: sshKeys, tokensRefreshed } = await _fetchEntityList({
-    entity: apiEntities.PUBLIC_KEY,
+  const { resources: sshKeys, tokensRefreshed } = await _fetchCollection({
+    resourceType: apiResourceTypes.PUBLIC_KEY,
     cloud,
     namespaces,
     create: ({ data, namespace }) => new SshKey({ data, namespace, cloud }),
@@ -362,8 +368,8 @@ const _fetchSshKeys = async function (cloud, namespaces) {
  *  any cluster, it will be ignored/skipped.
  */
 const _fetchClusters = async function (cloud, namespaces) {
-  const { entities: clusters, tokensRefreshed } = await _fetchEntityList({
-    entity: apiEntities.CLUSTER,
+  const { resources: clusters, tokensRefreshed } = await _fetchCollection({
+    resourceType: apiResourceTypes.CLUSTER,
     cloud,
     namespaces,
     create: ({ data, namespace }) => new Cluster({ data, namespace, cloud }),
@@ -384,10 +390,10 @@ const _fetchNamespaces = async function (cloud) {
   //  about this DataCloud, we always need to show the actual total, not just
   //  what we're syncing
   const {
-    entities: { [apiEntities.NAMESPACE]: namespaces },
+    resources: { [apiResourceTypes.NAMESPACE]: namespaces },
     tokensRefreshed,
-  } = await _fetchEntityList({
-    entity: apiEntities.NAMESPACE,
+  } = await _fetchCollection({
+    resourceType: apiResourceTypes.NAMESPACE,
     cloud,
     create: ({ data }) => new Namespace({ data, cloud }),
   });

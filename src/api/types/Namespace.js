@@ -1,6 +1,6 @@
 import * as rtv from 'rtvjs';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
-import { ApiObject, apiObjectTs } from './ApiObject';
+import { Resource, resourceTs } from './Resource';
 import { Cluster } from './Cluster';
 import { Credential } from './Credential';
 import { SshKey } from './SshKey';
@@ -10,7 +10,7 @@ import { License } from './License';
 /**
  * Typeset for an MCC Namespace object.
  */
-export const apiNamespaceTs = mergeRtvShapes({}, apiObjectTs, {
+export const namespaceTs = mergeRtvShapes({}, resourceTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
   //  related to what we expect to find in order to create a `Credential` class instance
 
@@ -18,16 +18,16 @@ export const apiNamespaceTs = mergeRtvShapes({}, apiObjectTs, {
     phase: rtv.STRING,
   },
 });
-delete apiNamespaceTs.kind; // Namespace API objects don't have `kind` property for some reason
+delete namespaceTs.kind; // Namespace API objects don't have `kind` property for some reason
 
 /**
  * MCC project/namespace.
  * @class Namespace
  * @param {Object} data Raw namespace data payload from the API.
  */
-export class Namespace extends ApiObject {
+export class Namespace extends Resource {
   constructor({ data, cloud }) {
-    super({ data, cloud, typeset: apiNamespaceTs });
+    super({ data, cloud, typeset: namespaceTs });
 
     let _clusters = [];
     let _sshKeys = [];

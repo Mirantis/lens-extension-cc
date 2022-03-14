@@ -6,7 +6,7 @@ import { logString } from '../../util/logger';
 /**
  * Typeset for a basic MCC API Object.
  */
-export const apiObjectTs = {
+export const resourceTs = {
   // NOTE: this is not intended to be fully-representative; we only list the properties
   //  related to what we expect to find in order to create a `Credential` class instance
 
@@ -22,11 +22,11 @@ export const apiObjectTs = {
 };
 
 /**
- * MCC generic API object. This is essentially a standard kube object spec with some
+ * Generic Kubernetes API resource. This is essentially a standard kube object spec with some
  *  MCC-specific extensions.
- * @class ApiObject
+ * @class Resource
  */
-export class ApiObject {
+export class Resource {
   /**
    * @constructor
    * @param {Object} params
@@ -123,8 +123,8 @@ export class ApiObject {
       this.cloud?.cloudUrl
     )}`;
 
-    if (Object.getPrototypeOf(this).constructor === ApiObject) {
-      return `{ApiObject ${propStr}}`;
+    if (Object.getPrototypeOf(this).constructor === Resource) {
+      return `{Resource ${propStr}}`;
     }
 
     // this is actually an extended class instance, so return only the properties

@@ -1,7 +1,7 @@
 import * as rtv from 'rtvjs';
 import { merge } from 'lodash';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
-import { ApiObject, apiObjectTs } from './ApiObject';
+import { Resource, resourceTs } from './Resource';
 import { Namespace } from './Namespace';
 import {
   LicenseEntity,
@@ -13,7 +13,7 @@ import { logString } from '../../util/logger';
 /**
  * Typeset for an MCC License object.
  */
-export const apiLicenseTs = mergeRtvShapes({}, apiObjectTs, {
+export const licenseTs = mergeRtvShapes({}, resourceTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
   //  related to what we expect to find in order to create a `Credential` class instance
 
@@ -26,7 +26,7 @@ export const apiLicenseTs = mergeRtvShapes({}, apiObjectTs, {
  * @param {Object} data Raw cluster data payload from the API.
  * @param {Namespace} namespace Namespace to which this object belongs.
  */
-export class License extends ApiObject {
+export class License extends Resource {
   /**
    * @constructor
    * @param {Object} params
@@ -35,7 +35,7 @@ export class License extends ApiObject {
    * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
    */
   constructor({ data, namespace, cloud }) {
-    super({ data, cloud, typeset: apiLicenseTs });
+    super({ data, cloud, typeset: licenseTs });
 
     DEV_ENV &&
       rtv.verify(

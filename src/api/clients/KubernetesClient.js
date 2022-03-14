@@ -1,8 +1,11 @@
 import { request } from '../../util/netUtil';
 import * as strings from '../../strings';
-import { apiEntities } from '../apiConstants';
+import { apiResourceTypes } from '../apiConstants';
+import { logString } from '../../util/logger';
 
 /**
+ * Used to work with Kubernetes cluster-wide resources (i.e. not in a namespace) resources
+ *  such as namespaces.
  * @param {string} baseUrl The MCC base URL (i.e. the URL to the MCC UI). Expected to
  *  be "http[s]://<host>" and to NOT end with a slash.
  */
@@ -38,42 +41,40 @@ export class KubernetesClient {
     );
   }
 
-  list(entity, { namespaceName, entityDescriptionName } = {}) {
+  list(resourceType, { namespaceName } = {}) {
     const url = {
-      [apiEntities.NAMESPACE]: entity,
-      [apiEntities.METAL_CREDENTIAL]: `${apiEntities.NAMESPACE}/${namespaceName}/${entity}`,
-      [apiEntities.EVENT]: `${apiEntities.NAMESPACE}/${namespaceName}/${entity}`,
+      [apiResourceTypes.NAMESPACE]: resourceType,
+      [apiResourceTypes.METAL_CREDENTIAL]: `${apiResourceTypes.NAMESPACE}/${namespaceName}/${resourceType}`,
+      [apiResourceTypes.EVENT]: `${apiResourceTypes.NAMESPACE}/${namespaceName}/${resourceType}`,
     };
-    return this.request(url[entity], {
-      errorMessage: strings.apiClient.error.failedToGet(
-        entityDescriptionName || entity
-      ),
+    return this.request(url[resourceType], {
+      errorMessage: strings.apiClient.error.failedToGet(resourceType),
     });
   }
 
-  create(entity, { namespaceName, config, entityDescriptionName } = {}) {
+  create(resourceType, { namespaceName, spec } = {}) {
     const url = {
-      [apiEntities.NAMESPACE]: entity,
-      [apiEntities.METAL_CREDENTIAL]: `${apiEntities.NAMESPACE}/${namespaceName}/${entity}`,
+      [apiResourceTypes.NAMESPACE]: resourceType,
+      [apiResourceTypes.METAL_CREDENTIAL]: `${apiResourceTypes.NAMESPACE}/${namespaceName}/${resourceType}`,
     };
-    return this.request(url[entity], {
-      options: { method: 'POST', body: JSON.stringify(config) },
+    return this.request(url[resourceType], {
+      options: { method: 'POST', body: JSON.stringify(spec) },
       expectedStatuses: [201],
       errorMessage: strings.apiClient.error.failedToCreate(
-        `${entityDescriptionName || entity} "${config.metadata.name}"`
+        `${logString(resourceType)} "${spec.metadata.name}"`
       ),
     });
   }
 
-  delete(entity, { namespaceName, name, entityDescriptionName } = {}) {
+  delete(resourceType, { namespaceName, name } = {}) {
     const url = {
-      [apiEntities.NAMESPACE]: `${entity}/${name}`,
-      [apiEntities.METAL_CREDENTIAL]: `${apiEntities.NAMESPACE}/${namespaceName}/${entity}/${name}`,
+      [apiResourceTypes.NAMESPACE]: `${resourceType}/${name}`,
+      [apiResourceTypes.METAL_CREDENTIAL]: `${apiResourceTypes.NAMESPACE}/${namespaceName}/${resourceType}/${name}`,
     };
-    return this.request(url[entity], {
+    return this.request(url[resourceType], {
       options: { method: 'DELETE' },
       errorMessage: strings.apiClient.error.failedToDelete(
-        `${entityDescriptionName || entity} "${name}"`
+        `${logString(resourceType)} "${name}"`
       ),
     });
   }

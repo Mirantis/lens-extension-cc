@@ -4,35 +4,35 @@
 
 import * as strings from '../strings';
 import { ApiClient } from './clients/ApiClient';
-import { KubernetesAuthorizationClient } from './clients/KubernetesAuthorizationClient';
+import { AuthorizationClient } from './clients/AuthorizationClient';
 import { KubernetesClient } from './clients/KubernetesClient';
-import { KubernetesEntityClient } from './clients/KubernetesEntityClient';
-import { logger } from '../util/logger';
-import { apiEntities } from './apiConstants';
+import { ResourceClient } from './clients/ResourceClient';
+import { logger, logString } from '../util/logger';
+import { apiResourceTypes } from './apiConstants';
 
-const entityToClient = {
-  [apiEntities.CLUSTER]: KubernetesEntityClient,
-  [apiEntities.MACHINE]: KubernetesEntityClient,
-  [apiEntities.PUBLIC_KEY]: KubernetesEntityClient, // SSH keys
-  [apiEntities.NAMESPACE]: KubernetesClient,
-  [apiEntities.CREDENTIAL]: KubernetesClient,
-  [apiEntities.OPENSTACK_CREDENTIAL]: KubernetesEntityClient,
-  [apiEntities.AWS_CREDENTIAL]: KubernetesEntityClient,
-  [apiEntities.EQUINIX_CREDENTIAL]: KubernetesEntityClient,
-  [apiEntities.VSPHERE_CREDENTIAL]: KubernetesEntityClient,
-  [apiEntities.AZURE_CREDENTIAL]: KubernetesEntityClient,
-  [apiEntities.BYO_CREDENTIAL]: KubernetesEntityClient,
-  [apiEntities.METAL_CREDENTIAL]: KubernetesClient,
-  [apiEntities.EVENT]: KubernetesClient,
-  [apiEntities.CLUSTER_RELEASE]: KubernetesEntityClient,
-  [apiEntities.KAAS_RELEASE]: KubernetesEntityClient,
-  [apiEntities.OPENSTACK_RESOURCE]: KubernetesEntityClient,
-  [apiEntities.AWS_RESOURCE]: KubernetesEntityClient,
-  [apiEntities.AUTHORIZATION]: KubernetesAuthorizationClient,
-  [apiEntities.METAL_HOST]: KubernetesEntityClient,
-  [apiEntities.CEPH_CLUSTER]: KubernetesEntityClient,
-  [apiEntities.RHEL_LICENSE]: KubernetesEntityClient,
-  [apiEntities.PROXY]: KubernetesEntityClient,
+const typeToClient = {
+  [apiResourceTypes.CLUSTER]: ResourceClient,
+  [apiResourceTypes.MACHINE]: ResourceClient,
+  [apiResourceTypes.PUBLIC_KEY]: ResourceClient, // SSH keys
+  [apiResourceTypes.NAMESPACE]: KubernetesClient,
+  [apiResourceTypes.CREDENTIAL]: KubernetesClient,
+  [apiResourceTypes.OPENSTACK_CREDENTIAL]: ResourceClient,
+  [apiResourceTypes.AWS_CREDENTIAL]: ResourceClient,
+  [apiResourceTypes.EQUINIX_CREDENTIAL]: ResourceClient,
+  [apiResourceTypes.VSPHERE_CREDENTIAL]: ResourceClient,
+  [apiResourceTypes.AZURE_CREDENTIAL]: ResourceClient,
+  [apiResourceTypes.BYO_CREDENTIAL]: ResourceClient,
+  [apiResourceTypes.METAL_CREDENTIAL]: KubernetesClient,
+  [apiResourceTypes.EVENT]: KubernetesClient,
+  [apiResourceTypes.CLUSTER_RELEASE]: ResourceClient,
+  [apiResourceTypes.KAAS_RELEASE]: ResourceClient,
+  [apiResourceTypes.OPENSTACK_RESOURCE]: ResourceClient,
+  [apiResourceTypes.AWS_RESOURCE]: ResourceClient,
+  [apiResourceTypes.AUTHORIZATION]: AuthorizationClient,
+  [apiResourceTypes.METAL_HOST]: ResourceClient,
+  [apiResourceTypes.CEPH_CLUSTER]: ResourceClient,
+  [apiResourceTypes.RHEL_LICENSE]: ResourceClient,
+  [apiResourceTypes.PROXY]: ResourceClient,
 };
 
 /**
@@ -126,17 +126,17 @@ export async function cloudLogout(cloud) {
  * @param {Object} options
  * @param {Cloud} options.cloud An Cloud object. NOTE: This instance will be UPDATED
  *  with new tokens if the token is expired and successfully refreshed.
- * @param {string} options.method Name of the method to call on the `entity`.
- * @param {string} options.entity One of the keys from `entityToClient`, the API entity
- *  on which to call the `method`.
- * @param {Object} [options.args] Optional arguments for the `method` on the `entity`.
+ * @param {string} options.method Name of the method to call on the `resourceType`.
+ * @param {string} options.resourceType One of the keys (i.e. API resource types) from
+ *  the `typeToClient` map. This is the API resource type on which to call the `method`.
+ * @param {Object} [options.args] Optional arguments for the `method` on the `resourceType`.
  * @returns {Object} If successful, `{body: Object, tokensRefreshed: boolean, cloud: Cloud}`;
  *  otherwise, `{error: string, status: number, cloud: Cloud}`. `tokensRefreshed` is true if
  *  the cloud's access token had expired and was successfully refreshed during the process
  *  of making the request. In either case, `cloud` is a reference to the original `cloud`
  *  given to make the request.
  */
-export async function cloudRequest({ cloud, method, entity, args }) {
+export async function cloudRequest({ cloud, method, resourceType, args }) {
   // NOTE: it's useless to fetch if we don't have a token, or we can't refresh it
   if (!cloud.connected) {
     cloud.resetTokens();
@@ -147,13 +147,11 @@ export async function cloudRequest({ cloud, method, entity, args }) {
     };
   }
 
-  const Client = entityToClient[entity];
+  const Client = typeToClient[resourceType];
   if (!Client) {
     return {
       cloud,
-      error: `Unknown or unmapped entity ${
-        typeof entity === 'string' ? `"${entity}"` : entity
-      }`,
+      error: `Unknown or unmapped resourceType=${logString(resourceType)}`,
       status: 0,
     };
   }
@@ -161,8 +159,8 @@ export async function cloudRequest({ cloud, method, entity, args }) {
   let tokensRefreshed = false;
 
   // the first attempt to fetch
-  let k8sClient = new Client(cloud.cloudUrl, cloud.token, entity);
-  let { response, error, body } = await k8sClient[method](entity, args);
+  let k8sClient = new Client(cloud.cloudUrl, cloud.token, resourceType);
+  let { response, error, body } = await k8sClient[method](resourceType, args);
 
   if (response && response.status === 401) {
     // assume token is expired, try to refresh
@@ -172,8 +170,8 @@ export async function cloudRequest({ cloud, method, entity, args }) {
     }
 
     // try to fetch again with updated token
-    k8sClient = new Client(cloud.cloudUrl, cloud.token, entity);
-    ({ response, error, body } = await k8sClient[method](entity, args));
+    k8sClient = new Client(cloud.cloudUrl, cloud.token, resourceType);
+    ({ response, error, body } = await k8sClient[method](resourceType, args));
   }
 
   return error
