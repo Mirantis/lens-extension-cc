@@ -5,10 +5,10 @@ import { Resource, resourceTs } from './Resource';
 import { Namespace } from './Namespace';
 import { SshKeyEntity, sshKeyEntityPhases } from '../../catalog/SshKeyEntity';
 import { apiKinds } from '../apiConstants';
-import { logString } from '../../util/logger';
+import { logValue } from '../../util/logger';
 
 /**
- * Typeset for an MCC SSH Key object.
+ * Typeset for an MCC SSH Key API resource.
  */
 export const sshKeyTs = mergeRtvShapes({}, resourceTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
@@ -21,10 +21,8 @@ export const sshKeyTs = mergeRtvShapes({}, resourceTs, {
 });
 
 /**
- * MCC ssh key.
+ * MCC ssh key API resource.
  * @class SshKey
- * @param {Object} data Raw cluster data payload from the API.
- * @param {Namespace} namespace Namespace to which this object belongs.
  */
 export class SshKey extends Resource {
   /**
@@ -98,7 +96,7 @@ export class SshKey extends Resource {
 
   /** @returns {string} A string representation of this instance for logging/debugging. */
   toString() {
-    const propStr = `${super.toString()}, namespace: ${logString(
+    const propStr = `${super.toString()}, namespace: ${logValue(
       this.namespace.name
     )}, publicKey: "${this.publicKey.slice(0, 15)}..${this.publicKey.slice(
       -15

@@ -5,10 +5,10 @@ import { Resource, resourceTs } from './Resource';
 import { Namespace } from './Namespace';
 import { ProxyEntity, proxyEntityPhases } from '../../catalog/ProxyEntity';
 import { apiKinds } from '../apiConstants';
-import { logString } from '../../util/logger';
+import { logValue } from '../../util/logger';
 
 /**
- * Typeset for an MCC Proxy object.
+ * Typeset for an MCC Proxy API resource.
  */
 export const proxyTs = mergeRtvShapes({}, resourceTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
@@ -30,10 +30,8 @@ export const proxyTs = mergeRtvShapes({}, resourceTs, {
 });
 
 /**
- * MCC proxy.
+ * MCC proxy API resource.
  * @class Proxy
- * @param {Object} data Raw cluster data payload from the API.
- * @param {Namespace} namespace Namespace to which this object belongs.
  */
 export class Proxy extends Resource {
   /**
@@ -123,11 +121,9 @@ export class Proxy extends Resource {
 
   /** @returns {string} A string representation of this instance for logging/debugging. */
   toString() {
-    const propStr = `${super.toString()}, namespace: ${logString(
+    const propStr = `${super.toString()}, namespace: ${logValue(
       this.namespace.name
-    )}, http: ${logString(this.httpProxy)}, https: ${logString(
-      this.httpsProxy
-    )}`;
+    )}, http: ${logValue(this.httpProxy)}, https: ${logValue(this.httpsProxy)}`;
 
     if (Object.getPrototypeOf(this).constructor === Proxy) {
       return `{Proxy ${propStr}}`;

@@ -38,13 +38,22 @@ export const logger = (function () {
 })();
 
 /**
- * Formats a string value for logging.
- * @param {string} [str] A string value which may not be defined.
+ * Formats a value for logging.
+ * @param {any} [value] A value which may not be defined.
  * @returns {string} Always returns a string. If it's an actual string, empty or
  *  not, the value is returned in double quotes, `"foo"`. If it's null/undefined,
  *  it's returned as-is and string-cast, which will be the string `null` or
- *  `undefined`.
+ *  `undefined`. If it's an array, it's returned as `"[...]"`. Otherwise, it's just
+ *  case to a string.
  */
-export const logString = function (str) {
-  return `${typeof str === 'string' ? `"${str}"` : str}`;
+export const logValue = function (value) {
+  if (typeof value === 'string') {
+    return `"${value}"`;
+  }
+
+  if (Array.isArray(value)) {
+    return `[${value.map(logValue).join(', ')}]`; // recursive
+  }
+
+  return `${value}`; // cast to string and we get what we get
 };

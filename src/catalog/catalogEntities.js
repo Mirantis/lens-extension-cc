@@ -2,11 +2,24 @@
 // Generic things related to Catalog Entities in Lens
 //
 
+import path from 'path';
 import * as rtv from 'rtvjs';
+import { Common } from '@k8slens/extensions';
 import * as consts from '../constants';
-import { logger, logString } from '../util/logger';
+import { logger, logValue } from '../util/logger';
 import { mergeRtvShapes } from '../util/mergeRtvShapes';
 import { apiKinds, apiCredentialKinds } from '../api/apiConstants';
+
+const {
+  Catalog: { CatalogEntity },
+} = Common;
+
+/**
+ * Name of the sub directory in the Lens-designated "extension storage" directory
+ *  where kubeConfig files are written.
+ * @type {string}
+ */
+export const KUBECONFIG_DIR_NAME = 'kubeconfigs';
 
 /**
  * Typeset representing the required labels for all entity types (except a mgmt
@@ -45,6 +58,7 @@ export const catalogEntityModelTs = {
     // can also contain any other custom properties as `name: value` pairs
 
     kind: apiKindTs,
+    resourceVersion: rtv.STRING,
 
     // enough info to relate this entity to a namespace in a Cloud in `CloudStore.clouds`
     //  if necessary
@@ -124,7 +138,12 @@ export const clusterEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
 
   // based on Lens `KubernetesClusterSpec` type
   spec: {
-    kubeconfigPath: rtv.STRING, // absolute path
+    // absolute path that includes a directory named `KUBECONFIG_DIR_NAME` taking into account
+    kubeconfigPath: [
+      rtv.STRING,
+      (v) => !!v.match(new RegExp(`(\\/|\\\\)${KUBECONFIG_DIR_NAME}\\1`)),
+    ],
+
     kubeconfigContext: rtv.STRING,
     icon: [
       rtv.OPTIONAL,
@@ -170,10 +189,78 @@ export const generateEntityUrl = (entity) => {
     default:
       logger.error(
         'catalogEntities.generateEntityUrl()',
-        `Unknown entity kind=${logString(
+        `Unknown entity kind=${logValue(
           entity.metadata.kind
         )}: Falling back to namespace URL`
       );
       return url;
   }
+};
+
+/**
+ * @private
+ * Converts a Catalog Entity Model OR a CatalogEntity to a string for logging purposes.
+ * @param {CatalogEntity|Object} item
+ * @returns {string} String representation for a log entry.
+ */
+const _itemToString = function (item) {
+  const type = item instanceof CatalogEntity ? 'Entity' : 'Model';
+
+  let other = '';
+  if (item.metadata.kind === apiKinds.CLUSTER) {
+    const match = item.spec.kubeconfigPath?.match(
+      new RegExp(`(\\/|\\\\)${KUBECONFIG_DIR_NAME}\\1`)
+    );
+    if (match) {
+      other = logValue(
+        `...${path.sep}${match.input.slice(match.index + match[0].length)}`
+      );
+    } else {
+      other = logValue(item.spec.kubeconfigPath);
+    }
+    other = `, kubeconfigPath=${other}`;
+  }
+
+  return `{{${type} kind=${item.metadata.kind}, name=${logValue(
+    item.metadata.name
+  )}, uid=${logValue(item.metadata.uid)}, cloudUrl=${logValue(
+    item.metadata.cloudUrl
+  )}${other}}}`;
+};
+
+/**
+ * Converts a Catalog Entity Model to a string for logging purposes.
+ * @param {Object} model
+ * @returns {string} String representation for a log entry.
+ */
+export const modelToString = function (model) {
+  DEV_ENV && rtv.verify({ model }, { model: catalogEntityModelTs });
+  return _itemToString(model);
+};
+
+/**
+ * Converts a Catalog Entity to a string for logging purposes.
+ * @param {CatalogEntity} entity
+ * @returns {string} String representation for a log entry.
+ */
+export const entityToString = function (entity) {
+  if (!(entity instanceof CatalogEntity)) {
+    throw new Error('entity must be an instance of CatalogEntity');
+  }
+  return _itemToString(entity);
+};
+
+/**
+ * Finds a Catalog Entity in a list of entities that matches a given Model.
+ * @param {Array} list
+ * @param {Object} model Catalog Entity Model.
+ * @returns {CatalogEntity|undefined} The Catalog Entity that matches; `undefined` if none.
+ */
+export const findEntity = function (list, model) {
+  // UID is enough for now because MCC doesn't have a concept of an actual "shared"
+  //  resource across namespaces; if we get multiple entities in the Catalog with
+  //  the same name, that's because someone created a resource with the same name
+  //  in multiple synced namespaces; they'll all have their own UIDs; users can
+  //  use the Catalog's search feature to filter on namespace
+  return list.find((entity) => model.metadata.uid === entity.metadata.uid);
 };

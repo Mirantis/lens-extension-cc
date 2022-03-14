@@ -13,6 +13,7 @@ export interface CatalogEntityMetadata extends LensCatalogEntityMetadata {
   kind: string;
   namespace: string;
   cloudUrl: string;
+  resourceVersion: string;
 }
 
 export interface CatalogEntitySpec {

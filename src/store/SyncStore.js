@@ -79,6 +79,16 @@ export class SyncStore extends Common.Store.ExtensionStore {
     Object.keys(this).forEach((key) => (this[key] = defaults[key]));
   }
 
+  /**
+   * @returns {Array<string>} Array of property names that are entity model lists
+   *  on this instance.
+   */
+  getListNames() {
+    return Object.keys(SyncStore.getDefaults()).filter((name) =>
+      Array.isArray(this[name])
+    );
+  }
+
   // NOTE: this method is not just called when reading from disk; it's also called in the
   //  sync process between the Main and Renderer threads should code on either thread
   //  update any of the store's properties
