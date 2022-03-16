@@ -17,22 +17,23 @@ class DataCloudProviderStore extends ProviderStore {
 
   // @override
   validate() {
-    rtv.verify(
-      { 'DataCloudProvider.store': this.store },
-      {
-        'DataCloudProvider.store': {
-          // map of cloudUrl -> DataCloud instance
-          dataClouds: [
-            rtv.HASH_MAP,
-            { $values: [rtv.CLASS_OBJECT, { ctor: DataCloud }] },
-          ],
-          // map of cloudUrl -> Cloud access token (could be `null` if the Cloud
-          //  doesn't have any tokens yet, or its tokens get reset after
-          //  getting disconnected)
-          tokens: [rtv.HASH_MAP, { $values: [rtv.EXPECTED, rtv.STRING] }],
-        },
-      }
-    );
+    DEV_ENV &&
+      rtv.verify(
+        { 'DataCloudProvider.store': this.store },
+        {
+          'DataCloudProvider.store': {
+            // map of cloudUrl -> DataCloud instance
+            dataClouds: [
+              rtv.HASH_MAP,
+              { $values: [rtv.CLASS_OBJECT, { ctor: DataCloud }] },
+            ],
+            // map of cloudUrl -> Cloud access token (could be `null` if the Cloud
+            //  doesn't have any tokens yet, or its tokens get reset after
+            //  getting disconnected)
+            tokens: [rtv.HASH_MAP, { $values: [rtv.EXPECTED, rtv.STRING] }],
+          },
+        }
+      );
   }
 
   // @override

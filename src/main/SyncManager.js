@@ -727,13 +727,14 @@ export class SyncManager extends Singleton {
    * @param {Object} model
    */
   updateEntity(entity, model) {
-    rtv.verify(
-      { entity, model },
-      {
-        entity: [rtv.CLASS_OBJECT, { ctor: CatalogEntity }],
-        model: catalogEntityModelTs,
-      }
-    );
+    DEV_ENV &&
+      rtv.verify(
+        { entity, model },
+        {
+          entity: [rtv.CLASS_OBJECT, { ctor: CatalogEntity }],
+          model: catalogEntityModelTs,
+        }
+      );
 
     if (entity.metadata.kind !== model.metadata.kind) {
       throw new Error(

@@ -94,6 +94,8 @@ export class SyncStore extends Common.Store.ExtensionStore {
   //  update any of the store's properties
   @action // prevent mobx from emitting a change event until the function returns
   fromStore(store) {
+    // NOTE: don't gate this with DEV_ENV because we want to do it every time so we
+    //  can detect an invalid store JSON file that a user may have edited by hand
     const result = rtv.check({ store }, { store: storeTs });
 
     if (!result.valid) {

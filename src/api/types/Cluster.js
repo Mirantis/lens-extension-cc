@@ -132,10 +132,11 @@ export class Cluster extends Resource {
         return _sshKey;
       },
       set(newValue) {
-        rtv.verify(
-          { sshKey: newValue },
-          { sshKey: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: SshKey }] }
-        );
+        DEV_ENV &&
+          rtv.verify(
+            { sshKey: newValue },
+            { sshKey: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: SshKey }] }
+          );
         if (newValue !== _sshKey) {
           _sshKey = newValue || null;
         }
@@ -151,12 +152,17 @@ export class Cluster extends Resource {
         return _credential;
       },
       set(newValue) {
-        rtv.verify(
-          { credential: newValue },
-          {
-            credential: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: Credential }],
-          }
-        );
+        DEV_ENV &&
+          rtv.verify(
+            { credential: newValue },
+            {
+              credential: [
+                rtv.EXPECTED,
+                rtv.CLASS_OBJECT,
+                { ctor: Credential },
+              ],
+            }
+          );
         if (newValue !== _credential) {
           _credential = newValue || null;
         }
@@ -172,12 +178,13 @@ export class Cluster extends Resource {
         return _proxy;
       },
       set(newValue) {
-        rtv.verify(
-          { proxy: newValue },
-          {
-            proxy: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: Proxy }],
-          }
-        );
+        DEV_ENV &&
+          rtv.verify(
+            { proxy: newValue },
+            {
+              proxy: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: Proxy }],
+            }
+          );
         if (newValue !== _proxy) {
           _proxy = newValue || null;
         }
@@ -193,12 +200,13 @@ export class Cluster extends Resource {
         return _license;
       },
       set(newValue) {
-        rtv.verify(
-          { license: newValue },
-          {
-            license: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: License }],
-          }
-        );
+        DEV_ENV &&
+          rtv.verify(
+            { license: newValue },
+            {
+              license: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: License }],
+            }
+          );
         if (newValue !== _license) {
           _license = newValue || null;
         }

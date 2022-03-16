@@ -52,16 +52,17 @@ export class Namespace extends Resource {
         return _clusters;
       },
       set(newValue) {
-        rtv.verify(
-          { clusters: newValue },
-          {
-            clusters: [
-              rtv.EXPECTED,
-              rtv.ARRAY,
-              { $: [rtv.CLASS_OBJECT, { ctor: Cluster }] },
-            ],
-          }
-        );
+        DEV_ENV &&
+          rtv.verify(
+            { clusters: newValue },
+            {
+              clusters: [
+                rtv.EXPECTED,
+                rtv.ARRAY,
+                { $: [rtv.CLASS_OBJECT, { ctor: Cluster }] },
+              ],
+            }
+          );
         if (newValue !== _clusters) {
           _clusters = newValue || [];
         }
@@ -77,16 +78,17 @@ export class Namespace extends Resource {
         return _sshKeys;
       },
       set(newValue) {
-        rtv.verify(
-          { sshKeys: newValue },
-          {
-            sshKeys: [
-              rtv.EXPECTED,
-              rtv.ARRAY,
-              { $: [rtv.CLASS_OBJECT, { ctor: SshKey }] },
-            ],
-          }
-        );
+        DEV_ENV &&
+          rtv.verify(
+            { sshKeys: newValue },
+            {
+              sshKeys: [
+                rtv.EXPECTED,
+                rtv.ARRAY,
+                { $: [rtv.CLASS_OBJECT, { ctor: SshKey }] },
+              ],
+            }
+          );
         if (newValue !== _sshKeys) {
           _sshKeys = newValue || [];
         }
@@ -102,16 +104,17 @@ export class Namespace extends Resource {
         return _credentials;
       },
       set(newValue) {
-        rtv.verify(
-          { credentials: newValue },
-          {
-            credentials: [
-              rtv.EXPECTED,
-              rtv.ARRAY,
-              { $: [rtv.CLASS_OBJECT, { ctor: Credential }] },
-            ],
-          }
-        );
+        DEV_ENV &&
+          rtv.verify(
+            { credentials: newValue },
+            {
+              credentials: [
+                rtv.EXPECTED,
+                rtv.ARRAY,
+                { $: [rtv.CLASS_OBJECT, { ctor: Credential }] },
+              ],
+            }
+          );
         if (newValue !== _credentials) {
           _credentials = newValue || [];
         }
@@ -127,16 +130,17 @@ export class Namespace extends Resource {
         return _proxies;
       },
       set(newValue) {
-        rtv.verify(
-          { proxies: newValue },
-          {
-            proxies: [
-              rtv.EXPECTED,
-              rtv.ARRAY,
-              { $: [rtv.CLASS_OBJECT, { ctor: Proxy }] },
-            ],
-          }
-        );
+        DEV_ENV &&
+          rtv.verify(
+            { proxies: newValue },
+            {
+              proxies: [
+                rtv.EXPECTED,
+                rtv.ARRAY,
+                { $: [rtv.CLASS_OBJECT, { ctor: Proxy }] },
+              ],
+            }
+          );
         if (newValue !== _proxies) {
           _proxies = newValue || [];
         }
@@ -152,16 +156,17 @@ export class Namespace extends Resource {
         return _licenses;
       },
       set(newValue) {
-        rtv.verify(
-          { licenses: newValue },
-          {
-            licenses: [
-              rtv.EXPECTED,
-              rtv.ARRAY,
-              { $: [rtv.CLASS_OBJECT, { ctor: License }] },
-            ],
-          }
-        );
+        DEV_ENV &&
+          rtv.verify(
+            { licenses: newValue },
+            {
+              licenses: [
+                rtv.EXPECTED,
+                rtv.ARRAY,
+                { $: [rtv.CLASS_OBJECT, { ctor: License }] },
+              ],
+            }
+          );
         if (newValue !== _licenses) {
           _licenses = newValue || [];
         }

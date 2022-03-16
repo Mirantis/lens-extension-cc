@@ -161,10 +161,11 @@ const _fetchCollection = async function ({
   namespaces,
   create,
 }) {
-  rtv.verify(
-    { resourceType: resourceType },
-    { resourceType: [rtv.STRING, { oneOf: Object.values(apiResourceTypes) }] }
-  );
+  DEV_ENV &&
+    rtv.verify(
+      { resourceType: resourceType },
+      { resourceType: [rtv.STRING, { oneOf: Object.values(apiResourceTypes) }] }
+    );
 
   let tokensRefreshed = false;
 
