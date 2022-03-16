@@ -1,7 +1,7 @@
 import * as rtv from 'rtvjs';
 import { isEqual } from 'lodash';
 import { request } from '../util/netUtil';
-import { logger, logString } from '../util/logger';
+import { logger, logValue } from '../util/logger';
 import * as strings from '../strings';
 import * as ssoUtil from '../util/ssoUtil';
 import {
@@ -710,7 +710,7 @@ export class Cloud extends EventDispatcher {
   /** @returns {string} String representation of this Cloud for logging/debugging. */
   toString() {
     const validTillStr = logDate(this.tokenValidTill);
-    return `{Cloud url: ${logString(this.cloudUrl)}, status: ${logString(
+    return `{Cloud url: ${logValue(this.cloudUrl)}, status: ${logValue(
       this.status
     )}, token: ${
       this.token
@@ -718,7 +718,7 @@ export class Cloud extends EventDispatcher {
         : this.token
     }, valid: ${this.tokenValid}, validTill: ${
       validTillStr ? `"${validTillStr}"` : validTillStr
-    }, refreshValid: ${this.refreshTokenValid}, connectError: ${logString(
+    }, refreshValid: ${this.refreshTokenValid}, connectError: ${logValue(
       this.connectError
     )}}`;
   }

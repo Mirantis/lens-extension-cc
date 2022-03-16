@@ -1,7 +1,7 @@
 import { request } from '../../util/netUtil';
 import * as strings from '../../strings';
 import { apiResourceTypes } from '../apiConstants';
-import { logString } from '../../util/logger';
+import { logValue } from '../../util/logger';
 
 /**
  * Used to work with Kubernetes cluster-wide resources (i.e. not in a namespace) resources
@@ -61,7 +61,7 @@ export class KubernetesClient {
       options: { method: 'POST', body: JSON.stringify(spec) },
       expectedStatuses: [201],
       errorMessage: strings.apiClient.error.failedToCreate(
-        `${logString(resourceType)} "${spec.metadata.name}"`
+        `${logValue(resourceType)} "${spec.metadata.name}"`
       ),
     });
   }
@@ -74,7 +74,7 @@ export class KubernetesClient {
     return this.request(url[resourceType], {
       options: { method: 'DELETE' },
       errorMessage: strings.apiClient.error.failedToDelete(
-        `${logString(resourceType)} "${name}"`
+        `${logValue(resourceType)} "${name}"`
       ),
     });
   }

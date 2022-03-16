@@ -3,7 +3,7 @@ import { Renderer } from '@k8slens/extensions';
 import styled from '@emotion/styled';
 import { layout } from '../styles';
 import { AddCloudInstance } from './AddCloudInstance.js';
-import { useDataCloudData } from '../../store/DataCloudProvider';
+import { useDataClouds } from '../../store/DataCloudProvider';
 import { WelcomeView } from './WelcomeView';
 import { cloudStore } from '../../../store/CloudStore';
 import { syncView } from '../../../strings';
@@ -56,9 +56,7 @@ const ButtonWrapper = styled.div`
 `;
 
 export const SyncView = () => {
-  const {
-    state: { dataClouds },
-  } = useDataCloudData();
+  const { dataClouds } = useDataClouds();
   const [showAddCloudComponent, setShowAddCloudComponent] = useState(false);
   const [isSelectiveSyncView, setIsSelectiveSyncView] = useState(false);
   const [isSyncStarted, setIsSyncStarted] = useState(false);
@@ -118,10 +116,12 @@ export const SyncView = () => {
   if (showAddCloudComponent) {
     return <AddCloudInstance onAdd={handleAddCloud} onCancel={onCancel} />;
   }
+
   // in no clouds => show Welcome page
   if (!Object.keys(cloudStore.clouds).length) {
     return <WelcomeView openAddCloud={openAddCloud} />;
   }
+
   // otherwise, show dataClouds table
   if (Object.keys(dataClouds).length) {
     return (

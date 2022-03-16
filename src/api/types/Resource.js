@@ -1,7 +1,7 @@
 import * as rtv from 'rtvjs';
 import * as consts from '../../constants';
 import { Cloud } from '../../common/Cloud';
-import { logString } from '../../util/logger';
+import { logValue } from '../../util/logger';
 
 /**
  * Typeset for a basic MCC API Object.
@@ -16,6 +16,7 @@ export const resourceTs = {
   metadata: {
     uid: rtv.STRING,
     name: rtv.STRING,
+    resourceVersion: rtv.STRING,
     creationTimestamp: rtv.STRING, // ISO8601 timestamp
     deletionTimestamp: [rtv.OPTIONAL, rtv.STRING], // ISO8601 timestamp; only exists if being deleted
   },
@@ -44,7 +45,7 @@ export class Resource {
         }
       );
 
-    /** @member {Cloud} */
+    /** @member {Cloud} cloud */
     Object.defineProperty(this, 'cloud', {
       enumerable: true,
       get() {
@@ -52,7 +53,7 @@ export class Resource {
       },
     });
 
-    /** @member {string} */
+    /** @member {string} uid */
     Object.defineProperty(this, 'uid', {
       enumerable: true,
       get() {
@@ -60,7 +61,7 @@ export class Resource {
       },
     });
 
-    /** @member {string} */
+    /** @member {string} kind One of the known API kinds in the `apiConstants.apiKinds` enum. */
     Object.defineProperty(this, 'kind', {
       enumerable: true,
       get() {
@@ -68,7 +69,7 @@ export class Resource {
       },
     });
 
-    /** @member {string} */
+    /** @member {string} name */
     Object.defineProperty(this, 'name', {
       enumerable: true,
       get() {
@@ -76,7 +77,21 @@ export class Resource {
       },
     });
 
-    /** @member {Date} */
+    /**
+     * Identifies a specific version of this resource in the Kube API. This opaque
+     *  string value can be used to detect when the resource has changed, so it
+     *  essentially reprents a type of hash of the resource's values/state.
+     * @member {string} resourceVersion
+     * @see https://kubernetes.io/docs/reference/using-api/api-concepts/#efficient-detection-of-changes
+     */
+    Object.defineProperty(this, 'resourceVersion', {
+      enumerable: true,
+      get() {
+        return data.metadata.resourceVersion;
+      },
+    });
+
+    /** @member {Date} createdDate */
     Object.defineProperty(this, 'createdDate', {
       enumerable: true,
       get() {
@@ -84,7 +99,7 @@ export class Resource {
       },
     });
 
-    /** @member {boolean|null} */
+    /** @member {boolean|null} deleteInProgress */
     Object.defineProperty(this, 'deleteInProgress', {
       enumerable: true,
       get() {
@@ -107,6 +122,7 @@ export class Resource {
         labels: {},
         cloudUrl: this.cloud.cloudUrl,
         kind: this.kind,
+        resourceVersion: this.resourceVersion,
       },
       spec: {
         createdAt: this.createdDate.toISOString(),
@@ -117,10 +133,10 @@ export class Resource {
 
   /** @returns {string} A string representation of this instance for logging/debugging. */
   toString() {
-    const propStr = `name: ${logString(this.name)}, uid: ${logString(
+    const propStr = `name: ${logValue(this.name)}, uid: ${logValue(
       this.uid
-    )}, kind: ${logString(this.kind)}, cloudUrl=${logString(
-      this.cloud?.cloudUrl
+    )}, kind: ${logValue(this.kind)}, cloudUrl: ${logValue(
+      this.cloud.cloudUrl
     )}`;
 
     if (Object.getPrototypeOf(this).constructor === Resource) {

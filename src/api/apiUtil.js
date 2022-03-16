@@ -7,7 +7,7 @@ import { ApiClient } from './clients/ApiClient';
 import { AuthorizationClient } from './clients/AuthorizationClient';
 import { KubernetesClient } from './clients/KubernetesClient';
 import { ResourceClient } from './clients/ResourceClient';
-import { logger, logString } from '../util/logger';
+import { logger, logValue } from '../util/logger';
 import { apiResourceTypes } from './apiConstants';
 
 const typeToClient = {
@@ -151,7 +151,7 @@ export async function cloudRequest({ cloud, method, resourceType, args }) {
   if (!Client) {
     return {
       cloud,
-      error: `Unknown or unmapped resourceType=${logString(resourceType)}`,
+      error: `Unknown or unmapped resourceType=${logValue(resourceType)}`,
       status: 0,
     };
   }

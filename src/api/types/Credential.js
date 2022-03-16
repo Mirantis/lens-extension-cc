@@ -10,7 +10,7 @@ import {
 } from '../../catalog/CredentialEntity';
 
 /**
- * Typeset for an MCC Credential object.
+ * Typeset for an MCC Credential API resource.
  */
 export const credentialTs = mergeRtvShapes({}, resourceTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
@@ -26,11 +26,18 @@ export const credentialTs = mergeRtvShapes({}, resourceTs, {
       },
     ],
   },
+  // NOTE: BYOCredential resources don't have `status` objects for some reason
+  //  so it's effectively made optional by temporarily removing it from the Typeset
+  //  in the Credential class constructor only when the kind is BYO_CREDENTIAL
   status: {
     valid: rtv.BOOLEAN,
   },
 });
 
+/**
+ * MCC credential API resource.
+ * @class Proxy
+ */
 export class Credential extends Resource {
   /**
    * @constructor

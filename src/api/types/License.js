@@ -8,10 +8,10 @@ import {
   licenseEntityPhases,
 } from '../../catalog/LicenseEntity';
 import { apiKinds } from '../apiConstants';
-import { logString } from '../../util/logger';
+import { logValue } from '../../util/logger';
 
 /**
- * Typeset for an MCC License object.
+ * Typeset for an MCC License API resource.
  */
 export const licenseTs = mergeRtvShapes({}, resourceTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
@@ -21,10 +21,8 @@ export const licenseTs = mergeRtvShapes({}, resourceTs, {
 });
 
 /**
- * MCC license.
+ * MCC license API resource.
  * @class License
- * @param {Object} data Raw cluster data payload from the API.
- * @param {Namespace} namespace Namespace to which this object belongs.
  */
 export class License extends Resource {
   /**
@@ -87,7 +85,7 @@ export class License extends Resource {
 
   /** @returns {string} A string representation of this instance for logging/debugging. */
   toString() {
-    const propStr = `${super.toString()}, namespace: ${logString(
+    const propStr = `${super.toString()}, namespace: ${logValue(
       this.namespace.name
     )}`;
 

@@ -1,7 +1,7 @@
 import { request } from '../../util/netUtil';
 import * as strings from '../../strings';
 import { apiResourceTypes } from '../apiConstants';
-import { logString } from '../../util/logger';
+import { logValue } from '../../util/logger';
 
 // no start nor end slashes
 const clusterEndpoint = 'apis/cluster.k8s.io/v1alpha1';
@@ -47,7 +47,7 @@ export class ResourceClient {
     this.apiPrefix = ResourceClient.typeToApiPrefix[resourceType];
     if (!this.apiPrefix) {
       throw new Error(
-        `Unknown or unmapped resourceType=${logString(resourceType)}`
+        `Unknown or unmapped resourceType=${logValue(resourceType)}`
       );
     }
 
@@ -114,7 +114,7 @@ export class ResourceClient {
       {
         options: { method: 'DELETE' },
         errorMessage: strings.apiClient.error.failedToDelete(
-          `${logString(resourceType)} ${logString(name)}`
+          `${logValue(resourceType)} ${logValue(name)}`
         ),
       }
     );
@@ -130,7 +130,7 @@ export class ResourceClient {
           headers: { 'Content-Type': 'application/merge-patch+json' },
         },
         errorMessage: strings.apiClient.error.failedToUpdate(
-          `${logString(resourceType)} ${logString(name)}`
+          `${logValue(resourceType)} ${logValue(name)}`
         ),
       }
     );

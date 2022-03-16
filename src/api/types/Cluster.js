@@ -10,7 +10,7 @@ import { Proxy } from './Proxy';
 import { License } from './License';
 import { clusterEntityPhases } from '../../catalog/catalogEntities';
 import { apiKinds } from '../apiConstants';
-import { logString } from '../../util/logger';
+import { logValue } from '../../util/logger';
 import { mkKubeConfig } from '../../util/templates';
 
 const {
@@ -28,7 +28,7 @@ const getServerUrl = function (data) {
 };
 
 /**
- * Typeset for an MCC Cluster object.
+ * Typeset for an MCC Cluster API resource.
  */
 export const clusterTs = mergeRtvShapes({}, resourceTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
@@ -85,7 +85,7 @@ export const clusterTs = mergeRtvShapes({}, resourceTs, {
 });
 
 /**
- * MCC cluster.
+ * MCC cluster API resource.
  * @class Cluster
  */
 export class Cluster extends Resource {
@@ -408,7 +408,7 @@ export class Cluster extends Resource {
   toString() {
     const propStr = `${super.toString()}, ready: ${
       this.ready
-    }, region: ${logString(this.region)}`;
+    }, region: ${logValue(this.region)}`;
 
     if (Object.getPrototypeOf(this).constructor === Cluster) {
       return `{Cluster ${propStr}}`;

@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo, useState } from 'react';
 import * as rtv from 'rtvjs';
-import { reaction } from 'mobx';
+import { autorun } from 'mobx';
 import { ProviderStore } from './ProviderStore';
 import { cloneDeepWith, isEqual } from 'lodash';
 import { cloudStore } from '../../store/CloudStore';
@@ -157,22 +157,20 @@ const _updateStore = function ({
   }
 };
 
-export const useDataCloudData = function () {
+export const useDataClouds = function () {
   const context = useContext(DataCloudContext);
   if (!context) {
-    throw new Error(
-      'useDataCloudData must be used within an DataCloudProvider'
-    );
+    throw new Error('useDataClouds must be used within an DataCloudProvider');
   }
 
   // NOTE: `context` is the value of the `value` prop we set on the
   //  <DataCloudContext.Provider value={...}/> we return as the <DataCloudProvider/>
   //  component to wrap all children that should have access to the state (i.e.
-  //  all the children that will be able to `useDataCloudData()` to access the state)
+  //  all the children that will be able to `useDataClouds()` to access the state)
   const [state] = context;
 
   return {
-    state,
+    dataClouds: state.dataClouds,
   };
 };
 
@@ -186,42 +184,35 @@ export const DataCloudProvider = function (props) {
 
   pr.setState = setState;
 
-  // @see https://mobx.js.org/reactions.html#reaction
-  reaction(
-    // reaction called on any `cloudStore.clouds` updates
-    () => cloudStore.clusters,
-    () => {
-      // @type {{ [index: string]: string }} Map of Cloud URL to token for
-      //   the new (current) set of known Clouds stored on disk.
-      const cloudStoreTokens = Object.values(cloudStore.clouds).reduce(
-        (acc, cloud) => {
-          acc[cloud.cloudUrl] = cloud.token;
-          return acc;
-        },
-        {}
-      );
+  // @see https://mobx.js.org/reactions.html#autorun
+  // NOTE: I have no idea why, but using a reaction() like we do in the SyncStore
+  //  on MAIN (which works fine there) is DOA here on RENDERER: the reaction is
+  //  never called except on first-run; only autorun() works
+  autorun(() => {
+    // @type {{ [index: string]: string }} Map of Cloud URL to token for
+    //   the new (current) set of known Clouds stored on disk.
+    const cloudStoreTokens = Object.values(cloudStore.clouds).reduce(
+      (acc, cloud) => {
+        acc[cloud.cloudUrl] = cloud.token;
+        return acc;
+      },
+      {}
+    );
 
-      // compare tokens from cloudStore.clouds and tokens in DataCloudProvider state
-      //  at previous change in context
-      if (!isEqual(pr.store.tokens, cloudStoreTokens)) {
-        const { cloudUrlsToAdd, cloudUrlsToUpdate, cloudUrlsToRemove } =
-          _triageCloudUrls(cloudStoreTokens);
+    // compare tokens from cloudStore.clouds and tokens in DataCloudProvider state
+    //  at previous change in context
+    if (!isEqual(pr.store.tokens, cloudStoreTokens)) {
+      const { cloudUrlsToAdd, cloudUrlsToUpdate, cloudUrlsToRemove } =
+        _triageCloudUrls(cloudStoreTokens);
 
-        _updateStore({
-          cloudStoreTokens,
-          cloudUrlsToAdd,
-          cloudUrlsToUpdate,
-          cloudUrlsToRemove,
-        });
-      }
-    },
-    {
-      // most likely the ClusterStore has been loaded already by the time this
-      //  provider is rendered for the first, so make sure we run this reaction
-      //  at least once right away
-      fireImmediately: true,
+      _updateStore({
+        cloudStoreTokens,
+        cloudUrlsToAdd,
+        cloudUrlsToUpdate,
+        cloudUrlsToRemove,
+      });
     }
-  );
+  });
 
   return <DataCloudContext.Provider value={value} {...props} />;
 };
