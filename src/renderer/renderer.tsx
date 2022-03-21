@@ -1,6 +1,6 @@
 import React from 'react';
 import { Renderer } from '@k8slens/extensions';
-import { GlobalPage, GlobalPageIcon } from './components/GlobalPage/GlobalPage';
+import { GlobalPage } from './components/GlobalPage/GlobalPage';
 import {
   ClusterPage,
   ClusterPageIcon,
@@ -17,6 +17,7 @@ import { getLensClusters } from './rendererUtil';
 import { mkClusterContextName } from '../util/templates';
 import { EXT_EVENT_OAUTH_CODE, EXT_EVENT_ACTIVATE_CLUSTER } from './eventBus';
 import { catalogEntityDetails } from './catalogEntityDetails';
+import { registerTopBarItems } from './topBar';
 
 const {
   LensExtension,
@@ -25,7 +26,6 @@ const {
 } = Renderer;
 
 const logger: any = loggerUtil; // get around TS compiler's complaining
-const statusItemColor = 'white'; // CSS color; Lens hard-codes the color of the workspace indicator item to 'white' also
 
 declare const FEAT_CLUSTER_PAGE_ENABLED: any; // TODO[clusterpage]: remove
 
@@ -72,19 +72,8 @@ export default class ExtensionRenderer extends LensExtension {
   //     at decorate (mobx.module.js:363)
   //     at decoratorFactory (mobx.module.js:384)
   // ============
-  statusBarItems = [
-    {
-      item: (
-        <div
-          className="flex align-center gaps"
-          title={strings.extension.statusBar['label']()}
-          onClick={() => this.navigate(ROUTE_GLOBAL_PAGE)}
-        >
-          <GlobalPageIcon size={16} fill={statusItemColor} />
-        </div>
-      ),
-    },
-  ];
+
+  topBarItems = registerTopBarItems(this);
 
   catalogEntityDetailItems = catalogEntityDetails;
 
