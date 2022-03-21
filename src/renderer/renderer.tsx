@@ -17,7 +17,7 @@ import { getLensClusters } from './rendererUtil';
 import { mkClusterContextName } from '../util/templates';
 import { EXT_EVENT_OAUTH_CODE, EXT_EVENT_ACTIVATE_CLUSTER } from './eventBus';
 import { catalogEntityDetails } from './catalogEntityDetails';
-import { registerTopBarItems } from './topBar';
+import { generateTopBarItems } from './topBarItems';
 
 const {
   LensExtension,
@@ -73,7 +73,7 @@ export default class ExtensionRenderer extends LensExtension {
   //     at decoratorFactory (mobx.module.js:384)
   // ============
 
-  topBarItems = registerTopBarItems(this);
+  topBarItems = generateTopBarItems(this);
 
   catalogEntityDetailItems = catalogEntityDetails;
 
