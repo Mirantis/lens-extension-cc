@@ -1,5 +1,12 @@
 # ChangeLog
 
+## UNRELEASED
+
+⚠️ This is an early alpha build and is not fully functional. Use at your own risk.
+
+- Catalog syncing is now enabled! The fake Catalog items have been removed, and you should now see any cluster, credential, SSH key, proxy, and RHEL license in any of the projects you're syncing show-up in the Catalog.
+- The old status bar item has been replaced by a new top bar item to make it easier to find, and easier to click on.
+
 ## v4.0.0-alpha.3
 
 ⚠️ This is an early alpha build and is not fully functional. Use at your own risk.
