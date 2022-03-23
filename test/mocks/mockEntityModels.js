@@ -13,7 +13,7 @@ export const sshKeyModels = [
       namespace: 'lex-ns-1',
       cloudUrl: 'https://container-cloud.acme.com',
       labels: {
-        managementCluster: 'mcc-1',
+        mgmtCluster: 'mcc-1',
         project: 'project-1',
       },
     },
@@ -34,7 +34,7 @@ export const sshKeyModels = [
       namespace: 'lex-ns-2',
       cloudUrl: 'https://container-cloud.acme.com',
       labels: {
-        managementCluster: 'mcc-1',
+        mgmtCluster: 'mcc-1',
         project: 'project-1',
       },
     },
@@ -58,7 +58,7 @@ export const credentialModels = [
       namespace: 'lex-ns-1',
       cloudUrl: 'https://container-cloud.acme.com',
       labels: {
-        managementCluster: 'mcc-1',
+        mgmtCluster: 'mcc-1',
         project: 'project-1',
       },
     },
@@ -81,7 +81,7 @@ export const credentialModels = [
       namespace: 'lex-ns-2',
       cloudUrl: 'https://container-cloud.acme.com',
       labels: {
-        managementCluster: 'mcc-1',
+        mgmtCluster: 'mcc-1',
         project: 'project-1',
       },
     },
@@ -107,7 +107,7 @@ export const proxyModels = [
       namespace: 'lex-ns-1',
       cloudUrl: 'https://container-cloud.acme.com',
       labels: {
-        managementCluster: 'mcc-1',
+        mgmtCluster: 'mcc-1',
         project: 'project-1',
       },
     },
@@ -130,7 +130,7 @@ export const proxyModels = [
       namespace: 'lex-ns-2',
       cloudUrl: 'https://container-cloud.acme.com',
       labels: {
-        managementCluster: 'mcc-1',
+        mgmtCluster: 'mcc-1',
         project: 'project-1',
       },
     },
@@ -156,7 +156,7 @@ export const licenseModels = [
       namespace: 'lex-ns-1',
       cloudUrl: 'https://container-cloud.acme.com',
       labels: {
-        managementCluster: 'mcc-1',
+        mgmtCluster: 'mcc-1',
         project: 'project-1',
       },
     },
@@ -176,7 +176,7 @@ export const licenseModels = [
       namespace: 'lex-ns-2',
       cloudUrl: 'https://container-cloud.acme.com',
       labels: {
-        managementCluster: 'mcc-1',
+        mgmtCluster: 'mcc-1',
         project: 'project-1',
       },
     },

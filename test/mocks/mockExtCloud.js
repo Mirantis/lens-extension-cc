@@ -31,7 +31,7 @@ export const mockDataCloud = {
           namespace: 'namespaces-2',
           created: '2020-20-20',
           deleteInProgress: false,
-          isManagementCluster: false,
+          isMgmtCluster: false,
           ready: true,
           serverUrl: 'https://123.12.12.12:123',
           idpIssuerUrl:
@@ -58,7 +58,7 @@ export const mockDataCloud = {
           namespace: 'namespaces-3',
           created: '2020-20-20',
           deleteInProgress: false,
-          isManagementCluster: false,
+          isMgmtCluster: false,
           ready: true,
           serverUrl: 'https://123.12.12.12:123',
           idpIssuerUrl:
@@ -112,7 +112,7 @@ export const mockDataCloud2 = {
           namespace: 'namespaces-2',
           created: '2020-20-20',
           deleteInProgress: false,
-          isManagementCluster: false,
+          isMgmtCluster: false,
           ready: true,
           serverUrl: 'https://123.12.12.12:123',
           idpIssuerUrl:
@@ -139,7 +139,7 @@ export const mockDataCloud2 = {
           namespace: 'namespaces-3',
           created: '2020-20-20',
           deleteInProgress: false,
-          isManagementCluster: false,
+          isMgmtCluster: false,
           ready: true,
           serverUrl: 'https://123.12.12.12:123',
           idpIssuerUrl:

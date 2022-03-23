@@ -3,6 +3,7 @@ import { merge } from 'lodash';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
 import { Resource, resourceTs } from './Resource';
 import { Namespace } from './Namespace';
+import { entityLabels } from '../../catalog/catalogEntities';
 import {
   LicenseEntity,
   licenseEntityPhases,
@@ -65,8 +66,8 @@ export class License extends Resource {
       metadata: {
         namespace: this.namespace.name,
         labels: {
-          managementCluster: this.cloud.name,
-          project: this.namespace.name,
+          [entityLabels.CLOUD]: this.cloud.name,
+          [entityLabels.NAMESPACE]: this.namespace.name,
         },
       },
       status: {

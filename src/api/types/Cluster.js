@@ -2,22 +2,21 @@ import * as rtv from 'rtvjs';
 import { get, merge } from 'lodash';
 import { Common } from '@k8slens/extensions';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
-import { Resource, resourceTs } from './Resource';
-import { Namespace } from './Namespace';
-import { Credential } from './Credential';
-import { SshKey } from './SshKey';
-import { Proxy } from './Proxy';
-import { License } from './License';
-import { clusterEntityPhases } from '../../catalog/catalogEntities';
-import { apiKinds } from '../apiConstants';
-import { logValue } from '../../util/logger';
+import { resourceTs } from './Resource';
+import { Node } from './Node';
+import {
+  entityLabels,
+  clusterEntityPhases,
+} from '../../catalog/catalogEntities';
+import { apiKinds, apiLabels } from '../apiConstants';
+import { logger, logValue } from '../../util/logger';
 import { mkKubeConfig } from '../../util/templates';
 
 const {
   Catalog: { KubernetesCluster },
 } = Common;
 
-const isManagementCluster = function (data) {
+const isMgmtCluster = function (data) {
   const kaas = get(data.spec, 'providerSpec.value.kaas', {});
   return get(kaas, 'management.enabled', false) && !!get(kaas, 'regional');
 };
@@ -39,15 +38,27 @@ export const clusterTs = mergeRtvShapes({}, resourceTs, {
     labels: [
       rtv.OPTIONAL,
       {
-        // if we have labels, these are important
-        'kaas.mirantis.com/provider': [rtv.OPTIONAL, rtv.STRING],
-        'kaas.mirantis.com/region': [rtv.OPTIONAL, rtv.STRING],
+        [apiLabels.KAAS_PROVIDER]: [rtv.OPTIONAL, rtv.STRING],
+        [apiLabels.KAAS_REGION]: [rtv.OPTIONAL, rtv.STRING],
       },
     ],
   },
   spec: {
     providerSpec: {
       value: {
+        // NOTE: the name of the RHEL license used by the cluster is found in every
+        //  __machine__ used by the cluster, in each machine's
+        // `spec.providerSpec.value.rhelLicense` property
+
+        // name of the associated credential (one, even though prop name is plural), if any
+        credentials: [rtv.OPTIONAL, rtv.STRING],
+
+        // name of the associated SSH keys, if any
+        publicKeys: [rtv.OPTIONAL, [{ name: rtv.STRING }]],
+
+        // name of the associated proxy, if any
+        proxy: [rtv.OPTIONAL, rtv.STRING],
+
         kaas: [
           rtv.OPTIONAL,
           {
@@ -79,6 +90,28 @@ export const clusterTs = mergeRtvShapes({}, resourceTs, {
         apiServerCertificate: rtv.STRING,
         ucpDashboard: [rtv.OPTIONAL, rtv.STRING], // if managed by UCP, the URL
         loadBalancerHost: [rtv.OPTIONAL, rtv.STRING],
+
+        // readiness conditions
+        conditions: [
+          [
+            {
+              message: rtv.STRING, // ready message if `ready=true` or error message if `ready=false`
+              ready: rtv.BOOLEAN, // true if component is ready (NOTE: false if maintenance mode is active)
+              type: rtv.STRING, // component name, e.g. 'Kubelet', 'Swarm, 'Maintenance', etc.
+            },
+          ],
+        ],
+
+        // helm chart status
+        helm: {
+          ready: rtv.BOOLEAN,
+        },
+
+        // overall readiness: true if all `conditions[*].ready` and `helm.ready` are true
+        ready: rtv.BOOLEAN,
+
+        // NOTE: unlike machines, there's no `status` property with a string that appears
+        //  to summarize the readiness of the cluster
       },
     },
   ],
@@ -88,84 +121,69 @@ export const clusterTs = mergeRtvShapes({}, resourceTs, {
  * MCC cluster API resource.
  * @class Cluster
  */
-export class Cluster extends Resource {
+export class Cluster extends Node {
   /**
    * @constructor
    * @param {Object} params
    * @param {Object} params.data Raw data payload from the API.
    * @param {Namespace} params.namespace Namespace to which the object belongs.
+   *
+   *  NOTE: The namespace is expected to already contain all known Credentials,
+   *   SSH Keys, Proxies, Machines, and Licenses that this Cluster might reference.
+   *
    * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
+   * @param {string|null} [params.licenseName] Name of the RHEL License used by
+   *  this cluster (found on its machines).
    */
   constructor({ data, namespace, cloud }) {
-    super({ data, cloud, typeset: clusterTs });
+    super({ data, cloud, namespace, typeset: clusterTs });
 
-    // just testing for what is Cluster-specific
-    DEV_ENV &&
-      rtv.verify(
-        { namespace },
-        {
-          namespace: [rtv.CLASS_OBJECT, { ctor: Namespace }],
-        }
-      );
-
-    // NOTE: regardless of `ready`, we assume `data.metadata` is always available
-
-    let _sshKey = null;
+    let _controllers = [];
+    let _workers = [];
+    let _sshKeys = [];
     let _credential = null;
     let _proxy = null;
     let _license = null;
 
-    /** @member {Namespace} */
-    Object.defineProperty(this, 'namespace', {
-      enumerable: true,
-      get() {
-        return namespace;
-      },
-    });
-
     /**
-     * @member {SshKey|null} sshKey SSH key used by this Cluster. Null if none.
+     * @member {Array<Machine>} controllers Master node Machines used by this Cluster.
+     *  Empty list if none.
      */
-    Object.defineProperty(this, 'sshKey', {
+    Object.defineProperty(this, 'controllers', {
       enumerable: true,
       get() {
-        return _sshKey;
-      },
-      set(newValue) {
-        DEV_ENV &&
-          rtv.verify(
-            { sshKey: newValue },
-            { sshKey: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: SshKey }] }
-          );
-        if (newValue !== _sshKey) {
-          _sshKey = newValue || null;
-        }
+        return _controllers;
       },
     });
 
     /**
-     * @param {Credential|null} credential Credential used by this Cluster. Null if none.
+     * @member {Array<Machine>} workers Worker node Machines used by this Cluster.
+     *  Empty list if none.
+     */
+    Object.defineProperty(this, 'workers', {
+      enumerable: true,
+      get() {
+        return _workers;
+      },
+    });
+
+    /**
+     * @member {Array<SshKey>} sshKeys SSH keys used by this Cluster. Empty list if none.
+     */
+    Object.defineProperty(this, 'sshKeys', {
+      enumerable: true,
+      get() {
+        return _sshKeys;
+      },
+    });
+
+    /**
+     * @member {Credential|null} credential Credential used by this Cluster. Null if none.
      */
     Object.defineProperty(this, 'credential', {
       enumerable: true,
       get() {
         return _credential;
-      },
-      set(newValue) {
-        DEV_ENV &&
-          rtv.verify(
-            { credential: newValue },
-            {
-              credential: [
-                rtv.EXPECTED,
-                rtv.CLASS_OBJECT,
-                { ctor: Credential },
-              ],
-            }
-          );
-        if (newValue !== _credential) {
-          _credential = newValue || null;
-        }
       },
     });
 
@@ -177,18 +195,6 @@ export class Cluster extends Resource {
       get() {
         return _proxy;
       },
-      set(newValue) {
-        DEV_ENV &&
-          rtv.verify(
-            { proxy: newValue },
-            {
-              proxy: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: Proxy }],
-            }
-          );
-        if (newValue !== _proxy) {
-          _proxy = newValue || null;
-        }
-      },
     });
 
     /**
@@ -199,30 +205,28 @@ export class Cluster extends Resource {
       get() {
         return _license;
       },
-      set(newValue) {
-        DEV_ENV &&
-          rtv.verify(
-            { license: newValue },
-            {
-              license: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: License }],
-            }
-          );
-        if (newValue !== _license) {
-          _license = newValue || null;
-        }
-      },
     });
 
-    /** @member {boolean} isManagementCluster */
-    Object.defineProperty(this, 'isManagementCluster', {
+    /**
+     * @readonly
+     * @member {boolean} isMgmtCluster
+     */
+    Object.defineProperty(this, 'isMgmtCluster', {
       enumerable: true,
       get() {
-        return isManagementCluster(data);
+        return isMgmtCluster(data);
       },
     });
 
-    /** @member {boolean} ready */
-    Object.defineProperty(this, 'ready', {
+    /**
+     * True if this Cluster has all the data necessary to generate a kubeConfig for it.
+     *
+     * NOTE: It's possible for the Cluster to be config-ready, but not overall `ready`.
+     *
+     * @readonly
+     * @member {boolean} configReady
+     */
+    Object.defineProperty(this, 'configReady', {
       enumerable: true,
       get() {
         // NOTE: cluster is ready/provisioned (and we can generate a kubeConfig for it) if
@@ -238,98 +242,171 @@ export class Cluster extends Resource {
       },
     });
 
-    /** @member {string|null} serverUrl */
+    /**
+     * @readonly
+     * @member {string|null} serverUrl
+     */
     Object.defineProperty(this, 'serverUrl', {
       enumerable: true,
       get() {
-        return this.ready ? getServerUrl(data) : null;
+        return this.configReady ? getServerUrl(data) : null;
       },
     });
 
     /**
      * IDP Certificate Authority Data (OIDC)
+     * @readonly
      * @member {string|null} idpIssuerUrl
      */
     Object.defineProperty(this, 'idpIssuerUrl', {
       enumerable: true,
       get() {
-        return this.ready ? data.status.providerStatus.oidc.issuerUrl : null;
+        return this.configReady
+          ? data.status.providerStatus.oidc.issuerUrl
+          : null;
       },
     });
 
-    /** @member {string|null} idpCertificate */
+    /**
+     * @readonly
+     * @member {string|null} idpCertificate
+     */
     Object.defineProperty(this, 'idpCertificate', {
       enumerable: true,
       get() {
-        return this.ready ? data.status.providerStatus.oidc.certificate : null;
+        return this.configReady
+          ? data.status.providerStatus.oidc.certificate
+          : null;
       },
     });
 
-    /** @member {string|null} idpClientId */
+    /**
+     * @readonly
+     * @member {string|null} idpClientId
+     */
     Object.defineProperty(this, 'idpClientId', {
       enumerable: true,
       get() {
-        return this.ready ? data.status.providerStatus.oidc.clientId : null;
+        return this.configReady
+          ? data.status.providerStatus.oidc.clientId
+          : null;
       },
     });
 
-    /** @member {string|null} apiCertificate */
+    /**
+     * @readonly
+     * @member {string|null} apiCertificate
+     */
     Object.defineProperty(this, 'apiCertificate', {
       enumerable: true,
       get() {
-        return this.ready
+        return this.configReady
           ? data.status.providerStatus.apiServerCertificate
           : null;
       },
     });
 
     /**
-     * e.g. 'aws'
+     * e.g. 'https://1.1.1.1:123'
+     * @readonly
      * @member {string|null} ucpUrl
      */
     Object.defineProperty(this, 'ucpUrl', {
       enumerable: true,
       get() {
-        return this.ready ? data.status.providerStatus.ucpDashboard : null;
-      },
-    });
-
-    /**
-     * e.g. 'region-one'
-     * @member {string|null} provider
-     */
-    Object.defineProperty(this, 'provider', {
-      enumerable: true,
-      get() {
-        return this.ready
-          ? get(data.metadata, 'labels["kaas.mirantis.com/provider"]', null)
+        return this.configReady
+          ? data.status.providerStatus.ucpDashboard
           : null;
       },
     });
 
     /**
-     * e.g. 'us-west-2'
-     * @member {string|null} region
+     * @readonly
+     * @member {sting|null} awsRegion
      */
-    Object.defineProperty(this, 'region', {
-      enumerable: true,
-      get() {
-        return this.ready
-          ? get(data.metadata, 'labels["kaas.mirantis.com/region"]', null)
-          : null;
-      },
-    });
-
-    /** @member {sting|null} awsRegion */
     Object.defineProperty(this, 'awsRegion', {
       enumerable: true,
       get() {
-        return this.ready ? data.spec.providerSpec.region : null;
+        return this.configReady ? data.spec.providerSpec.region : null;
       },
     });
+
+    //// Initialize
+
+    // NOTE: if any of these warnings get logged, it's probably because the `namespace`
+    //  given to the constructor isn't loaded yet with all other resource types
+
+    data.spec.providerSpec.value.publicKeys?.forEach(({ name: keyName }) => {
+      const sshKey = this.namespace.sshKeys.find((key) => key.name === keyName);
+      if (sshKey) {
+        _sshKeys.push(sshKey);
+      } else {
+        logger.warn(
+          'Cluster.constructor()',
+          `Unable to find ssh key name=${logValue(
+            keyName
+          )} for cluster=${logValue(this.name)} in namespace=${logValue(
+            this.namespace.name
+          )}`
+        );
+      }
+    });
+
+    if (data.spec.providerSpec.value.credentials) {
+      const credName = data.spec.providerSpec.value.credentials;
+      _credential =
+        this.namespace.credentials.find((cr) => cr.name === credName) || null;
+      if (!_credential) {
+        logger.warn(
+          'Cluster.constructor()',
+          `Unable to find credential name=${logValue(
+            credName
+          )} for cluster=${logValue(this.name)} in namespace=${logValue(
+            this.namespace.name
+          )}`
+        );
+      }
+    }
+
+    if (data.spec.providerSpec.value.proxy) {
+      const proxyName = data.spec.providerSpec.value.proxy;
+      _proxy =
+        this.namespace.proxies.find((pr) => pr.name === proxyName) || null;
+      if (!_proxy) {
+        logger.warn(
+          'Cluster.constructor()',
+          `Unable to find proxy name=${logValue(
+            proxyName
+          )} for cluster=${logValue(this.name)} in namespace=${logValue(
+            this.namespace.name
+          )}`
+        );
+      }
+    }
+
+    this.namespace.machines.forEach((m) => {
+      if (m.clusterName === this.name) {
+        if (m.isController) {
+          _controllers.push(m);
+        } else {
+          _workers.push(m);
+        }
+      }
+    });
+    if (_controllers.length + _workers.length <= 0) {
+      logger.warn(
+        'Cluster.constructor()',
+        `Unable to find any machines for cluster=${logValue(
+          this.name
+        )} in namespace=${logValue(this.namespace.name)}`
+      );
+    }
   }
 
-  /** @member {string} contextName Kubeconfig context name for this cluster. */
+  /**
+   * @readonly
+   * @member {string} contextName Kubeconfig context name for this cluster.
+   */
   get contextName() {
     // NOTE: this mirrors how MCC generates kubeconfig context names
     return `${this.cloud.username}@${this.namespace.name}@${this.name}`;
@@ -358,29 +435,37 @@ export class Cluster extends Resource {
 
     DEV_ENV && rtv.verify({ kubeconfigPath }, { kubeconfigPath: rtv.STRING });
 
-    // NOTE: only add a label if it should be there; add a label to the object
+    // NOTE: only add a label if it should be there; adding a label to the object
     //  and giving it a value of `undefined` will result in the entity getting
     //  a label with a value of "undefined" (rather than ignoring it)
-    const labels = {};
-    if (!this.isManagementCluster) {
-      labels.managementCluster = this.cloud.name;
-      labels.project = this.namespace.name;
+    const labels = {
+      [entityLabels.CLOUD]: this.cloud.name,
+      [entityLabels.NAMESPACE]: this.namespace.name,
+    };
 
-      if (this.sshKey) {
-        labels.sshKey = this.sshKey.name;
-      }
+    if (this.isMgmtCluster) {
+      labels[entityLabels.IS_MGMT_CLUSTER] = 'true';
+    }
 
-      if (this.credential) {
-        labels.credential = this.credential.name;
-      }
+    if (this.sshKeys.length > 0) {
+      // NOTE: this mostly works, but it's a __Lens issue__ that you then have to
+      //  search for the combined string, and you can't find all clusters that have
+      //  one or the other
+      labels[entityLabels.SSH_KEY] = this.sshKeys
+        .map(({ name }) => name)
+        .join(',');
+    }
 
-      if (this.proxy) {
-        labels.proxy = this.proxy.name;
-      }
+    if (this.credential) {
+      labels[entityLabels.CREDENTIAL] = this.credential.name;
+    }
 
-      if (this.license) {
-        labels.license = this.license.name;
-      }
+    if (this.proxy) {
+      labels[entityLabels.PROXY] = this.proxy.name;
+    }
+
+    if (this.license) {
+      labels[entityLabels.LICENSE] = this.license.name;
     }
 
     return merge({}, model, {
@@ -391,8 +476,9 @@ export class Cluster extends Resource {
       spec: {
         kubeconfigPath,
         kubeconfigContext: this.contextName, // must be same context name used in file
-        isManagementCluster: this.isManagementCluster,
+        isMgmtCluster: this.isMgmtCluster,
         ready: this.ready,
+        apiStatus: this.status,
       },
       status: {
         // always starts off disconnected as far as Lens is concerned (because it
@@ -414,9 +500,17 @@ export class Cluster extends Resource {
 
   /** @returns {string} A string representation of this instance for logging/debugging. */
   toString() {
-    const propStr = `${super.toString()}, ready: ${
-      this.ready
-    }, region: ${logValue(this.region)}`;
+    const propStr = `${super.toString()}, ready: ${this.ready}, configReady: ${
+      this.configReady
+    }, controllers: ${this.controllers.length}, workers: ${
+      this.workers.length
+    }, sshKeys: ${logValue(
+      this.sshKeys.map((key) => key.name)
+    )}, credential: ${logValue(
+      this.credential && this.credential.name
+    )}, proxy: ${logValue(this.proxy && this.proxy.name)}, license: ${logValue(
+      this.license && this.license.name
+    )}`;
 
     if (Object.getPrototypeOf(this).constructor === Cluster) {
       return `{Cluster ${propStr}}`;

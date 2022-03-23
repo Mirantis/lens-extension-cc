@@ -88,6 +88,7 @@ export const syncView: Dict = {
   connectButtonLabel: () => 'Connect new Management Cluster',
   autoSync: () => 'Auto-sync',
 };
+
 export const managementClusters = {
   table: {
     thead: {
@@ -142,6 +143,18 @@ export const apiClient: Dict = {
       `Failed to update ${resourceType}`,
     failedToDelete: (resourceType = 'unknown') =>
       `Failed to delete ${resourceType}`,
+  },
+};
+
+/** Generic API resource-related strings. */
+export const apiResource: Dict = {
+  notice: {
+    helmNotReady: () => 'Helm charts are not ready.',
+  },
+  status: {
+    unknown: () => 'Unknown',
+    pending: () => 'Pending', // cluster or machine isn't fully ready yet, might have an error
+    ready: () => 'Ready', // cluster or machine ready status
   },
 };
 

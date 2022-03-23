@@ -5,7 +5,7 @@
 import { Common, Renderer, Main } from '@k8slens/extensions';
 import * as rtv from 'rtvjs';
 import { mergeRtvShapes } from '../util/mergeRtvShapes';
-import { catalogEntityModelTs, requiredLabelTs } from './catalogEntities';
+import { catalogEntityModelTs, requiredLabelsTs } from './catalogEntities';
 import {
   CatalogEntityMetadata,
   CatalogEntitySpec,
@@ -36,7 +36,7 @@ export const sshKeyEntityPhases = Object.freeze({
  */
 export const sshKeyEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
   metadata: {
-    labels: requiredLabelTs,
+    labels: requiredLabelsTs,
   },
   spec: {
     publicKey: rtv.STRING,

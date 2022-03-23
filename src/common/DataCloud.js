@@ -6,9 +6,10 @@ import { Namespace } from '../api/types/Namespace';
 import { Credential } from '../api/types/Credential';
 import { SshKey } from '../api/types/SshKey';
 import { Cluster } from '../api/types/Cluster';
+import { Machine } from '../api/types/Machine';
 import { Proxy } from '../api/types/Proxy';
 import { License } from '../api/types/License';
-import { logger } from '../util/logger';
+import { logger, logValue } from '../util/logger';
 import { EventDispatcher } from './EventDispatcher';
 import { apiResourceTypes, apiCredentialTypes } from '../api/apiConstants';
 
@@ -119,7 +120,7 @@ const _deserializeCollection = function (
         logger.warn(
           'DataCloud._deserializeCollection()',
           `Ignoring "${resourceType}" resource type ${idx}${
-            namespace ? ` from namespace "${namespace.name}"` : ''
+            namespace ? ` from namespace=${logValue(namespace.name)}` : ''
           }: Could not be deserialized, error="${getErrorMessage(err)}"`,
           err
         );
@@ -145,6 +146,10 @@ const _deserializeCollection = function (
  *  - `data` is the raw object returned from the API for the resourceType
  *  - `namespace` is the related Namespace (`undefined` when fetching namespaces themselves
  *      with `resourceType === apiResourceTypes.NAMESPACE`)
+ * @param {Object} [params.args] Custom arguments to provide to the `args` param of `cloudRequest()`.
+ *
+ *  NOTE: `namespaceName` will be overridden by the namespace whose resources are being fetched.
+ *
  * @returns {Promise<Object>} Never fails, always resolves in
  *  `{ resources: { [index: string]: Array<Resource> }, tokensRefreshed: boolean }`,
  *  where `resources` is a map of namespace name to list of `Resource`-based instances
@@ -160,11 +165,15 @@ const _fetchCollection = async function ({
   cloud,
   namespaces,
   create,
+  args,
 }) {
   DEV_ENV &&
     rtv.verify(
-      { resourceType: resourceType },
-      { resourceType: [rtv.STRING, { oneOf: Object.values(apiResourceTypes) }] }
+      { resourceType, namespaces },
+      {
+        resourceType: [rtv.STRING, { oneOf: Object.values(apiResourceTypes) }],
+        namespaces: [rtv.OPTIONAL, [rtv.CLASS_OBJECT, { ctor: Namespace }]],
+      }
     );
 
   let tokensRefreshed = false;
@@ -207,6 +216,7 @@ const _fetchCollection = async function ({
       cloud,
       method: 'list',
       resourceType: apiResourceTypes.NAMESPACE,
+      args,
     });
     results = [processResult(result)];
   } else {
@@ -216,7 +226,7 @@ const _fetchCollection = async function ({
           cloud,
           method: 'list',
           resourceType,
-          args: { namespaceName: namespace.name }, // extra args
+          args: { ...args, namespaceName: namespace.name },
         });
 
         return processResult(result, namespace);
@@ -358,11 +368,36 @@ const _fetchSshKeys = async function (cloud, namespaces) {
 };
 
 /**
+ * [ASYNC] Best-try to get all existing Machines from the management cluster, for each
+ *  namespace specified.
+ * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
+ *  if necessary.
+ * @param {Array<Namespace>} namespaces List of namespaces.
+ * @returns {Promise<Object>} Never fails, always resolves in
+ *  `{ machines: { [index: string]: Array<Machine> }, tokensRefreshed: boolean }`
+ *  where the Machines are mapped per namespace name. If an error occurs trying to get
+ *  any Machine, it will be ignored/skipped.
+ */
+const _fetchMachines = async function (cloud, namespaces) {
+  const { resources: machines, tokensRefreshed } = await _fetchCollection({
+    resourceType: apiResourceTypes.MACHINE,
+    cloud,
+    namespaces,
+    create: ({ data, namespace }) => new Machine({ data, namespace, cloud }),
+  });
+  return { machines, tokensRefreshed };
+};
+
+/**
  * [ASYNC] Best-try to get all existing clusters from the management cluster, for each
  *  namespace specified.
  * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
  *  if necessary.
  * @param {Array<Namespace>} namespaces List of namespaces.
+ *
+ *  NOTE: Each namespace is expected to already contain all known Credentials,
+ *   SSH Keys, Proxies, Machines, and Licenses that this Cluster might reference.
+ *
  * @returns {Promise<Object>} Never fails, always resolves in
  *  `{ clusters: { [index: string]: Array<Cluster> }, tokensRefreshed: boolean }`
  *  where the clusters are mapped per namespace name. If an error occurs trying to get
@@ -753,10 +788,6 @@ export class DataCloud extends EventDispatcher {
     logger.log('DataCloud.fetchData()', `Fetching data for dataCloud=${this}`);
 
     const nsResults = await _fetchNamespaces(this.cloud);
-    const clusterResults = await _fetchClusters(
-      this.cloud,
-      nsResults.namespaces
-    );
     const credResults = await _fetchCredentials(
       this.cloud,
       nsResults.namespaces
@@ -765,27 +796,42 @@ export class DataCloud extends EventDispatcher {
 
     let proxyResults;
     let licenseResults;
+    let machineResults;
     if (!this.preview) {
       proxyResults = await _fetchProxies(this.cloud, nsResults.namespaces);
       licenseResults = await _fetchLicenses(this.cloud, nsResults.namespaces);
+      machineResults = await _fetchMachines(this.cloud, nsResults.namespaces);
     } else {
       logger.log(
         'DataCloud.fetchData()',
-        `Skipping proxy and license fetch for preview instance, dataCloud=${this}`
+        `Skipping proxy, license, machine fetch for preview instance, dataCloud=${this}`
       );
     }
 
-    this.error = null;
-
-    this.namespaces = nsResults.namespaces.map((namespace) => {
-      namespace.clusters = clusterResults?.clusters[namespace.name] || [];
+    // map all the resources fetched so far into their respective Namespaces
+    const newNamespaces = nsResults.namespaces.map((namespace) => {
       namespace.sshKeys = keyResults?.sshKeys[namespace.name] || [];
       namespace.credentials = credResults?.credentials[namespace.name] || [];
       namespace.proxies = proxyResults?.proxies[namespace.name] || [];
       namespace.licenses = licenseResults?.licenses[namespace.name] || [];
-
+      namespace.machines = machineResults?.machines[namespace.name] || [];
       return namespace;
     });
+
+    // fetch clusters only AFTER everything else has been fetched and added into
+    //  the Namespaces because the Cluster uses all the other resources
+    const clusterResults = await _fetchClusters(
+      this.cloud,
+      nsResults.namespaces
+    );
+
+    // map fetched clusters into their respective Namespaces
+    newNamespaces.forEach((namespace) => {
+      namespace.clusters = clusterResults.clusters[namespace.name] || [];
+    });
+
+    this.error = null;
+    this.namespaces = newNamespaces;
 
     this.updateCloudNamespaces();
 

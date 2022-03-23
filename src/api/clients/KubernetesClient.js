@@ -1,4 +1,4 @@
-import { request } from '../../util/netUtil';
+import { request, buildQueryString } from '../../util/netUtil';
 import * as strings from '../../strings';
 import { apiResourceTypes } from '../apiConstants';
 import { logValue } from '../../util/logger';
@@ -41,13 +41,21 @@ export class KubernetesClient {
     );
   }
 
-  list(resourceType, { namespaceName } = {}) {
+  /**
+   * List resources within a given namespace.
+   * @param {string} resourceType
+   * @param {Object} options
+   * @param {string} options.namespaceName
+   * @param {number} [options.limit] To limit the number of items fetched.
+   */
+  list(resourceType, { namespaceName, limit } = {}) {
     const url = {
       [apiResourceTypes.NAMESPACE]: resourceType,
       [apiResourceTypes.METAL_CREDENTIAL]: `${apiResourceTypes.NAMESPACE}/${namespaceName}/${resourceType}`,
       [apiResourceTypes.EVENT]: `${apiResourceTypes.NAMESPACE}/${namespaceName}/${resourceType}`,
     };
-    return this.request(url[resourceType], {
+    const paramStr = buildQueryString({ limit });
+    return this.request(`${url[resourceType]}${paramStr}`, {
       errorMessage: strings.apiClient.error.failedToGet(resourceType),
     });
   }

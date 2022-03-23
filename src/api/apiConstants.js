@@ -56,6 +56,7 @@ export const apiCredentialTypes = Object.freeze(
 export const apiKinds = Object.freeze({
   NAMESPACE: 'Namespace',
   CLUSTER: 'Cluster',
+  MACHINE: 'Machine',
   PUBLIC_KEY: 'PublicKey',
   AWS_CREDENTIAL: 'AWSCredential',
   AZURE_CREDENTIAL: 'AzureCredential',
@@ -100,4 +101,15 @@ export const apiCredentialProviders = Object.freeze({
   // METAL_CREDENTIAL: '',
   OPENSTACK_CREDENTIAL: 'openstack',
   VSPHERE_CREDENTIAL: 'vsphere',
+});
+
+/**
+ * Map of API label to value.
+ * @type {{ [index: string], string }}
+ */
+export const apiLabels = Object.freeze({
+  KAAS_REGION: 'kaas.mirantis.com/region',
+  KAAS_PROVIDER: 'kaas.mirantis.com/provider',
+  CLUSTER_CONTROLLER: 'cluster.sigs.k8s.io/control-plane', // if a machine is a master (vs worker)
+  CLUSTER_NAME: 'cluster.sigs.k8s.io/cluster-name', // machine's associated cluster
 });
