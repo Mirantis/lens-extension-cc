@@ -2,6 +2,7 @@ import { get } from 'lodash';
 import nodeFetch from 'node-fetch';
 import https from 'https';
 import { Common } from '@k8slens/extensions';
+import queryString from 'query-string';
 import * as strings from '../strings';
 
 const { Util } = Common;
@@ -56,6 +57,18 @@ export function openBrowser(url) {
   }
 
   Util.openExternal(url); // open in default browser
+}
+
+/**
+ * Builds a query string from given parameters.
+ * @param {{ [index: string]: any }} params Values will be cast to a string. Parameters
+ *  with `undefined` values will be ignored.
+ * @returns {string} Query string that begins with "?" if there is at least one
+ *  parameter; empty string if none.
+ */
+export function buildQueryString(params) {
+  const str = queryString.stringify(params);
+  return `${str ? '?' : ''}${str}`;
 }
 
 /**

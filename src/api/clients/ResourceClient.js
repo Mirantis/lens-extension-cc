@@ -1,4 +1,4 @@
-import { request } from '../../util/netUtil';
+import { request, buildQueryString } from '../../util/netUtil';
 import * as strings from '../../strings';
 import { apiResourceTypes } from '../apiConstants';
 import { logValue } from '../../util/logger';
@@ -75,24 +75,52 @@ export class ResourceClient {
     );
   }
 
-  get(resourceType, { namespaceName, name } = {}) {
+  get(resourceType, { namespaceName, resourceName } = {}) {
     return this.request(
-      `${namespacePrefix(namespaceName)}${resourceType}/${name}`,
+      `${namespacePrefix(namespaceName)}${resourceType}/${resourceName}`,
       {
         errorMessage: strings.apiClient.error.failedToGet(resourceType),
       }
     );
   }
 
-  list(resourceType, { namespaceName } = {}) {
-    return this.request(`${namespacePrefix(namespaceName)}${resourceType}`, {
+  /**
+   * List resources within a given namespace.
+   * @param {string} resourceType Value from the `apiResourceTypes` enum.
+   * @param {Object} options
+   * @param {string} options.namespaceName
+   * @param {number} [options.limit] To limit the number of items fetched.
+   * @param {string} [options.resourceName] Name of the resource to scope a sub-resource query.
+   *  Required in order to use `subResourceType`.
+   * @param {string} [options.subResourceType] Sub-resource type, scoped to `resourceName`.
+   *  Ignored if `resourceName` is falsy. Value from the `apiResourceTypes` enum.
+   */
+  list(
+    resourceType,
+    { namespaceName, limit, resourceName, subResourceType } = {}
+  ) {
+    const paramStr = buildQueryString({ limit });
+
+    let url = `${namespacePrefix(namespaceName)}${resourceType}`;
+    if (resourceName && subResourceType) {
+      url = `${url}/${resourceName}/${subResourceType}`;
+    }
+    url = `${url}${paramStr}`;
+
+    return this.request(url, {
       errorMessage: strings.apiClient.error.failedToGetList(resourceType),
     });
   }
 
-  /** List all resources across all namespaces. */
-  listAll(resourceType) {
-    return this.request(resourceType, {
+  /**
+   * List all resources across all namespaces.
+   * @param {string} resourceType
+   * @param {Object} [options]
+   * @param {number} [options.limit] To limit the number of items fetched.
+   */
+  listAll(resourceType, { limit } = {}) {
+    const paramStr = buildQueryString({ limit });
+    return this.request(`${resourceType}${paramStr}`, {
       errorMessage: strings.apiClient.error.failedToGetList(resourceType),
     });
   }

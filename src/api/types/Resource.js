@@ -40,7 +40,10 @@ export class Resource {
       rtv.verify(
         { data, cloud },
         {
+          // if `typeset` was specified, `null` here will cause `verify()` to fail, which is good
+          //  since `typeset` should be considered required
           data: typeset,
+
           cloud: [rtv.CLASS_OBJECT, { ctor: Cloud }],
         }
       );

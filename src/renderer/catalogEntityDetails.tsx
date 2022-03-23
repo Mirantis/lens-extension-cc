@@ -32,7 +32,9 @@ const {
 const {
   catalog: {
     entities: {
-      common: { details: unknownValue },
+      common: {
+        details: { unknownValue },
+      },
     },
   },
 } = strings;

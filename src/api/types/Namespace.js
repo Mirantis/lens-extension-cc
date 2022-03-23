@@ -2,6 +2,7 @@ import * as rtv from 'rtvjs';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
 import { Resource, resourceTs } from './Resource';
 import { Cluster } from './Cluster';
+import { Machine } from './Machine';
 import { Credential } from './Credential';
 import { SshKey } from './SshKey';
 import { Proxy } from './Proxy';
@@ -30,6 +31,7 @@ export class Namespace extends Resource {
     super({ data, cloud, typeset: namespaceTs });
 
     let _clusters = [];
+    let _machines = [];
     let _sshKeys = [];
     let _credentials = [];
     let _proxies = [];
@@ -65,6 +67,32 @@ export class Namespace extends Resource {
           );
         if (newValue !== _clusters) {
           _clusters = newValue || [];
+        }
+      },
+    });
+
+    /**
+     * @member {Array<Machine>} machines Machines in this namespace. Empty if none.
+     */
+    Object.defineProperty(this, 'machines', {
+      enumerable: true,
+      get() {
+        return _machines;
+      },
+      set(newValue) {
+        DEV_ENV &&
+          rtv.verify(
+            { machines: newValue },
+            {
+              machines: [
+                rtv.EXPECTED,
+                rtv.ARRAY,
+                { $: [rtv.CLASS_OBJECT, { ctor: Machine }] },
+              ],
+            }
+          );
+        if (newValue !== _machines) {
+          _machines = newValue || [];
         }
       },
     });
@@ -182,6 +210,13 @@ export class Namespace extends Resource {
   }
 
   /**
+   * @member {number} machineCount Number of machines in this namespace.
+   */
+  get machineCount() {
+    return this.machines.length;
+  }
+
+  /**
    * @member {number} clusterCount Number of SSH keys in this namespace.
    */
   get sshKeyCount() {
@@ -213,9 +248,11 @@ export class Namespace extends Resource {
   toString() {
     const propStr = `${super.toString()}, clusters: ${
       this.clusterCount
-    }, sshKeys: ${this.sshKeyCount}, credentials: ${
-      this.credentialCount
-    }, proxies: ${this.proxyCount}, licenses: ${this.licenseCount}`;
+    }, machines: ${this.machineCount}, sshKeys: ${
+      this.sshKeyCount
+    }, credentials: ${this.credentialCount}, proxies: ${
+      this.proxyCount
+    }, licenses: ${this.licenseCount}`;
 
     if (Object.getPrototypeOf(this).constructor === Namespace) {
       return `{Namespace ${propStr}}`;

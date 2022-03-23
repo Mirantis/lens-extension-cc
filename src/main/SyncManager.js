@@ -542,10 +542,10 @@ export class SyncManager extends Singleton {
     // }
     const promises = dataCloud.syncedNamespaces.flatMap((ns) => {
       return ns.clusters.map((cluster) => {
-        if (!cluster.ready) {
+        if (!cluster.configReady) {
           return Promise.reject(
             new Error(
-              `Cannot add/update cluster that is not ready; cluster=${cluster}`
+              `Cannot add/update cluster that is not config-ready; cluster=${cluster}`
             )
           );
         }

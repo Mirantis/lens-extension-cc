@@ -21,13 +21,30 @@ const {
  */
 export const KUBECONFIG_DIR_NAME = 'kubeconfigs';
 
+/** Label names for various entity types. */
+export const entityLabels = Object.freeze({
+  /** Management cluster's name (name assigned to Cloud by user when adding it). */
+  CLOUD: 'mgmt-cluster',
+  /** Resource's namespace name. */
+  NAMESPACE: 'project',
+  /** Identifies clusters that are management clusters. Value should always be "true". */
+  IS_MGMT_CLUSTER: 'is-mgmt-cluster',
+  /** Associated SSH key name(s), if any. */
+  SSH_KEY: 'ssh-key',
+  /** Associated Credential name, if any. */
+  CREDENTIAL: 'credential',
+  /** Associated Proxy name, if any. */
+  PROXY: 'proxy',
+  /** Associated License name, if any. */
+  LICENSE: 'license',
+});
+
 /**
- * Typeset representing the required labels for all entity types (except a mgmt
- *  cluster itself).
+ * Typeset representing the required labels for all entity types.
  */
-export const requiredLabelTs = {
-  managementCluster: rtv.STRING,
-  project: rtv.STRING,
+export const requiredLabelsTs = {
+  [entityLabels.CLOUD]: rtv.STRING,
+  [entityLabels.NAMESPACE]: rtv.STRING,
 };
 
 /**
@@ -126,11 +143,32 @@ export const clusterEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
       rtv.PLAIN_OBJECT,
       {
         $: {
-          ...requiredLabelTs,
-          sshKey: [rtv.OPTIONAL, rtv.STRING, (value) => value !== ''], // either no label, or non-empty string
-          credential: [rtv.OPTIONAL, rtv.STRING, (value) => value !== ''], // either no label, or non-empty string
-          proxy: [rtv.OPTIONAL, rtv.STRING, (value) => value !== ''], // either no label, or non-empty string
-          license: [rtv.OPTIONAL, rtv.STRING, (value) => value !== ''], // either no label, or non-empty string
+          ...requiredLabelsTs,
+          [entityLabels.IS_MGMT_CLUSTER]: [
+            rtv.OPTIONAL,
+            rtv.STRING,
+            { oneOf: 'true' },
+          ], // either no label, or "true"
+          [entityLabels.SSH_KEY]: [
+            rtv.OPTIONAL,
+            rtv.STRING,
+            (value) => value !== '',
+          ], // either no label, or non-empty string
+          [entityLabels.CREDENTIAL]: [
+            rtv.OPTIONAL,
+            rtv.STRING,
+            (value) => value !== '',
+          ], // either no label, or non-empty string
+          [entityLabels.PROXY]: [
+            rtv.OPTIONAL,
+            rtv.STRING,
+            (value) => value !== '',
+          ], // either no label, or non-empty string
+          [entityLabels.LICENSE]: [
+            rtv.OPTIONAL,
+            rtv.STRING,
+            (value) => value !== '',
+          ], // either no label, or non-empty string
         },
       },
     ],
@@ -156,8 +194,9 @@ export const clusterEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
 
     //// CUSTOM PROPERTIES
 
-    isManagementCluster: rtv.BOOLEAN,
+    isMgmtCluster: rtv.BOOLEAN,
     ready: rtv.BOOLEAN,
+    apiStatus: rtv.STRING,
   },
 
   // based on Lens `KubernetesClusterStatus` type

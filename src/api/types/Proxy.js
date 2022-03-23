@@ -1,10 +1,11 @@
 import * as rtv from 'rtvjs';
-import { merge, get } from 'lodash';
+import { merge } from 'lodash';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
 import { Resource, resourceTs } from './Resource';
 import { Namespace } from './Namespace';
+import { entityLabels } from '../../catalog/catalogEntities';
 import { ProxyEntity, proxyEntityPhases } from '../../catalog/ProxyEntity';
-import { apiKinds } from '../apiConstants';
+import { apiKinds, apiLabels } from '../apiConstants';
 import { logValue } from '../../util/logger';
 
 /**
@@ -19,7 +20,7 @@ export const proxyTs = mergeRtvShapes({}, resourceTs, {
     labels: [
       rtv.OPTIONAL,
       {
-        'kaas.mirantis.com/region': [rtv.OPTIONAL, rtv.STRING],
+        [apiLabels.KAAS_REGION]: [rtv.OPTIONAL, rtv.STRING],
       },
     ],
   },
@@ -62,7 +63,7 @@ export class Proxy extends Resource {
     Object.defineProperty(this, 'region', {
       enumerable: true,
       get() {
-        return get(data.metadata, 'labels["kaas.mirantis.com/region"]', null);
+        return data.metadata.labels?.[apiLabels.KAAS_REGION] || null;
       },
     });
 
@@ -96,8 +97,8 @@ export class Proxy extends Resource {
       metadata: {
         namespace: this.namespace.name,
         labels: {
-          managementCluster: this.cloud.name,
-          project: this.namespace.name,
+          [entityLabels.CLOUD]: this.cloud.name,
+          [entityLabels.NAMESPACE]: this.namespace.name,
         },
       },
       spec: {

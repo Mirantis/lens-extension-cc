@@ -1,13 +1,15 @@
 import * as rtv from 'rtvjs';
-import { get, merge, pick } from 'lodash';
+import { merge, pick } from 'lodash';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
-import { apiCredentialKinds } from '../apiConstants';
+import { apiCredentialKinds, apiLabels } from '../apiConstants';
 import { Resource, resourceTs } from './Resource';
 import { Namespace } from './Namespace';
+import { entityLabels } from '../../catalog/catalogEntities';
 import {
   CredentialEntity,
   credentialEntityPhases,
 } from '../../catalog/CredentialEntity';
+import { logValue } from '../../util/logger';
 
 /**
  * Typeset for an MCC Credential API resource.
@@ -21,8 +23,8 @@ export const credentialTs = mergeRtvShapes({}, resourceTs, {
     labels: [
       rtv.OPTIONAL,
       {
-        'kaas.mirantis.com/provider': [rtv.OPTIONAL, rtv.STRING],
-        'kaas.mirantis.com/region': [rtv.OPTIONAL, rtv.STRING],
+        [apiLabels.KAAS_PROVIDER]: [rtv.OPTIONAL, rtv.STRING],
+        [apiLabels.KAAS_REGION]: [rtv.OPTIONAL, rtv.STRING],
       },
     ],
   },
@@ -36,7 +38,7 @@ export const credentialTs = mergeRtvShapes({}, resourceTs, {
 
 /**
  * MCC credential API resource.
- * @class Proxy
+ * @class Credential
  */
 export class Credential extends Resource {
   /**
@@ -57,7 +59,6 @@ export class Credential extends Resource {
           : credentialTs,
     });
 
-    // now we have check only for openStack. It's hard to predict other types
     DEV_ENV &&
       rtv.verify(
         { namespace },
@@ -78,7 +79,7 @@ export class Credential extends Resource {
     Object.defineProperty(this, 'region', {
       enumerable: true,
       get() {
-        return get(data.metadata, 'labels["kaas.mirantis.com/region"]', null);
+        return data.metadata.labels?.[apiLabels.KAAS_REGION] || null;
       },
     });
 
@@ -86,7 +87,7 @@ export class Credential extends Resource {
     Object.defineProperty(this, 'provider', {
       enumerable: true,
       get() {
-        return get(data.metadata, 'labels["kaas.mirantis.com/provider"]', null);
+        return data.metadata.labels?.[apiLabels.KAAS_PROVIDER] || null;
       },
     });
 
@@ -113,8 +114,8 @@ export class Credential extends Resource {
       metadata: {
         namespace: this.namespace.name,
         labels: {
-          managementCluster: this.cloud.name,
-          project: this.namespace.name,
+          [entityLabels.CLOUD]: this.cloud.name,
+          [entityLabels.NAMESPACE]: this.namespace.name,
         },
       },
       spec: {
@@ -138,9 +139,9 @@ export class Credential extends Resource {
 
   /** @returns {string} A string representation of this instance for logging/debugging. */
   toString() {
-    const propStr = `${super.toString()}, namespace: "${
+    const propStr = `${super.toString()}, namespace: ${logValue(
       this.namespace.name
-    }", valid: ${this.valid}`;
+    )}, valid: ${this.valid}`;
 
     if (Object.getPrototypeOf(this).constructor === Credential) {
       return `{Credential ${propStr}}`;
