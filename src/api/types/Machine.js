@@ -100,6 +100,16 @@ export class Machine extends Node {
       },
     });
 
+    /**
+     * @member {License|null} license License used by this Machine. Null if none.
+     */
+    Object.defineProperty(this, 'license', {
+      enumerable: true,
+      get() {
+        return _license;
+      },
+    });
+
     //// Initialize
 
     if (data.spec.providerSpec.value.rhelLicense) {
