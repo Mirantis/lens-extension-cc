@@ -794,32 +794,48 @@ export class DataCloud extends EventDispatcher {
     );
     const keyResults = await _fetchSshKeys(this.cloud, nsResults.namespaces);
 
-    let proxyResults;
-    let licenseResults;
-    let machineResults;
-    if (!this.preview) {
-      proxyResults = await _fetchProxies(this.cloud, nsResults.namespaces);
-      licenseResults = await _fetchLicenses(this.cloud, nsResults.namespaces);
-      machineResults = await _fetchMachines(this.cloud, nsResults.namespaces);
-    } else {
-      logger.log(
-        'DataCloud.fetchData()',
-        `Skipping proxy, license, machine fetch for preview instance, dataCloud=${this}`
-      );
-    }
-
     // map all the resources fetched so far into their respective Namespaces
     const newNamespaces = nsResults.namespaces.map((namespace) => {
       namespace.sshKeys = keyResults?.sshKeys[namespace.name] || [];
       namespace.credentials = credResults?.credentials[namespace.name] || [];
-      namespace.proxies = proxyResults?.proxies[namespace.name] || [];
-      namespace.licenses = licenseResults?.licenses[namespace.name] || [];
-      namespace.machines = machineResults?.machines[namespace.name] || [];
       return namespace;
     });
 
-    // fetch clusters only AFTER everything else has been fetched and added into
-    //  the Namespaces because the Cluster uses all the other resources
+    if (!this.preview) {
+      const proxyResults = await _fetchProxies(
+        this.cloud,
+        nsResults.namespaces
+      );
+      const licenseResults = await _fetchLicenses(
+        this.cloud,
+        nsResults.namespaces
+      );
+      // map fetched proxies and licenses into their respective Namespaces
+      newNamespaces.forEach((namespace) => {
+        namespace.proxies = proxyResults.proxies[namespace.name] || [];
+        namespace.licenses = licenseResults.licenses[namespace.name] || [];
+      });
+
+      // NOTE: fetch machines only AFTER licenses have been fetched and added
+      //  into the Namespaces because the Machine resource expects to find Licenses
+      const machineResults = await _fetchMachines(
+        this.cloud,
+        nsResults.namespaces
+      );
+      // map fetched machines into their respective Namespaces
+      newNamespaces.forEach((namespace) => {
+        namespace.machines = machineResults.machines[namespace.name] || [];
+      });
+    } else {
+      logger.log(
+        'DataCloud.fetchData()',
+        `Preview only: Skipping proxy, license, machine fetch; dataCloud=${this}`
+      );
+    }
+
+    // NOTE: fetch clusters only AFTER everything else has been fetched and added
+    //  into the Namespaces because the Cluster resource expects to find all the
+    //  other resources
     const clusterResults = await _fetchClusters(
       this.cloud,
       nsResults.namespaces

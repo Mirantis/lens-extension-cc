@@ -3,7 +3,7 @@ import { mergeRtvShapes } from '../../util/mergeRtvShapes';
 import { apiKinds, apiLabels } from '../apiConstants';
 import { resourceTs } from './Resource';
 import { Node } from './Node';
-import { logValue } from '../../util/logger';
+import { logger, logValue } from '../../util/logger';
 
 /**
  * Typeset for an MCC Machine API resource.
@@ -23,6 +23,14 @@ export const machineTs = mergeRtvShapes({}, resourceTs, {
         [apiLabels.KAAS_REGION]: [rtv.OPTIONAL, rtv.STRING],
       },
     ],
+  },
+  spec: {
+    providerSpec: {
+      value: {
+        // name of the associated license, if any
+        rhelLicense: [rtv.OPTIONAL, rtv.STRING],
+      },
+    },
   },
   status: {
     providerStatus: {
@@ -59,10 +67,16 @@ export class Machine extends Node {
    * @param {Object} params
    * @param {Object} params.data Raw data payload from the API.
    * @param {Namespace} params.namespace Namespace to which the object belongs.
+   *
+   *  NOTE: The namespace is expected to already contain all known Licenses that
+   *   this Machine might reference.
+   *
    * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
    */
   constructor({ data, namespace, cloud }) {
     super({ data, cloud, namespace, typeset: machineTs });
+
+    let _license = null;
 
     /**
      * @readonly
@@ -85,6 +99,24 @@ export class Machine extends Node {
         return !!data.metadata.labels?.[apiLabels.CLUSTER_CONTROLLER];
       },
     });
+
+    //// Initialize
+
+    if (data.spec.providerSpec.value.rhelLicense) {
+      const licenseName = data.spec.providerSpec.value.rhelLicense;
+      _license =
+        this.namespace.licenses.find((li) => li.name === licenseName) || null;
+      if (!_license) {
+        logger.warn(
+          'Machine.constructor()',
+          `Unable to find license name=${logValue(
+            licenseName
+          )} for machine=${logValue(this.name)} in namespace=${logValue(
+            this.namespace.name
+          )}`
+        );
+      }
+    }
   }
 
   // NOTE: we don't have toModel() and toEntity() because we don't show Machines in
@@ -94,7 +126,7 @@ export class Machine extends Node {
   toString() {
     const propStr = `${super.toString()}, namespace: ${logValue(
       this.namespace.name
-    )}`;
+    )}, license: ${logValue(this.license && this.license.name)}`;
 
     if (Object.getPrototypeOf(this).constructor === Machine) {
       return `{Machine ${propStr}}`;
