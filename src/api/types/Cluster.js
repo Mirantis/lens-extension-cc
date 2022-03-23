@@ -393,6 +393,7 @@ export class Cluster extends Node {
         }
       }
     });
+
     if (_controllers.length + _workers.length <= 0) {
       logger.warn(
         'Cluster.constructor()',
@@ -400,6 +401,13 @@ export class Cluster extends Node {
           this.name
         )} in namespace=${logValue(this.namespace.name)}`
       );
+    } else {
+      // look for the first machine that has a license, and assume that's the one
+      //  the cluster is ultimately using (because we assume all machines use the
+      //  same license)
+      _license = [...this.controllers, ...this.workers].find(
+        (m) => !!m.license
+      )?.license;
     }
   }
 
