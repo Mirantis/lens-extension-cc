@@ -23,7 +23,7 @@ export const logger = (function () {
       }
 
       const msg = `[${pkg.name}/${scope.replace(/^\//, '')}] ${
-        level === 'error' ? 'ERROR: ' : ''
+        level === 'error' ? 'ERROR: ' : level === 'warn' ? 'Warning: ' : ''
       }${message}`;
 
       // eslint-disable-next-line no-console -- we intend to log

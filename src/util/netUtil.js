@@ -1,18 +1,33 @@
+import process from 'process';
 import { get } from 'lodash';
 import nodeFetch from 'node-fetch';
 import https from 'https';
 import { Common } from '@k8slens/extensions';
 import queryString from 'query-string';
 import * as strings from '../strings';
+import { logger } from './logger';
 
 const { Util } = Common;
 
-// SECURITY: get around any MCC instance certificate issues
-const httpsAgent = DEV_UNSAFE_NO_CERT
-  ? new https.Agent({
-      rejectUnauthorized: false,
-    })
-  : undefined;
+let httpsAgent;
+// NOTE: there seems to be a bug with Webpack in that if we use optional chaining (`?.`)
+//  to make this statement more terse, it just removes the `?` instead of (1) leaving
+//  it there like it should (and does for the rest of the code everywhere), or (2)
+//  transpiling it to what we've explicitly used here to get around this issue
+if (
+  process.env.LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS &&
+  process.env.LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS.match(/^(true|yes|1)$/)
+) {
+  // SECURITY: get around issues with Clouds that have self-signed certificates (typically used
+  //  for internal test Clouds of various kinds)
+  logger.warn(
+    'netUtil',
+    'Self-signed certificates will be permitted for all network requests: Be careful!'
+  );
+  httpsAgent = new https.Agent({
+    rejectUnauthorized: false,
+  });
+}
 
 async function tryExtractBody(response, extractMethod) {
   let body = null;
