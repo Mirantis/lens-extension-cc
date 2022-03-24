@@ -151,6 +151,22 @@ GET /oauth/code
 - Up to, and including, __Lens 5.1.3__ (and probably some versions after that as well), I get an error like, "Failed to add cluster to Lens" after choosing a cluster and clicking on the "Add cluster" button in the extension, or choosing the "Add cluster to Lens" cluster menu option in Mirantis Container Cloud v2.9 or later.
     - __Lens must be restarted__ after upgrading the extension. This is __due to a bug in Lens__ that causes the extension's registration of [IPC event handlers](https://api-docs.k8slens.dev/v5.1.2/extensions/guides/ipc/) to be ignored, leading to an error message like this. [This Lens PR](https://github.com/lensapp/lens/pull/3505) tracks the fix.
 
+## Security
+
+### Self-signed certificates
+
+By default, the extension does not support management clusters that use self-signed certificates. They are treated as untrusted hosts for security reasons (because their identity cannot be verified).
+
+There are some legitimate reasons to use self-signed certificates, however, and it is possible to enable the extension to skip certificate verification by starting Lens from the command line with a special `LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS` flag:
+
+```bash
+$ LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS=1 /Applications/Lens.app/Contents/MacOS/Lens
+```
+
+- Values of `1`, `true`, or `yes` will enable self-signed certificate support.
+
+> The above example is for macOS. It will be similar on Windows and Linux, but with different syntax for setting the environment variable, and a different installation path for Lens.
+
 ## Development
 
 > __Yarn 1.x is required__
