@@ -6,6 +6,7 @@
 
 - Catalog syncing is now enabled! The fake Catalog items have been removed, and you should now see any cluster, credential, SSH key, proxy, and RHEL license in any of the projects you're syncing show-up in the Catalog.
 - The old status bar item has been replaced by a new top bar item to make it easier to find, and easier to click on.
+- It's now possible to connect to a management cluster using a self-signed certificate. See the [Security](README.md#security) section in the README for more information.
 
 ## v4.0.0-alpha.3
 
