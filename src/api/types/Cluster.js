@@ -90,6 +90,11 @@ export const clusterTs = mergeRtvShapes({}, resourceTs, {
         apiServerCertificate: rtv.STRING,
         ucpDashboard: [rtv.OPTIONAL, rtv.STRING], // if managed by UCP, the URL
         loadBalancerHost: [rtv.OPTIONAL, rtv.STRING],
+        releaseRefs: {
+          current: {
+            version: rtv.STRING,
+          },
+        },
 
         // readiness conditions
         conditions: [
@@ -215,6 +220,17 @@ export class Cluster extends Node {
       enumerable: true,
       get() {
         return isMgmtCluster(data);
+      },
+    });
+
+    /**
+     * @readonly
+     * @member {sting|null} currentVersion
+     */
+    Object.defineProperty(this, 'currentVersion', {
+      enumerable: true,
+      get() {
+        return data.status?.providerStatus?.releaseRefs.current.version || null;
       },
     });
 
@@ -510,8 +526,6 @@ export class Cluster extends Node {
   toString() {
     const propStr = `${super.toString()}, ready: ${this.ready}, configReady: ${
       this.configReady
-    }, controllers: ${this.controllers.length}, workers: ${
-      this.workers.length
     }, sshKeys: ${logValue(
       this.sshKeys.map((key) => key.name)
     )}, credential: ${logValue(
