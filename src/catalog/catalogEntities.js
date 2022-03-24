@@ -197,6 +197,12 @@ export const clusterEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
     isMgmtCluster: rtv.BOOLEAN,
     ready: rtv.BOOLEAN,
     apiStatus: rtv.STRING,
+    controllerCount: rtv.SAFE_INT,
+    workerCount: rtv.SAFE_INT,
+    region: rtv.STRING,
+    provider: rtv.STRING,
+    currentVersion: rtv.STRING,
+    childCount: rtv.SAFE_INT,
   },
 
   // based on Lens `KubernetesClusterStatus` type

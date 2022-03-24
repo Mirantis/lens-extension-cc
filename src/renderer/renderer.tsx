@@ -18,6 +18,8 @@ import { mkClusterContextName } from '../util/templates';
 import { EXT_EVENT_OAUTH_CODE, EXT_EVENT_ACTIVATE_CLUSTER } from './eventBus';
 import { catalogEntityDetails } from './catalogEntityDetails';
 import { generateTopBarItems } from './topBarItems';
+import { openBrowser } from '../util/netUtil';
+import { generateEntityUrl } from '../catalog/catalogEntities';
 
 const {
   LensExtension,
@@ -147,13 +149,10 @@ export default class ExtensionRenderer extends LensExtension {
 
     // OPEN IN BROWSER
     ctx.menuItems.push({
-      title: `(WIP) ${strings.catalog.entities.cluster.contextMenu.browserOpen.title()}`,
+      title: strings.catalog.entities.cluster.contextMenu.browserOpen.title(),
       icon: 'launch',
       onClick: async () => {
-        logger.log(
-          'ExtensionRenderer.handleClusterContextMenuOpen.browserOpen.onClick()',
-          'Opening cluster in browser...'
-        );
+        openBrowser(generateEntityUrl(entity));
       },
     });
   };
