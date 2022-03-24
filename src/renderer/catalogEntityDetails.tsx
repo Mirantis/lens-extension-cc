@@ -61,6 +61,57 @@ export const catalogEntityDetails = [
           >
             {getCreatedValue(props.entity.spec.createdAt)}
           </DrawerItem>
+          <DrawerItem
+            name={strings.catalog.entities.cluster.details.props.managementCluster()}
+          >
+            {strings.catalog.entities.cluster.details.props.isManagementCluster(
+              props.entity.spec.isMgmtCluster
+            ) || unknownValue()}
+          </DrawerItem>
+          {props.entity.spec.isMgmtCluster && (
+            <>
+              <DrawerItem
+                name={strings.catalog.entities.cluster.details.props.url()}
+              >
+                {props.entity.metadata.cloudUrl || unknownValue()}
+              </DrawerItem>
+              <DrawerItem
+                name={strings.catalog.entities.cluster.details.props.childClusters()}
+              >
+                {props.entity.spec.childCount ?? unknownValue()}
+              </DrawerItem>
+            </>
+          )}
+          <DrawerItem
+            name={strings.catalog.entities.cluster.details.props.region()}
+          >
+            {props.entity.spec.region || unknownValue()}
+          </DrawerItem>
+          <DrawerItem
+            name={strings.catalog.entities.cluster.details.props.provider()}
+          >
+            {props.entity.spec.provider || unknownValue()}
+          </DrawerItem>
+          <DrawerItem
+            name={strings.catalog.entities.cluster.details.props.mccStatus()}
+          >
+            {props.entity.spec.apiStatus || unknownValue()}
+          </DrawerItem>
+          <DrawerItem
+            name={strings.catalog.entities.cluster.details.props.release()}
+          >
+            {props.entity.spec.currentVersion || unknownValue()}
+          </DrawerItem>
+          <DrawerItem
+            name={strings.catalog.entities.cluster.details.props.managers()}
+          >
+            {props.entity.spec.controllerCount ?? unknownValue()}
+          </DrawerItem>
+          <DrawerItem
+            name={strings.catalog.entities.cluster.details.props.workers()}
+          >
+            {props.entity.spec.workerCount ?? unknownValue()}
+          </DrawerItem>
         </>
       ),
     },

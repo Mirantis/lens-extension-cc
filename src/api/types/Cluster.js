@@ -503,6 +503,12 @@ export class Cluster extends Node {
         isMgmtCluster: this.isMgmtCluster,
         ready: this.ready,
         apiStatus: this.status,
+        controllerCount: this.controllers.length,
+        workerCount: this.workers.length,
+        region: this.region,
+        provider: this.provider,
+        currentVersion: this.currentVersion,
+        childCount: this.isMgmtCluster ? this.namespace.clusters.length - 1 : 0,
       },
       status: {
         // always starts off disconnected as far as Lens is concerned (because it

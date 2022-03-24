@@ -225,7 +225,17 @@ export const catalog: Dict = {
       // details panel
       details: {
         props: {
-          // TODO
+          managementCluster: () => 'Management cluster',
+          isManagementCluster: (isManagementCluster) =>
+            isManagementCluster ? 'Yes' : 'No',
+          url: () => 'URL',
+          childClusters: () => 'Child clusters',
+          region: () => 'Region',
+          provider: () => 'Provider',
+          mccStatus: () => 'MCC Status',
+          release: () => 'Release',
+          managers: () => 'Managers',
+          workers: () => 'Workers',
         },
       },
     },
