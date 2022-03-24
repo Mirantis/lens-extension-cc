@@ -2,10 +2,17 @@
 // Main Process IPC API
 //
 
+import process from 'process';
 import { Main } from '@k8slens/extensions';
 import * as rtv from 'rtvjs';
 import { logger } from '../util/logger';
 import { ipcEvents } from '../constants';
+
+// enabled if flag is not set, or specifically set to 'true', 'yes', or '1'
+// set to some other non-empty value to disable it
+const captureEnabled =
+  !process.env.LEX_CC_MAIN_CAPTURE ||
+  process.env.LEX_CC_MAIN_CAPTURE.match(/^(true|yes|1)$/);
 
 // typeset for the capture() method
 const captureTs = {
@@ -33,6 +40,9 @@ export class IpcMain extends Main.Ipc {
    *  calls to this method will be a noop until the bridge is established, resulting
    *  in missing log statements (if you're only looking for them on the Renderer side).
    *
+   * NOTE: Broadcast is enabled from the command line by using the `LEX_CC_MAIN_CAPTURE` flag.
+   *  If broadcast is disabled, the method will still log to the console as usual.
+   *
    * @param {string} level Logger/console method, e.g. 'log' or 'warn'.
    * @param {string} context Identifies where the message came from, e.g. 'methodName()'.
    * @param {string} message Log message.
@@ -42,13 +52,18 @@ export class IpcMain extends Main.Ipc {
   capture(level, context, message, ...rest) {
     DEV_ENV && rtv.verify({ level, context, message }, captureTs);
 
+    // always log as normal to console
     logger[level](context, message, ...rest);
-    this.broadcast(
-      ipcEvents.broadcast.LOGGER,
-      level,
-      `__MAIN__/${context}`,
-      message,
-      ...rest
-    );
+
+    // only broadcast if enabled
+    if (captureEnabled) {
+      this.broadcast(
+        ipcEvents.broadcast.LOGGER,
+        level,
+        `__MAIN__/${context}`,
+        message,
+        ...rest
+      );
+    }
   }
 }

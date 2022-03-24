@@ -178,6 +178,20 @@ You can also run a one-off development build with `yarn dev`.
 
 > Note these steps will get much easier once [this Lens issue](https://github.com/lensapp/lens/issues/1741) is fixed.
 
+### Dev - Env vars
+
+The following environment variables are supported when starting Lens from the command line (typically to debug the `main` process):
+
+- `LEX_CC_MAIN_CAPTURE`: Use this to opt-out of broadcasting some log messages from `main` to `renderer` to reduce noise in the `renderer` process' DevTools Console.
+    - No value, or one of "true", "yes", or "1" will enable it.
+    - Set it to any other non-empty value to disable it.
+
+Start Lens from the command line, with `main` process debugging enabled, like this (and here, we're disabling the flag, as an example of using it):
+
+```bash
+$ DEBUG=true LEX_CC_MAIN_CAPTURE=0 /Applications/Lens.app/Contents/MacOS/Lens --inspect=5858
+```
+
 ### Dev - Uninstalling
 
 Go to the Lens Extensions View (`CMD+SHIFT+E` on macOS) and use the UI to uninstall it.
