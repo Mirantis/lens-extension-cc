@@ -10,7 +10,14 @@ import { logger } from './logger';
 const { Util } = Common;
 
 let httpsAgent;
-if (process.env.LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS?.match(/^(true|yes|1)$/)) {
+// NOTE: there seems to be a bug with Webpack in that if we use optional chaining (`?.`)
+//  to make this statement more terse, it just removes the `?` instead of (1) leaving
+//  it there like it should (and does for the rest of the code everywhere), or (2)
+//  transpiling it to what we've explicitly used here to get around this issue
+if (
+  process.env.LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS &&
+  process.env.LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS.match(/^(true|yes|1)$/)
+) {
   // SECURITY: get around issues with Clouds that have self-signed certificates (typically used
   //  for internal test Clouds of various kinds)
   logger.warn(
