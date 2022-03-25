@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { Renderer } from '@k8slens/extensions';
 import styled from '@emotion/styled';
 import { layout } from '../styles';
@@ -85,32 +85,34 @@ export const SyncView = () => {
    */
   const getDataToSync = (data, url) => {
     // store data from each cloud in the local object 'syncedClouds'
-    setSyncedClouds({ ...syncedClouds, [url]: data });
-    // when clouds count in local object === count DCs, preparation is done and we can use syncedClouds
-    if (Object.keys(syncedClouds).length === Object.keys(dataClouds).length) {
+    const newSyncedClouds = { ...syncedClouds, [url]: data };
+    setSyncedClouds(newSyncedClouds);
+
+    // when clouds count in local object === count DCs, preparation is done
+    if (
+      isSyncStarted &&
+      Object.keys(newSyncedClouds).length === Object.keys(dataClouds).length
+    ) {
       setIsSyncStarted(false);
+
+      // go through all clouds and update properties
+      Object.keys(newSyncedClouds).map((cloudUrl) => {
+        const { syncAll, syncedNamespaces, ignoredNamespaces } =
+          newSyncedClouds[cloudUrl];
+        const cloud = cloudStore.clouds[cloudUrl];
+        cloud.syncAll = syncAll;
+        cloud.updateNamespaces(syncedNamespaces, ignoredNamespaces);
+      });
+
+      closeSelectiveSyncView();
     }
   };
+
   const startSyncAll = () => {
     // clean syncedClouds and start get data to Sync
     setSyncedClouds({});
     setIsSyncStarted(true);
   };
-
-  useEffect(() => {
-    // this condition happens only when last cloud is written to syncedClouds
-    if (!isSyncStarted && Object.keys(syncedClouds).length) {
-      // go through all clouds and update properties
-      Object.keys(syncedClouds).map((url) => {
-        const { syncAll, syncedNamespaces, ignoredNamespaces } =
-          syncedClouds[url];
-        const cloud = cloudStore.clouds[url];
-        cloud.syncAll = syncAll;
-        cloud.updateNamespaces(syncedNamespaces, ignoredNamespaces);
-      });
-      closeSelectiveSyncView();
-    }
-  }, [syncedClouds, isSyncStarted]);
 
   // we control this state and should check it first
   if (showAddCloudComponent) {
