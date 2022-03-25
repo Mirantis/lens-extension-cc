@@ -893,7 +893,7 @@ export class DataCloud extends EventDispatcher {
     return `{DataCloud loaded: ${this.loaded}, fetching: ${
       this.fetching
     }, preview: ${this.preview}, namespaces: ${
-      this.loaded ? this.namespaces.length : '??'
+      this.loaded ? this.namespaces.length : '-1'
     }, error: ${this.error}, cloud: ${this.cloud}}`;
   }
 }
