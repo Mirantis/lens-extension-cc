@@ -136,7 +136,23 @@ export class SyncStore extends Common.Store.ExtensionStore {
     }, {});
 
     // return a deep-clone that is no longer observable
+    // NOTE: it's not "pure JSON" void of Mobx proxy objects, however; the sole purpose of
+    //  this is to let Lens serialize the store to the related JSON file on disk, however
+    //  it does that
     return toJS(observableThis);
+  }
+
+  /** @returns {Object} A full clone to pure JSON of this store, void of all Mobx influence. */
+  toPureJSON() {
+    // throw-away: just to get keys we care about on this
+    const defaults = SyncStore.getDefaults();
+
+    const json = Object.keys(defaults).reduce((obj, key) => {
+      obj[key] = JSON.parse(JSON.stringify(this[key]));
+      return obj;
+    }, {});
+
+    return json;
   }
 }
 

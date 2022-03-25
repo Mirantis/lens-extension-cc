@@ -361,9 +361,9 @@ export class Cluster extends Node {
           'Cluster.constructor()',
           `Unable to find ssh key name=${logValue(
             keyName
-          )} for cluster=${logValue(this.name)} in namespace=${logValue(
+          )} for cluster=${logValue(this.name)}, namespace=${logValue(
             this.namespace.name
-          )}`
+          )}, cloud=${this.cloud}`
         );
       }
     });
@@ -377,9 +377,9 @@ export class Cluster extends Node {
           'Cluster.constructor()',
           `Unable to find credential name=${logValue(
             credName
-          )} for cluster=${logValue(this.name)} in namespace=${logValue(
+          )} for cluster=${logValue(this.name)}, namespace=${logValue(
             this.namespace.name
-          )}`
+          )}, cloud=${this.cloud}`
         );
       }
     }
@@ -393,9 +393,9 @@ export class Cluster extends Node {
           'Cluster.constructor()',
           `Unable to find proxy name=${logValue(
             proxyName
-          )} for cluster=${logValue(this.name)} in namespace=${logValue(
+          )} for cluster=${logValue(this.name)}, namespace=${logValue(
             this.namespace.name
-          )}`
+          )}, cloud=${this.cloud}`
         );
       }
     }
@@ -415,7 +415,7 @@ export class Cluster extends Node {
         'Cluster.constructor()',
         `Unable to find any machines for cluster=${logValue(
           this.name
-        )} in namespace=${logValue(this.namespace.name)}`
+        )}, namespace=${logValue(this.namespace.name)}, cloud=${this.cloud}`
       );
     } else {
       // look for the first machine that has a license, and assume that's the one
