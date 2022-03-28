@@ -438,7 +438,10 @@ const _fetchNamespaces = async function (cloud) {
 
   const hasReadPermissions = (name) =>
     userRoles.includes(`m:kaas:${name}@reader`) ||
-    userRoles.includes(`m:kaas:${name}@writer`);
+    userRoles.includes(`m:kaas:${name}@writer`) ||
+    userRoles.includes(`m:kaas:${name}@user`) ||
+    userRoles.includes(`m:kaas:${name}@operator`) ||
+    userRoles.includes('m:kaas@global-admin');
 
   const ignoredNamespaces = cloud?.config?.ignoredNamespaces || [];
 
