@@ -1,8 +1,8 @@
 import { get, orderBy } from 'lodash';
 
 const SELECTIVE_HEAD_CELL_VALUES = {
-  NAME: 'Name',
-  AUTOSYNC: 'Autosync',
+  NAME: 'NAME',
+  AUTOSYNC: 'AUTOSYNC',
   URL: 'URL',
 };
 
@@ -13,16 +13,17 @@ const selectivePathToData = {
 };
 
 const HEAD_CELL_VALUES = {
-  NAME: 'Name',
+  NAME: 'NAME',
   URL: 'URL',
-  USERNAME: 'Username',
-  STATUS: 'Status',
+  USERNAME: 'USERNAME',
+  STATUS: 'STATUS',
 };
 
 const pathToData = {
   [HEAD_CELL_VALUES.NAME]: ['cloud', 'name'],
   [HEAD_CELL_VALUES.URL]: ['cloud', 'cloudUrl'],
   [HEAD_CELL_VALUES.USERNAME]: ['cloud', 'username'],
+  [HEAD_CELL_VALUES.STATUS]: ['cloud', 'status'],
 };
 
 export const getTableData = (isSelectiveSyncView) => {
@@ -43,7 +44,6 @@ export const sortData = (obj, sortBy, order, path) => {
   });
 
   const sorted = orderBy(sortByValueArr, Object.keys(obj), [order]);
-
   return sorted.map(Object.keys);
 };
 
