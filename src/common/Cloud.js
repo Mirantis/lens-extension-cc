@@ -489,32 +489,33 @@ export class Cloud extends EventDispatcher {
      *  should be synced.
      * @param {Array<string>} ignoredList A list of namespace names in the mgmt cluster that
      *  should not be synced.
-     * @param {boolean} [silent] If true, we don't notify about the change.
      */
     Object.defineProperty(this, 'updateNamespaces', {
       // non-enumerable since normally, methods are hidden on the prototype, but in this case,
       //  since we bind to the private context of the constructor, we have to define it on
       //  the instance itself
       enumerable: false,
-      value: function (syncedList, ignoredList, silent = false) {
+      value: function (syncedList, ignoredList) {
         DEV_ENV &&
           rtv.verify(
             { syncedList, ignoredList },
             {
               syncedList: Cloud.specTs.syncedNamespaces,
               ignoredList: Cloud.specTs.ignoredNamespaces,
-              silent: [rtv.OPTIONAL, rtv.BOOLEAN],
             }
           );
+
         const isNewSynced = !isEqual(_syncedNamespaces, syncedList);
-        const isNewIgnored = !isEqual(_ignoredNamespaces, ignoredList);
         if (isNewSynced) {
           _syncedNamespaces = syncedList;
         }
+
+        const isNewIgnored = !isEqual(_ignoredNamespaces, ignoredList);
         if (isNewIgnored) {
           _ignoredNamespaces = ignoredList;
         }
-        if (!silent && (isNewSynced || isNewIgnored)) {
+
+        if (isNewSynced || isNewIgnored) {
           this.dispatchEvent(CLOUD_EVENTS.SYNC_CHANGE, this);
         }
       },
@@ -662,8 +663,10 @@ export class Cloud extends EventDispatcher {
       this.updateNamespaces(spec.syncedNamespaces, spec.ignoredNamespaces);
 
       if (spec.id_token && spec.refresh_token) {
+        logger.log('Cloud.update()', `⚠️ Updating tokens for cloud=${this}`); // TODO[PRODX-22830] REMOVE
         this.updateTokens(spec);
       } else {
+        logger.log('Cloud.update()', `⚠️ RESETTING tokens for cloud=${this}`); // TODO[PRODX-22830] REMOVE
         this.resetTokens();
       }
     }
@@ -712,7 +715,9 @@ export class Cloud extends EventDispatcher {
     const validTillStr = logDate(this.tokenValidTill);
     return `{Cloud url: ${logValue(this.cloudUrl)}, status: ${logValue(
       this.status
-    )}, token: ${
+    )}, sync: ${this.syncedNamespaces.length}/${
+      this.ignoredNamespaces.length
+    }, token: ${
       this.token
         ? `"${this.token.slice(0, 15)}..${this.token.slice(-15)}"`
         : this.token

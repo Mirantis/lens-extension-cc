@@ -96,8 +96,8 @@ export async function cloudRefresh(cloud) {
   }
 
   // token was refreshed
+  logger.log('apiUtil.cloudRefresh()', `Refreshing tokens of cloud=${cloud}`);
   cloud.updateTokens(body);
-  logger.log('apiUtil.cloudRefresh()', `Refreshed tokens of cloud=${cloud}`);
 
   return true;
 }
@@ -164,6 +164,10 @@ export async function cloudRequest({ cloud, method, resourceType, args }) {
 
   if (response && response.status === 401) {
     // assume token is expired, try to refresh
+    logger.log(
+      'apiUtil.cloudRequest()',
+      `⚠️ Requesting new tokens, status=401, cloud=${cloud}`
+    ); // TODO[PRODX-22830] REMOVE
     tokensRefreshed = await cloudRefresh(cloud);
     if (!tokensRefreshed) {
       return { cloud, error: cloud.connectError, status: 401 };
