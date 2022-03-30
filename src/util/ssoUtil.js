@@ -9,7 +9,7 @@ import * as strings from '../strings';
  *  redirect URI that will use the 'lens://' protocol to redirect the user
  *  to Lens and ultimately call back into `finishAuthorization()`.
  * @param {Object} options
- * @param {Object} options.config MCC Config object.
+ * @param {CloudConfig} options.config MCC Config object.
  * @param {string} [options.state] Any string that should be returned verbatim
  *  in a `state` request parameter in the redirect request.
  * @throws {Error} If the MCC instance doesn't support SSO.
@@ -18,7 +18,7 @@ import * as strings from '../strings';
 export const startAuthorization = function ({ config, state }) {
   const apiClient = new ApiClient({ config });
 
-  if (config.keycloakLogin) {
+  if (config.ssoEnabled) {
     const url = apiClient.getSsoAuthUrl({ state });
     try {
       openBrowser(url); // open in default browser (will throw if `url` is blacklisted)

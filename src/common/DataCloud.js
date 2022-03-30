@@ -176,6 +176,16 @@ const _fetchCollection = async function ({
       }
     );
 
+  if (!cloud.config.isResourceAvailable(resourceType)) {
+    logger.log(
+      'DataCloud._fetchCollection',
+      `Cannot fetch resources of type ${logValue(
+        resourceType
+      )}: Not available; cloud=${cloud}`
+    );
+    return { resources: {}, tokensRefreshed: false };
+  }
+
   let tokensRefreshed = false;
 
   // process a result from an API call

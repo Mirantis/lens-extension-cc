@@ -13,6 +13,7 @@ import {
 import { EventDispatcher } from './EventDispatcher';
 import { normalizeUrl } from '../util/netUtil';
 import * as apiUtil from '../api/apiUtil';
+import { CloudConfig } from './CloudConfig';
 
 /**
  * Determines if a date has passed.
@@ -95,13 +96,13 @@ export const CLOUD_EVENTS = Object.freeze({
 
 /**
  * Loads the config object from the Mgmt Cluster at the given URL.
- * @param {string} url
+ * @param {string} cloudUrl
  * @returns {Promise<Object>} The Mgmt cluster's config object as JSON if successful;
  *  rejects with an `Error` if not.
  */
-const _loadConfig = async (url) => {
+const _loadConfig = async (cloudUrl) => {
   const res = await request(
-    `${url}/config.js`,
+    `${cloudUrl}/config.js`,
     {},
     { extractBodyMethod: 'text' }
   );
@@ -113,7 +114,7 @@ const _loadConfig = async (url) => {
       .replace('};', '}');
 
     try {
-      return JSON.parse(content);
+      return new CloudConfig(cloudUrl, JSON.parse(content));
     } catch (err) {
       logger.error(
         'Cloud._loadConfig()',
@@ -310,6 +311,13 @@ export class Cloud extends EventDispatcher {
         return _config;
       },
       set(newValue) {
+        DEV_ENV &&
+          rtv.verify(
+            { config: newValue },
+            {
+              config: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: CloudConfig }],
+            }
+          );
         if (newValue !== _config) {
           _config = newValue || null;
           this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this); // affects status
@@ -716,7 +724,7 @@ export class Cloud extends EventDispatcher {
     return `{Cloud url: ${logValue(this.cloudUrl)}, status: ${logValue(
       this.status
     )}, sync: ${this.syncedNamespaces.length}/${
-      this.ignoredNamespaces.length
+      this.allNamespaces.length
     }, token: ${
       this.token
         ? `"${this.token.slice(0, 15)}..${this.token.slice(-15)}"`
