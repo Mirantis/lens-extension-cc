@@ -79,6 +79,10 @@ export class CloudStore extends Common.Store.ExtensionStore {
             if (existingClouds[cloudUrl]) {
               // update existing Cloud with new data instead of creating a new instance
               //  so that currently-bound objects don't leak
+              logger.log(
+                'CloudStore.fromStore()',
+                `♻️ Updating cloudUrl=${cloudUrl} with new data from disk`
+              ); // TODO[PRODX-22830] REMOVE
               cloud = existingClouds[cloudUrl].update(cloudJson);
             } else {
               // add new Cloud we don't know about yet

@@ -433,6 +433,8 @@ export class SyncManager extends Singleton {
         }
       } else {
         // add new DC to store (initial fetch is scheduled by the DC itself)
+        // NOTE: SyncManager only runs on the MAIN thread and always needs full data
+        //  so we create full instances, not preview ones
         const dc = new DataCloud(cloud);
         dc.addEventListener(DATA_CLOUD_EVENTS.DATA_UPDATED, this.onDataUpdated);
         this.dataClouds[url] = dc;
