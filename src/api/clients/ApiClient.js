@@ -12,11 +12,11 @@ const authRoute = 'protocol/openid-connect'; // NEVER begins/ends with a slash
  *  and refresh those tokens if they expire.
  * @class ApiClient
  * @param {Object} options
- * @param {Object} options.config The MCC Configuration object.
+ * @param {CloudConfig} options.config The MCC Configuration object.
  */
 export class ApiClient {
   constructor({ config }) {
-    if (!config || !config.keycloakLogin) {
+    if (!config || !config.ssoEnabled) {
       throw new Error(
         'config is always required and must be for an instance that uses Keycloak/SSO'
       );
@@ -40,11 +40,14 @@ export class ApiClient {
   /**
    * Makes a network request with specified options.
    * @param {string} endpoint API endpoint. Does NOT begin or end with a slash.
-   * @param {Object} config
-   * @param {Object} [config.options] Request configuration options.
-   * @param {Array<number>} [config.expectedStatuses] List of expected success
+   * @param {Object} params
+   * @param {Object} [params.options] Request configuration options.
+   * @param {Array<number>} [params.expectedStatuses] List of expected success
    *  statuses.
-   * @param {string} [config.extractBodyMethod] Name of a method on a fetch
+   * @param {string} [params.errorMessage] Error message to use if the request is
+   *  deemed to have failed (per other options); otherwise, a generated message
+   *  is used, based on response status.
+   * @param {string} [params.extractBodyMethod] Name of a method on a fetch
    *  response object to call to deserialize/extract/parse data from the response.
    *  Defaults to "json".
    * @returns {Promise<Object>} See netUtil.request() for response shape.

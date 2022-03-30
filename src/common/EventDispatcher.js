@@ -13,7 +13,7 @@ export class EventDispatcher {
     // asynchronously dispatches queued events on the next frame
     const _scheduleDispatch = () => {
       if (_dispatchTimerId === undefined) {
-        _dispatchTimerId = setTimeout(function () {
+        _dispatchTimerId = setTimeout(() => {
           _dispatchTimerId = undefined;
           if (
             Object.keys(_eventListeners).length > 0 &&
@@ -31,11 +31,23 @@ export class EventDispatcher {
             events.forEach((event) => {
               const { name, params } = event;
               const handlers = _eventListeners[name] || [];
+              logger.log(
+                'EventDispatcher._scheduleDispatch()',
+                `⚡️ Dispatching event=${logValue(name)}, emitter=${this}`
+              ); // TODO[PRODX-22830] REMOVE
               handlers.forEach((handler) => {
                 try {
                   handler(...params);
-                } catch {
-                  // ignore
+                } catch (err) {
+                  if (!err?.message.startsWith('[MobX]')) {
+                    logger.error(
+                      'EventDispatcher._scheduleDispatch()',
+                      `Event handler failed; event=${logValue(
+                        name
+                      )}, error=${logValue(err.message)} emitter=${this}`
+                    );
+                  }
+                  // else, ignore the noise
                 }
               });
             });
@@ -113,10 +125,6 @@ export class EventDispatcher {
             //  scheduled it when the event was first added to the queue; we
             //  just haven't gotten to the next frame yet where we'll dispatch it
           } else {
-            logger.log(
-              'EventDispatcher.dispatchEvent()',
-              `⚡️ Dispatching event=${logValue(name)}, this=${this}`
-            ); // TODO[PRODX-22830] REMOVE
             _eventQueue.push({ name, params });
             _scheduleDispatch();
           }
