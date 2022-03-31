@@ -37,14 +37,10 @@ export const EnhancedTable = ({
   const [order, setOrder] = useState('asc');
 
   const sortBy = (value) => {
-    if (value === sortedBy && order === 'asc') {
-      setOrder('desc');
-    } else if (value === sortedBy && order === 'desc') {
-      setOrder('asc');
-    }
-
     if (value !== sortedBy) {
       setOrder('asc');
+    } else {
+      order === 'asc' ? setOrder('desc') : setOrder('asc');
     }
 
     setSortedBy(value ? value : headCellValue.NAME);
@@ -52,7 +48,12 @@ export const EnhancedTable = ({
 
   return (
     <SelectiveSyncTableItem>
-      <EnhancedTableHead sortBy={sortBy} headerValues={headCellValue} />
+      <EnhancedTableHead
+        sortBy={sortBy}
+        sortedBy={sortedBy}
+        order={order}
+        headerValues={headCellValue}
+      />
       <tbody>
         {sortData(dataClouds, sortedBy, order, path).map((url) => {
           const key = `${url}-${isSelectiveSyncView ? 'selective' : ''}`;

@@ -25,6 +25,12 @@ const EnhSortButton = styled.button`
   color: var(--textColorAccent);
   background: transparent;
   cursor: pointer;
+
+  i {
+    ${({ isCurrentAsc }) => isCurrentAsc && 'transform: rotate(180deg);'}
+    visibility: ${({ isSortedByCurrent }) =>
+      isSortedByCurrent ? 'visible;' : 'hidden;'}
+  }
 `;
 
 const sortButtonStyles = {
@@ -38,7 +44,12 @@ const sortButtonStyles = {
  * @param {Object} headerValues  'enum' with header values (HEAD_CELL_VALUES or SELECTIVE_HEAD_CELL_VALUES in tableUtil.js)
  * @return {JSX.Element}
  */
-export const EnhancedTableHead = ({ sortBy, headerValues }) => {
+export const EnhancedTableHead = ({
+  sortBy,
+  sortedBy,
+  order,
+  headerValues,
+}) => {
   const headerCells = Object.keys(headerValues).map((key) => ({
     label: managementClusters.table.thead[key.toLowerCase()](),
     key,
@@ -49,7 +60,11 @@ export const EnhancedTableHead = ({ sortBy, headerValues }) => {
       <tr>
         {headerCells.map(({ label, key }) => (
           <EnhTableHeadCell key={key}>
-            <EnhSortButton onClick={() => sortBy(key)}>
+            <EnhSortButton
+              isSortedByCurrent={sortedBy === key}
+              isCurrentAsc={order === 'asc' && sortedBy === key}
+              onClick={() => sortBy(key)}
+            >
               {label}
               <Component.Icon
                 material="arrow_drop_down"
@@ -65,5 +80,7 @@ export const EnhancedTableHead = ({ sortBy, headerValues }) => {
 
 EnhancedTableHead.propTypes = {
   sortBy: PropTypes.func.isRequired,
+  sortedBy: PropTypes.string.isRequired,
+  order: PropTypes.oneOf(['asc', 'desc']).isRequired,
   headerValues: PropTypes.object.isRequired,
 };
