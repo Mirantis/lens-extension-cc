@@ -28,7 +28,8 @@ const EnhSortButton = styled.button`
 
   i {
     ${({ isCurrentAsc }) => isCurrentAsc && 'transform: rotate(180deg);'}
-    opacity: ${({ isSortedByCurrent }) => (isSortedByCurrent ? '1;' : '0;')}
+    visibility: ${({ isSortedByCurrent }) =>
+      isSortedByCurrent ? 'visible;' : 'hidden;'}
   }
 `;
 
@@ -80,6 +81,6 @@ export const EnhancedTableHead = ({
 EnhancedTableHead.propTypes = {
   sortBy: PropTypes.func.isRequired,
   sortedBy: PropTypes.string.isRequired,
-  order: PropTypes.string.isRequired,
+  order: PropTypes.oneOf(['asc', 'desc']).isRequired,
   headerValues: PropTypes.object.isRequired,
 };

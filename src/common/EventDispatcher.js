@@ -2,6 +2,8 @@
 // Base class providing event dispatching capabilities
 //
 
+import { logger, logValue } from '../util/logger'; // TODO[PRODX-22830] REMOVE
+
 export class EventDispatcher {
   constructor() {
     const _eventListeners = {}; // map of event name to array of functions that are handlers
@@ -11,7 +13,7 @@ export class EventDispatcher {
     // asynchronously dispatches queued events on the next frame
     const _scheduleDispatch = () => {
       if (_dispatchTimerId === undefined) {
-        _dispatchTimerId = setTimeout(function () {
+        _dispatchTimerId = setTimeout(() => {
           _dispatchTimerId = undefined;
           if (
             Object.keys(_eventListeners).length > 0 &&
@@ -29,11 +31,23 @@ export class EventDispatcher {
             events.forEach((event) => {
               const { name, params } = event;
               const handlers = _eventListeners[name] || [];
+              logger.log(
+                'EventDispatcher._scheduleDispatch()',
+                `⚡️ Dispatching event=${logValue(name)}, emitter=${this}`
+              ); // TODO[PRODX-22830] REMOVE
               handlers.forEach((handler) => {
                 try {
                   handler(...params);
-                } catch {
-                  // ignore
+                } catch (err) {
+                  if (!err?.message.startsWith('[MobX]')) {
+                    logger.error(
+                      'EventDispatcher._scheduleDispatch()',
+                      `Event handler failed; event=${logValue(
+                        name
+                      )}, error=${logValue(err.message)} emitter=${this}`
+                    );
+                  }
+                  // else, ignore the noise
                 }
               });
             });
@@ -102,6 +116,10 @@ export class EventDispatcher {
         value(name, ...params) {
           const event = _eventQueue.find((e) => e.name === name);
           if (event) {
+            logger.log(
+              'EventDispatcher.dispatchEvent()',
+              `✳️ Updating params for event=${logValue(name)}, this=${this}`
+            ); // TODO[PRODX-22830] REMOVE
             event.params = params;
             // don't schedule dispatch in this case because we wouldn't already
             //  scheduled it when the event was first added to the queue; we

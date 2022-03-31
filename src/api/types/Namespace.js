@@ -24,24 +24,45 @@ delete namespaceTs.kind; // Namespace API objects don't have `kind` property for
 /**
  * MCC project/namespace.
  * @class Namespace
- * @param {Object} data Raw namespace data payload from the API.
  */
 export class Namespace extends Resource {
-  constructor({ data, cloud }) {
+  /**
+   * @constructor
+   * @param {Object} params
+   * @param {Object} params.data Raw data payload from the API.
+   * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
+   * @param {boolean} [params.preview] True if this Namespace is for preview
+   *  purposes only, and so only the __count__ properties will be valid.
+   */
+  constructor({ data, cloud, preview }) {
     super({ data, cloud, typeset: namespaceTs });
 
     let _clusters = [];
+    let _clusterCount;
     let _machines = [];
+    let _machineCount;
     let _sshKeys = [];
+    let _sshKeyCount;
     let _credentials = [];
+    let _credentialCount;
     let _proxies = [];
+    let _proxyCount;
     let _licenses = [];
+    let _licenseCount;
 
     /** @member {string} */
     Object.defineProperty(this, 'phase', {
       enumerable: true,
       get() {
         return data.status.phase;
+      },
+    });
+
+    /** @member {boolean} */
+    Object.defineProperty(this, 'preview', {
+      enumerable: true,
+      get() {
+        return !!preview;
       },
     });
 
@@ -54,6 +75,12 @@ export class Namespace extends Resource {
         return _clusters;
       },
       set(newValue) {
+        if (this.preview) {
+          throw new Error(
+            `Cannot set set clusters property on preview namespace=${this}`
+          );
+        }
+
         DEV_ENV &&
           rtv.verify(
             { clusters: newValue },
@@ -65,6 +92,7 @@ export class Namespace extends Resource {
               ],
             }
           );
+
         if (newValue !== _clusters) {
           _clusters = newValue || [];
         }
@@ -80,6 +108,12 @@ export class Namespace extends Resource {
         return _machines;
       },
       set(newValue) {
+        if (this.preview) {
+          throw new Error(
+            `Cannot set set machines property on preview namespace=${this}`
+          );
+        }
+
         DEV_ENV &&
           rtv.verify(
             { machines: newValue },
@@ -91,6 +125,7 @@ export class Namespace extends Resource {
               ],
             }
           );
+
         if (newValue !== _machines) {
           _machines = newValue || [];
         }
@@ -106,6 +141,12 @@ export class Namespace extends Resource {
         return _sshKeys;
       },
       set(newValue) {
+        if (this.preview) {
+          throw new Error(
+            `Cannot set set sshKeys property on preview namespace=${this}`
+          );
+        }
+
         DEV_ENV &&
           rtv.verify(
             { sshKeys: newValue },
@@ -117,6 +158,7 @@ export class Namespace extends Resource {
               ],
             }
           );
+
         if (newValue !== _sshKeys) {
           _sshKeys = newValue || [];
         }
@@ -132,6 +174,12 @@ export class Namespace extends Resource {
         return _credentials;
       },
       set(newValue) {
+        if (this.preview) {
+          throw new Error(
+            `Cannot set set credentials property on preview namespace=${this}`
+          );
+        }
+
         DEV_ENV &&
           rtv.verify(
             { credentials: newValue },
@@ -143,6 +191,7 @@ export class Namespace extends Resource {
               ],
             }
           );
+
         if (newValue !== _credentials) {
           _credentials = newValue || [];
         }
@@ -158,6 +207,12 @@ export class Namespace extends Resource {
         return _proxies;
       },
       set(newValue) {
+        if (this.preview) {
+          throw new Error(
+            `Cannot set set proxies property on preview namespace=${this}`
+          );
+        }
+
         DEV_ENV &&
           rtv.verify(
             { proxies: newValue },
@@ -169,6 +224,7 @@ export class Namespace extends Resource {
               ],
             }
           );
+
         if (newValue !== _proxies) {
           _proxies = newValue || [];
         }
@@ -184,6 +240,12 @@ export class Namespace extends Resource {
         return _licenses;
       },
       set(newValue) {
+        if (this.preview) {
+          throw new Error(
+            `Cannot set set licenses property on preview namespace=${this}`
+          );
+        }
+
         DEV_ENV &&
           rtv.verify(
             { licenses: newValue },
@@ -195,64 +257,191 @@ export class Namespace extends Resource {
               ],
             }
           );
+
         if (newValue !== _licenses) {
           _licenses = newValue || [];
         }
       },
     });
-  }
 
-  /**
-   * @member {number} clusterCount Number of clusters in this namespace.
-   */
-  get clusterCount() {
-    return this.clusters.length;
-  }
+    /**
+     * @member {number} clusterCount Number of clusters in this namespace.
+     * @throws {Error} If setting this property when `preview` is false.
+     */
+    Object.defineProperty(this, 'clusterCount', {
+      enumerable: true,
+      get() {
+        return _clusterCount ?? this.clusters.length;
+      },
+      set(newValue) {
+        if (!this.preview) {
+          throw new Error(
+            `Cannot set clusterCount property on non-preview namespace=${this}`
+          );
+        }
 
-  /**
-   * @member {number} machineCount Number of machines in this namespace.
-   */
-  get machineCount() {
-    return this.machines.length;
-  }
+        DEV_ENV &&
+          rtv.verify(
+            { clusterCount: newValue },
+            { clusterCount: [rtv.OPTIONAL, rtv.SAFE_INT] }
+          );
 
-  /**
-   * @member {number} clusterCount Number of SSH keys in this namespace.
-   */
-  get sshKeyCount() {
-    return this.sshKeys.length;
-  }
+        if (_clusterCount !== newValue) {
+          _clusterCount = newValue ?? undefined;
+        }
+      },
+    });
 
-  /**
-   * @member {number} credentialCount Number of all credentials, doesn't matter type, in this namespace.
-   */
-  get credentialCount() {
-    return this.credentials.length;
-  }
+    /**
+     * @member {number} machineCount Number of machines in this namespace.
+     * @throws {Error} If setting this property when `preview` is false.
+     */
+    Object.defineProperty(this, 'machineCount', {
+      enumerable: true,
+      get() {
+        return _machineCount ?? this.machines.length;
+      },
+      set(newValue) {
+        if (!this.preview) {
+          throw new Error(
+            `Cannot set machineCount property on non-preview namespace=${this}`
+          );
+        }
 
-  /**
-   * @member {number} proxyCount Number of all proxies in this namespace.
-   */
-  get proxyCount() {
-    return this.proxies.length;
-  }
+        DEV_ENV &&
+          rtv.verify(
+            { machineCount: newValue },
+            { machineCount: [rtv.OPTIONAL, rtv.SAFE_INT] }
+          );
 
-  /**
-   * @member {number} licenseCount Number of all licenses in this namespace.
-   */
-  get licenseCount() {
-    return this.licenses.length;
+        if (_machineCount !== newValue) {
+          _machineCount = newValue ?? undefined;
+        }
+      },
+    });
+
+    /**
+     * @member {number} clusterCount Number of SSH keys in this namespace.
+     * @throws {Error} If setting this property when `preview` is false.
+     */
+    Object.defineProperty(this, 'sshKeyCount', {
+      enumerable: true,
+      get() {
+        return _sshKeyCount ?? this.sshKeys.length;
+      },
+      set(newValue) {
+        if (!this.preview) {
+          throw new Error(
+            `Cannot set sshKeyCount property on non-preview namespace=${this}`
+          );
+        }
+
+        DEV_ENV &&
+          rtv.verify(
+            { sshKeyCount: newValue },
+            { sshKeyCount: [rtv.OPTIONAL, rtv.SAFE_INT] }
+          );
+
+        if (_sshKeyCount !== newValue) {
+          _sshKeyCount = newValue ?? undefined;
+        }
+      },
+    });
+
+    /**
+     * @member {number} credentialCount Number of all credentials, doesn't matter type, in this namespace.
+     * @throws {Error} If setting this property when `preview` is false.
+     */
+    Object.defineProperty(this, 'credentialCount', {
+      enumerable: true,
+      get() {
+        return _credentialCount ?? this.credentials.length;
+      },
+      set(newValue) {
+        if (!this.preview) {
+          throw new Error(
+            `Cannot set credentialCount property on non-preview namespace=${this}`
+          );
+        }
+
+        DEV_ENV &&
+          rtv.verify(
+            { credentialCount: newValue },
+            { credentialCount: [rtv.OPTIONAL, rtv.SAFE_INT] }
+          );
+
+        if (_credentialCount !== newValue) {
+          _credentialCount = newValue ?? undefined;
+        }
+      },
+    });
+
+    /**
+     * @member {number} proxyCount Number of all proxies in this namespace.
+     * @throws {Error} If setting this property when `preview` is false.
+     */
+    Object.defineProperty(this, 'proxyCount', {
+      enumerable: true,
+      get() {
+        return _proxyCount ?? this.proxies.length;
+      },
+      set(newValue) {
+        if (!this.preview) {
+          throw new Error(
+            `Cannot set proxyCount property on non-preview namespace=${this}`
+          );
+        }
+
+        DEV_ENV &&
+          rtv.verify(
+            { proxyCount: newValue },
+            { proxyCount: [rtv.OPTIONAL, rtv.SAFE_INT] }
+          );
+
+        if (_proxyCount !== newValue) {
+          _proxyCount = newValue ?? undefined;
+        }
+      },
+    });
+
+    /**
+     * @member {number} licenseCount Number of all licenses in this namespace.
+     * @throws {Error} If setting this property when `preview` is false.
+     */
+    Object.defineProperty(this, 'licenseCount', {
+      enumerable: true,
+      get() {
+        return _licenseCount ?? this.licenses.length;
+      },
+      set(newValue) {
+        if (!this.preview) {
+          throw new Error(
+            `Cannot set licenseCount property on non-preview namespace=${this}`
+          );
+        }
+
+        DEV_ENV &&
+          rtv.verify(
+            { licenseCount: newValue },
+            { licenseCount: [rtv.OPTIONAL, rtv.SAFE_INT] }
+          );
+
+        if (_licenseCount !== newValue) {
+          _licenseCount = newValue ?? undefined;
+        }
+      },
+    });
   }
 
   /** @returns {string} A string representation of this instance for logging/debugging. */
   toString() {
-    const propStr = `${super.toString()}, clusters: ${
+    const propStr = `${super.toString()}, preview: ${this.preview}, clusters: ${
       this.clusterCount
-    }, machines: ${this.machineCount}, sshKeys: ${
+    }, credentials: ${this.credentialCount}, sshKeys: ${
       this.sshKeyCount
-    }, credentials: ${this.credentialCount}, proxies: ${
-      this.proxyCount
-    }, licenses: ${this.licenseCount}`;
+    }, machines: ${this.machineCount}, proxies: ${this.proxyCount}, licenses: ${
+      this.licenseCount
+    }`;
 
     if (Object.getPrototypeOf(this).constructor === Namespace) {
       return `{Namespace ${propStr}}`;

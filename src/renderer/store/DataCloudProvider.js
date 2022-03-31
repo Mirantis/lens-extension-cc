@@ -143,7 +143,9 @@ const _updateStore = function ({
       pr.store.dataClouds[url].cloud = cloud;
     } else {
       // otherwise create new DataCloud
-      const dc = new DataCloud(cloud);
+      // NOTE: DataCloudProvider only runs on the RENDERER thread, and it only needs
+      //  preview data, not full data, so always create preview instances
+      const dc = new DataCloud(cloud, true);
       // add new DC to store
       pr.store.dataClouds[url] = dc;
     }
