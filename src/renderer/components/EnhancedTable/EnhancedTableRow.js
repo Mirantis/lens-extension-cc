@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
 import { layout } from '../styles';
-import { Namespace } from '../../../api/types/Namespace';
 import { AdditionalInfoRows } from './AdditionalInfoRows';
 import * as strings from '../../../strings';
 import {
@@ -14,12 +13,13 @@ import {
   useCheckboxes,
   makeCheckboxesInitialState,
 } from '../hooks/useCheckboxes';
-import { CONNECTION_STATUSES } from '../../../common/Cloud';
+import { Cloud, CONNECTION_STATUSES } from '../../../common/Cloud';
 import { openBrowser } from '../../../util/netUtil';
-import { cloudStore } from '../../../store/CloudStore';
+import { useClouds } from '../../store/CloudProvider';
 import { sortNamespaces } from './tableUtil';
 import { IpcRenderer } from '../../IpcRenderer';
 import * as consts from '../../../constants';
+import { CloudNamespace } from '../../../common/CloudNamespace';
 
 const { Icon, MenuItem, MenuActions, ConfirmDialog } = Renderer.Component;
 
@@ -77,31 +77,32 @@ const expandIconStyles = {
   fontSize: 'calc(var(--font-size) * 1.8)',
 };
 
-const getCloudMenuItems = (dataCloud) => [
+const getCloudMenuItems = (cloud, cloudActions) => [
   {
     title: strings.contextMenus.cloud.reconnect(),
     name: 'reconnect',
-    disabled: dataCloud.cloud.status === CONNECTION_STATUSES.CONNECTED,
-    onClick: () => dataCloud.reconnect(),
+    disabled: cloud.status === CONNECTION_STATUSES.CONNECTED,
+    onClick: () => {
+      // NOTE: this returns a promise, but we don't care about the result
+      IpcRenderer.getInstance().invoke(
+        consts.ipcEvents.invoke.RECONNECT,
+        cloud.cloudUrl
+      );
+    },
   },
   {
     title: strings.contextMenus.cloud.remove(),
     name: 'remove',
-    disabled: dataCloud.fetching,
+    disabled: cloud.fetching,
     onClick: () => {
-      const {
-        name: cloudName,
-        cloudUrl,
-        syncedNamespaces,
-        connected,
-      } = dataCloud.cloud;
-      const isConnected = connected && dataCloud.loaded;
-      if (isConnected && !dataCloud.namespaces.length) {
-        cloudStore.removeCloud(cloudUrl);
+      const { name: cloudName, cloudUrl, syncedProjects, connected } = cloud;
+      const isConnected = connected && cloud.loaded;
+      if (isConnected && !cloud.namespaces.length) {
+        cloudActions.removeCloud(cloudUrl);
       } else {
         ConfirmDialog.open({
           ok: () => {
-            cloudStore.removeCloud(cloudUrl);
+            cloudActions.removeCloud(cloudUrl);
           },
           labelOk:
             strings.contextMenus.cloud.confirmDialog.confirmButtonLabel(),
@@ -110,7 +111,7 @@ const getCloudMenuItems = (dataCloud) => [
               dangerouslySetInnerHTML={{
                 __html: strings.contextMenus.cloud.confirmDialog.messageHtml(
                   cloudName,
-                  syncedNamespaces
+                  syncedProjects
                 ),
               }}
             />
@@ -123,15 +124,12 @@ const getCloudMenuItems = (dataCloud) => [
     title: strings.contextMenus.cloud.sync(),
     name: 'sync',
     disabled:
-      dataCloud.cloud.status === CONNECTION_STATUSES.DISCONNECTED ||
-      dataCloud.fetching,
+      cloud.status === CONNECTION_STATUSES.DISCONNECTED || cloud.fetching,
     onClick: async () => {
-      dataCloud.fetchNow();
-
       // NOTE: this returns a promise, but we don't care about the result
       IpcRenderer.getInstance().invoke(
         consts.ipcEvents.invoke.SYNC_NOW,
-        dataCloud.cloud.cloudUrl
+        cloud.cloudUrl
       );
     },
   },
@@ -140,33 +138,34 @@ const getCloudMenuItems = (dataCloud) => [
     name: 'openInBrowser',
     disabled: false,
     onClick: () => {
-      openBrowser(dataCloud.cloud.cloudUrl);
+      openBrowser(cloud.cloudUrl);
     },
   },
 ];
 
-const getNamespaceMenuItems = (dataCloud, namespace) => [
+const getNamespaceMenuItems = (cloud, namespace) => [
   {
     title: strings.contextMenus.namespace.openInBrowser(),
     name: 'openInBrowser',
     onClick: () => {
-      openBrowser(`${dataCloud.cloud.cloudUrl}/projects/${namespace.name}`);
+      openBrowser(`${cloud.cloudUrl}/projects/${namespace.name}`);
     },
   },
 ];
 
 export const EnhancedTableRow = ({
-  dataCloud,
+  cloud,
   withCheckboxes,
   isSyncStarted,
   getDataToSync,
   namespaces,
   status,
 }) => {
+  const { actions: cloudActions } = useClouds();
   const { getCheckboxValue, setCheckboxValue, getSyncedData } = useCheckboxes(
-    makeCheckboxesInitialState(dataCloud)
+    makeCheckboxesInitialState(cloud)
   );
-  const [syncAll, setSyncAll] = useState(dataCloud.cloud.syncAll);
+  const [syncAll, setSyncAll] = useState(cloud.syncAll);
   const [isOpenFirstLevel, setIsOpenFirstLevel] = useState(false);
   const [openNamespaces, setOpenNamespaces] = useState([]);
 
@@ -175,16 +174,10 @@ export const EnhancedTableRow = ({
       const { syncedNamespaces, ignoredNamespaces } = getSyncedData();
       getDataToSync(
         { syncedNamespaces, ignoredNamespaces, syncAll },
-        dataCloud.cloud.cloudUrl
+        cloud.cloudUrl
       );
     }
-  }, [
-    getDataToSync,
-    isSyncStarted,
-    getSyncedData,
-    syncAll,
-    dataCloud.cloud.cloudUrl,
-  ]);
+  }, [getDataToSync, isSyncStarted, getSyncedData, syncAll, cloud.cloudUrl]);
 
   const setOpenedList = (name) => {
     if (openNamespaces.includes(name)) {
@@ -203,7 +196,7 @@ export const EnhancedTableRow = ({
     let autoSyncSuffix = '';
     if (withCheckboxes) {
       autoSyncSuffix =
-        isParent && !dataCloud.cloud.connected
+        isParent && !cloud.connected
           ? ` (${strings.connectionStatuses.cloud.disconnected()})`
           : '';
       return (
@@ -215,9 +208,7 @@ export const EnhancedTableRow = ({
       );
     }
     autoSyncSuffix =
-      isParent && dataCloud.cloud.syncAll
-        ? ` (${strings.syncView.autoSync()})`
-        : '';
+      isParent && cloud.syncAll ? ` (${strings.syncView.autoSync()})` : '';
 
     return `${name}${autoSyncSuffix}`;
   };
@@ -228,7 +219,7 @@ export const EnhancedTableRow = ({
    * @return {JSX.Element|null}
    */
   const getExpandIcon = (condition, showSecondLevel = true) => {
-    // EG when namespace isn't loaded, we show first level but not second
+    // when namespace isn't synced, we show first level but not second
     if (!showSecondLevel) {
       return null;
     }
@@ -251,11 +242,11 @@ export const EnhancedTableRow = ({
     if (withCheckboxes) {
       return null;
     }
-    const cloudMenuItems = getCloudMenuItems(dataCloud);
+    const cloudMenuItems = getCloudMenuItems(cloud, cloudActions);
     const { cloudStatus, styles } = status;
     return (
       <>
-        <EnhTableRowCell>{dataCloud.cloud.username}</EnhTableRowCell>
+        <EnhTableRowCell>{cloud.username}</EnhTableRowCell>
         <EnhTableRowCell style={styles}>{cloudStatus}</EnhTableRowCell>
         <EnhTableRowCell isRightAligned>
           <EnhMore>
@@ -282,7 +273,7 @@ export const EnhancedTableRow = ({
     if (withCheckboxes) {
       return <EnhTableRowCell />;
     }
-    const namespaceMenuItems = getNamespaceMenuItems(dataCloud, namespace);
+    const namespaceMenuItems = getNamespaceMenuItems(cloud, namespace);
     const { namespaceStatus } = status;
     return (
       <>
@@ -316,7 +307,7 @@ export const EnhancedTableRow = ({
           <EnhCollapseBtn onClick={toggleOpenFirstLevel}>
             {getExpandIcon(isOpenFirstLevel)}
           </EnhCollapseBtn>
-          {makeNameCell(dataCloud.cloud.name, true)}
+          {makeNameCell(cloud.name, true)}
         </EnhTableRowCell>
         {withCheckboxes && (
           <EnhTableRowCell>
@@ -327,7 +318,7 @@ export const EnhancedTableRow = ({
             />
           </EnhTableRowCell>
         )}
-        <EnhTableRowCell>{dataCloud.cloud.cloudUrl}</EnhTableRowCell>
+        <EnhTableRowCell>{cloud.cloudUrl}</EnhTableRowCell>
         {renderRestSyncTableRows()}
       </EnhTableRow>
       {isOpenFirstLevel &&
@@ -336,10 +327,7 @@ export const EnhancedTableRow = ({
             <EnhTableRow>
               <EnhTableRowCell isFirstLevel withCheckboxes={withCheckboxes}>
                 <EnhCollapseBtn onClick={() => setOpenedList(namespace.name)}>
-                  {getExpandIcon(
-                    openNamespaces.includes(namespace.name),
-                    dataCloud.loaded
-                  )}
+                  {getExpandIcon(openNamespaces.includes(namespace.name))}
                 </EnhCollapseBtn>
                 {makeNameCell(namespace.name)}
               </EnhTableRowCell>
@@ -359,18 +347,12 @@ export const EnhancedTableRow = ({
 };
 
 EnhancedTableRow.propTypes = {
-  dataCloud: PropTypes.object.isRequired,
+  cloud: PropTypes.instanceOf(Cloud).isRequired,
   withCheckboxes: PropTypes.bool,
   isSyncStarted: PropTypes.bool,
   getDataToSync: PropTypes.func,
-  namespaces: PropTypes.arrayOf(
-    PropTypes.oneOfType([
-      PropTypes.instanceOf(Namespace),
-      PropTypes.shape({
-        name: PropTypes.string.isRequired,
-      }),
-    ])
-  ).isRequired,
+  namespaces: PropTypes.arrayOf(PropTypes.instanceOf(CloudNamespace))
+    .isRequired,
   status: PropTypes.shape({
     cloudStatus: PropTypes.string.isRequired,
     namespaceStatus: PropTypes.string.isRequired,

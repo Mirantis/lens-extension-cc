@@ -369,7 +369,7 @@ export const contextMenus: Dict = {
     confirmDialog: {
       messageHtml: (
         cloudName,
-        projects // `projects` is `Array<Namespace>`
+        projects // `projects` is `Array<string|Namespace>`
       ) =>
         `
         <p>Removing management cluster “${cloudName}” will also remove the following projects and their associated catalog items${

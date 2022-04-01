@@ -1,7 +1,7 @@
 import { observable, action, toJS, makeObservable } from 'mobx';
 import { Common } from '@k8slens/extensions';
 import * as rtv from 'rtvjs';
-import { logger } from '../util/logger';
+import { logger, logValue } from '../util/logger';
 import { clusterEntityModelTs } from '../catalog/catalogEntities';
 import { credentialEntityModelTs } from '../catalog/CredentialEntity';
 import { licenseEntityModelTs } from '../catalog/LicenseEntity';
@@ -55,6 +55,13 @@ export class SyncStore extends Common.Store.ExtensionStore {
    */
   @observable proxies;
 
+  /**
+   * @member {boolean|undefined} isMainThread True if this store instance is running on the
+   *  Main thread; false if it's on the Renderer thread. `undefined` until the store is
+   *  loaded with the Extension via `loadExtension()`.
+   */
+  isMainThread; // NOT observable on purpose; set only once
+
   static getDefaults() {
     return {
       credentials: [],
@@ -73,10 +80,16 @@ export class SyncStore extends Common.Store.ExtensionStore {
     makeObservable(this);
   }
 
-  /** Reset properties to default empty object */
-  reset() {
-    const defaults = SyncStore.getDefaults();
-    Object.keys(this).forEach((key) => (this[key] = defaults[key]));
+  /**
+   * Initializes the store with the extension.
+   * @override
+   * @param {Main.LensExtension|Renderer.LensExtension} extension Main or Renderer extension
+   *  instance.
+   * @param {boolean} [isMainThread] True if this store instance is on the Main thread.
+   */
+  loadExtension(extension, isMainThread) {
+    this.isMainThread = !!isMainThread;
+    super.loadExtension(extension);
   }
 
   /**
@@ -101,7 +114,9 @@ export class SyncStore extends Common.Store.ExtensionStore {
     if (!result.valid) {
       logger.error(
         'SyncStore.fromStore()',
-        `Invalid data found, error="${result.message}"`
+        `Invalid data found, will use defaults instead; error=${logValue(
+          result.message
+        )}`
       );
     }
 
@@ -109,7 +124,7 @@ export class SyncStore extends Common.Store.ExtensionStore {
 
     logger.log(
       'SyncStore.fromStore()',
-      `Updating store: ${Object.entries(json)
+      `Updating store to: ${Object.entries(json)
         .map(([key, value]) => `${key}=${value.length}`)
         .join(', ')}`
     );
@@ -120,8 +135,9 @@ export class SyncStore extends Common.Store.ExtensionStore {
 
     logger.log(
       'SyncStore.fromStore()',
-      `Store updated: ${Object.entries(json)
-        .map(([key, value]) => `${key}=${value.length}`)
+      // NOTE: just using defaults to iterate over expected keys we care about on `this`
+      `Updated store to: ${Object.keys(SyncStore.getDefaults())
+        .map((key) => `${key}=${this[key].length}`)
         .join(', ')}`
     );
   }

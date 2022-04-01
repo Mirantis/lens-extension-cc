@@ -11,8 +11,7 @@ export const mockDataCloud = {
     cloudUrl: 'https://cloud-url.com',
     name: 'Container name',
     syncAll: false,
-    syncedNamespaces: [],
-    ignoredNamespaces: [],
+    namespaces: {},
   },
   loading: false,
   namespaces: [
@@ -92,8 +91,7 @@ export const mockDataCloud2 = {
     cloudUrl: 'https://cloud-url-2.com',
     name: 'Container name 2',
     syncAll: false,
-    syncedNamespaces: [],
-    ignoredNamespaces: [],
+    namespaces: {},
   },
   loading: false,
   namespaces: [

@@ -15,33 +15,22 @@ const setParentCheckboxState = (children) => {
 };
 
 /**
- * @param {DataCloud} dataCloud
+ * @param {Cloud} cloud
  * @return {Object} {[namespaceName]: boolean}
  */
-const makeCheckboxesStateObj = (dataCloud) => {
-  // if DC.namespaces aren't loaded yet, we use stored syncedNamespaces names from Cloud
-  if (!dataCloud.loaded) {
-    return dataCloud.cloud.allNamespaces.reduce((acc, name) => {
-      acc[name] = dataCloud.cloud.syncedNamespaces.includes(name);
-      return acc;
-    }, {});
-  }
-  // otherwise, we make state for all DC.namespaces, they have to be present
-  // And use syncedNamespaces to make initial state checked for selected checkboxes
-  return dataCloud.namespaces.reduce((acc, namespace) => {
-    acc[namespace.name] = dataCloud.cloud.syncedNamespaces.includes(
-      namespace.name
-    );
+const makeCheckboxesStateObj = (cloud) => {
+  return cloud.namespaces.reduce((acc, namespace) => {
+    acc[namespace.name] = namespace.synced;
     return acc;
   }, {});
 };
 
 /**
- * @param {DataCloud} dataCloud
+ * @param {Cloud} cloud
  * @return {{parent: (boolean), children: Object}}
  */
-export const makeCheckboxesInitialState = (dataCloud) => {
-  const children = makeCheckboxesStateObj(dataCloud);
+export const makeCheckboxesInitialState = (cloud) => {
+  const children = makeCheckboxesStateObj(cloud);
   return {
     parent: setParentCheckboxState(children),
     children,

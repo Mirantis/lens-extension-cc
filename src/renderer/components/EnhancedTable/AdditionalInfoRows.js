@@ -3,6 +3,7 @@ import _ from 'lodash';
 import styled from '@emotion/styled';
 import { layout } from '../styles';
 import { managementClusters } from '../../../strings';
+import { CloudNamespace } from '../../../common/CloudNamespace';
 
 const EnhInfoRowsWrapper = styled.div`
   display: contents;
@@ -65,7 +66,7 @@ export const AdditionalInfoRows = ({ namespace, emptyCellsCount }) => {
 };
 
 AdditionalInfoRows.propTypes = {
-  namespace: PropTypes.object.isRequired,
+  namespace: PropTypes.instanceOf(CloudNamespace).isRequired,
   emptyCellsCount: PropTypes.number,
 };
 

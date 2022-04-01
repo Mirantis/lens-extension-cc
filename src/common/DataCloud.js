@@ -17,7 +17,9 @@ export const DATA_CLOUD_EVENTS = Object.freeze({
   /**
    * Initial data load (fetch) only, either starting or finished.
    *
-   * Expected signature: `(dataCloud: DataCloud) => void`
+   * Expected signature: `({ name: string, target: DataCloud }) => void`
+   *
+   * - `name`: event name
    */
   LOADED: 'loaded',
 
@@ -25,28 +27,36 @@ export const DATA_CLOUD_EVENTS = Object.freeze({
    * Whenever new data is being fetched, or done fetching (even on the initial
    *  data load, which means there's overlap with the `LOADED` event).
    *
-   * Expected signature: `(dataCloud: DataCloud) => void`
+   * Expected signature: `({ name: string, target: DataCloud }) => void`
+   *
+   * - `name`: event name
    */
   FETCHING_CHANGE: 'fetchingChange',
 
   /**
    * When new data will be fetched.
    *
-   * Expected signature: `(dataCloud: DataCloud) => void`
+   * Expected signature: `({ name: string, target: DataCloud }) => void`
+   *
+   * - `name`: event name
    */
   FETCH_DATA: 'fetchData',
 
   /**
    * Whenever the `error` property changes.
    *
-   * Expected signature: `(dataCloud: DataCloud) => void`
+   * Expected signature: `({ name: string, target: DataCloud }) => void`
+   *
+   * - `name`: event name
    */
   ERROR_CHANGE: 'errorChange',
 
   /**
    * When any data-related property (e.g. `namespaces`) has been updated.
    *
-   * Expected signature: `(dataCloud: DataCloud) => void`
+   * Expected signature: `({ name: string, target: DataCloud }) => void`
+   *
+   * - `name`: event name
    */
   DATA_UPDATED: 'dataUpdated',
 });
@@ -270,15 +280,12 @@ const _fetchCollection = async function ({
  * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
  *  if necessary.
  * @param {Array<Namespace>} namespaces List of namespaces.
- * @param {boolean} [preview] If true, only the count per namespace is retrieved.
  * @returns {Promise<Object>} Never fails, always resolves in
- *  `{ credentials: { [index: string]: Array<Credential|Object> }, tokensRefreshed: boolean, preview: boolean }`,
+ *  `{ credentials: { [index: string]: Array<Credential|Object> }, tokensRefreshed: boolean }`,
  *  where `credentials` is a map of namespace name to credential (regardless of type).
- *  If `preview=true`, `credentials` is a map of namespace name to empty objects since
- *  only the count is desired. If there's an error trying to get any credential, it will be
- *  skipped/ignored.
+ *  If there's an error trying to get any credential, it will be skipped/ignored.
  */
-const _fetchCredentials = async function (cloud, namespaces, preview = false) {
+const _fetchCredentials = async function (cloud, namespaces) {
   const results = await Promise.all(
     Object.values(apiCredentialTypes).map((resourceType) =>
       _fetchCollection({
@@ -286,9 +293,7 @@ const _fetchCredentials = async function (cloud, namespaces, preview = false) {
         cloud,
         namespaces,
         create: ({ data, namespace }) => {
-          return preview
-            ? {} // skip full object creation; we just need a count
-            : new Credential({ data, namespace, cloud });
+          return new Credential({ data, namespace, cloud });
         },
       })
     )
@@ -317,7 +322,7 @@ const _fetchCredentials = async function (cloud, namespaces, preview = false) {
     return acc;
   }, {});
 
-  return { credentials, tokensRefreshed, preview };
+  return { credentials, tokensRefreshed };
 };
 
 /**
@@ -368,25 +373,21 @@ const _fetchProxies = async function (cloud, namespaces) {
  * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
  *  if necessary.
  * @param {Array<Namespace>} namespaces List of namespaces.
- * @param {boolean} [preview] If true, only the count per namespace is retrieved.
  * @returns {Promise<Object>} Never fails, always resolves in
- *  `{ sshKeys: { [index: string]: Array<SshKey|Object> }, tokensRefreshed: boolean, preview: boolean }`
- *  where the SSH keys are mapped per namespace name. If `preview=true`, `sshKeys` is a map of
- *  namespace name to empty objects since only the count is desired. If an error occurs trying
+ *  `{ sshKeys: { [index: string]: Array<SshKey|Object> }, tokensRefreshed: boolean }`
+ *  where the SSH keys are mapped per namespace name. If an error occurs trying
  *  to get any SSH key, it will be ignored/skipped.
  */
-const _fetchSshKeys = async function (cloud, namespaces, preview = false) {
+const _fetchSshKeys = async function (cloud, namespaces) {
   const { resources: sshKeys, tokensRefreshed } = await _fetchCollection({
     resourceType: apiResourceTypes.PUBLIC_KEY,
     cloud,
     namespaces,
     create: ({ data, namespace }) => {
-      return preview
-        ? {} // skip full object creation; we just need a count
-        : new SshKey({ data, namespace, cloud });
+      return new SshKey({ data, namespace, cloud });
     },
   });
-  return { sshKeys, tokensRefreshed, preview };
+  return { sshKeys, tokensRefreshed };
 };
 
 /**
@@ -420,25 +421,21 @@ const _fetchMachines = async function (cloud, namespaces) {
  *  NOTE: Each namespace is expected to already contain all known Credentials,
  *   SSH Keys, Proxies, Machines, and Licenses that this Cluster might reference.
  *
- * @param {boolean} [preview] If true, only the count per namespace is retrieved.
  * @returns {Promise<Object>} Never fails, always resolves in
- *  `{ clusters: { [index: string]: Array<Cluster|Object> }, tokensRefreshed: boolean, preview: boolean }`
- *  where the clusters are mapped per namespace name. If `preview=true`, `clusters` is a map
- *  of namespace name to empty objects since only the count is desired. If an error occurs
- *  trying to get any cluster, it will be ignored/skipped.
+ *  `{ clusters: { [index: string]: Array<Cluster|Object> }, tokensRefreshed: boolean }`
+ *  where the clusters are mapped per namespace name. If an error occurs trying to get
+ *  any cluster, it will be ignored/skipped.
  */
-const _fetchClusters = async function (cloud, namespaces, preview) {
+const _fetchClusters = async function (cloud, namespaces) {
   const { resources: clusters, tokensRefreshed } = await _fetchCollection({
     resourceType: apiResourceTypes.CLUSTER,
     cloud,
     namespaces,
     create: ({ data, namespace }) => {
-      return preview
-        ? {} // skip full object creation; we just need a count
-        : new Cluster({ data, namespace, cloud });
+      return new Cluster({ data, namespace, cloud });
     },
   });
-  return { clusters, tokensRefreshed, preview };
+  return { clusters, tokensRefreshed };
 };
 
 /**
@@ -495,7 +492,7 @@ export class DataCloud extends EventDispatcher {
    *  the API and determines which namespaces are synced.
    * @param {boolean} [preview] If truthy, declares this instance is only for preview
    *  purposes (i.e. not used for actual sync to the Catalog), which reduces the amount
-   *  of data fetched from the Cloud in order to make data fetching a bit faster.
+   *  of data fetched from the Cloud in order to make data fetching much faster.
    */
   constructor(cloud, preview) {
     super();
@@ -507,6 +504,7 @@ export class DataCloud extends EventDispatcher {
     let _error = null;
 
     /**
+     * @readonly
      * @member {Cloud} cloud The Cloud instance providing data.
      */
     Object.defineProperty(this, 'cloud', {
@@ -515,13 +513,16 @@ export class DataCloud extends EventDispatcher {
         return _cloud;
       },
       set(newValue) {
-        if (newValue !== _cloud) {
-          DEV_ENV &&
-            rtv.verify(
-              { cloud: newValue },
-              { cloud: [rtv.CLASS_OBJECT, { ctor: Cloud }] } // required, cannot be undefined/null
-            );
+        DEV_ENV &&
+          rtv.verify(
+            { cloud: newValue },
+            { cloud: [rtv.CLASS_OBJECT, { ctor: Cloud }] } // required, cannot be undefined/null
+          );
 
+        if (
+          newValue !== _cloud &&
+          (!_cloud || _cloud.cloudUrl === newValue.cloudUrl)
+        ) {
           if (_cloud) {
             // stop listening to the OLD Cloud
             _cloud.removeEventListener(
@@ -531,6 +532,14 @@ export class DataCloud extends EventDispatcher {
           }
 
           _cloud = newValue;
+
+          // sync the new Cloud with this DC's loaded/fetching state since even though
+          //  it's a new Cloud class instance, it's still the same URL and so the same
+          //  mgmt cluster, and do the data that we have already (if any) should still
+          //  be valid (we just got a new class instance from the CloudStore for "reasons")
+          _cloud.loaded = this.loaded;
+          _cloud.fetching = this.fetching;
+
           _cloud.addEventListener(
             CLOUD_EVENTS.SYNC_CHANGE,
             this.onCloudSyncChange
@@ -541,6 +550,11 @@ export class DataCloud extends EventDispatcher {
             `Received new Cloud: Fetching new data now; dataCloud=${this}`
           );
           this.fetchNow();
+        } else if (_cloud && _cloud.cloudUrl !== newValue.cloudUrl) {
+          logger.error(
+            'DataCloud.cloud:set',
+            `Rejected new Cloud with different URL; newCloud=${newValue}, dataCloud=${this}`
+          );
         }
       },
     });
@@ -559,6 +573,7 @@ export class DataCloud extends EventDispatcher {
         // only change it once from false -> true because we only load once; after that, we fetch
         if (!_loaded && !!newValue) {
           _loaded = true;
+          this.cloud.loaded = _loaded;
           this.dispatchEvent(DATA_CLOUD_EVENTS.LOADED, this);
         }
       },
@@ -576,15 +591,19 @@ export class DataCloud extends EventDispatcher {
       set(newValue) {
         if (!!newValue !== _fetching) {
           _fetching = !!newValue;
+          this.cloud.fetching = _fetching;
           this.dispatchEvent(DATA_CLOUD_EVENTS.FETCHING_CHANGE, this);
         }
       },
     });
 
     /**
-     * @member {Array<Namespace>|null} namespaces __ALL__ namespaces in the Cloud, regardless
-     *  of which specific ones the Cloud may be syncing. `null` if never fetched. Empty if none.
+     * @member {Array<Namespace>} namespaces __ALL__ namespaces in the Cloud, regardless
+     *  of which specific ones the Cloud may be syncing. Empty if never fetched. Empty if none.
+     *  Use `DataCloud.loaded` to know if namespaces have been successfully fetched at least
+     *  once.
      * @see {@link syncedNamespaces}
+     * @see {@link loaded}
      */
     Object.defineProperty(this, 'namespaces', {
       enumerable: true,
@@ -681,17 +700,18 @@ export class DataCloud extends EventDispatcher {
    *  empty if none or the namespaces haven't been successfully fetched at least once yet.
    */
   get syncedNamespaces() {
-    return this.namespaces.filter((namespace) =>
-      this.cloud.syncedNamespaces.includes(namespace.name)
+    return this.cloud.syncedProjects.map((name) =>
+      this.namespaces.find(({ name: nsName }) => name === nsName)
     );
   }
 
   /**
    * @member {Array<Namespace>} ignoredNamespaces List of namespaces the Cloud is not syncing;
+   *  empty if none or the namespaces haven't been successfully fetched at least once yet.
    */
   get ignoredNamespaces() {
-    return this.namespaces.filter((namespace) =>
-      this.cloud.ignoredNamespaces.includes(namespace.name)
+    return this.cloud.ignoredProjects.map((name) =>
+      this.namespaces.find(({ name: nsName }) => name === nsName)
     );
   }
 
@@ -750,36 +770,6 @@ export class DataCloud extends EventDispatcher {
     }
   }
 
-  /**
-   * Update the Cloud's list of namespaces given all known namespaces and the Cloud's
-   *  `syncAll` flag (i.e. add any new namespaces to its synced or ignored list, and
-   *  remove any old ones).
-   * @param {Array<Namespace>} allNamespaces All existing/known namespaces from the
-   *  latest data fetch.
-   */
-  updateCloudNamespaces(allNamespaces) {
-    const syncedList = [];
-    const ignoredList = [];
-
-    allNamespaces.forEach(({ name }) => {
-      if (this.cloud.syncAll) {
-        if (this.cloud.ignoredNamespaces.includes(name)) {
-          ignoredList.push(name);
-        } else {
-          syncedList.push(name);
-        }
-      } else {
-        if (this.cloud.syncedNamespaces.includes(name)) {
-          syncedList.push(name);
-        } else {
-          ignoredList.push(name);
-        }
-      }
-    });
-
-    this.cloud.updateNamespaces(syncedList, ignoredList);
-  }
-
   /** Called when __this__ DataCloud should fetch new data from its Cloud. */
   onFetchData = () => this.fetchData();
 
@@ -823,89 +813,77 @@ export class DataCloud extends EventDispatcher {
     const nsResults = await _fetchNamespaces(this.cloud, this.preview);
     const allNamespaces = nsResults.namespaces.concat();
 
-    // update the synced vs ignored namespace lists of the Cloud
-    this.updateCloudNamespaces(allNamespaces);
-
     // if we're not generating a preview, only fetch full data for synced namespaces
     //  (which may contain some newly-discovered ones after the update we just did
     //  using `allNamespaces`)
-    const fetchNamespaces = this.preview
+    const fetchedNamespaces = this.preview
       ? allNamespaces
       : allNamespaces.filter((ns) =>
-          this.cloud.syncedNamespaces.includes(ns.name)
+          this.cloud.syncedProjects.includes(ns.name)
         );
 
-    const credResults = await _fetchCredentials(
-      this.cloud,
-      fetchNamespaces,
-      this.preview
-    );
-    const keyResults = await _fetchSshKeys(
-      this.cloud,
-      fetchNamespaces,
-      this.preview
-    );
-
-    // map all the resources fetched so far into their respective Namespaces
-    fetchNamespaces.forEach((namespace) => {
-      if (keyResults.preview) {
-        namespace.sshKeyCount = keyResults.sshKeys[namespace.name]?.length ?? 0;
-      } else {
-        namespace.sshKeys = keyResults.sshKeys[namespace.name] || [];
-      }
-
-      if (credResults.preview) {
-        namespace.credentialCount =
-          credResults.credentials[namespace.name]?.length ?? 0;
-      } else {
-        namespace.credentials = credResults.credentials[namespace.name] || [];
-      }
-    });
-
     if (!this.preview) {
-      const proxyResults = await _fetchProxies(this.cloud, fetchNamespaces);
-      const licenseResults = await _fetchLicenses(this.cloud, fetchNamespaces);
+      const credResults = await _fetchCredentials(
+        this.cloud,
+        fetchedNamespaces
+      );
+      const keyResults = await _fetchSshKeys(this.cloud, fetchedNamespaces);
+
+      // map all the resources fetched so far into their respective Namespaces
+      fetchedNamespaces.forEach((namespace) => {
+        namespace.sshKeys = keyResults.sshKeys[namespace.name] || [];
+        namespace.credentials = credResults.credentials[namespace.name] || [];
+      });
+
+      const proxyResults = await _fetchProxies(this.cloud, fetchedNamespaces);
+      const licenseResults = await _fetchLicenses(
+        this.cloud,
+        fetchedNamespaces
+      );
       // map fetched proxies and licenses into their respective Namespaces
-      fetchNamespaces.forEach((namespace) => {
+      fetchedNamespaces.forEach((namespace) => {
         namespace.proxies = proxyResults.proxies[namespace.name] || [];
         namespace.licenses = licenseResults.licenses[namespace.name] || [];
       });
 
       // NOTE: fetch machines only AFTER licenses have been fetched and added
       //  into the Namespaces because the Machine resource expects to find Licenses
-      const machineResults = await _fetchMachines(this.cloud, fetchNamespaces);
+      const machineResults = await _fetchMachines(
+        this.cloud,
+        fetchedNamespaces
+      );
       // map fetched machines into their respective Namespaces
-      fetchNamespaces.forEach((namespace) => {
+      fetchedNamespaces.forEach((namespace) => {
         namespace.machines = machineResults.machines[namespace.name] || [];
+      });
+
+      // NOTE: fetch clusters only AFTER everything else has been fetched and added
+      //  into the Namespaces because the Cluster resource expects to find all the
+      //  other resources
+      const clusterResults = await _fetchClusters(
+        this.cloud,
+        fetchedNamespaces
+      );
+
+      // map fetched clusters into their respective Namespaces
+      fetchedNamespaces.forEach((namespace) => {
+        namespace.clusters = clusterResults.clusters[namespace.name] || [];
       });
     } else {
       logger.log(
         'DataCloud.fetchData()',
-        `Preview only: Skipping proxy, license, machine fetch; dataCloud=${this}`
+        `Preview only: Skipping all but namespace fetch; dataCloud=${this}`
       );
     }
 
-    // NOTE: fetch clusters only AFTER everything else has been fetched and added
-    //  into the Namespaces because the Cluster resource expects to find all the
-    //  other resources
-    const clusterResults = await _fetchClusters(
-      this.cloud,
-      fetchNamespaces,
-      this.preview
-    );
-
-    // map fetched clusters into their respective Namespaces
-    fetchNamespaces.forEach((namespace) => {
-      if (clusterResults.preview) {
-        namespace.clusterCount =
-          clusterResults.clusters[namespace.name]?.length ?? 0;
-      } else {
-        namespace.clusters = clusterResults.clusters[namespace.name] || [];
-      }
-    });
+    // update the synced vs ignored namespace lists of the Cloud
+    // NOTE: we do this AFTER fetching ALL data (if not preview) so that when
+    //  we update the Cloud's namespace metadata, we have the summary counts
+    //  for what we fetched from the __synced__ namespaces among all the namespaces
+    this.cloud.updateNamespaces(allNamespaces);
 
     this.error = null;
-    this.namespaces = fetchNamespaces;
+    this.namespaces = allNamespaces;
 
     if (!this.loaded) {
       // successfully loaded at least once

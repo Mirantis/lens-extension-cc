@@ -21,7 +21,7 @@ export class IpcRenderer extends Renderer.Ipc {
    * @param {...any} args Anything else to pass to the Logger to be printed as data
    *  or parsed with '%s' placeholders in the message (same as `console` API).
    */
-  onLogger = (event, level, ...args) => {
+  handleLogger = (event, level, ...args) => {
     // NOTE: while this does make it easier to get logger messages from the Main
     //  process, any modification to the Main process will require Lens to be
     //  completely restarted (more than just reloaded with CMD+R) in order to
@@ -35,6 +35,6 @@ export class IpcRenderer extends Renderer.Ipc {
 
   constructor(extension) {
     super(extension);
-    this.listen(ipcEvents.broadcast.LOGGER, this.onLogger);
+    this.listen(ipcEvents.broadcast.LOGGER, this.handleLogger);
   }
 }

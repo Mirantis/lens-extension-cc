@@ -7,6 +7,7 @@ import { Credential } from './Credential';
 import { SshKey } from './SshKey';
 import { Proxy } from './Proxy';
 import { License } from './License';
+import { logger, logValue } from '../../util/logger';
 
 /**
  * Typeset for an MCC Namespace object.
@@ -22,7 +23,7 @@ export const namespaceTs = mergeRtvShapes({}, resourceTs, {
 delete namespaceTs.kind; // Namespace API objects don't have `kind` property for some reason
 
 /**
- * MCC project/namespace.
+ * MCC namespace API resource.
  * @class Namespace
  */
 export class Namespace extends Resource {
@@ -34,23 +35,27 @@ export class Namespace extends Resource {
    * @param {boolean} [params.preview] True if this Namespace is for preview
    *  purposes only, and so only the __count__ properties will be valid.
    */
-  constructor({ data, cloud, preview }) {
+  constructor({ data, cloud, preview = false }) {
     super({ data, cloud, typeset: namespaceTs });
 
     let _clusters = [];
-    let _clusterCount;
     let _machines = [];
-    let _machineCount;
     let _sshKeys = [];
-    let _sshKeyCount;
     let _credentials = [];
-    let _credentialCount;
     let _proxies = [];
-    let _proxyCount;
     let _licenses = [];
-    let _licenseCount;
 
-    /** @member {string} */
+    // initially `undefined` to defer to length of associated array when NOT preview;
+    //  when IS preview, initially `0` so we do NOT defer to length of associated
+    //  array since we shouldn't be accessing the array in preview mode
+    let _clusterCount = preview ? 0 : undefined;
+    let _machineCount = preview ? 0 : undefined;
+    let _sshKeyCount = preview ? 0 : undefined;
+    let _credentialCount = preview ? 0 : undefined;
+    let _proxyCount = preview ? 0 : undefined;
+    let _licenseCount = preview ? 0 : undefined;
+
+    /** @member {string} phase */
     Object.defineProperty(this, 'phase', {
       enumerable: true,
       get() {
@@ -58,7 +63,7 @@ export class Namespace extends Resource {
       },
     });
 
-    /** @member {boolean} */
+    /** @member {boolean} preview */
     Object.defineProperty(this, 'preview', {
       enumerable: true,
       get() {
@@ -72,12 +77,23 @@ export class Namespace extends Resource {
     Object.defineProperty(this, 'clusters', {
       enumerable: true,
       get() {
+        if (this.preview) {
+          logger.warn(
+            'Namespace.clusters:get',
+            `Getting always-empty clusters property on PREVIEW namespace=${logValue(
+              this.name
+            )}`
+          );
+        }
+
         return _clusters;
       },
       set(newValue) {
         if (this.preview) {
           throw new Error(
-            `Cannot set set clusters property on preview namespace=${this}`
+            `Cannot set clusters property on PREVIEW namespace=${logValue(
+              this.name
+            )}`
           );
         }
 
@@ -105,12 +121,23 @@ export class Namespace extends Resource {
     Object.defineProperty(this, 'machines', {
       enumerable: true,
       get() {
+        if (this.preview) {
+          logger.warn(
+            'Namespace.machines:get',
+            `Getting always-empty machines property on PREVIEW namespace=${logValue(
+              this.name
+            )}`
+          );
+        }
+
         return _machines;
       },
       set(newValue) {
         if (this.preview) {
           throw new Error(
-            `Cannot set set machines property on preview namespace=${this}`
+            `Cannot set machines property on PREVIEW namespace=${logValue(
+              this.name
+            )}`
           );
         }
 
@@ -138,12 +165,23 @@ export class Namespace extends Resource {
     Object.defineProperty(this, 'sshKeys', {
       enumerable: true,
       get() {
+        if (this.preview) {
+          logger.warn(
+            'Namespace.sshKeys:get',
+            `Getting always-empty sshKeys property on PREVIEW namespace=${logValue(
+              this.name
+            )}`
+          );
+        }
+
         return _sshKeys;
       },
       set(newValue) {
         if (this.preview) {
           throw new Error(
-            `Cannot set set sshKeys property on preview namespace=${this}`
+            `Cannot set sshKeys property on PREVIEW namespace=${logValue(
+              this.name
+            )}`
           );
         }
 
@@ -171,12 +209,23 @@ export class Namespace extends Resource {
     Object.defineProperty(this, 'credentials', {
       enumerable: true,
       get() {
+        if (this.preview) {
+          logger.warn(
+            'Namespace.credentials:get',
+            `Getting always-empty credentials property on PREVIEW namespace=${logValue(
+              this.name
+            )}`
+          );
+        }
+
         return _credentials;
       },
       set(newValue) {
         if (this.preview) {
           throw new Error(
-            `Cannot set set credentials property on preview namespace=${this}`
+            `Cannot set credentials property on PREVIEW namespace=${logValue(
+              this.name
+            )}`
           );
         }
 
@@ -204,12 +253,23 @@ export class Namespace extends Resource {
     Object.defineProperty(this, 'proxies', {
       enumerable: true,
       get() {
+        if (this.preview) {
+          logger.warn(
+            'Namespace.proxies:get',
+            `Getting always-empty proxies property on PREVIEW namespace=${logValue(
+              this.name
+            )}`
+          );
+        }
+
         return _proxies;
       },
       set(newValue) {
         if (this.preview) {
           throw new Error(
-            `Cannot set set proxies property on preview namespace=${this}`
+            `Cannot set proxies property on PREVIEW namespace=${logValue(
+              this.name
+            )}`
           );
         }
 
@@ -237,12 +297,23 @@ export class Namespace extends Resource {
     Object.defineProperty(this, 'licenses', {
       enumerable: true,
       get() {
+        if (this.preview) {
+          logger.warn(
+            'Namespace.licenses:get',
+            `Getting always-empty licenses property on PREVIEW namespace=${logValue(
+              this.name
+            )}`
+          );
+        }
+
         return _licenses;
       },
       set(newValue) {
         if (this.preview) {
           throw new Error(
-            `Cannot set set licenses property on preview namespace=${this}`
+            `Cannot set licenses property on PREVIEW namespace=${logValue(
+              this.name
+            )}`
           );
         }
 
@@ -276,18 +347,20 @@ export class Namespace extends Resource {
       set(newValue) {
         if (!this.preview) {
           throw new Error(
-            `Cannot set clusterCount property on non-preview namespace=${this}`
+            `Cannot set clusterCount property on non-preview namespace=${logValue(
+              this.name
+            )}`
           );
         }
 
         DEV_ENV &&
           rtv.verify(
             { clusterCount: newValue },
-            { clusterCount: [rtv.OPTIONAL, rtv.SAFE_INT] }
+            { clusterCount: [rtv.SAFE_INT, { min: 0 }] }
           );
 
         if (_clusterCount !== newValue) {
-          _clusterCount = newValue ?? undefined;
+          _clusterCount = Math.max(newValue, 0);
         }
       },
     });
@@ -304,18 +377,20 @@ export class Namespace extends Resource {
       set(newValue) {
         if (!this.preview) {
           throw new Error(
-            `Cannot set machineCount property on non-preview namespace=${this}`
+            `Cannot set machineCount property on non-preview namespace=${logValue(
+              this.name
+            )}`
           );
         }
 
         DEV_ENV &&
           rtv.verify(
             { machineCount: newValue },
-            { machineCount: [rtv.OPTIONAL, rtv.SAFE_INT] }
+            { machineCount: [rtv.SAFE_INT, { min: 0 }] }
           );
 
         if (_machineCount !== newValue) {
-          _machineCount = newValue ?? undefined;
+          _machineCount = Math.max(newValue, 0);
         }
       },
     });
@@ -332,18 +407,20 @@ export class Namespace extends Resource {
       set(newValue) {
         if (!this.preview) {
           throw new Error(
-            `Cannot set sshKeyCount property on non-preview namespace=${this}`
+            `Cannot set sshKeyCount property on non-preview namespace=${logValue(
+              this.name
+            )}`
           );
         }
 
         DEV_ENV &&
           rtv.verify(
             { sshKeyCount: newValue },
-            { sshKeyCount: [rtv.OPTIONAL, rtv.SAFE_INT] }
+            { sshKeyCount: [rtv.SAFE_INT, { min: 0 }] }
           );
 
         if (_sshKeyCount !== newValue) {
-          _sshKeyCount = newValue ?? undefined;
+          _sshKeyCount = Math.max(newValue, 0);
         }
       },
     });
@@ -360,18 +437,20 @@ export class Namespace extends Resource {
       set(newValue) {
         if (!this.preview) {
           throw new Error(
-            `Cannot set credentialCount property on non-preview namespace=${this}`
+            `Cannot set credentialCount property on non-preview namespace=${logValue(
+              this.name
+            )}`
           );
         }
 
         DEV_ENV &&
           rtv.verify(
             { credentialCount: newValue },
-            { credentialCount: [rtv.OPTIONAL, rtv.SAFE_INT] }
+            { credentialCount: [rtv.SAFE_INT, { min: 0 }] }
           );
 
         if (_credentialCount !== newValue) {
-          _credentialCount = newValue ?? undefined;
+          _credentialCount = Math.max(newValue, 0);
         }
       },
     });
@@ -388,18 +467,20 @@ export class Namespace extends Resource {
       set(newValue) {
         if (!this.preview) {
           throw new Error(
-            `Cannot set proxyCount property on non-preview namespace=${this}`
+            `Cannot set proxyCount property on non-preview namespace=${logValue(
+              this.name
+            )}`
           );
         }
 
         DEV_ENV &&
           rtv.verify(
             { proxyCount: newValue },
-            { proxyCount: [rtv.OPTIONAL, rtv.SAFE_INT] }
+            { proxyCount: [rtv.SAFE_INT, { min: 0 }] }
           );
 
         if (_proxyCount !== newValue) {
-          _proxyCount = newValue ?? undefined;
+          _proxyCount = Math.max(newValue, 0);
         }
       },
     });
@@ -416,18 +497,20 @@ export class Namespace extends Resource {
       set(newValue) {
         if (!this.preview) {
           throw new Error(
-            `Cannot set licenseCount property on non-preview namespace=${this}`
+            `Cannot set licenseCount property on non-preview namespace=${logValue(
+              this.name
+            )}`
           );
         }
 
         DEV_ENV &&
           rtv.verify(
             { licenseCount: newValue },
-            { licenseCount: [rtv.OPTIONAL, rtv.SAFE_INT] }
+            { licenseCount: [rtv.SAFE_INT, { min: 0 }] }
           );
 
         if (_licenseCount !== newValue) {
-          _licenseCount = newValue ?? undefined;
+          _licenseCount = Math.max(newValue, 0);
         }
       },
     });
@@ -435,6 +518,7 @@ export class Namespace extends Resource {
 
   /** @returns {string} A string representation of this instance for logging/debugging. */
   toString() {
+    // NOTE: AVOID using list properties unless you test for `this.preview === true`
     const propStr = `${super.toString()}, preview: ${this.preview}, clusters: ${
       this.clusterCount
     }, credentials: ${this.credentialCount}, sshKeys: ${

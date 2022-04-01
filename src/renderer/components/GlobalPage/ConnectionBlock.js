@@ -6,7 +6,7 @@ import styled from '@emotion/styled';
 import { layout } from '../styles';
 import { normalizeUrl } from '../../../util/netUtil';
 import { connectionBlock } from '../../../strings';
-import { cloudStore } from '../../../store/CloudStore';
+import { useClouds } from '../../store/CloudProvider';
 
 const {
   Component: { Input, Button },
@@ -45,22 +45,24 @@ const RequiredMark = styled.span`
   margin-left: ${layout.grid}px;
 `;
 
-const cloudAlreadySynced = {
+const mkCloudAlreadySyncedValidator = (clouds) => ({
   message: () => connectionBlock.notice.urlAlreadyUsed(),
-  validate: (url) => !cloudStore?.clouds?.[normalizeUrl(url)],
-};
+  validate: (url) => !clouds[normalizeUrl(url)],
+});
 
 const nameSymbols = {
   message: () => connectionBlock.notice.nameSymbolsAreNotValid(),
   validate: (name) => /^[a-zA-Z0-9_-]*$/.test(name),
 };
-const nameAlreadyUsed = {
+
+const mkNameValidator = (clouds) => ({
   message: () => connectionBlock.notice.nameAlreadyUsed(),
   validate: (value) =>
-    !Object.values(cloudStore.clouds).find(({ name }) => name === value),
-};
+    !Object.values(clouds).find(({ name }) => name === value),
+});
 
 export const ConnectionBlock = ({ loading, handleClusterConnect }) => {
+  const { clouds } = useClouds();
   const [clusterName, setClusterName] = useState('');
   const [clusterUrl, setClusterUrl] = useState('');
   const [showInfoBox, setShowInfoBox] = useState(true);
@@ -93,7 +95,7 @@ export const ConnectionBlock = ({ loading, handleClusterConnect }) => {
           value={clusterName}
           onChange={setClusterName}
           disabled={loading}
-          validators={[nameSymbols, nameAlreadyUsed]}
+          validators={[nameSymbols, mkNameValidator(clouds)]}
           required
           trim
         />
@@ -109,7 +111,7 @@ export const ConnectionBlock = ({ loading, handleClusterConnect }) => {
           id="lecc-cluster-url"
           value={clusterUrl}
           onChange={setUrl}
-          validators={[cloudAlreadySynced]}
+          validators={[mkCloudAlreadySyncedValidator(clouds)]}
           disabled={loading}
           required
           trim
