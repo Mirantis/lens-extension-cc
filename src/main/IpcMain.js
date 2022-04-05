@@ -66,4 +66,65 @@ export class IpcMain extends Main.Ipc {
       );
     }
   }
+
+  /**
+   * Notifies of a change in a Cloud's connection status.
+   * @param {string} cloudUrl URL of the Cloud (mgmt cluster).
+   * @param {{ connecting: boolean, connectError: string|null }} status New connection status.
+   */
+  notifyCloudStatusChange(cloudUrl, status) {
+    DEV_ENV &&
+      rtv.verify(
+        { cloudUrl, status },
+        {
+          cloudUrl: rtv.STRING,
+          status: {
+            connecting: rtv.BOOLEAN,
+            connectError: [rtv.EXPECTED, rtv.STRING],
+          },
+        }
+      );
+
+    this.broadcast(ipcEvents.broadcast.CLOUD_STATUS_CHANGE, cloudUrl, status);
+  }
+
+  /**
+   * Notifies of a change in a Cloud's loaded state.
+   * @param {string} cloudUrl URL of the Cloud (mgmt cluster).
+   * @param {boolean} loaded New loaded state.
+   */
+  notifyCloudLoadedChange(cloudUrl, loaded) {
+    DEV_ENV &&
+      rtv.verify(
+        { cloudUrl, loaded },
+        {
+          cloudUrl: rtv.STRING,
+          loaded: rtv.BOOLEAN,
+        }
+      );
+
+    this.broadcast(ipcEvents.broadcast.CLOUD_LOADED_CHANGE, cloudUrl, loaded);
+  }
+
+  /**
+   * Notifies of a change in a Cloud's fetching state.
+   * @param {string} cloudUrl URL of the Cloud (mgmt cluster).
+   * @param {boolean} fetching New fetching state.
+   */
+  notifyCloudFetchingChange(cloudUrl, fetching) {
+    DEV_ENV &&
+      rtv.verify(
+        { cloudUrl, fetching },
+        {
+          cloudUrl: rtv.STRING,
+          fetching: rtv.BOOLEAN,
+        }
+      );
+
+    this.broadcast(
+      ipcEvents.broadcast.CLOUD_FETCHING_CHANGE,
+      cloudUrl,
+      fetching
+    );
+  }
 }

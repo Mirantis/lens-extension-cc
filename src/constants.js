@@ -79,14 +79,57 @@ export const catalog = deepFreeze({
 export const ipcEvents = deepFreeze({
   /** Send to both `main` and `renderer` processes. No response. No awaiting. */
   broadcast: {
-    /** Signature: (event: string, level: string, context: string, message: string, ...args: Array) => void */
+    /**
+     * Log something in the RENDERER DevTools Console.
+     *
+     * Signature: `(event: string, level: string, context: string, message: string, ...args: Array) => void`
+     */
     LOGGER: 'logger',
+
+    /**
+     * A Cloud's connection status has changed.
+     *
+     * Signature: `(event: string, cloudUrl: string, status: { connecting: boolean, connectError: string|null }) => void`
+     *
+     * - `status.connecting`: True if the Cloud is currently connecting (i.e. getting config
+     *     or tokens).
+     * - `status.connectError`: Error message if connection failed; `null` if no errors reported.
+     */
+    CLOUD_STATUS_CHANGE: 'cloudStatusChange',
+
+    /**
+     * A Cloud's loaded state has changed.
+     *
+     * Signature: `(event: string, cloudUrl: string, loaded: boolean) => void`
+     *
+     * - `loaded`: New loaded state.
+     */
+    CLOUD_LOADED_CHANGE: 'cloudLoadedChange',
+
+    /**
+     * A Cloud's fetching state has changed.
+     *
+     * Signature: `(event: string, cloudUrl: string, fetching: boolean) => void`
+     *
+     * - `fetching`: New fetching state.
+     */
+    CLOUD_FETCHING_CHANGE: 'cloudFetchingChange',
   },
 
   /** Invoked on the `main` process only. Returns a promise to be awaited. */
   invoke: {
-    /** Signature: (event: string, cloudUrl: string) => void */
+    /**
+     * Sync a Cloud immediately.
+     *
+     * Signature: `(event: string, cloudUrl: string) => void`
+     */
     SYNC_NOW: 'syncNow',
+    /**
+     * Reconnect a Cloud.
+     *
+     * Signature: `(event: string, cloudUrl: string) => void`
+     */
+    RECONNECT: 'reconnect',
   },
 });
 

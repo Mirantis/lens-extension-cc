@@ -1,5 +1,5 @@
 import * as rtv from 'rtvjs';
-import { isEqual } from 'lodash';
+import { isEqualWith } from 'lodash';
 import { request } from '../util/netUtil';
 import { logger, logValue } from '../util/logger';
 import * as strings from '../strings';
@@ -9,11 +9,12 @@ import {
   extEventOauthCodeTs,
   addExtEventHandler,
   removeExtEventHandler,
-} from '../renderer/eventBus';
+} from '../common/eventBus';
 import { EventDispatcher } from './EventDispatcher';
-import { normalizeUrl } from '../util/netUtil';
 import * as apiUtil from '../api/apiUtil';
+import { Namespace } from '../api/types/Namespace';
 import { CloudConfig } from './CloudConfig';
+import { CloudNamespace, cloudNamespaceTs } from './CloudNamespace';
 
 /**
  * Determines if a date has passed.
@@ -51,6 +52,24 @@ const logDate = function (date) {
   return date;
 };
 
+/**
+ * Deep-compares two CloudNamespaces when using `_.isEqualWith()`.
+ * @param {CloudNamespace} [left]
+ * @param {CloudNamespace} [right]
+ * @returns {boolean} True if deep-equal; false if not.
+ */
+const compareCloudNamespaces = function (left, right) {
+  if ((!left && right) || (left && !right)) {
+    return false;
+  }
+
+  if (!left && !right) {
+    return true;
+  }
+
+  return Object.keys(cloudNamespaceTs).every((key) => left[key] === right[key]);
+};
+
 export const CONNECTION_STATUSES = Object.freeze({
   /** Cloud has a config object and an API token, and the ability to refresh it when it expires. */
   CONNECTED: 'connected',
@@ -65,23 +84,54 @@ export const CLOUD_EVENTS = Object.freeze({
   /**
    * At least one of the Cloud's status-related properties has changed.
    *
-   * Expected signature: `(cloud: Cloud) => void`
+   * NOTE: __Excludes__ `loaded` and `fetching` property changes.
+   *
+   * Expected signature: `(event: { name: string, target: Cloud }, info: { isFromStore: boolean }) => void`
+   *
+   * - `info.isFromStore`: True if the change is a result of a store (i.e. disk) change;
+   *     false otherwise.
    */
   STATUS_CHANGE: 'statusChange',
+
+  /**
+   * The Cloud's `loaded` property has changed.
+   *
+   * Expected signature: `(event: { name: string, target: Cloud }, info: { isFromStore: boolean }) => void`
+   *
+   * - `info.isFromStore`: True if the change is a result of a store (i.e. disk) change;
+   *     false otherwise.
+   */
+  LOADED_CHANGE: 'loadedChange',
+
+  /**
+   * The Cloud's `fetching` property has changed.
+   *
+   * Expected signature: `(event: { name: string, target: Cloud }, info: { isFromStore: boolean }) => void`
+   *
+   * - `info.isFromStore`: True if the change is a result of a store (i.e. disk) change;
+   *     false otherwise.
+   */
+  FETCHING_CHANGE: 'fetchingChange',
 
   /**
    * At least one of the Cloud's token-related properties has changed, likely because
    *  the token expired and had to be refreshed, or because the Cloud had no tokens,
    *  connected to MCC, and obtained a new set.
    *
-   * Expected signature: `(cloud: Cloud) => void`
+   * Expected signature: `(event: { name: string, target: Cloud }, info: { isFromStore: boolean }) => void`
+   *
+   * - `info.isFromStore`: True if the change is a result of a store (i.e. disk) change;
+   *     false otherwise.
    */
   TOKEN_CHANGE: 'tokenChange',
 
   /**
    * At least one of the Cloud's sync-related properties has changed.
    *
-   * Expected signature: `(cloud: Cloud) => void`
+   * Expected signature: `(event: { name: string, target: Cloud }, info: { isFromStore: boolean }) => void`
+   *
+   * - `info.isFromStore`: True if the change is a result of a store (i.e. disk) change;
+   *     false otherwise.
    */
   SYNC_CHANGE: 'syncChange',
 
@@ -89,7 +139,10 @@ export const CLOUD_EVENTS = Object.freeze({
    * At least one of the Cloud's other properties has changed (not related to
    *  status, tokens, or sync). For example, its user-specified name.
    *
-   * Expected signature: `(cloud: Cloud) => void`
+   * Expected signature: `(event: { name: string, target: Cloud }, info: { isFromStore: boolean }) => void`
+   *
+   * - `info.isFromStore`: True if the change is a result of a store (i.e. disk) change;
+   *     false otherwise.
    */
   PROP_CHANGE: 'propChange',
 });
@@ -137,6 +190,8 @@ const _loadConfig = async (cloudUrl) => {
 export class Cloud extends EventDispatcher {
   /** @static {Object} RTV Typeset (shape) for an API tokens payload. */
   static tokensTs = {
+    // NOTE: all token properties are required because this is the expectation when
+    //  tokens are being updated (see `Cloud.updateTokens()`)
     id_token: [rtv.REQUIRED, rtv.STRING],
     expires_in: [rtv.REQUIRED, rtv.SAFE_INT], // SECONDS valid from now
     refresh_token: [rtv.REQUIRED, rtv.STRING],
@@ -145,17 +200,16 @@ export class Cloud extends EventDispatcher {
     // NOTE: These properties are important because `expires_in` and `refresh_expires_in`
     //  are just offsets from when the tokens were obtained, and on disk, that tells us
     //  nothing; we need the actual expiry date/time so that if Lens is quit and opened
-    //  at a later time, we can know if the tokens are still valid. They are marked OPTIONAL
-    //  because they don't come from the server, only from JSON
+    //  at a later time, we can know if the tokens are still valid.
+    // They are marked OPTIONAL because they don't come from the server, only from JSON.
     tokenExpiresAt: [rtv.OPTIONAL, rtv.SAFE_INT],
     refreshExpiresAt: [rtv.OPTIONAL, rtv.SAFE_INT],
   };
 
-  /**
-   * @static {Object} RTV Typeset (shape) for a new Cloud instance. All members
-   *  are expected, which means properties must exist but may have `null` values.
-   */
+  /** @static {Object} RTV Typeset (shape) for a new Cloud instance. */
   static specTs = {
+    // all token properties can be `null` in the overall Cloud spec because a Cloud
+    //  doesn't always have tokens
     ...Object.keys(Cloud.tokensTs).reduce((ts, key) => {
       ts[key] = Cloud.tokensTs[key].concat(); // shallow clone of property typeset
 
@@ -169,32 +223,38 @@ export class Cloud extends EventDispatcher {
       return ts;
     }, {}),
 
-    username: [rtv.EXPECTED, rtv.STRING],
-
-    // URL to the MCC instance (no trailing slash)
-    cloudUrl: [rtv.EXPECTED, rtv.STRING, (v) => !v.endsWith('/')],
-
-    syncedNamespaces: [rtv.EXPECTED, rtv.ARRAY, { $: rtv.STRING }],
-    ignoredNamespaces: [rtv.EXPECTED, rtv.ARRAY, { $: rtv.STRING }],
-    name: [rtv.EXPECTED, rtv.STRING],
-    syncAll: [rtv.EXPECTED, rtv.BOOLEAN],
+    username: [rtv.EXPECTED, rtv.STRING], // username used to obtain tokens; null if no tokens
+    cloudUrl: [rtv.STRING, (v) => !v.endsWith('/')], // URL to the MCC instance (no trailing slash)
+    name: rtv.STRING, // user-assigned name
+    syncAll: rtv.BOOLEAN,
+    namespaces: [[cloudNamespaceTs]], // all known namespaces, synced or ignored
   };
 
   /**
    * @constructor
-   * @param {Object|null|undefined} [spec] A serialized (from `toJSON()`) Cloud. See `specTs`
-   *  for expected shape. If falsy, a new instance is created, but all properties are `null`
-   *  or `undefined` and need to be set.
+   * @param {string|Object} urlOrSpec Either the URL for the mgmt cluster (must not end
+   *  with a slash ('/')), or an object that matches the `specTs` Typeset and contains
+   *  multiple properties to initialize the Cloud (including the URL).
+   * @param {IpcMain} [ipcMain] Reference to the IpcMain singleton instance on the MAIN
+   *  thread, if this Cloud instance is being created on the MAIN thread; `undefined`
+   *  otherwise.
    */
-  constructor(spec) {
+  constructor(urlOrSpec, ipcMain) {
     super();
 
-    DEV_ENV && rtv.verify({ spec }, { spec: [rtv.OPTIONAL, Cloud.specTs] });
+    const cloudUrl =
+      typeof urlOrSpec === 'string' ? urlOrSpec : urlOrSpec.cloudUrl;
+
+    DEV_ENV && rtv.verify({ cloudUrl }, { cloudUrl: Cloud.specTs.cloudUrl });
+
+    // NOTE: `spec` is validated after all properties are declared via `this.update(spec)`
+    //  only if it was given
 
     let _name = null;
     let _syncAll = false;
-    let _syncedNamespaces = [];
-    let _ignoredNamespaces = [];
+    let _namespaces = {}; // map of name to CloudNamespace for internal efficiency
+    let _syncedProjects = []; // cached from _namespaces for performance
+    let _ignoredProjects = []; // cached from _namespaces for performance
     let _token = null;
     let _expiresIn = null;
     let _tokenValidTill = null;
@@ -202,10 +262,15 @@ export class Cloud extends EventDispatcher {
     let _refreshExpiresIn = null;
     let _refreshTokenValidTill = null;
     let _username = null;
-    let _cloudUrl = null;
     let _config = null;
     let _connectError = null;
     let _connecting = false;
+    let _loaded = false;
+    let _fetching = false;
+
+    // true if this Cloud's properties are currently being updated via `Cloud.update()`
+    //  resulting from a change in the CloudStore
+    let _updatingFromStore = false;
 
     /**
      * @member {string} name The "friendly name" given to the mgmt cluster by
@@ -221,7 +286,9 @@ export class Cloud extends EventDispatcher {
           rtv.verify({ token: newValue }, { token: Cloud.specTs.name });
         if (_name !== newValue) {
           _name = newValue;
-          this.dispatchEvent(CLOUD_EVENTS.PROP_CHANGE, this);
+          this.dispatchEvent(CLOUD_EVENTS.PROP_CHANGE, {
+            isFromStore: _updatingFromStore,
+          });
         }
       },
     });
@@ -240,32 +307,110 @@ export class Cloud extends EventDispatcher {
           rtv.verify({ token: newValue }, { token: Cloud.specTs.syncAll });
         if (_syncAll !== newValue) {
           _syncAll = newValue;
-          this.dispatchEvent(CLOUD_EVENTS.SYNC_CHANGE, this);
+          this.dispatchEvent(CLOUD_EVENTS.SYNC_CHANGE, {
+            isFromStore: _updatingFromStore,
+          });
         }
       },
     });
 
     /**
      * @readonly
-     * @member {Array<string>} syncedNamespaces A list of namespace names in the mgmt
-     *  cluster that should be synced.
+     * @member {Array<string>} syncedProjects A simple list of namespace __names__ in
+     *  the mgmt cluster that are being synced.
      */
-    Object.defineProperty(this, 'syncedNamespaces', {
+    Object.defineProperty(this, 'syncedProjects', {
       enumerable: true,
       get() {
-        return _syncedNamespaces;
+        return _syncedProjects;
       },
     });
 
     /**
      * @readonly
-     * @member {Array<string>} ignoredNamespaces A list of namespace names in the mgmt
-     *  cluster that not synced.
+     * @member {Array<string>} ignoredProjects A simple list of namespace __names__ in
+     *  the mgmt cluster that __not__ being synced.
      */
-    Object.defineProperty(this, 'ignoredNamespaces', {
+    Object.defineProperty(this, 'ignoredProjects', {
       enumerable: true,
       get() {
-        return _ignoredNamespaces;
+        return _ignoredProjects;
+      },
+    });
+
+    /**
+     * @readonly
+     * @member {Array<string>} allProjects Full list of all known namespace __names__.
+     *  `syncedProjects` + `ignoredProjects` in one list.
+     */
+    Object.defineProperty(this, 'allProjects', {
+      enumerable: true,
+      get() {
+        return [..._syncedProjects, ..._ignoredProjects];
+      },
+    });
+
+    /**
+     * @readonly
+     * @member {Array<CloudNamespace>} namespaces All known namespaces in this Cloud.
+     */
+    Object.defineProperty(this, 'namespaces', {
+      enumerable: true,
+      get() {
+        return Object.values(_namespaces);
+      },
+    });
+
+    /**
+     * @readonly
+     * @member {Array<CloudNamespace>} syncedNamespaces Only known __synced__ namespaces
+     *  in this Cloud.
+     */
+    Object.defineProperty(this, 'syncedNamespaces', {
+      enumerable: true,
+      get() {
+        return this.namespaces.filter((ns) => ns.synced);
+      },
+    });
+
+    /**
+     * @member {boolean} loaded True if this Cloud's data has been successfully fetched
+     *  at least once. Once true, doesn't change again. Use `#fetching` instead for
+     *  periodic data fetch state.
+     */
+    Object.defineProperty(this, 'loaded', {
+      enumerable: true,
+      get() {
+        return _loaded;
+      },
+      set(newValue) {
+        if (_loaded !== !!newValue) {
+          _loaded = !!newValue;
+          this.dispatchEvent(CLOUD_EVENTS.LOADED_CHANGE, {
+            isFromStore: _updatingFromStore,
+          });
+          ipcMain?.notifyCloudLoadedChange(this.cloudUrl, _loaded);
+        }
+      },
+    });
+
+    /**
+     * @member {boolean} fetching True if this Cloud's data is actively being fetched
+     *  (e.g. by the SyncManager).
+     */
+    Object.defineProperty(this, 'fetching', {
+      enumerable: true,
+      get() {
+        return _fetching;
+      },
+      set(newValue) {
+        if (_fetching !== !!newValue) {
+          _fetching = !!newValue;
+          this.dispatchEvent(CLOUD_EVENTS.FETCHING_CHANGE, {
+            isFromStore: _updatingFromStore,
+          });
+          ipcMain?.notifyCloudFetchingChange(this.cloudUrl, _fetching);
+        }
       },
     });
 
@@ -278,7 +423,13 @@ export class Cloud extends EventDispatcher {
       set(newValue) {
         if (_connecting !== !!newValue) {
           _connecting = !!newValue;
-          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
+          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, {
+            isFromStore: _updatingFromStore,
+          });
+          ipcMain?.notifyCloudStatusChange(this.cloudUrl, {
+            connecting: _connecting,
+            connectError: this.connectError,
+          });
         }
       },
     });
@@ -299,8 +450,45 @@ export class Cloud extends EventDispatcher {
           );
         if (validValue !== _connectError) {
           _connectError = validValue || null;
-          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this);
+          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, {
+            isFromStore: _updatingFromStore,
+          });
+          ipcMain?.notifyCloudStatusChange(this.cloudUrl, {
+            connecting: this.connecting,
+            connectError: _connectError,
+          });
         }
+      },
+    });
+
+    /**
+     * @readonly
+     * @member {string} status One of the `CONNECTION_STATUSES` enum values.
+     */
+    Object.defineProperty(this, 'status', {
+      enumerable: true,
+      get() {
+        if (this.connecting) {
+          return CONNECTION_STATUSES.CONNECTING;
+        }
+
+        // we're not truly connected to the Cloud unless there's no error, we have
+        //  a config (can't make API calls without it), we have an API token, and'
+        //  we have the ability to refresh it when it expires
+        if (!this.connectError && this.token && this.refreshTokenValid) {
+          // if we're on MAIN and all we're missing is the config, claim we're "connecting"
+          //  because we most likely just restored this Cloud from disk after opening Lens,
+          //  and we just haven't attempted to fetch the config yet as part of a data fetch
+          // if we're on RENDERER (where we never connect other than for preview purposes),
+          //  then we simply can't consider this
+          if (ipcMain && !this.config) {
+            return CONNECTION_STATUSES.CONNECTING;
+          }
+
+          return CONNECTION_STATUSES.CONNECTED;
+        }
+
+        return CONNECTION_STATUSES.DISCONNECTED;
       },
     });
 
@@ -320,7 +508,9 @@ export class Cloud extends EventDispatcher {
           );
         if (newValue !== _config) {
           _config = newValue || null;
-          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this); // affects status
+          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, {
+            isFromStore: _updatingFromStore,
+          }); // affects status
         }
       },
     });
@@ -336,8 +526,12 @@ export class Cloud extends EventDispatcher {
           rtv.verify({ token: newValue }, { token: Cloud.specTs.id_token });
         if (_token !== newValue) {
           _token = newValue || null; // normalize empty to null
-          this.dispatchEvent(CLOUD_EVENTS.TOKEN_CHANGE, this);
-          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this); // tokens affect status
+          this.dispatchEvent(CLOUD_EVENTS.TOKEN_CHANGE, {
+            isFromStore: _updatingFromStore,
+          });
+          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, {
+            isFromStore: _updatingFromStore,
+          }); // tokens affect status
         }
       },
     });
@@ -356,8 +550,12 @@ export class Cloud extends EventDispatcher {
           );
         if (_expiresIn !== newValue) {
           _expiresIn = newValue;
-          this.dispatchEvent(CLOUD_EVENTS.TOKEN_CHANGE, this);
-          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this); // tokens affect status
+          this.dispatchEvent(CLOUD_EVENTS.TOKEN_CHANGE, {
+            isFromStore: _updatingFromStore,
+          });
+          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, {
+            isFromStore: _updatingFromStore,
+          }); // tokens affect status
         }
       },
     });
@@ -376,8 +574,12 @@ export class Cloud extends EventDispatcher {
           );
         if (_tokenValidTill !== newValue) {
           _tokenValidTill = newValue;
-          this.dispatchEvent(CLOUD_EVENTS.TOKEN_CHANGE, this);
-          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this); // tokens affect status
+          this.dispatchEvent(CLOUD_EVENTS.TOKEN_CHANGE, {
+            isFromStore: _updatingFromStore,
+          });
+          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, {
+            isFromStore: _updatingFromStore,
+          }); // tokens affect status
         }
       },
     });
@@ -396,8 +598,12 @@ export class Cloud extends EventDispatcher {
           );
         if (_refreshToken !== newValue) {
           _refreshToken = newValue || null; // normalize empty to null
-          this.dispatchEvent(CLOUD_EVENTS.TOKEN_CHANGE, this);
-          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this); // tokens affect status
+          this.dispatchEvent(CLOUD_EVENTS.TOKEN_CHANGE, {
+            isFromStore: _updatingFromStore,
+          });
+          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, {
+            isFromStore: _updatingFromStore,
+          }); // tokens affect status
         }
       },
     });
@@ -416,8 +622,12 @@ export class Cloud extends EventDispatcher {
           );
         if (_refreshExpiresIn !== newValue) {
           _refreshExpiresIn = newValue;
-          this.dispatchEvent(CLOUD_EVENTS.TOKEN_CHANGE, this);
-          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this); // tokens affect status
+          this.dispatchEvent(CLOUD_EVENTS.TOKEN_CHANGE, {
+            isFromStore: _updatingFromStore,
+          });
+          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, {
+            isFromStore: _updatingFromStore,
+          }); // tokens affect status
         }
       },
     });
@@ -436,8 +646,12 @@ export class Cloud extends EventDispatcher {
           );
         if (_refreshTokenValidTill !== newValue) {
           _refreshTokenValidTill = newValue;
-          this.dispatchEvent(CLOUD_EVENTS.TOKEN_CHANGE, this);
-          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, this); // tokens affect status
+          this.dispatchEvent(CLOUD_EVENTS.TOKEN_CHANGE, {
+            isFromStore: _updatingFromStore,
+          });
+          this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, {
+            isFromStore: _updatingFromStore,
+          }); // tokens affect status
         }
       },
     });
@@ -456,7 +670,9 @@ export class Cloud extends EventDispatcher {
           );
         if (_username !== newValue) {
           _username = newValue || null; // normalize empty to null
-          this.dispatchEvent(CLOUD_EVENTS.TOKEN_CHANGE, this); // related to tokens but not status
+          this.dispatchEvent(CLOUD_EVENTS.TOKEN_CHANGE, {
+            isFromStore: _updatingFromStore,
+          }); // related to tokens but not status
         }
       },
     });
@@ -467,38 +683,149 @@ export class Cloud extends EventDispatcher {
     Object.defineProperty(this, 'cloudUrl', {
       enumerable: true,
       get() {
-        return _cloudUrl;
+        return cloudUrl;
       },
-      set(newValue) {
-        const normalizedNewValue = normalizeUrl(newValue || '') || null; // '' or undefined -> null
+    });
 
+    /**
+     * Replaces the Cloud's list of namespaces given an entirely new set. The `syncAll` flag
+     *  is __ignored__.
+     * @method
+     * @param {Array<CloudNamespace|Object>} newNamespaces New namespaces, typically from disk
+     *  as plain objects with the `cloudNamespaceTs` shape.
+     */
+    Object.defineProperty(this, 'replaceNamespaces', {
+      // non-enumerable since normally, methods are hidden on the prototype, but in this case,
+      //  since we require the private context of the constructor, we have to define it on
+      //  the instance itself
+      enumerable: false,
+      value: function (newNamespaces) {
         DEV_ENV &&
           rtv.verify(
-            { cloudUrl: normalizedNewValue },
-            { cloudUrl: Cloud.specTs.cloudUrl }
+            { newNamespaces },
+            { newNamespaces: Cloud.specTs.namespaces }
           );
 
-        if (_cloudUrl !== normalizedNewValue) {
-          if (_cloudUrl) {
-            // the URL has changed after being set: any tokens we have are invalid
-            this.resetTokens();
+        // reset since we're getting new set of namespaces
+        _namespaces = {};
+        _syncedProjects = [];
+        _ignoredProjects = [];
+
+        newNamespaces.forEach((ns) => {
+          const newCns = new CloudNamespace({
+            cloudUrl: this.cloudUrl,
+            name: ns,
+          });
+
+          if (newCns.synced) {
+            _syncedProjects.push(newCns.name);
+          } else {
+            _ignoredProjects.push(newCns.name);
           }
 
-          _cloudUrl = normalizedNewValue;
-          this.dispatchEvent(CLOUD_EVENTS.PROP_CHANGE, this);
+          _namespaces[newCns.name] = newCns;
+        });
+
+        this.dispatchEvent(CLOUD_EVENTS.SYNC_CHANGE, {
+          isFromStore: _updatingFromStore,
+        });
+      },
+    });
+
+    /**
+     * Updates the Cloud's list of namespaces given all known namespaces and the Cloud's
+     *  `syncAll` flag (i.e. add any new namespaces to its synced or ignored list, remove
+     *  any old ones, and update ones that have had count changes).
+     * @method
+     * @param {Array<Namespace>} fetchedNamespaces All existing/known namespaces from the
+     *  latest data fetch.
+     */
+    Object.defineProperty(this, 'updateNamespaces', {
+      // non-enumerable since normally, methods are hidden on the prototype, but in this case,
+      //  since we require the private context of the constructor, we have to define it on
+      //  the instance itself
+      enumerable: false,
+      value: function (fetchedNamespaces) {
+        DEV_ENV &&
+          rtv.verify(
+            { fetchedNamespaces },
+            { fetchedNamespaces: [[rtv.CLASS_OBJECT, { $: Namespace }]] }
+          );
+
+        const oldNamespaces = { ..._namespaces };
+        const syncedList = [];
+        const ignoredList = [];
+        let changed = false;
+
+        _namespaces = {}; // reset since we're getting new set of known namespaces
+
+        fetchedNamespaces.forEach((ns) => {
+          let synced = false;
+
+          if (this.syncAll) {
+            if (this.ignoredProjects.includes(ns.name)) {
+              ignoredList.push(ns.name); // keep ignoring it (explicitly ignored)
+            } else {
+              synced = true;
+              syncedList.push(ns.name); // sync it (newly discovered)
+            }
+          } else {
+            if (this.syncedProjects.includes(ns.name)) {
+              synced = true;
+              syncedList.push(ns.name); // keep syncing it
+            } else {
+              ignoredList.push(ns.name); // ignore it (newly discovered)
+            }
+          }
+
+          const newCns = new CloudNamespace({
+            cloudUrl: this.cloudUrl,
+            name: ns,
+            synced,
+          });
+
+          // DEEP-compare existing to new so we only notify of SYNC_CHANGE if something
+          //  about the namespace has really changed (especially in the case where we
+          //  were already syncing it); this will also work if we don't know about
+          //  this namespace yet
+          if (
+            isEqualWith(oldNamespaces[ns.name], newCns, compareCloudNamespaces)
+          ) {
+            // no changes: use old/existing one since it's deep-equal
+            _namespaces[ns.name] = oldNamespaces[ns.name];
+          } else {
+            changed = true;
+            _namespaces[ns.name] = newCns;
+          }
+        });
+
+        // check to see if any old namespaces have been removed
+        changed ||= Object.keys(oldNamespaces).some(
+          (name) => !_namespaces[name]
+        );
+
+        _syncedProjects = syncedList;
+        _ignoredProjects = ignoredList;
+
+        if (changed) {
+          this.dispatchEvent(CLOUD_EVENTS.SYNC_CHANGE, {
+            isFromStore: _updatingFromStore,
+          });
         }
       },
     });
 
     /**
-     * Updates the Cloud's synced and ignored namespaces.
+     * Updates the Cloud's synced and ignored namespace __names__.
      * @method
-     * @param {Array<string>} syncedList A list of namespace names in the mgmt cluster that
+     * @param {Array<string>} syncedList A list of namespace __names__ in the mgmt cluster that
      *  should be synced.
-     * @param {Array<string>} ignoredList A list of namespace names in the mgmt cluster that
+     * @param {Array<string>} ignoredList A list of namespace __names__ in the mgmt cluster that
      *  should not be synced.
+     * @throws {Error} If either list contains a namespace __name__ that is not already in
+     *  the list of all known namespaces in this Cloud.
      */
-    Object.defineProperty(this, 'updateNamespaces', {
+    Object.defineProperty(this, 'updateSyncedProjects', {
       // non-enumerable since normally, methods are hidden on the prototype, but in this case,
       //  since we bind to the private context of the constructor, we have to define it on
       //  the instance itself
@@ -508,65 +835,116 @@ export class Cloud extends EventDispatcher {
           rtv.verify(
             { syncedList, ignoredList },
             {
-              syncedList: Cloud.specTs.syncedNamespaces,
-              ignoredList: Cloud.specTs.ignoredNamespaces,
+              syncedList: [[rtv.STRING]],
+              ignoredList: [[rtv.STRING]],
             }
           );
 
-        const isNewSynced = !isEqual(_syncedNamespaces, syncedList);
-        if (isNewSynced) {
-          _syncedNamespaces = syncedList;
+        let changed = false;
+
+        syncedList.forEach((name) => {
+          if (!_namespaces[name]) {
+            throw new Error(
+              `Cannot add unknown namespace ${logValue(
+                name
+              )} to synced set in cloud=${this}`
+            );
+          }
+
+          if (!_namespaces[name].synced) {
+            // wasn't synced before and now will be
+            _namespaces[name].synced = true;
+            changed = true;
+          }
+        });
+
+        ignoredList.forEach((name) => {
+          if (!_namespaces[name]) {
+            throw new Error(
+              `Cannot add unknown namespace ${logValue(
+                name
+              )} to ignored set in cloud=${this}`
+            );
+          }
+
+          if (_namespaces[name].synced) {
+            // was synced before and now will be ignored
+            _namespaces[name].synced = false;
+            changed = true;
+          }
+        });
+
+        _syncedProjects = syncedList;
+        _ignoredProjects = ignoredList;
+
+        if (changed) {
+          this.dispatchEvent(CLOUD_EVENTS.SYNC_CHANGE, {
+            isFromStore: _updatingFromStore,
+          });
+        }
+      },
+    });
+
+    /**
+     * Updates this Cloud given a JSON model matching `Cloud.specTs`, typically originating
+     *  from disk. This is basically like calling the constructor, just that it updates this
+     *  instance's properties (if changes have occurred) rather than creating a new instance.
+     *  Change events are triggered as needed.
+     * @method
+     * @param {Object} spec JSON object. Must match the `Cloud.specTs` shape.
+     * @param {boolean} [isFromStore] Set to true if this update is emanating from disk. This
+     *  is important, as any change events fired as a result will have its `info.isFromStore`
+     *  flag set to `true` to help prevent circular/endless store updates from Mobx reactions
+     *  on both MAIN and RENDERER threads.
+     * @returns {Cloud} This instance, for chaining/convenience.
+     * @throws {Error} If `spec.cloudUrl` is different from this Cloud's `cloudUrl`.
+     *  Don't re-used Clouds. Destroy them and create new ones instead.
+     */
+    Object.defineProperty(this, 'update', {
+      // non-enumerable since normally, methods are hidden on the prototype, but in this case,
+      //  since we bind to the private context of the constructor, we have to define it on
+      //  the instance itself
+      enumerable: false,
+      value: function (spec, isFromStore = false) {
+        DEV_ENV && rtv.verify({ spec }, { spec: Cloud.specTs });
+
+        if (spec.cloudUrl !== this.cloudUrl) {
+          throw new Error(
+            `cloudUrl cannot be changed; spec.cloudUrl=${logValue(
+              spec.cloudUrl
+            )}, cloud=${this}`
+          );
         }
 
-        const isNewIgnored = !isEqual(_ignoredNamespaces, ignoredList);
-        if (isNewIgnored) {
-          _ignoredNamespaces = ignoredList;
+        _updatingFromStore = !!isFromStore;
+
+        this.name = spec.name;
+        this.syncAll = spec.syncAll;
+        this.replaceNamespaces(spec.namespaces);
+        this.username = spec.username;
+
+        if (spec.id_token && spec.refresh_token) {
+          this.updateTokens(spec);
+        } else {
+          this.resetTokens();
         }
 
-        if (isNewSynced || isNewIgnored) {
-          this.dispatchEvent(CLOUD_EVENTS.SYNC_CHANGE, this);
-        }
+        _updatingFromStore = false;
+
+        return this;
       },
     });
 
     //// initialize
 
-    this.update(spec);
+    if (typeof urlOrSpec !== 'string') {
+      this.update(urlOrSpec);
+    }
 
     // since we assign properties when initializing, and this may cause some events
     //  to get dispatched, make sure we start with a clean slate for any listeners
     //  that get added to this new instance we just constructed
     this.emptyEventQueue();
-  }
-
-  /** @member {string} status One of the `CONNECTION_STATUSES` enum values. */
-  get status() {
-    if (this.connecting) {
-      return CONNECTION_STATUSES.CONNECTING;
-    }
-
-    // we're not truly connected to the Cloud unless there's no error, we have
-    //  a config (can't make API calls without it), we have an API token, and'
-    //  we have the ability to refresh it when it expires
-    if (!this.connectError && this.token && this.refreshTokenValid) {
-      // if all we're missing is the config, claim we're "connecting" because we
-      //  most likely just restored this Cloud from disk after opening Lens, and
-      //  we just haven't attempted to fetch the config yet as part of a data fetch
-      if (!this.config) {
-        return CONNECTION_STATUSES.CONNECTING;
-      }
-
-      return CONNECTION_STATUSES.CONNECTED;
-    }
-
-    return CONNECTION_STATUSES.DISCONNECTED;
-  }
-
-  /**
-   * @member {Array<string>} returns syncedNamespaces + ignoredNamespaces array
-   */
-  get allNamespaces() {
-    return this.syncedNamespaces.concat(this.ignoredNamespaces);
   }
 
   /**
@@ -653,36 +1031,6 @@ export class Cloud extends EventDispatcher {
   }
 
   /**
-   * Updates this Cloud given a JSON model produced by `toJSON()` at some earlier
-   *  point in time. This is basically like calling the constructor, just that it
-   *  updates this instance's properties (if changes have occurred) rather than
-   *  creating a new instance.
-   * @param {Object|null|undefined} spec JSON object.
-   * @returns {Cloud} This instance, for chaining/convenience.
-   */
-  update(spec) {
-    DEV_ENV && rtv.verify({ spec }, { spec: [rtv.OPTIONAL, Cloud.specTs] });
-
-    if (spec) {
-      this.cloudUrl = spec.cloudUrl;
-      this.name = spec.name;
-      this.syncAll = spec.syncAll;
-      this.username = spec.username;
-      this.updateNamespaces(spec.syncedNamespaces, spec.ignoredNamespaces);
-
-      if (spec.id_token && spec.refresh_token) {
-        logger.log('Cloud.update()', `⚠️ Updating tokens for cloud=${this}`); // TODO[PRODX-22830] REMOVE
-        this.updateTokens(spec);
-      } else {
-        logger.log('Cloud.update()', `⚠️ RESETTING tokens for cloud=${this}`); // TODO[PRODX-22830] REMOVE
-        this.resetTokens();
-      }
-    }
-
-    return this;
-  }
-
-  /**
    * Serializes this instance to a JSON object for storage. Called automatically
    *  by `JSON.stringify(cloud)`.
    * @returns {Object} This object can subsequently be used as a `spec` object
@@ -693,9 +1041,13 @@ export class Cloud extends EventDispatcher {
       cloudUrl: this.cloudUrl,
       name: this.name,
       syncAll: this.syncAll,
-      syncedNamespaces: this.syncedNamespaces.concat(),
-      ignoredNamespaces: this.ignoredNamespaces.concat(),
       username: this.username,
+
+      // NOTE: we intentionally don't store `loading` and `fetching` state (we use
+      //  IPC from MAIN -> RENDERER to communicate this state instead of trying to
+      //  use the CloudStore because using the store results in endless read/write
+      //  loops whenever the state changes, and we don't need to retain it on disk
+      //  anyway since we reset it anytime Lens/extension restarts)
 
       // NOTE: the API-related properties have underscores in them since they do
       //  when they're coming from the MCC API
@@ -715,6 +1067,11 @@ export class Cloud extends EventDispatcher {
       refresh_expires_in: this.refreshExpiresIn,
       refreshExpiresAt: this.refreshTokenValidTill?.getTime() ?? null,
       _refreshValidTill: this.refreshTokenValidTill?.toString() || null,
+
+      // list namespaces LAST since JSON gets printed in property order here and
+      //  this could be a long list; printing at the end ensures we can more quickly
+      //  read all the other properties when looking at the file for debugging
+      namespaces: this.namespaces,
     };
   }
 
@@ -723,9 +1080,9 @@ export class Cloud extends EventDispatcher {
     const validTillStr = logDate(this.tokenValidTill);
     return `{Cloud url: ${logValue(this.cloudUrl)}, status: ${logValue(
       this.status
-    )}, sync: ${this.syncedNamespaces.length}/${
-      this.allNamespaces.length
-    }, token: ${
+    )}, loaded: ${this.loaded}, fetching: ${this.fetching}, sync: ${
+      this.syncedProjects.length
+    }/${this.allProjects.length}, all: ${this.syncAll}, token: ${
       this.token
         ? `"${this.token.slice(0, 15)}..${this.token.slice(-15)}"`
         : this.token
@@ -832,6 +1189,8 @@ export class Cloud extends EventDispatcher {
     this.config = null;
     this.connectError = null;
     this.connecting = false;
+    this.fetching = false;
+    this.loaded = false;
     this.resetTokens();
   }
 

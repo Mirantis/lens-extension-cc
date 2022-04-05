@@ -7,9 +7,9 @@ const SELECTIVE_HEAD_CELL_VALUES = {
 };
 
 const selectivePathToData = {
-  [SELECTIVE_HEAD_CELL_VALUES.NAME]: ['cloud', 'name'],
-  [SELECTIVE_HEAD_CELL_VALUES.AUTOSYNC]: ['cloud', 'syncAll'],
-  [SELECTIVE_HEAD_CELL_VALUES.URL]: ['cloud', 'cloudUrl'],
+  [SELECTIVE_HEAD_CELL_VALUES.NAME]: ['name'],
+  [SELECTIVE_HEAD_CELL_VALUES.AUTOSYNC]: ['syncAll'],
+  [SELECTIVE_HEAD_CELL_VALUES.URL]: ['cloudUrl'],
 };
 
 const HEAD_CELL_VALUES = {
@@ -20,10 +20,10 @@ const HEAD_CELL_VALUES = {
 };
 
 const pathToData = {
-  [HEAD_CELL_VALUES.NAME]: ['cloud', 'name'],
-  [HEAD_CELL_VALUES.URL]: ['cloud', 'cloudUrl'],
-  [HEAD_CELL_VALUES.USERNAME]: ['cloud', 'username'],
-  [HEAD_CELL_VALUES.STATUS]: ['cloud', 'status'],
+  [HEAD_CELL_VALUES.NAME]: ['name'],
+  [HEAD_CELL_VALUES.URL]: ['cloudUrl'],
+  [HEAD_CELL_VALUES.USERNAME]: ['username'],
+  [HEAD_CELL_VALUES.STATUS]: ['status'],
 };
 
 export const getTableData = (isSelectiveSyncView) => {

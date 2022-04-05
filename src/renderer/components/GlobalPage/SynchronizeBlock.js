@@ -135,7 +135,7 @@ export const SynchronizeBlock = ({ dataCloud, onAdd }) => {
     const { syncedNamespaces, ignoredNamespaces } = getSyncedData();
 
     cloud.syncAll = syncAll;
-    cloud.updateNamespaces(syncedNamespaces, ignoredNamespaces);
+    cloud.updateSyncedProjects(syncedNamespaces, ignoredNamespaces);
 
     onAdd(cloud);
   };

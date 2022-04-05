@@ -8,14 +8,17 @@ import {
 import * as strings from '../strings';
 import * as consts from '../constants';
 import { ROUTE_GLOBAL_PAGE, ROUTE_CLUSTER_PAGE } from '../routes';
-import { dispatchExtEvent } from './eventBus';
+import {
+  EXT_EVENT_OAUTH_CODE,
+  EXT_EVENT_ACTIVATE_CLUSTER,
+  dispatchExtEvent,
+} from '../common/eventBus';
 import { cloudStore } from '../store/CloudStore';
 import { syncStore } from '../store/SyncStore';
 import { logger as loggerUtil } from '../util/logger';
 import { IpcRenderer } from './IpcRenderer';
 import { getLensClusters } from './rendererUtil';
 import { mkClusterContextName } from '../util/templates';
-import { EXT_EVENT_OAUTH_CODE, EXT_EVENT_ACTIVATE_CLUSTER } from './eventBus';
 import { catalogEntityDetails } from './catalogEntityDetails';
 import { generateTopBarItems } from './topBarItems';
 import { openBrowser } from '../util/netUtil';
@@ -106,8 +109,6 @@ export default class ExtensionRenderer extends LensExtension {
   };
 
   protected handleProtocolOauthCode = ({ search }) => {
-    this.navigate(ROUTE_GLOBAL_PAGE);
-
     dispatchExtEvent({
       type: EXT_EVENT_OAUTH_CODE,
       state: search.state,
@@ -121,6 +122,8 @@ export default class ExtensionRenderer extends LensExtension {
       handler: this.handleProtocolActivateCluster,
     },
     {
+      // NOTE: we need this on RENDERER also because we temporarily connect to
+      //  Clouds when adding new ones (to preview their namespaces)
       pathSchema: `/${EXT_EVENT_OAUTH_CODE}`,
       handler: this.handleProtocolOauthCode,
     },
@@ -207,11 +210,10 @@ export default class ExtensionRenderer extends LensExtension {
   onActivate() {
     logger.log('ExtensionRenderer.onActivate()', 'extension activated');
 
+    IpcRenderer.createInstance(this);
+
     cloudStore.loadExtension(this);
     syncStore.loadExtension(this);
-
-    // AFTER load stores
-    IpcRenderer.createInstance(this);
 
     const category = Catalog.catalogCategories.getForGroupKind(
       consts.catalog.entities.kubeCluster.group,

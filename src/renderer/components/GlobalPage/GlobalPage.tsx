@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { ThemeProvider, CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
-import { SyncView } from './SyncView.js';
-import { DataCloudProvider } from '../../store/DataCloudProvider.js';
+import { SyncView } from './SyncView';
+import { CloudProvider } from '../../store/CloudProvider';
 
 import { lightThemeClassName, lightTheme, darkTheme } from '../theme';
 
@@ -67,9 +67,9 @@ export const GlobalPage = function () {
   return (
     <CacheProvider value={createCache({ key: 'lens-extension-cc' })}>
       <ThemeProvider theme={theme}>
-        <DataCloudProvider>
+        <CloudProvider>
           <SyncView />
-        </DataCloudProvider>
+        </CloudProvider>
       </ThemeProvider>
     </CacheProvider>
   );

@@ -3,9 +3,8 @@ import { Renderer } from '@k8slens/extensions';
 import styled from '@emotion/styled';
 import { layout } from '../styles';
 import { AddCloudInstance } from './AddCloudInstance.js';
-import { useDataClouds } from '../../store/DataCloudProvider';
+import { useClouds } from '../../store/CloudProvider';
 import { WelcomeView } from './WelcomeView';
-import { cloudStore } from '../../../store/CloudStore';
 import { syncView } from '../../../strings';
 import { EnhancedTable } from '../EnhancedTable/EnhancedTable';
 
@@ -56,16 +55,19 @@ const ButtonWrapper = styled.div`
 `;
 
 export const SyncView = () => {
-  const { dataClouds } = useDataClouds();
+  const { clouds, actions } = useClouds();
   const [showAddCloudComponent, setShowAddCloudComponent] = useState(false);
   const [isSelectiveSyncView, setIsSelectiveSyncView] = useState(false);
   const [isSyncStarted, setIsSyncStarted] = useState(false);
   const [syncedClouds, setSyncedClouds] = useState({});
 
-  const handleAddCloud = useCallback(function (cloud) {
-    cloudStore.addCloud(cloud);
-    setShowAddCloudComponent(false);
-  }, []);
+  const handleAddCloud = useCallback(
+    function (cloud) {
+      actions.addCloud(cloud);
+      setShowAddCloudComponent(false);
+    },
+    [actions]
+  );
 
   const onCancel = () => setShowAddCloudComponent(false);
   const openAddCloud = () => setShowAddCloudComponent(true);
@@ -91,7 +93,7 @@ export const SyncView = () => {
     // when clouds count in local object === count DCs, preparation is done
     if (
       isSyncStarted &&
-      Object.keys(newSyncedClouds).length === Object.keys(dataClouds).length
+      Object.keys(newSyncedClouds).length === Object.keys(clouds).length
     ) {
       setIsSyncStarted(false);
 
@@ -99,9 +101,9 @@ export const SyncView = () => {
       Object.keys(newSyncedClouds).map((cloudUrl) => {
         const { syncAll, syncedNamespaces, ignoredNamespaces } =
           newSyncedClouds[cloudUrl];
-        const cloud = cloudStore.clouds[cloudUrl];
+        const cloud = clouds[cloudUrl];
         cloud.syncAll = syncAll;
-        cloud.updateNamespaces(syncedNamespaces, ignoredNamespaces);
+        cloud.updateSyncedProjects(syncedNamespaces, ignoredNamespaces);
       });
 
       closeSelectiveSyncView();
@@ -120,12 +122,12 @@ export const SyncView = () => {
   }
 
   // in no clouds => show Welcome page
-  if (!Object.keys(cloudStore.clouds).length) {
+  if (!Object.keys(clouds).length) {
     return <WelcomeView openAddCloud={openAddCloud} />;
   }
 
   // otherwise, show dataClouds table
-  if (Object.keys(dataClouds).length) {
+  if (Object.keys(clouds).length) {
     return (
       <Content>
         <ContentTop>
@@ -156,7 +158,7 @@ export const SyncView = () => {
 
         <TableWrapper>
           <EnhancedTable
-            dataClouds={dataClouds}
+            clouds={clouds}
             isSelectiveSyncView={isSelectiveSyncView}
             isSyncStarted={isSyncStarted}
             getDataToSync={getDataToSync}

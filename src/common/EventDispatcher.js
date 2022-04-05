@@ -2,7 +2,7 @@
 // Base class providing event dispatching capabilities
 //
 
-import { logger, logValue } from '../util/logger'; // TODO[PRODX-22830] REMOVE
+import { logger, logValue } from '../util/logger';
 
 export class EventDispatcher {
   constructor() {
@@ -31,13 +31,9 @@ export class EventDispatcher {
             events.forEach((event) => {
               const { name, params } = event;
               const handlers = _eventListeners[name] || [];
-              logger.log(
-                'EventDispatcher._scheduleDispatch()',
-                `⚡️ Dispatching event=${logValue(name)}, emitter=${this}`
-              ); // TODO[PRODX-22830] REMOVE
               handlers.forEach((handler) => {
                 try {
-                  handler(...params);
+                  handler({ name, target: this }, ...params);
                 } catch (err) {
                   if (!err?.message.startsWith('[MobX]')) {
                     logger.error(
@@ -67,7 +63,9 @@ export class EventDispatcher {
        * Adds an event listener to this Cloud instance.
        * @method addEventListener
        * @param {string} name Event name.
-       * @param {Function} handler Handler.
+       * @param {(event: { name: string, target: any }, ...params: any[]) => void} handler Handler.
+       *  The `target` is the event emitter (i.e. `this` class instance).
+       *  The `params` are any parameters specified when the event was dispatched.
        */
       addEventListener: {
         enumerable: true,
@@ -116,10 +114,6 @@ export class EventDispatcher {
         value(name, ...params) {
           const event = _eventQueue.find((e) => e.name === name);
           if (event) {
-            logger.log(
-              'EventDispatcher.dispatchEvent()',
-              `✳️ Updating params for event=${logValue(name)}, this=${this}`
-            ); // TODO[PRODX-22830] REMOVE
             event.params = params;
             // don't schedule dispatch in this case because we wouldn't already
             //  scheduled it when the event was first added to the queue; we

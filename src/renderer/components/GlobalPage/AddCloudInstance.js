@@ -109,8 +109,7 @@ export const AddCloudInstance = ({ onAdd, onCancel }) => {
     cleanCloudsState();
     const normUrl = normalizeUrl(clusterUrl.trim());
     setLoading(true);
-    let newCloud = new Cloud();
-    newCloud.cloudUrl = normUrl;
+    let newCloud = new Cloud(normUrl);
     newCloud.name = clusterName;
     const statusListener = () => {
       if (newCloud.status === CONNECTION_STATUSES.CONNECTING) {

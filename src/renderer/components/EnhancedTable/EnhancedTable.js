@@ -27,7 +27,7 @@ const emptyRowStyles = {
 };
 
 export const EnhancedTable = ({
-  dataClouds,
+  clouds,
   isSelectiveSyncView,
   isSyncStarted,
   getDataToSync,
@@ -55,12 +55,12 @@ export const EnhancedTable = ({
         headerValues={headCellValue}
       />
       <tbody>
-        {sortData(dataClouds, sortedBy, order, path).map((url) => {
+        {sortData(clouds, sortedBy, order, path).map((url) => {
           const key = `${url}-${isSelectiveSyncView ? 'selective' : ''}`;
           return (
             <TableRowListenerWrapper
               key={key}
-              dataCloud={dataClouds[url]}
+              cloud={clouds[url]}
               withCheckboxes={isSelectiveSyncView}
               isSyncStarted={isSyncStarted}
               getDataToSync={getDataToSync}
@@ -76,7 +76,7 @@ export const EnhancedTable = ({
 };
 
 EnhancedTable.propTypes = {
-  dataClouds: PropTypes.object.isRequired,
+  clouds: PropTypes.object.isRequired,
   isSelectiveSyncView: PropTypes.bool,
   isSyncStarted: PropTypes.bool.isRequired,
   getDataToSync: PropTypes.func,

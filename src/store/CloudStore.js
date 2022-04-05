@@ -7,7 +7,7 @@ import {
 } from 'mobx';
 import { Common } from '@k8slens/extensions';
 import * as rtv from 'rtvjs';
-import { logger } from '../util/logger';
+import { logger, logValue } from '../util/logger';
 import { Cloud, CLOUD_EVENTS } from '../common/Cloud';
 
 export const storeTs = {
@@ -19,11 +19,15 @@ export class CloudStore extends Common.Store.ExtensionStore {
   // NOTE: See main.ts#onActivate() and renderer.tsx#onActivate() where this.loadExtension()
   //  is called on the store instance in order to get Lens to load it from storage.
 
-  // ultimately, we try to set this to the getExtensionFileFolder() directory that
-  //  Lens gives the extension, but we don't know what it is until later
-  // static defaultSavePath = null;
-
+  /** @member {{ [index: string]: Cloud }} clouds Map of Cloud URL to Cloud instance. */
   @observable clouds;
+
+  /**
+   * @member {IpcMain|undefined} ipcMain IpcMain singleton instance if this store instance
+   *  is running on the MAIN thread; `undefined` if it's on the RENDERER thread. `undefined`
+   *  until the store is loaded with the Extension via `loadExtension()`.
+   */
+  ipcMain; // NOT observable on purpose; set only once
 
   static getDefaults() {
     return {
@@ -39,10 +43,17 @@ export class CloudStore extends Common.Store.ExtensionStore {
     makeObservable(this);
   }
 
-  /** Reset clouds to default empty object */
-  reset() {
-    const defaults = CloudStore.getDefaults();
-    Object.keys(this).forEach((key) => (this[key] = defaults[key]));
+  /**
+   * Initializes the store with the extension.
+   * @override
+   * @param {Main.LensExtension|Renderer.LensExtension} extension Main or Renderer extension
+   *  instance.
+   * @param {IpcMain} [ipcMainInstance] IpcMain singleton instance if being loaded on the
+   *  MAIN thread; `undefined` otherwise.
+   */
+  loadExtension(extension, ipcMainInstance) {
+    this.ipcMain = ipcMainInstance;
+    super.loadExtension(extension);
   }
 
   // NOTE: this method is not just called when reading from disk; it's also called in the
@@ -55,9 +66,11 @@ export class CloudStore extends Common.Store.ExtensionStore {
     const result = rtv.check({ store }, { store: storeTs });
 
     if (!result.valid) {
-      logger.log(
+      logger.error(
         'CloudStore.fromStore()',
-        `Invalid data found, error="${result.message}"`
+        `Invalid data found, will use defaults instead; error=${logValue(
+          result.message
+        )}`
       );
     }
 
@@ -65,7 +78,7 @@ export class CloudStore extends Common.Store.ExtensionStore {
 
     logger.log(
       'CloudStore.fromStore()',
-      `Updating store: clouds=[${Object.keys(store.clouds).join(', ')}]`
+      `Updating store to: clouds=[${Object.keys(json.clouds).join(', ')}]`
     );
 
     Object.keys(json).forEach((key) => {
@@ -78,17 +91,15 @@ export class CloudStore extends Common.Store.ExtensionStore {
             let cloud;
             if (existingClouds[cloudUrl]) {
               // update existing Cloud with new data instead of creating a new instance
-              //  so that currently-bound objects don't leak
-              logger.log(
-                'CloudStore.fromStore()',
-                `♻️ Updating cloudUrl=${cloudUrl} with new data from disk`
-              ); // TODO[PRODX-22830] REMOVE
-              cloud = existingClouds[cloudUrl].update(cloudJson);
+              //  so that currently-bound objects don't leak and those watching for changes
+              //  get notified by various Cloud events
+              cloud = existingClouds[cloudUrl].update(cloudJson, true);
             } else {
               // add new Cloud we don't know about yet
-              cloud = new Cloud(cloudJson);
+              cloud = new Cloud(cloudJson, this.ipcMain);
               this.listenForChanges(cloud);
             }
+
             cloudMap[cloudUrl] = cloud;
             return cloudMap;
           },
@@ -99,10 +110,11 @@ export class CloudStore extends Common.Store.ExtensionStore {
         Object.keys(existingClouds).forEach((cloudUrl) => {
           if (!newClouds[cloudUrl]) {
             this.stopListeningForChanges(existingClouds[cloudUrl]);
+            existingClouds[cloudUrl].destroy();
           }
         });
 
-        // this assignment will implicitly remove any old clouds from the map
+        // this assignment will implicitly remove any old clouds from the map since
         //  they won't be included in `newClouds`
         this.clouds = newClouds;
       } else {
@@ -112,7 +124,7 @@ export class CloudStore extends Common.Store.ExtensionStore {
 
     logger.log(
       'CloudStore.fromStore()',
-      `Store updated: clouds=[${Object.keys(store.clouds).join(', ')}]`
+      `Updated store to: clouds=[${Object.keys(this.clouds).join(', ')}]`
     );
   }
 
@@ -157,14 +169,32 @@ export class CloudStore extends Common.Store.ExtensionStore {
   /**
    * Handles a change to any of the Cloud's properties (e.g. tokens were refreshed and now Cloud
    *  has a new set of tokens, synced namespaces changed, name changed, etc.).
-   * @param {Cloud} cloud
+   * @param {Object} event
+   * @param {string} event.name
+   * @param {Cloud} event.target
+   * @param {Object} info
+   * @param {boolean} info.isFromStore True if the update is emanating from this store;
+   *  false if it's an actual update.
    */
-  onCloudUpdate = (cloud) => {
-    // NOTE: this event doesn't mean we have a new Cloud instance; it just means
-    //  one or more properties of the Cloud object were changed, and by using
-    //  `extendObservable()` here, we'll trigger the Store to persist to disk,
-    //  thereby capturing the Cloud's latest data in case the user quits Lens
-    extendObservable(this.clouds, { [cloud.cloudUrl]: cloud });
+  onCloudChange = ({ name, target: cloud }, { isFromStore }) => {
+    if (!isFromStore) {
+      logger.log(
+        'CloudStore.onCloudChange()',
+        `<${this.ipcMain ? 'MAIN' : 'RENDERER'}> Processing event=${logValue(
+          name
+        )} on cloud=${cloud}`
+      );
+
+      // NOTE: this event doesn't mean we have a new Cloud instance; it just means
+      //  one or more properties of the Cloud object were changed, and by assigning
+      //  a new shallow copy of the existing store, we'll trigger the Store to persist
+      //  to disk, thereby capturing the Cloud's latest data in case the user quits Lens
+      // CAUTION: https://alexhisen.gitbook.io/mobx-recipes/use-extendobservable-sparingly
+      //  don't try `extendObservable(this.clouds, { [cloud.cloudUrl]: cloud })` because
+      //  it won't work reliably (last it was used, only updates from the RENDERER thread
+      //  where triggering a disk write; nothing from MAIN, for no readily-apparent reason)
+      this.clouds = Object.assign({}, this.clouds, { [cloud.cloudUrl]: cloud });
+    }
   };
 
   /**
@@ -175,9 +205,13 @@ export class CloudStore extends Common.Store.ExtensionStore {
   addCloud(cloud) {
     const { cloudUrl } = cloud;
     if (this.clouds[cloudUrl]) {
-      throw new Error(
-        `Store already has an entry for url="${cloudUrl}", existing=${this.clouds[cloudUrl]}, new=${cloud}`
+      logger.error(
+        'CloudStore.addCloud()',
+        `Ignoring: Store already has an entry for url=${logValue(
+          cloudUrl
+        )}; existing=${this.clouds[cloudUrl]}, new=${cloud}`
       );
+      return;
     }
 
     this.listenForChanges(cloud);
@@ -185,13 +219,45 @@ export class CloudStore extends Common.Store.ExtensionStore {
   }
 
   /**
-   * Subscribes to a Cloud's change events to know when it gets updated and should
-   *  be written to disk via this store.
+   * Subscribes to a Cloud's change events to know when it gets updated __on this thread__
+   *  and should be written to disk by this store.
    * @param {Cloud} cloud
    */
   listenForChanges(cloud) {
-    Object.values(CLOUD_EVENTS).forEach((eventName) =>
-      cloud.addEventListener(eventName, this.onCloudUpdate)
+    // to avoid ping-pong between MAIN and RENDERER threads, especially when updating
+    //  existing Clouds with updated store data, only subscribe to Cloud events that
+    //  we expect to change on one thread or the other
+    // NOTE: both threads must listen for SYNC changes because they both will affect
+    //  the sync settings: MAIN will as a byproduct of discovering new namespaces
+    //  and obtaining metadata on synced namespaces, and RENDERER will when the
+    //  user changes the sync selection
+    let eventNames;
+    if (this.ipcMain) {
+      logger.log(
+        'CloudStore.listenForChanges()',
+        `<MAIN> Subscribing to ALL EXCEPT loading/fetching/prop changes for cloud=${cloud}`
+      );
+      const excludedEvents = [
+        CLOUD_EVENTS.LOADING_CHANGE, // not stored on disk
+        CLOUD_EVENTS.FETCHING_CHANGE, // not stored on disk
+        CLOUD_EVENTS.PROP_CHANGE, // not expected to change on MAIN
+      ];
+      eventNames = Object.values(CLOUD_EVENTS).filter(
+        (eventName) => !excludedEvents.includes(eventName)
+      );
+    } else {
+      logger.log(
+        'CloudStore.listenForChanges()',
+        `<RENDERER> Subscribing to ONLY sync and prop changes for cloud=${cloud}`
+      );
+      eventNames = [
+        CLOUD_EVENTS.SYNC_CHANGE, // selective sync changes only happend on RENDERER
+        CLOUD_EVENTS.PROP_CHANGE, // may change on RENDERER if we allow editing name
+      ];
+    }
+
+    eventNames.forEach((eventName) =>
+      cloud.addEventListener(eventName, this.onCloudChange)
     );
   }
 
@@ -200,14 +266,15 @@ export class CloudStore extends Common.Store.ExtensionStore {
    * @param {Cloud} cloud
    */
   stopListeningForChanges(cloud) {
+    // noop if we weren't already subscribed
     Object.values(CLOUD_EVENTS).forEach((eventName) =>
-      cloud.removeEventListener(eventName, this.onCloudUpdate)
+      cloud.removeEventListener(eventName, this.onCloudChange)
     );
   }
 
   /**
-   * Removes a Cloud from this store. Does nothing if this store doesn't have a Cloud
-   *  for this URL.
+   * Removes a Cloud from this store and destroys it. Does nothing if this store doesn't
+   *  have a Cloud for this URL.
    * @param {string} cloudUrl
    */
   removeCloud(cloudUrl) {

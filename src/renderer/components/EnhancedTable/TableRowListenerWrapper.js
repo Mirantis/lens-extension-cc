@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import { DATA_CLOUD_EVENTS } from '../../../common/DataCloud';
 import { CLOUD_EVENTS } from '../../../common/Cloud';
 import { EnhancedTableRow } from './EnhancedTableRow';
 import { CONNECTION_STATUSES } from '../../../common/Cloud';
@@ -21,13 +20,12 @@ const colorGray = {
 /**
  * Determines the connection status of the Cloud.
  * @param {Cloud} cloud
- * @param {boolean} isFetching
  * @return {{cloudStatus: string, namespaceStatus: string, styles: Object}}
  *  where `cloudStatus` and `namespaceStatus` are labels, and `styles` is
  *  a style object to apply to the label.
  */
-const getStatus = (cloud, isFetching) => {
-  if (isFetching) {
+const getStatus = (cloud) => {
+  if (cloud.fetching) {
     return {
       cloudStatus: strings.connectionStatuses.cloud.updating(),
       namespaceStatus: strings.connectionStatuses.namespace.connected(),
@@ -61,82 +59,48 @@ const getStatus = (cloud, isFetching) => {
   }
 };
 
-/**
- * @param {DataCloud} dataCloud
- * @param {'namespaces'|'syncedNamespaces'} usedNamespaces if true and connected - it returns all namespaces to populate in SyncView mode
- * @param {boolean} withCheckboxes
- * @return {Array<Object>} It might be an array og Namespaces or just {name: _namespaceName_ }, depending on cloud.connected
- */
-const getNamespaces = ({ dataCloud, usedNamespaces, withCheckboxes }) => {
-  // if loaded return Namespaces class object from DC
-  if (dataCloud.loaded) {
-    return dataCloud[usedNamespaces];
-  }
-  // if cloud disconnected and Selected view - return allNamespaces stored in Cloud
-  if (withCheckboxes) {
-    return dataCloud.cloud.allNamespaces.map((name) => ({ name }));
-  }
-  // if cloud disconnected and Sync View - return just syncedNamespaces stored in Cloud
-  return dataCloud.cloud.syncedNamespaces.map((name) => ({ name }));
-};
-
 // We need this level of abstraction mostly for 'key' prop for `EnhancedTableRow`.
-// When DC is connecting or fetch data, we use DC.cloud.syncedNamespaces in selective mode (we don't know namespaces yet)
-// When they come by updateNamespaces listener - we have to fully rerender row component to force useCheckboxes hook to take new dataCloud data
-// without that we have incorrect checkboxes state in Selected Sync view
-// besides - keep useEffect listeners in separate level looks not so bad. Code become more readable
-export const TableRowListenerWrapper = ({
-  dataCloud,
-  withCheckboxes,
-  ...rest
-}) => {
-  const usedNamespaces = withCheckboxes ? 'namespaces' : 'syncedNamespaces';
+// When DC is not yet loaded, we use DC.cloud.syncedProjects in selective
+//  mode (we don't know namespaces yet).
+// When they come by updateSyncedProjects() listener - we have to fully rerender row
+//  component to force useCheckboxes hook to take new dataCloud data without that we
+//  have incorrect checkboxes state in Selected Sync view besides - keep useEffect
+//  listeners in separate level looks not so bad. Code become more readable.
+export const TableRowListenerWrapper = ({ cloud, withCheckboxes, ...rest }) => {
+  const cloudNamespaceProp = withCheckboxes ? 'namespaces' : 'syncedNamespaces';
 
+  // @type {Array<CloudNamespace>}
   const [actualNamespaces, setActualNamespaces] = useState(
-    getNamespaces({ dataCloud, usedNamespaces, withCheckboxes })
+    [...cloud[cloudNamespaceProp]] // shallow clone so React can detect changes later
   );
-  const [isFetching, setFetching] = useState(dataCloud.fetching);
-  const [status, setStatus] = useState(getStatus(dataCloud.cloud, isFetching));
+  const [status, setStatus] = useState(getStatus(cloud));
 
-  const onDataCloudDataUpdated = (dc) => {
-    setActualNamespaces(dc[usedNamespaces]);
+  const onCloudSyncChange = () => {
+    setActualNamespaces([...cloud[cloudNamespaceProp]]);
   };
 
-  const onDataCloudFetchingChange = (dc) => {
-    setFetching(dc.fetching);
-    setStatus(getStatus(dc.cloud, dc.fetching));
+  const onCloudFetchingChange = () => {
+    setStatus(getStatus(cloud));
   };
 
-  const onCloudStatusChange = (cl) => {
-    setStatus(getStatus(cl, isFetching));
+  const onCloudStatusChange = () => {
+    setStatus(getStatus(cloud));
   };
 
   useEffect(() => {
     // Listen namespaces update
-    dataCloud.addEventListener(
-      DATA_CLOUD_EVENTS.DATA_UPDATED,
-      onDataCloudDataUpdated
-    );
+    cloud.addEventListener(CLOUD_EVENTS.SYNC_CHANGE, onCloudSyncChange);
     // Listen fetching status (updating namespaces)
-    dataCloud.addEventListener(
-      DATA_CLOUD_EVENTS.FETCHING_CHANGE,
-      onDataCloudFetchingChange
-    );
-    dataCloud.cloud.addEventListener(
-      CLOUD_EVENTS.STATUS_CHANGE,
-      onCloudStatusChange
-    );
+    cloud.addEventListener(CLOUD_EVENTS.FETCHING_CHANGE, onCloudFetchingChange);
+    cloud.addEventListener(CLOUD_EVENTS.STATUS_CHANGE, onCloudStatusChange);
 
     return () => {
-      dataCloud.removeEventListener(
-        DATA_CLOUD_EVENTS.DATA_UPDATED,
-        onDataCloudDataUpdated
+      cloud.removeEventListener(CLOUD_EVENTS.SYNC_CHANGE, onCloudSyncChange);
+      cloud.removeEventListener(
+        CLOUD_EVENTS.FETCHING_CHANGE,
+        onCloudFetchingChange
       );
-      dataCloud.removeEventListener(
-        DATA_CLOUD_EVENTS.FETCHING_CHANGE,
-        onDataCloudFetchingChange
-      );
-      dataCloud.cloud.removeEventListener(
+      cloud.removeEventListener(
         CLOUD_EVENTS.STATUS_CHANGE,
         onCloudStatusChange
       );
@@ -145,8 +109,8 @@ export const TableRowListenerWrapper = ({
 
   return (
     <EnhancedTableRow
-      key={`${dataCloud.cloud.url}-${actualNamespaces.length}`}
-      dataCloud={dataCloud}
+      key={`${cloud.cloudUrl}-${actualNamespaces.length}`}
+      cloud={cloud}
       withCheckboxes={withCheckboxes}
       namespaces={actualNamespaces}
       status={status}
@@ -156,7 +120,7 @@ export const TableRowListenerWrapper = ({
 };
 
 TableRowListenerWrapper.propTypes = {
-  dataCloud: PropTypes.object.isRequired,
+  cloud: PropTypes.object.isRequired,
   withCheckboxes: PropTypes.bool.isRequired,
   isSyncStarted: PropTypes.bool,
   getDataToSync: PropTypes.func,

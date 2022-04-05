@@ -6,6 +6,7 @@ import { IpcMain } from './IpcMain';
 import { logger as loggerUtil } from '../util/logger';
 import { SyncManager } from './SyncManager';
 import * as consts from '../constants';
+import { EXT_EVENT_OAUTH_CODE, dispatchExtEvent } from '../common/eventBus';
 
 const logger: any = loggerUtil; // get around TS compiler's complaining
 
@@ -20,17 +21,33 @@ const logger: any = loggerUtil; // get around TS compiler's complaining
 const catalogSource = observable.array([]);
 
 export default class ExtensionMain extends Main.LensExtension {
+  protected handleProtocolOauthCode = ({ search }) => {
+    dispatchExtEvent({
+      type: EXT_EVENT_OAUTH_CODE,
+      state: search.state,
+      data: search,
+    });
+  };
+
+  protocolHandlers = [
+    {
+      pathSchema: `/${EXT_EVENT_OAUTH_CODE}`,
+      handler: this.handleProtocolOauthCode,
+    },
+  ];
+
   onActivate() {
     logger.log('ExtensionMain.onActivate()', 'extension activated');
 
     // NOTE: an extension can only have ONE registered Catalog Source
     this.addCatalogSource(consts.catalog.source, catalogSource);
 
-    cloudStore.loadExtension(this);
-    syncStore.loadExtension(this);
+    IpcMain.createInstance(this);
+
+    cloudStore.loadExtension(this, IpcMain.getInstance());
+    syncStore.loadExtension(this, IpcMain.getInstance());
 
     // AFTER load stores
-    IpcMain.createInstance(this);
     SyncManager.createInstance(this, catalogSource, IpcMain.getInstance());
   }
 
