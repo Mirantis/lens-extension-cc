@@ -157,15 +157,25 @@ GET /oauth/code
 
 By default, the extension does not support management clusters that use self-signed certificates. They are treated as untrusted hosts for security reasons (because their identity cannot be verified).
 
-There are some legitimate reasons to use self-signed certificates, however, and it is possible to enable the extension to skip certificate verification by starting Lens from the command line with a special `LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS` flag:
+There are some legitimate reasons to use self-signed certificates, however, and it is possible to enable the extension to skip certificate verification by starting Lens from the command line with a special `LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS` flag, where values of `1`, `true`, or `yes` will enable self-signed certificate support.
+
+#### macOS
 
 ```bash
 $ LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS=1 /Applications/Lens.app/Contents/MacOS/Lens
 ```
 
-- Values of `1`, `true`, or `yes` will enable self-signed certificate support.
+#### Linux
 
-> The above example is for macOS. It will be similar on Windows and Linux, but with different syntax for setting the environment variable, and a different installation path for Lens.
+```bash
+LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS=1 snap run lens
+```
+
+> This presumes a Snap-based installation. How to run Lens will differ if you used an alternate installation method.
+
+#### Windows
+
+TBD. If someone would like to share the syntax on Windows, we will add it here.
 
 ## Development
 
