@@ -1,30 +1,33 @@
 # ChangeLog
 
-## UNRELEASED
+## v4.0.0-alpha.4
 
-⚠️ This is an early alpha build and is not fully functional. Use at your own risk.
+⚠️ This is an early alpha build and is not fully functional/tested.
 
+- Updated dependencies for [Lens 5.4.5](https://github.com/lensapp/lens/releases/tag/v5.4.5)
+    - The extension __crashes__ in Lens v5.4.4 because of a Lens bug fixed in v5.4.5.
 - Catalog syncing is now enabled! The fake Catalog items have been removed, and you should now see any cluster, credential, SSH key, proxy, and RHEL license in any of the projects you're syncing show-up in the Catalog.
 - The old status bar item has been replaced by a new top bar item to make it easier to find, and easier to click on.
 - It's now possible to connect to a management cluster using a self-signed certificate. See the [Security](README.md#security) section in the README for more information.
+- Sorting bugs in the SyncView have been fixed.
 
 ## v4.0.0-alpha.3
 
-⚠️ This is an early alpha build and is not fully functional. Use at your own risk.
+⚠️ This is an early alpha build and is not fully functional/tested.
 
 - For real, this time, fix the fake Catalog items not showing up.
 - Add additional custom details to the "Details panel" (choose `View details` from a Catalog item's context menu) for Proxies, SSH Keys, Credentials, and Licenses. Clusters aren't supported yet.
 
 ## v4.0.0-alpha.2
 
-⚠️ This is an early alpha build and is not fully functional. Use at your own risk.
+⚠️ This is an early alpha build and is not fully functional/tested.
 
 - Updated dependencies for [Lens 5.4](https://github.com/lensapp/lens/releases/tag/v5.4.0) official release.
 - Fixed fake Catalog items not showing up.
 
 ## v4.0.0-alpha.1
 
-⚠️ This is an early alpha build and is not fully functional. Use at your own risk.
+⚠️ This is an early alpha build and is not fully functional/tested.
 
 - Added __Selective Sync__ mode. Use the aptly-named button at the top/right of the Extension's main view to adjust your project selections across all synced management clusters at once.
 - No syncing actually takes place yet, but project selections across all management clusters are stored on disk and restored after quitting and re-opening Lens.
@@ -40,7 +43,7 @@
 
 ## v4.0.0-alpha.0
 
-⚠️ This is an early alpha build and is not fully functional. Use at your own risk.
+⚠️ This is an early alpha build and is not fully functional/tested.
 
 - Main Cluster view is replaced with the new SyncView
 - User is prompted to add their first magament cluster
