@@ -75,11 +75,6 @@ export const catalogEntityDetails = [
               >
                 {props.entity.metadata.cloudUrl || unknownValue()}
               </DrawerItem>
-              <DrawerItem
-                name={strings.catalog.entities.cluster.details.props.childClusters()}
-              >
-                {props.entity.spec.childCount ?? unknownValue()}
-              </DrawerItem>
             </>
           )}
           <DrawerItem

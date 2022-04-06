@@ -229,7 +229,6 @@ export const catalog: Dict = {
           isManagementCluster: (isManagementCluster) =>
             isManagementCluster ? 'Yes' : 'No',
           url: () => 'URL',
-          childClusters: () => 'Child clusters',
           region: () => 'Region',
           provider: () => 'Provider',
           mccStatus: () => 'MCC Status',
