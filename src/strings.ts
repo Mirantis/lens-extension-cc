@@ -102,6 +102,8 @@ export const managementClusters = {
       clusters: () => 'clusters',
       sshKeys: () => 'SSH keys',
       credentials: () => 'credentials',
+      proxies: () => 'proxies',
+      licenses: () => 'licenses',
     },
   },
 };

@@ -50,6 +50,14 @@ export const AdditionalInfoRows = ({ namespace, emptyCellsCount }) => {
       infoName: managementClusters.table.tbodyDetailedInfo.credentials(),
       infoCount: namespace.credentialCount,
     },
+    {
+      infoName: managementClusters.table.tbodyDetailedInfo.proxies(),
+      infoCount: namespace.proxyCount,
+    },
+    {
+      infoName: managementClusters.table.tbodyDetailedInfo.licenses(),
+      infoCount: namespace.licenseCount,
+    },
   ];
   return (
     <EnhInfoRowsWrapper>
