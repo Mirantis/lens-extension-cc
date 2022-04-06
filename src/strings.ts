@@ -102,6 +102,8 @@ export const managementClusters = {
       clusters: () => 'clusters',
       sshKeys: () => 'SSH keys',
       credentials: () => 'credentials',
+      proxies: () => 'proxies',
+      licenses: () => 'licenses',
     },
   },
 };
@@ -229,7 +231,6 @@ export const catalog: Dict = {
           isManagementCluster: (isManagementCluster) =>
             isManagementCluster ? 'Yes' : 'No',
           url: () => 'URL',
-          childClusters: () => 'Child clusters',
           region: () => 'Region',
           provider: () => 'Provider',
           mccStatus: () => 'MCC Status',
