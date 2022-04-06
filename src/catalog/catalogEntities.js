@@ -202,7 +202,6 @@ export const clusterEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
     region: rtv.STRING,
     provider: rtv.STRING,
     currentVersion: rtv.STRING,
-    childCount: rtv.SAFE_INT,
   },
 
   // based on Lens `KubernetesClusterStatus` type
