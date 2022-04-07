@@ -7,6 +7,7 @@
 - Updated dependencies for [Lens 5.4.5](https://github.com/lensapp/lens/releases/tag/v5.4.5)
     - The extension __crashes__ in Lens v5.4.4 because of a Lens bug fixed in v5.4.5.
 - Catalog syncing is now enabled! The fake Catalog items have been removed, and you should now see any cluster, credential, SSH key, proxy, and RHEL license in any of the projects you're syncing show-up in the Catalog.
+- The [kubelogin](https://github.com/int128/kubelogin) binary __must be installed separately__ in order to open synced clusters.
 - The old status bar item has been replaced by a new top bar item to make it easier to find, and easier to click on.
 - It's now possible to connect to a management cluster using a self-signed certificate. See the [Security](README.md#security) section in the README for more information.
 - Sorting bugs in the SyncView have been fixed.
