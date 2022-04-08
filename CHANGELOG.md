@@ -1,5 +1,12 @@
 # ChangeLog
 
+## UNRELEASED
+
+⚠️ This is an early alpha build and is not fully functional/tested.
+
+- Resources contained projects are no longer displayed when adding a new management cluster, as well as in the Selective Sync view for any in un-synced projects.
+- Added synced proxy and license counts for synced projects in the Sync View.
+
 ## v4.0.0-alpha.4
 
 ⚠️ This is an early alpha build and is not fully functional/tested.
