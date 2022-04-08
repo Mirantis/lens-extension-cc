@@ -6,7 +6,6 @@ import {
   checkValues,
   TriStateCheckbox,
 } from '../TriStateCheckbox/TriStateCheckbox';
-import { Accordion } from '../Accordion/Accordion';
 import { layout } from '../styles';
 import { synchronizeBlock } from '../../../strings';
 import {
@@ -51,8 +50,8 @@ const ProjectsHead = styled.div(() => ({
 
 const ProjectsBody = styled.div(() => ({
   paddingTop: layout.grid * 1.5,
-  paddingLeft: layout.grid * 3.25,
-  paddingRight: layout.grid * 3.25,
+  paddingLeft: layout.grid * 9.5,
+  paddingRight: layout.grid * 9.5,
   paddingBottom: layout.grid * 1.5,
 }));
 
@@ -60,22 +59,6 @@ const ProjectsList = styled.ul(() => ({
   paddingBottom: layout.grid * 3,
   '& > li:not(:last-of-type)': {
     marginBottom: layout.grid * 2.5,
-  },
-}));
-
-const AccordionChildrenList = styled.ul(() => ({
-  paddingLeft: layout.grid * 13.5,
-  paddingRight: layout.grid * 13.5,
-
-  '& > li': {
-    paddingTop: layout.grid * 1.5,
-    paddingLeft: layout.grid * 5,
-    paddingRight: layout.grid * 5,
-    paddingBottom: layout.grid * 1.5,
-  },
-
-  '& > li:nth-of-type(odd)': {
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
   },
 }));
 
@@ -174,38 +157,11 @@ export const SynchronizeBlock = ({ dataCloud, onAdd }) => {
             <ProjectsList>
               {sortNamespaces(projectsList).map((namespace) => (
                 <li key={namespace.name}>
-                  <Accordion
-                    title={
-                      <TriStateCheckbox
-                        value={getCheckboxValue({ name: namespace.name })}
-                        label={namespace.name}
-                        onChange={() =>
-                          setCheckboxValue({ name: namespace.name })
-                        }
-                      />
-                    }
-                  >
-                    <AccordionChildrenList>
-                      <li>
-                        <p>
-                          {synchronizeBlock.checkboxesDropdownLabels.clusters()}{' '}
-                          ({namespace.clusterCount})
-                        </p>
-                      </li>
-                      <li>
-                        <p>
-                          {synchronizeBlock.checkboxesDropdownLabels.sshKeys()}{' '}
-                          ({namespace.sshKeyCount})
-                        </p>
-                      </li>
-                      <li>
-                        <p>
-                          {synchronizeBlock.checkboxesDropdownLabels.credentials()}{' '}
-                          ({namespace.credentialCount})
-                        </p>
-                      </li>
-                    </AccordionChildrenList>
-                  </Accordion>
+                  <TriStateCheckbox
+                    value={getCheckboxValue({ name: namespace.name })}
+                    label={namespace.name}
+                    onChange={() => setCheckboxValue({ name: namespace.name })}
+                  />
                 </li>
               ))}
             </ProjectsList>

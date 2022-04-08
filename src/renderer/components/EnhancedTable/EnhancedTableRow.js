@@ -59,6 +59,16 @@ const EnhTableRowCell = styled.td`
     display: flex;
     align-items: center;
   `}
+
+  ${({ isUnSynced }) =>
+    isUnSynced &&
+    `
+    &::before {
+      content: '';
+      display: block;
+      width: ${layout.grid * 6.75}px;
+    }
+  `}
 `;
 
 const EnhCollapseBtn = styled.button`
@@ -325,16 +335,22 @@ export const EnhancedTableRow = ({
         sortNamespaces(namespaces).map((namespace) => (
           <EnhRowsWrapper key={namespace.name}>
             <EnhTableRow>
-              <EnhTableRowCell isFirstLevel withCheckboxes={withCheckboxes}>
-                <EnhCollapseBtn onClick={() => setOpenedList(namespace.name)}>
-                  {getExpandIcon(openNamespaces.includes(namespace.name))}
-                </EnhCollapseBtn>
+              <EnhTableRowCell
+                isFirstLevel
+                isUnSynced={!namespace.synced}
+                withCheckboxes={withCheckboxes}
+              >
+                {namespace.synced && (
+                  <EnhCollapseBtn onClick={() => setOpenedList(namespace.name)}>
+                    {getExpandIcon(openNamespaces.includes(namespace.name))}
+                  </EnhCollapseBtn>
+                )}
                 {makeNameCell(namespace.name)}
               </EnhTableRowCell>
               {renderNamespaceRows(namespace)}
             </EnhTableRow>
 
-            {openNamespaces.includes(namespace.name) && (
+            {openNamespaces.includes(namespace.name) && namespace.synced && (
               <AdditionalInfoRows
                 namespace={namespace}
                 emptyCellsCount={withCheckboxes ? 2 : 4}
