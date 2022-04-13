@@ -113,3 +113,16 @@ export const apiLabels = Object.freeze({
   CLUSTER_CONTROLLER: 'cluster.sigs.k8s.io/control-plane', // if a machine is a master (vs worker)
   CLUSTER_NAME: 'cluster.sigs.k8s.io/cluster-name', // machine's associated cluster
 });
+
+// TODO[PRODX-22469]: Remove if we drop watches.
+/**
+ * Map of API watch change response document type to value.
+ * @type {{ [index: string], string }}
+ * @see https://kubernetes.io/docs/reference/using-api/api-concepts/#efficient-detection-of-changes
+ */
+export const apiChangeTypes = Object.freeze({
+  ERROR: 'ERROR',
+  ADDED: 'ADDED',
+  MODIFIED: 'MODIFIED',
+  DELETED: 'DELETED',
+});

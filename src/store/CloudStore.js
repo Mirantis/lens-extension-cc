@@ -176,7 +176,7 @@ export class CloudStore extends Common.Store.ExtensionStore {
    * @param {boolean} info.isFromStore True if the update is emanating from this store;
    *  false if it's an actual update.
    */
-  onCloudChange = ({ name, target: cloud }, { isFromStore }) => {
+  handleCloudChange = ({ name, target: cloud }, { isFromStore }) => {
     if (!isFromStore) {
       logger.log(
         'CloudStore.onCloudChange()',
@@ -238,7 +238,7 @@ export class CloudStore extends Common.Store.ExtensionStore {
         `<MAIN> Subscribing to ALL EXCEPT loading/fetching/prop changes for cloud=${cloud}`
       );
       const excludedEvents = [
-        CLOUD_EVENTS.LOADING_CHANGE, // not stored on disk
+        CLOUD_EVENTS.LOADED_CHANGE, // not stored on disk
         CLOUD_EVENTS.FETCHING_CHANGE, // not stored on disk
         CLOUD_EVENTS.PROP_CHANGE, // not expected to change on MAIN
       ];
@@ -257,7 +257,7 @@ export class CloudStore extends Common.Store.ExtensionStore {
     }
 
     eventNames.forEach((eventName) =>
-      cloud.addEventListener(eventName, this.onCloudChange)
+      cloud.addEventListener(eventName, this.handleCloudChange)
     );
   }
 
@@ -268,7 +268,7 @@ export class CloudStore extends Common.Store.ExtensionStore {
   stopListeningForChanges(cloud) {
     // noop if we weren't already subscribed
     Object.values(CLOUD_EVENTS).forEach((eventName) =>
-      cloud.removeEventListener(eventName, this.onCloudChange)
+      cloud.removeEventListener(eventName, this.handleCloudChange)
     );
   }
 

@@ -8,7 +8,11 @@ import { DATA_CLOUD_EVENTS, DataCloud } from '../common/DataCloud';
 import { CONNECTION_STATUSES } from '../common/Cloud';
 import { cloudStore } from '../store/CloudStore';
 import { syncStore } from '../store/SyncStore';
-import { apiCredentialKinds, apiKinds } from '../api/apiConstants';
+import {
+  apiChangeTypes,
+  apiCredentialKinds,
+  apiKinds,
+} from '../api/apiConstants';
 import { logValue } from '../util/logger';
 import * as consts from '../constants';
 import {
@@ -65,6 +69,12 @@ const kindToSyncStoreProp = {
   [apiKinds.RHEL_LICENSE]: 'licenses',
   [apiKinds.PROXY]: 'proxies',
 };
+
+/**
+ * API kind to Namespace property for kinds that are supported.
+ * @type {{ [index: string]: string }}
+ */
+const kindToNamespaceProp = kindToSyncStoreProp; // same property names for now
 
 /**
  * Synchronizes MCC namespaces with the Lens Catalog.
@@ -203,10 +213,10 @@ export class SyncManager extends Singleton {
    * Removes all entities of a given DataCloud from the Catalog.
    * @param {DataCloud} dataCloud
    */
-  async removeFromCatalog(dataCloud) {
+  async removeCloudFromCatalog(dataCloud) {
     this.ipcMain.capture(
       'info',
-      'SyncManager.removeFromCatalog()',
+      'SyncManager.removeCloudFromCatalog()',
       `DataCloud deleted, removing all synced entities from Catalog; dataCloud=${dataCloud}`
     );
 
@@ -217,8 +227,8 @@ export class SyncManager extends Singleton {
     } catch (err) {
       this.ipcMain.capture(
         'error',
-        'SyncManager.updateClusters()',
-        `Cannot update clusters: Failed to get Lens-designated extension file folder path; error="${err.message}"`
+        'SyncManager.removeCloudFromCatalog()',
+        `Cannot remove Cloud entities: Failed to get Lens-designated extension file folder path; error="${err.message}"`
       );
       return;
     }
@@ -250,7 +260,7 @@ export class SyncManager extends Singleton {
           const item = list[idx];
           this.ipcMain.capture(
             'log',
-            'SyncManager.removeFromCatalog()',
+            'SyncManager.removeCloudFromCatalog()',
             `Removing ${
               target === 'catalog' ? entityToString(item) : modelToString(item)
             } from Catalog and deleting kubeconfig file: Cloud deleted`
@@ -271,7 +281,7 @@ export class SyncManager extends Singleton {
     fs.rm(cloudPath, { force: true, recursive: true }).catch((err) => {
       this.ipcMain.capture(
         'error',
-        'SyncManager.removeFromCatalog()',
+        'SyncManager.removeCloudFromCatalog()',
         `Failed to delete kubeconfig cloud path ${logValue(
           cloudPath
         )}; error=${logValue(err.message)}`
@@ -280,7 +290,7 @@ export class SyncManager extends Singleton {
 
     this.ipcMain.capture(
       'info',
-      'SyncManager.removeFromCatalog()',
+      'SyncManager.removeCloudFromCatalog()',
       `Done: DataCloud deleted, removed ${deleteCount} synced entities from Catalog; dataCloud=${dataCloud}`
     );
   }
@@ -455,6 +465,38 @@ export class SyncManager extends Singleton {
   }
 
   /**
+   * Removes a single entity from the Catalog and returns it. If it's a cluster, its
+   *  kubeConfig file is also scheduled for deletion.
+   * @param {number} index Index of the item in the `catalogSource` array.
+   * @returns {CatalogEntity} The entity that was removed.
+   */
+  removeEntityFromCatalog(index) {
+    const entity = this.catalogSource[index];
+    this.ipcMain.capture(
+      'log',
+      'SyncManager.removeEntityFromCatalog()',
+      `Removing ${entityToString(entity)}`
+    );
+
+    this.catalogSource.splice(index, 1);
+
+    if (entity.metadata.kind === apiKinds.CLUSTER) {
+      // no need to wait around for the promise to fulfill
+      fs.rm(entity.spec.kubeconfigPath).catch((err) => {
+        this.ipcMain.capture(
+          'error',
+          'SyncManager.removeEntityFromCatalog()',
+          `Failed to delete kubeconfig file of deleted ${entityToString(
+            entity
+          )}; error=${logValue(err.message)}`
+        );
+      });
+    }
+
+    return entity;
+  }
+
+  /**
    * Removes all entities from the Catalog that aren't found in the Cloud's known resources.
    * @param {DataCloud} dataCloud
    * @param {{ [index: string]: true }} cloudResourceIds Map of known resource UID to `true`
@@ -481,33 +523,30 @@ export class SyncManager extends Singleton {
         );
       })) >= 0
     ) {
-      const entity = this.catalogSource[idx];
-      this.ipcMain.capture(
-        'log',
-        'SyncManager.cleanCatalog()',
-        `Removing entity ${entityToString(
-          entity
-        )} from Catalog: Deleted from Cloud`
-      );
-
-      this.catalogSource.splice(idx, 1);
+      this.removeEntityFromCatalog(idx);
       deleteCount++;
-
-      if (entity.metadata.kind === apiKinds.CLUSTER) {
-        // no need to wait around for the promise to fulfill
-        fs.rm(entity.spec.kubeconfigPath).catch((err) => {
-          this.ipcMain.capture(
-            'error',
-            'SyncManager.cleanCatalog()',
-            `Failed to delete kubeconfig file of deleted ${entityToString(
-              entity
-            )}; error=${logValue(err.message)}`
-          );
-        });
-      }
     }
 
     return deleteCount;
+  }
+
+  /**
+   * Removes a single model from the SyncStore and returns it.
+   * @param {Array} storeList A list from the SyncStore that contains the model.
+   * @param {number} index Index of the item in the `catalogSource` array.
+   * @returns {Object} The model that was removed.
+   */
+  removeModelFromStore(storeList, index) {
+    const model = storeList[index];
+    this.ipcMain.capture(
+      'log',
+      'SyncManager.removeModelFromStore()',
+      `Removing ${modelToString(model)}`
+    );
+
+    storeList.splice(index, 1);
+
+    return model;
   }
 
   /**
@@ -533,16 +572,7 @@ export class SyncManager extends Singleton {
         );
       })) >= 0
     ) {
-      const model = storeList[idx];
-      this.ipcMain.capture(
-        'log',
-        'SyncManager.cleanStore()',
-        `Removing model ${modelToString(
-          model
-        )} from SyncStore: Deleted from Cloud`
-      );
-
-      storeList.splice(idx, 1);
+      this.removeModelFromStore(storeList, idx);
       deleteCount++;
     }
 
@@ -552,14 +582,26 @@ export class SyncManager extends Singleton {
   /**
    * [ASYNC] Updates a DataCloud's clusters in the Catalog and temporary store.
    * @param {DataCloud} dataCloud
+   * @param {Array<Cluster>} clusters List of clusters. This is either ALL known clusters
+   *  across ALL __synced__ namespaces in the `dataCloud`; or it's a subset of clusters,
+   *  in which case `skipDelete` should be `true` to avoid incorrectly deleting clusters
+   *  that aren't in this list but are found in the Catalog.
    * @param {{ clusters: Array, proxies: Array, credentials: Array, sshKeys: Array, licenses: Array }} jsonStore
    *  A disconnected (in terms of Mobx) replica of the SyncStore to update with cluster model changes.
+   * @param {boolean} [skipDelete] If true, the list of clusters is not considered complete
+   *  and therefore not used to determine which Catalog entities should be removed as a result
+   *  of a cluster not being in this list but being found in the Catalog.
    */
-  async updateClusters(dataCloud, jsonStore) {
+  async updateClusterEntities(
+    dataCloud,
+    clusters,
+    jsonStore,
+    skipDelete = false
+  ) {
     this.ipcMain.capture(
       'info',
-      'SyncManager.updateClusters()',
-      `Processing cluster entities for changes in dataCloud=${dataCloud}`
+      'SyncManager.updateClusterEntities()',
+      `Processing cluster entities (skipDelete=${skipDelete}) for changes in dataCloud=${dataCloud}`
     );
 
     const ACTION_ADDED = 'added';
@@ -572,7 +614,7 @@ export class SyncManager extends Singleton {
     } catch (err) {
       this.ipcMain.capture(
         'error',
-        'SyncManager.updateClusters()',
+        'SyncManager.updateClusterEntities()',
         `Cannot update clusters: Failed to get Lens-designated extension file folder path; error="${err.message}"`
       );
       return;
@@ -588,78 +630,76 @@ export class SyncManager extends Singleton {
     //   catEntity?: KubernetesCluster, // EXISTING Catalog Entity (if action not 'added')
     //   action: 'added' | 'updated' | null
     // }
-    const promises = dataCloud.syncedNamespaces.flatMap((ns) => {
-      return ns.clusters.map((cluster) => {
-        if (!cluster.configReady) {
-          return Promise.reject(
-            new Error(
-              `Cannot add/update cluster that is not config-ready; cluster=${cluster}`
-            )
-          );
-        }
+    const promises = clusters.map((cluster) => {
+      if (!cluster.configReady) {
+        return Promise.reject(
+          new Error(
+            `Cannot add/update cluster that is not config-ready; cluster=${cluster}`
+          )
+        );
+      }
 
-        const configFilePath = this.getKubeConfigFilePath(cluster);
-        const configDirPath = path.dirname(configFilePath);
-        const model = cluster.toModel(configFilePath);
+      const configFilePath = this.getKubeConfigFilePath(cluster);
+      const configDirPath = path.dirname(configFilePath);
+      const model = cluster.toModel(configFilePath);
 
-        const catEntity = findEntity(this.catalogSource, model);
-        if (catEntity) {
-          // entity exists already in the Catalog: either same (no changes) or updated
-          if (catEntity.metadata.resourceVersion === cluster.resourceVersion) {
-            return Promise.resolve({
-              cluster,
-              model,
-              catEntity,
-              action: null, // no changes
-            });
-          } else {
-            // something about that resource has changed since the last time we fetched it
-            return Promise.resolve({
-              cluster,
-              model,
-              catEntity,
-              action: ACTION_UPDATED,
-            });
-          }
+      const catEntity = findEntity(this.catalogSource, model);
+      if (catEntity) {
+        // entity exists already in the Catalog: either same (no changes) or updated
+        if (catEntity.metadata.resourceVersion === cluster.resourceVersion) {
+          return Promise.resolve({
+            cluster,
+            model,
+            catEntity,
+            action: null, // no changes
+          });
         } else {
-          // new entity we have discovered: create kubeconfig file
-          const kubeConfig = cluster.getKubeConfig();
-          return fs.mkdir(configDirPath, { recursive: true }).then(
-            () =>
-              fs
-                .writeFile(
-                  configFilePath,
-                  // NOTE: the 'simpleKeys' YAML option ensures that the output uses implicit vs
-                  //  explicit notation, which appears to fix the issue where if all of an object's
-                  //  properties are `null`, the resulting notation for the object is such that each
-                  //  key is preceded by a `?` YAML operator, which Lens doesn't support/expect
-                  YAML.stringify(kubeConfig, { simpleKeys: true })
-                )
-                .then(
-                  () => ({
-                    cluster,
-                    model,
-                    catEntity, // will be undefined because not found in Catalog
-                    action: ACTION_ADDED,
-                  }),
-                  (err) => {
-                    throw new Error(
-                      `Failed to write kubeconfig file: Unable to add cluster; filePath=${logValue(
-                        configFilePath
-                      )}, error=${logValue(err.message)}, cluster=${cluster}`
-                    );
-                  }
-                ),
-            (err) => {
-              throw new Error(
-                `Failed to create kubeconfig directory: Unable to add cluster; path=${logValue(
-                  configDirPath
-                )}, error=${logValue(err.message)}, cluster=${cluster}`
-              );
-            }
-          );
+          // something about that resource has changed since the last time we fetched it
+          return Promise.resolve({
+            cluster,
+            model,
+            catEntity,
+            action: ACTION_UPDATED,
+          });
         }
-      });
+      } else {
+        // new entity we have discovered: create kubeconfig file
+        const kubeConfig = cluster.getKubeConfig();
+        return fs.mkdir(configDirPath, { recursive: true }).then(
+          () =>
+            fs
+              .writeFile(
+                configFilePath,
+                // NOTE: the 'simpleKeys' YAML option ensures that the output uses implicit vs
+                //  explicit notation, which appears to fix the issue where if all of an object's
+                //  properties are `null`, the resulting notation for the object is such that each
+                //  key is preceded by a `?` YAML operator, which Lens doesn't support/expect
+                YAML.stringify(kubeConfig, { simpleKeys: true })
+              )
+              .then(
+                () => ({
+                  cluster,
+                  model,
+                  catEntity, // will be undefined because not found in Catalog
+                  action: ACTION_ADDED,
+                }),
+                (err) => {
+                  throw new Error(
+                    `Failed to write kubeconfig file: Unable to add cluster; filePath=${logValue(
+                      configFilePath
+                    )}, error=${logValue(err.message)}, cluster=${cluster}`
+                  );
+                }
+              ),
+          (err) => {
+            throw new Error(
+              `Failed to create kubeconfig directory: Unable to add cluster; path=${logValue(
+                configDirPath
+              )}, error=${logValue(err.message)}, cluster=${cluster}`
+            );
+          }
+        );
+      }
     });
 
     //// ADD, UPDATE, DELETE CATALOG ENTITIES
@@ -680,7 +720,7 @@ export class SyncManager extends Singleton {
           if (action === ACTION_ADDED) {
             this.ipcMain.capture(
               'log',
-              'SyncManager.updateClusters()',
+              'SyncManager.updateClusterEntities()',
               `Adding new ${cluster} to Catalog and Store`
             );
             newEntities.push(this.mkEntity(model));
@@ -688,7 +728,7 @@ export class SyncManager extends Singleton {
           } else if (action === ACTION_UPDATED) {
             this.ipcMain.capture(
               'log',
-              'SyncManager.updateClusters()',
+              'SyncManager.updateClusterEntities()',
               `Updating ${cluster} in Catalog and Store: resourceVersion ${logValue(
                 catEntity.metadata.resourceVersion
               )} -> ${logValue(cluster.resourceVersion)}`
@@ -704,14 +744,14 @@ export class SyncManager extends Singleton {
           } else {
             this.ipcMain.capture(
               'log',
-              'SyncManager.updateClusters()',
+              'SyncManager.updateClusterEntities()',
               `Skipping ${cluster} update: No changes detected`
             );
           }
         } else {
           this.ipcMain.capture(
             'warn',
-            'SyncManager.updateClusters()',
+            'SyncManager.updateClusterEntities()',
             // NOTE: `reason.message` already has information about the cluster affected
             //  because it's an error message we generated in previous loop that created
             //  all the promises whose results we're now looping through
@@ -722,21 +762,19 @@ export class SyncManager extends Singleton {
 
       // remove all entities from the Catalog and temp Store of this type that no longer exist
       //  in the Cloud
-      const catDelCount = this.cleanCatalog(dataCloud, cloudClusterIds, [
-        apiKinds.CLUSTER,
-      ]);
-      const storeDelCount = this.cleanStore(
-        dataCloud,
-        cloudClusterIds,
-        jsonStore.clusters
-      );
+      const catDelCount = skipDelete
+        ? 0
+        : this.cleanCatalog(dataCloud, cloudClusterIds, [apiKinds.CLUSTER]);
+      const storeDelCount = skipDelete
+        ? 0
+        : this.cleanStore(dataCloud, cloudClusterIds, jsonStore.clusters);
 
       // add all the new entities to the Catalog
       newEntities.forEach((entity) => this.catalogSource.push(entity));
 
       this.ipcMain.capture(
         'info',
-        'SyncManager.updateClusters()',
+        'SyncManager.updateClusterEntities()',
         `Have added=${newEntities.length}, updated=${catUpdateCount}, deleted=${catDelCount} cluster Catalog entities for dataCloud=${dataCloud}`
       );
 
@@ -745,17 +783,139 @@ export class SyncManager extends Singleton {
 
       this.ipcMain.capture(
         'info',
-        'SyncManager.onDataUpdated()',
+        'SyncManager.updateClusterEntities()',
         `Will add=${newModels.length}, update=${storeUpdateCount}, delete=${storeDelCount} cluster SyncStore models for dataCloud=${dataCloud}`
       );
 
       this.ipcMain.capture(
         'info',
-        'SyncManager.updateClusters()',
-        `Done: Processed cluster entities for changes in dataCloud=${dataCloud}`
+        'SyncManager.updateClusterEntities()',
+        `Done: Processed cluster entities (skipDelete=${skipDelete}) for changes in dataCloud=${dataCloud}`
       );
     });
     // NOTE: Promise.allSettled() does not fail
+  }
+
+  /**
+   * [ASYNC] Updates a DataCloud's entities in the Catalog and temporary store.
+   * @param {DataCloud} dataCloud
+   * @param {{ clusters: Array<Cluster>, proxies: Array<Proxy>, credentials: Array<Credential>, sshKeys: Array<SshKey>, licenses: Array<License> }} resources
+   *  Lists of resources. This is either ALL known resources across ALL __synced__ namespaces in
+   *  the `dataCloud`; or it's a subset of resources, in which case `skipDelete` should be `true`
+   *  to avoid incorrectly deleting resources that aren't in this list but are found in the Catalog.
+   * @param {{ clusters: Array, proxies: Array, credentials: Array, sshKeys: Array, licenses: Array }} jsonStore
+   *  A disconnected (in terms of Mobx) replica of the SyncStore to update with cluster model changes.
+   * @param {boolean} [skipDelete] If true, the list of resources is not considered complete
+   *  and therefore not used to determine which Catalog entities should be removed as a result
+   *  of a resource not being in this list but being found in the Catalog.
+   */
+  async updateCatalogEntities(
+    dataCloud,
+    resources,
+    jsonStore,
+    skipDelete = false
+  ) {
+    this.ipcMain.capture(
+      'info',
+      'SyncManager.updateCatalogEntities()',
+      `Processing entities (skipDelete=${skipDelete}) for changes in dataCloud=${dataCloud}`
+    );
+
+    // property names for lists on Namespace and SyncStore classes
+    const types = ['sshKeys', 'credentials', 'proxies', 'licenses'];
+
+    types.forEach((type) => {
+      const newModels = []; // new models for SyncStore
+      const newEntities = []; // new entities for Catalog
+      const cloudResourceIds = {}; // map of string -> `true` for all resources of this type in this Cloud
+      let catUpdateCount = 0;
+      let storeUpdateCount = 0;
+
+      // start by determining what is new and what has been updated
+      resources[type].forEach((resource) => {
+        cloudResourceIds[resource.uid] = true;
+
+        const model = resource.toModel();
+        const catEntity = findEntity(this.catalogSource, model);
+
+        if (catEntity) {
+          // entity exists already in the Catalog: either same (no changes) or updated
+          if (catEntity.metadata.resourceVersion === resource.resourceVersion) {
+            this.ipcMain.capture(
+              'log',
+              'SyncManager.updateCatalogEntities()',
+              `Skipping ${resource} update: No changes detected`
+            );
+          } else {
+            // something about that resource has changed since the last time we fetched it
+            this.ipcMain.capture(
+              'log',
+              'SyncManager.updateCatalogEntities()',
+              `Updating ${resource} in Catalog and SyncStore: resourceVersion ${logValue(
+                catEntity.metadata.resourceVersion
+              )} -> ${logValue(resource.resourceVersion)}`
+            );
+
+            if (this.updateEntity(catEntity, model)) {
+              catUpdateCount++;
+            }
+
+            if (this.updateStoreModel(jsonStore, model)) {
+              storeUpdateCount++;
+            }
+          }
+        } else {
+          // new entity we have discovered: add to Catalog and Store
+          this.ipcMain.capture(
+            'log',
+            'SyncManager.updateCatalogEntities()',
+            `Adding new ${resource} to Catalog and SyncStore`
+          );
+          newEntities.push(this.mkEntity(model));
+          newModels.push(model);
+        }
+      });
+
+      // remove all entities from the Catalog and temp Store of this type that no longer exist
+      //  in the Cloud
+      const catDelCount = skipDelete
+        ? 0
+        : this.cleanCatalog(dataCloud, cloudResourceIds, nsPropToKinds[type]);
+      const storeDelCount = skipDelete
+        ? 0
+        : this.cleanStore(dataCloud, cloudResourceIds, jsonStore[type]);
+
+      // add all the new entities to the Catalog
+      newEntities.forEach((entity) => this.catalogSource.push(entity));
+
+      this.ipcMain.capture(
+        'info',
+        'SyncManager.updateCatalogEntities()',
+        `Have added=${newEntities.length}, updated=${catUpdateCount}, deleted=${catDelCount} ${type} Catalog entities for dataCloud=${dataCloud}`
+      );
+
+      // add all the new models to the temporary store
+      newModels.forEach((model) => jsonStore[type].push(model));
+
+      this.ipcMain.capture(
+        'info',
+        'SyncManager.updateCatalogEntities()',
+        `Will add=${newModels.length}, update=${storeUpdateCount}, delete=${storeDelCount} ${type} SyncStore models for dataCloud=${dataCloud}`
+      );
+    });
+
+    await this.updateClusterEntities(
+      dataCloud,
+      resources.clusters,
+      jsonStore,
+      skipDelete
+    );
+
+    this.ipcMain.capture(
+      'info',
+      'SyncManager.updateCatalogEntities()',
+      `Done: Processed entities (skipDelete=${skipDelete}) for changes in dataCloud=${dataCloud}`
+    );
   }
 
   //
@@ -783,11 +943,18 @@ export class SyncManager extends Singleton {
           'SyncManager.onCloudStoreChange()',
           `Detected new Cloud, creating new DataCloud for it; cloud=${cloud}`
         );
+
         const dataCloud = new DataCloud(cloud);
+
         dataCloud.addEventListener(
           DATA_CLOUD_EVENTS.DATA_UPDATED,
           this.onDataUpdated
         );
+        dataCloud.addEventListener(
+          DATA_CLOUD_EVENTS.RESOURCE_UPDATED,
+          this.onResourceUpdated
+        );
+
         this.dataClouds[cloudUrl] = dataCloud;
       }
     });
@@ -811,13 +978,21 @@ export class SyncManager extends Singleton {
         'SyncManager.onCloudStoreChange()',
         `Destroying old DataCloud removed from CloudStore; dataCloud=${dataCloud}`
       );
+
       dataCloud.removeEventListener(
         DATA_CLOUD_EVENTS.DATA_UPDATED,
         this.onDataUpdated
       );
-      this.removeFromCatalog(dataCloud);
+      dataCloud.removeEventListener(
+        DATA_CLOUD_EVENTS.RESOURCE_UPDATED,
+        this.onResourceUpdated
+      );
+
+      this.removeCloudFromCatalog(dataCloud);
+
       dataCloud.cloud.destroy(); // CloudStore should already have done this, but just in case (probably noop)
       dataCloud.destroy();
+
       delete this.dataClouds[cloudUrl];
     });
 
@@ -993,6 +1168,93 @@ export class SyncManager extends Singleton {
     }
   };
 
+  // TODO[PRODX-22469]: Remove if we drop watches. Currently untested code because of body
+  //  extraction issue (see other related comments).
+  /**
+   * Called whenever a DataCloud's resources have changed.
+   * @param {Object} event
+   * @param {DataCloud} event.dataCloud The updated DataCloud.
+   * @param {Object} info
+   * @param {Array<{ type: "ADDED"|"MODIFIED"|"DELETE", resource: Resource }>} info.updates
+   */
+  onResourceUpdated = async ({ target: dataCloud }, { updates }) => {
+    this.ipcMain.capture(
+      'info',
+      'SyncManager.onResourceUpdated()',
+      `Updating Catalog and SyncStore after resource updates in dataCloud=${dataCloud}`
+    );
+
+    // get a 'disconnected' version of the SyncStore that won't react to every single
+    //  change so that we can effectively batch changes to as few as possible, and
+    //  avoid them taking place while we're still churning through Cloud updates
+    // NOTE: we can update the `catalogSource` directly because we don't watch it;
+    //  it's a one-way change here and reflected in Lens
+    const jsonStore = syncStore.toPureJSON();
+
+    // map of Namespace property name to list of added or modified resources
+    const updatedResources = {};
+    updates.forEach(({ type: updateType, resource }) => {
+      if (resource.kind === apiKinds.NAMESPACE) {
+        // not expecting to get updates to namespaces here; namespace updates should result in
+        //  a full data fetch and wholesale catalog/store update via `onDataUpdated()` handler
+        this.ipcMain.capture(
+          'warn',
+          'SyncManager.onResourceUpdated()',
+          `Ignoring unexpected ${logValue(
+            updateType
+          )} update to namespace resource; resource=${resource}`
+        );
+        return;
+      }
+
+      if (updateType === apiChangeTypes.DELETED) {
+        const catIdx = this.catalogSource.findIndex(
+          (entity) =>
+            entity.metadata.kind === resource.kind &&
+            entity.metadata.name === resource.name &&
+            entity.metadata.cloudUrl === resource.cloud.cloudUrl
+        );
+        if (catIdx >= 0) {
+          this.removeEntityFromCatalog(catIdx);
+        }
+
+        const storeList = jsonStore[kindToSyncStoreProp[resource.kind]];
+        const listIdx = storeList.findIndex(
+          (model) =>
+            model.metadata.name === resource.name &&
+            model.metadata.cloudUrl === resource.cloud.cloudUrl
+        );
+        if (listIdx >= 0) {
+          this.removeModelFromStore(storeList, listIdx);
+        }
+      } else {
+        // assuming ADDED or MODIFIED resource
+        const prop = kindToNamespaceProp[resource.kind];
+        updatedResources[prop] ||= [];
+        updatedResources[prop].push(resource);
+      }
+    });
+
+    // skip deleting entities because we've done that here, and `addModResources`
+    //  is not representative of ALL synced resources since we're only processing
+    //  individual resource updates as opposed to an update after a full data fetch
+    await this.updateCatalogEntities(
+      dataCloud,
+      updatedResources,
+      jsonStore,
+      true
+    );
+
+    // save the models in the store
+    Object.keys(jsonStore).forEach((key) => (syncStore[key] = jsonStore[key]));
+
+    this.ipcMain.capture(
+      'info',
+      'SyncManager.onResourceUpdated()',
+      `Done: Updated Catalog and SyncStore after resource updates in dataCloud=${dataCloud}`
+    );
+  };
+
   /**
    * Called whenever a DataCloud's data has been updated.
    * @param {Object} event
@@ -1012,98 +1274,23 @@ export class SyncManager extends Singleton {
     //  it's a one-way change here and reflected in Lens
     const jsonStore = syncStore.toPureJSON();
 
-    // property names for lists on Namespace and SyncStore classes
-    const types = ['sshKeys', 'credentials', 'proxies', 'licenses'];
+    const types = [
+      'clusters',
+      'machines',
+      'sshKeys',
+      'credentials',
+      'proxies',
+      'licenses',
+    ];
 
-    types.forEach((type) => {
-      const newModels = []; // new models for SyncStore
-      const newEntities = []; // new entities for Catalog
-      const cloudResourceIds = {}; // map of string -> `true` for all resources of this type in this Cloud
-      let catUpdateCount = 0;
-      let storeUpdateCount = 0;
+    // ALL resources of each type across ALL __synced__ namespaces since we don't
+    //  know what changed
+    const resources = types.reduce((acc, type) => {
+      acc[type] = dataCloud.syncedNamespaces.flatMap((ns) => ns[type]);
+      return acc;
+    }, {});
 
-      // start by determining what is new and what has been updated
-      dataCloud.syncedNamespaces.forEach((ns) => {
-        ns[type].forEach((resource) => {
-          cloudResourceIds[resource.uid] = true;
-
-          const model = resource.toModel();
-          const catEntity = findEntity(this.catalogSource, model);
-
-          if (catEntity) {
-            // entity exists already in the Catalog: either same (no changes) or updated
-            if (
-              catEntity.metadata.resourceVersion === resource.resourceVersion
-            ) {
-              this.ipcMain.capture(
-                'log',
-                'SyncManager.onDataUpdated()',
-                `Skipping ${resource} update: No changes detected`
-              );
-            } else {
-              // something about that resource has changed since the last time we fetched it
-              this.ipcMain.capture(
-                'log',
-                'SyncManager.onDataUpdated()',
-                `Updating ${resource} in Catalog and SyncStore: resourceVersion ${logValue(
-                  catEntity.metadata.resourceVersion
-                )} -> ${logValue(resource.resourceVersion)}`
-              );
-
-              if (this.updateEntity(catEntity, model)) {
-                catUpdateCount++;
-              }
-
-              if (this.updateStoreModel(jsonStore, model)) {
-                storeUpdateCount++;
-              }
-            }
-          } else {
-            // new entity we have discovered: add to Catalog and Store
-            this.ipcMain.capture(
-              'log',
-              'SyncManager.onDataUpdated()',
-              `Adding new ${resource} to Catalog and SyncStore`
-            );
-            newEntities.push(this.mkEntity(model));
-            newModels.push(model);
-          }
-        });
-      });
-
-      // remove all entities from the Catalog and temp Store of this type that no longer exist
-      //  in the Cloud
-      const catDelCount = this.cleanCatalog(
-        dataCloud,
-        cloudResourceIds,
-        nsPropToKinds[type]
-      );
-      const storeDelCount = this.cleanStore(
-        dataCloud,
-        cloudResourceIds,
-        jsonStore[type]
-      );
-
-      // add all the new entities to the Catalog
-      newEntities.forEach((entity) => this.catalogSource.push(entity));
-
-      this.ipcMain.capture(
-        'info',
-        'SyncManager.onDataUpdated()',
-        `Have added=${newEntities.length}, updated=${catUpdateCount}, deleted=${catDelCount} ${type} Catalog entities for dataCloud=${dataCloud}`
-      );
-
-      // add all the new models to the temporary store
-      newModels.forEach((model) => jsonStore[type].push(model));
-
-      this.ipcMain.capture(
-        'info',
-        'SyncManager.onDataUpdated()',
-        `Will add=${newModels.length}, update=${storeUpdateCount}, delete=${storeDelCount} ${type} SyncStore models for dataCloud=${dataCloud}`
-      );
-    });
-
-    await this.updateClusters(dataCloud, jsonStore);
+    await this.updateCatalogEntities(dataCloud, resources, jsonStore);
 
     // save the models in the store
     Object.keys(jsonStore).forEach((key) => (syncStore[key] = jsonStore[key]));

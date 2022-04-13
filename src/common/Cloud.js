@@ -1180,22 +1180,30 @@ export class Cloud extends EventDispatcher {
 
   /**
    * Disconnects from the MCC server, killing the current session, if any.
+   * @param {boolean} [destroying] If true, various connection-related properties
+   *  are __not__ reset so as not to trigger any unnecessary change events because
+   *  the Cloud is being destroyed, not just disconnected.
    */
-  disconnect() {
-    if (this.connected) {
+  disconnect(destroying = false) {
+    // NOTE: if we're on the RENDERER side, we may appear connected but we won't
+    //  have a config, which we need in order to logout; let the Cloud instance
+    //  on MAIN do it
+    if (this.connected && this.config) {
       apiUtil.cloudLogout(this); // try but don't block on waiting for response
     }
 
-    this.config = null;
-    this.connectError = null;
-    this.connecting = false;
-    this.fetching = false;
-    this.loaded = false;
-    this.resetTokens();
+    if (!destroying) {
+      this.config = null;
+      this.connectError = null;
+      this.connecting = false;
+      this.fetching = false;
+      this.loaded = false;
+      this.resetTokens();
+    }
   }
 
   /** Called when this instance is being deleted/destroyed. */
   destroy() {
-    this.disconnect();
+    this.disconnect(true);
   }
 }

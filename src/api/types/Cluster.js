@@ -421,9 +421,9 @@ export class Cluster extends Node {
       // look for the first machine that has a license, and assume that's the one
       //  the cluster is ultimately using (because we assume all machines use the
       //  same license)
-      _license = [...this.controllers, ...this.workers].find(
-        (m) => !!m.license
-      )?.license;
+      _license =
+        [...this.controllers, ...this.workers].find((m) => !!m.license)
+          ?.license || null;
     }
   }
 

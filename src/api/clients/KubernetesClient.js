@@ -26,7 +26,10 @@ export class KubernetesClient {
     };
   }
 
-  request(url, { options = {}, expectedStatuses = [200], errorMessage }) {
+  request(
+    url,
+    { options = {}, expectedStatuses = [200], errorMessage, extractBodyMethod }
+  ) {
     return request(
       `${this.baseUrl}/${KubernetesClient.apiPrefix}/${url}`,
       {
@@ -37,7 +40,7 @@ export class KubernetesClient {
           ...((options && options.headers) || {}),
         },
       },
-      { expectedStatuses, errorMessage }
+      { expectedStatuses, errorMessage, extractBodyMethod }
     );
   }
 
@@ -47,16 +50,36 @@ export class KubernetesClient {
    * @param {Object} options
    * @param {string} options.namespaceName
    * @param {number} [options.limit] To limit the number of items fetched.
+   * @param {string} [options.resourceVersion] If specified, establishes a __watch__ on the
+   *  __collection__, from that version on (to get change notifications via long-poll).
+   *  NOTE: This is __not__ related to `options.resourceName`.
+   * @param {any} [options.requestOptions] Any remaining properties in the `options` object are
+   *  passed down to the raw request as node-fetch options.
    */
-  list(resourceType, { namespaceName, limit } = {}) {
+  list(
+    resourceType,
+    { namespaceName, limit, resourceVersion, ...requestOptions } = {}
+  ) {
     const url = {
       [apiResourceTypes.NAMESPACE]: resourceType,
       [apiResourceTypes.METAL_CREDENTIAL]: `${apiResourceTypes.NAMESPACE}/${namespaceName}/${resourceType}`,
       [apiResourceTypes.EVENT]: `${apiResourceTypes.NAMESPACE}/${namespaceName}/${resourceType}`,
     };
-    const paramStr = buildQueryString({ limit });
+
+    const paramStr = buildQueryString({
+      limit,
+      ...(resourceVersion ? { watch: 1, resourceVersion } : {}),
+    });
+
     return this.request(`${url[resourceType]}${paramStr}`, {
       errorMessage: strings.apiClient.error.failedToGet(resourceType),
+      extractBodyMethod: resourceVersion ? 'text' : 'json', // watches respond with multiple JSON documents
+      options: {
+        // TODO[PRODX-22469]: A timeout helps, but still, we never get content from the body.
+        //  We just get a timeout error waiting for body content.
+        // timeout: resourceVersion ? 30000 : 0, // milliseconds (0 -> Infinity)
+        ...requestOptions,
+      },
     });
   }
 

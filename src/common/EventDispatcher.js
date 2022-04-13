@@ -60,7 +60,7 @@ export class EventDispatcher {
 
     Object.defineProperties(this, {
       /**
-       * Adds an event listener to this Cloud instance.
+       * Adds an event listener to this instance.
        * @method addEventListener
        * @param {string} name Event name.
        * @param {(event: { name: string, target: any }, ...params: any[]) => void} handler Handler.
@@ -70,6 +70,10 @@ export class EventDispatcher {
       addEventListener: {
         enumerable: true,
         value(name, handler) {
+          if (!name || !handler) {
+            throw new Error('Event name and handler are required');
+          }
+
           _eventListeners[name] = _eventListeners[name] || [];
           if (!_eventListeners[name].find((h) => h === handler)) {
             _eventListeners[name].push(handler);
@@ -87,6 +91,10 @@ export class EventDispatcher {
       removeEventListener: {
         enumerable: true,
         value(name, handler) {
+          if (!name || !handler) {
+            throw new Error('Event name and handler are required');
+          }
+
           const idx =
             _eventListeners[name]?.findIndex((h) => h === handler) ?? -1;
           if (idx >= 0) {
@@ -99,29 +107,65 @@ export class EventDispatcher {
       },
 
       /**
-       * Dispatches an event to all listenders on this Cloud instance. If the
-       *  event is already scheduled, its parameters are updated with the new
-       *  ones given (even if none are given). This also serves as a way to
-       *  de-duplicate events if the same event is dispatched multiple times
-       *  in a row.
-       * @private
+       * Dispatches an event to all listenders on this instance. Unlike `sendEvent()`,
+       *  if the event is already scheduled (has already been dispatched once, but not
+       *  yet sent), __its parameters are updated with the new ones given__ (even if
+       *  none are given). This serves as a way to de-duplicate events if the same event
+       *  is dispatched multiple times in a row.
+       *
+       * NOTE: `params` will be __overwritten__ with subsequent params if the same
+       *  event is dispatched multiple times before actually being sent. This is
+       *  possible since events are not sent immediately. They are always sent in
+       *  a future execution frame.
+       *
        * @method dispatchEvent
        * @param {string} name Event name.
        * @param {Array} [params] Parameters to pass to each handler, if any.
+       * @see #sendEvent
        */
       dispatchEvent: {
         enumerable: false,
         value(name, ...params) {
+          if (!name) {
+            throw new Error('Event name is required');
+          }
+
           const event = _eventQueue.find((e) => e.name === name);
           if (event) {
             event.params = params;
-            // don't schedule dispatch in this case because we wouldn't already
+            // don't schedule dispatch in this case because we would have already
             //  scheduled it when the event was first added to the queue; we
             //  just haven't gotten to the next frame yet where we'll dispatch it
           } else {
             _eventQueue.push({ name, params });
             _scheduleDispatch();
           }
+        },
+      },
+
+      /**
+       * Sends an event to all listenders on this instance. Unlike `dispatchEvent()`,
+       *  __every single event is sent__ to all its listeners, each with its own
+       *  set of parameters.
+       *
+       * NOTE: Use this method carefully so as not to overwhelm listeners with a stream
+       *  of events. Use this method instead of `dispatchEvent()` only if it's necessary
+       *  for listeners to receive each set of parameters sent.
+       *
+       * @method sendEvent
+       * @param {string} name Event name.
+       * @param {Array} [params] Parameters to pass to each handler, if any.
+       * @see #dispatchEvent
+       */
+      sendEvent: {
+        enumerable: false,
+        value(name, ...params) {
+          if (!name) {
+            throw new Error('Event name is required');
+          }
+
+          _eventQueue.push({ name, params });
+          _scheduleDispatch();
         },
       },
 
