@@ -29,14 +29,20 @@ if (
   });
 }
 
+/**
+ * Attempts to extract the body of a response.
+ * @param {Object} response
+ * @param {string} extractMethod Method to call on the response.
+ * @returns {Promise<{ body?: any, error?: string }>} If successful, `{ body }`.
+ *  If fails, `{ error }`.
+ */
 async function tryExtractBody(response, extractMethod) {
-  let body = null;
   try {
-    body = await response[extractMethod]();
-  } catch (e) {
-    return { error: e };
+    const body = await response[extractMethod]();
+    return { body };
+  } catch (err) {
+    return { error: err.message };
   }
-  return { body };
 }
 
 /**
@@ -122,7 +128,7 @@ export function buildQueryString(params) {
 export async function request(
   url,
   requestOptions,
-  { expectedStatuses, extractBodyMethod = 'json', errorMessage } = {}
+  { expectedStatuses, errorMessage, extractBodyMethod = 'json' } = {}
 ) {
   let response = {};
 
@@ -139,9 +145,9 @@ export async function request(
   } catch (e) {
     return {
       expectedStatuses,
-      error: `${errorMessage || strings.netUtil.error.requestFailed(url)}: ${
-        e.message
-      }`,
+      error: `${
+        errorMessage || strings.netUtil.error.requestFailed(url)
+      } ${strings.netUtil.error.reason(e.message)}`,
     };
   }
 
@@ -155,7 +161,8 @@ export async function request(
       : !response.ok
   ) {
     if (extractBodyMethod) {
-      const { body } = await tryExtractBody(response, extractBodyMethod);
+      // see if the body has an error message in it that we can use; ignore extraction error, if any
+      const { body = {} } = await tryExtractBody(response, extractBodyMethod);
 
       let message =
         get(body, 'message', '') || get(body, 'error_description', '');
@@ -173,17 +180,19 @@ export async function request(
           response,
           expectedStatuses,
           error:
-            `${errorMessage || strings.netUtil.error.requestFailed(url)}. ` +
+            `${errorMessage || strings.netUtil.error.requestFailed(url)} ` +
             strings.netUtil.error.reason(message),
         };
       }
+      // else, fall back to generic message
     }
+    // else, fall back to generic message
 
     return {
       response,
       expectedStatuses,
       error:
-        `${errorMessage || strings.netUtil.error.requestFailed(url)}. ` +
+        `${errorMessage || strings.netUtil.error.requestFailed(url)} ` +
         (response.statusText
           ? strings.netUtil.error.serverResponse(response.statusText)
           : strings.netUtil.error.responseCode(response.status)),
@@ -197,7 +206,7 @@ export async function request(
       return {
         response,
         expectedStatuses,
-        error: strings.netUtil.error.invalidResponseData(url),
+        error: strings.netUtil.error.invalidResponseData(url, extracted.error),
       };
     }
     body = extracted.body;

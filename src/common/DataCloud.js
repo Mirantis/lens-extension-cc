@@ -1,6 +1,7 @@
 import * as rtv from 'rtvjs';
 import { Cloud, CLOUD_EVENTS } from './Cloud';
 import { filter } from 'lodash';
+import AbortController from 'abort-controller'; // TODO[PRODX-22469]: Remove package if we drop watches.
 import { cloudRequest, extractJwtPayload } from '../api/apiUtil';
 import { Namespace } from '../api/types/Namespace';
 import { Credential } from '../api/types/Credential';
@@ -11,13 +12,80 @@ import { Proxy } from '../api/types/Proxy';
 import { License } from '../api/types/License';
 import { logger, logValue } from '../util/logger';
 import { EventDispatcher } from './EventDispatcher';
-import { apiResourceTypes, apiCredentialTypes } from '../api/apiConstants';
+import {
+  apiResourceTypes,
+  apiCredentialTypes,
+  apiChangeTypes,
+} from '../api/apiConstants';
+
+// TODO[PRODX-22469]: Remove if we drop watches.
+/**
+ * @typedef {Object} ApiWatch
+ * @property {Cloud} cloud Cloud used to fetch the data.
+ * @property {string} resourceType API resource type from `apiResourceTypes` enum.
+ * @property {string} resourceVersion Version of the collection that was retrieved, from
+ *  which to start watching.
+ * @property {Namespace} [namespace] Defined only if resource type isn't NAMESPACE
+ * @property {{ [index: string]: any }} [args] Additional args used to fetch the data.
+ * @property {Function} [run] If the watch is active, reference to the runner. Called
+ *  once to initiate the watch, and runs forever until aborted.
+ * @property {AbortController} [controller] If the watch is active, the controller used
+ *  to abort the watch if necessary.
+ */
+
+// TODO[PRODX-22469]: Remove if we drop watches.
+/**
+ * Shape (Typeset) for a `watch` object returned by `_fetchCollection()`.
+ */
+const apiWatchTs = {
+  cloud: [rtv.CLASS_OBJECT, { ctor: Cloud }],
+  resourceType: [rtv.STRING, { exact: Object.values(apiResourceTypes) }],
+  resourceVersion: rtv.STRING,
+  namespace: [rtv.OPTIONAL, rtv.CLASS_OBJECT, { ctor: Namespace }],
+  run: [rtv.OPTIONAL, rtv.FUNCTION],
+  controller: [rtv.OPTIONAL, rtv.CLASS_OBJECT, { ctor: AbortController }],
+};
+
+// TODO[PRODX-22469]: Remove if we drop watches.
+/**
+ * Map of resource type to Resource class constructor.
+ * @type { [index: string]: function }
+ */
+const resourceConstructors = {
+  [apiResourceTypes.NAMESPACE]: Namespace,
+  [apiResourceTypes.MACHINE]: Machine,
+  [apiResourceTypes.CLUSTER]: Cluster,
+  [apiResourceTypes.PUBLIC_KEY]: SshKey,
+  [apiResourceTypes.RHEL_LICENSE]: License,
+  [apiResourceTypes.PROXY]: Proxy,
+  ...Object.values(apiCredentialTypes).reduce((acc, type) => {
+    acc[type] = Credential;
+    return acc;
+  }, {}),
+};
+
+// TODO[PRODX-22469]: Remove if we drop watches.
+/**
+ * Map of resource type to Namespace list property name.
+ * @type { [index: string]: string }
+ */
+const resourceToNamespaceProp = {
+  [apiResourceTypes.MACHINE]: 'machines',
+  [apiResourceTypes.CLUSTER]: 'clusters',
+  [apiResourceTypes.PUBLIC_KEY]: 'sshKeys',
+  [apiResourceTypes.RHEL_LICENSE]: 'licenses',
+  [apiResourceTypes.PROXY]: 'proxies',
+  ...Object.values(apiCredentialTypes).reduce((acc, type) => {
+    acc[type] = 'credentials';
+    return acc;
+  }, {}),
+};
 
 export const DATA_CLOUD_EVENTS = Object.freeze({
   /**
    * Initial data load (fetch) only, either starting or finished.
    *
-   * Expected signature: `({ name: string, target: DataCloud }) => void`
+   * Expected signature: `(event: { name: string, target: DataCloud }) => void`
    *
    * - `name`: event name
    */
@@ -27,38 +95,41 @@ export const DATA_CLOUD_EVENTS = Object.freeze({
    * Whenever new data is being fetched, or done fetching (even on the initial
    *  data load, which means there's overlap with the `LOADED` event).
    *
-   * Expected signature: `({ name: string, target: DataCloud }) => void`
-   *
-   * - `name`: event name
+   * Expected signature: `(event: { name: string, target: DataCloud }) => void`
    */
   FETCHING_CHANGE: 'fetchingChange',
 
   /**
    * When new data will be fetched.
    *
-   * Expected signature: `({ name: string, target: DataCloud }) => void`
-   *
-   * - `name`: event name
+   * Expected signature: `(event: { name: string, target: DataCloud }) => void`
    */
   FETCH_DATA: 'fetchData',
 
   /**
    * Whenever the `error` property changes.
    *
-   * Expected signature: `({ name: string, target: DataCloud }) => void`
-   *
-   * - `name`: event name
+   * Expected signature: `(event: { name: string, target: DataCloud }) => void`
    */
   ERROR_CHANGE: 'errorChange',
 
   /**
    * When any data-related property (e.g. `namespaces`) has been updated.
    *
-   * Expected signature: `({ name: string, target: DataCloud }) => void`
-   *
-   * - `name`: event name
+   * Expected signature: `(event: { name: string, target: DataCloud }) => void`
    */
   DATA_UPDATED: 'dataUpdated',
+
+  // TODO[PRODX-22469]: Remove if we drop watches.
+  /**
+   * When one or more API Resources fetched by this DataCloud has been updated
+   *  (added, modified, or deleted).
+   *
+   * Expected signature: `(event: { name: string, target: DataCloud }, info: { updates: Array<{ type: "ADDED"|"MODIFIED"|"DELETED", resource: Resource }> }) => void`
+   *
+   * - `info.updates`: List of changes to resources that have taken place.
+   */
+  RESOURCE_UPDATED: 'resourceUpdated',
 });
 
 /**
@@ -140,6 +211,8 @@ const _deserializeCollection = function (
     .filter((obj) => !!obj);
 };
 
+// TODO[PRODX-22469]: No need to return `watches` from any of the _fetch*() methods if we're dropping watches.
+
 /**
  * [ASYNC] Best-try to get all existing resources of a given type from the management cluster,
  *  for each namespace specified.
@@ -158,13 +231,26 @@ const _deserializeCollection = function (
  *      with `resourceType === apiResourceTypes.NAMESPACE`)
  * @param {Object} [params.args] Custom arguments to provide to the `args` param of `cloudRequest()`.
  *
- *  NOTE: `namespaceName` will be overridden by the namespace whose resources are being fetched.
+ *  NOTE: `namespaceName` arg, if specified, will be overwritten by the namespace whose resources
+ *   are being fetched.
  *
- * @returns {Promise<Object>} Never fails, always resolves in
- *  `{ resources: { [index: string]: Array<Resource> }, tokensRefreshed: boolean }`,
- *  where `resources` is a map of namespace name to list of `Resource`-based instances
- *  as returned by `create()`. If an error occurs trying to get an resourceType or deserialize
- *  it, it is ignored/skipped.
+ * @returns {Promise<{
+ *   resources: { [index: string]: Array<Resource> },
+ *   watches: Array<ApiWatch>,
+ *   tokensRefreshed: boolean
+ * }>} Always resolves, never fails.
+ *
+ *  - `resources` is a map of namespace name to list of `Resource`-based instances as returned
+ *      by `create()`. If an error occurs trying to get an resourceType or deserialize
+ *      it, it is ignored/skipped.
+ *  - `watches` is an array of details for launching subsequent Kube API watches to get notified
+ *      (via long-polls) of changes to resource collections accessed while retrieving the
+ *      `resources`. See https://kubernetes.io/docs/reference/using-api/api-concepts/#efficient-detection-of-changes
+ *      for more on the watch API. `namespace` is only defined if the `resourceType` is NOT
+ *      `apiResourceTypes.NAMESPACE`, and `resourceVersion` is defined if a collection version
+ *      was retrieved from the fetch request. Each object will match the `apiWatchTs` Typeset
+ *  - `tokensRefreshed` is true if the Cloud's API access tokens had to be refreshed while getting
+ *      the `resources`.
  *
  *  NOTE: If `resourceType === apiResourceTypes.NAMESPACE` (i.e. fetching namespaces themselves),
  *   `resources` is a map with a single key which is the `apiResourceTypes.NAMESPACE` type
@@ -193,7 +279,7 @@ const _fetchCollection = async function ({
         resourceType
       )}: Not available; cloud=${cloud}`
     );
-    return { resources: {}, tokensRefreshed: false };
+    return { resources: {}, watches: [], tokensRefreshed: false };
   }
 
   let tokensRefreshed = false;
@@ -227,21 +313,37 @@ const _fetchCollection = async function ({
     return {
       items,
       namespace,
+      resourceVersion: body?.metadata?.resourceVersion || null, // collection version
     };
   };
 
+  let watches = [];
   let results;
   if (resourceType === apiResourceTypes.NAMESPACE) {
+    watches.push({
+      cloud,
+      resourceType: apiResourceTypes.NAMESPACE,
+      args,
+    });
+
     const result = await cloudRequest({
       cloud,
       method: 'list',
       resourceType: apiResourceTypes.NAMESPACE,
       args,
     });
+
     results = [processResult(result)];
   } else {
     results = await Promise.all(
       namespaces.map(async (namespace) => {
+        watches.push({
+          cloud,
+          resourceType,
+          namespace,
+          args,
+        });
+
         const result = await cloudRequest({
           cloud,
           method: 'list',
@@ -260,18 +362,25 @@ const _fetchCollection = async function ({
   let resources;
   if (resourceType === apiResourceTypes.NAMESPACE) {
     resources = { [apiResourceTypes.NAMESPACE]: results[0].items };
+    watches[0].resourceVersion = results[0].resourceVersion;
   } else {
-    resources = results.reduce((acc, val) => {
+    resources = results.reduce((acc, result, idx) => {
       const {
         namespace: { name: nsName },
         items,
-      } = val;
+      } = result;
       acc[nsName] = items;
+      watches[idx].resourceVersion = result.resourceVersion;
       return acc;
     }, {});
   }
 
-  return { resources, tokensRefreshed };
+  // remove any watches that didn't get a resource version (which means there was likely
+  //  an error getting or parsing the results and we didn't get the collection, so we didn't
+  //  get a resource version to watch for changes)
+  watches = watches.filter((w) => !!w.resourceVersion);
+
+  return { resources, watches, tokensRefreshed };
 };
 
 /**
@@ -280,10 +389,14 @@ const _fetchCollection = async function ({
  * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
  *  if necessary.
  * @param {Array<Namespace>} namespaces List of namespaces.
- * @returns {Promise<Object>} Never fails, always resolves in
- *  `{ credentials: { [index: string]: Array<Credential|Object> }, tokensRefreshed: boolean }`,
- *  where `credentials` is a map of namespace name to credential (regardless of type).
- *  If there's an error trying to get any credential, it will be skipped/ignored.
+ * @returns {Promise<{
+ *   credentials: { [index: string]: Array<Credential|Object> },
+ *   watches: Array<ApiWatch>,
+ *   tokensRefreshed: boolean
+ * }>} Always resolves, never fails.
+ *
+ *  - `credentials` is a map of namespace name to credential (regardless of type).
+ *      If there's an error trying to get any credential, it will be skipped/ignored.
  */
 const _fetchCredentials = async function (cloud, namespaces) {
   const results = await Promise.all(
@@ -304,11 +417,17 @@ const _fetchCredentials = async function (cloud, namespaces) {
   // NOTE: _fetchCollection() ensures there are no error results; all items in
   //  `results` have the same shape
 
+  let watches = [];
   let tokensRefreshed = false;
   const credentials = results.reduce((acc, result) => {
-    const { resources, tokensRefreshed: refreshed } = result;
+    const {
+      resources,
+      watches: resultWatches,
+      tokensRefreshed: refreshed,
+    } = result;
 
     tokensRefreshed = tokensRefreshed || refreshed;
+    watches = [...watches, ...resultWatches];
 
     Object.keys(resources).forEach((nsName) => {
       const creds = resources[nsName];
@@ -322,7 +441,7 @@ const _fetchCredentials = async function (cloud, namespaces) {
     return acc;
   }, {});
 
-  return { credentials, tokensRefreshed };
+  return { credentials, watches, tokensRefreshed };
 };
 
 /**
@@ -331,19 +450,27 @@ const _fetchCredentials = async function (cloud, namespaces) {
  * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
  *  if necessary.
  * @param {Array<Namespace>} namespaces List of namespaces.
- * @returns {Promise<Object>} Never fails, always resolves in
- *  `{ licenses: { [index: string]: Array<License> }, tokensRefreshed: boolean }`
- *  where the licenses are mapped per namespace name. If an error occurs trying to get
- *  any license, it will be ignored/skipped.
+ * @returns {Promise<{
+ *   licenses: { [index: string]: Array<License> },
+ *   watches: Array<ApiWatch>,
+ *   tokensRefreshed: boolean
+ * }>} Always resolves, never fails.
+ *
+ *  - `licenses` are mapped per namespace name. If an error occurs trying to get
+ *      any license, it will be ignored/skipped.
  */
 const _fetchLicenses = async function (cloud, namespaces) {
-  const { resources: licenses, tokensRefreshed } = await _fetchCollection({
+  const {
+    resources: licenses,
+    watches,
+    tokensRefreshed,
+  } = await _fetchCollection({
     resourceType: apiResourceTypes.RHEL_LICENSE,
     cloud,
     namespaces,
     create: ({ data, namespace }) => new License({ data, namespace, cloud }),
   });
-  return { licenses, tokensRefreshed };
+  return { licenses, watches, tokensRefreshed };
 };
 
 /**
@@ -352,19 +479,27 @@ const _fetchLicenses = async function (cloud, namespaces) {
  * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
  *  if necessary.
  * @param {Array<Namespace>} namespaces List of namespaces.
- * @returns {Promise<Object>} Never fails, always resolves in
- *  `{ proxies: { [index: string]: Array<Proxy> }, tokensRefreshed: boolean }`
- *  where the proxies are mapped per namespace name. If an error occurs trying to get
- *  any proxy, it will be ignored/skipped.
+ * @returns {Promise<{
+ *   proxies: { [index: string]: Array<Proxy> },
+ *   watches: Array<ApiWatch>,
+ *   tokensRefreshed: boolean
+ * }>} Always resolves, never fails.
+ *
+ *  - `proxies` are mapped per namespace name. If an error occurs trying to get
+ *      any proxy, it will be ignored/skipped.
  */
 const _fetchProxies = async function (cloud, namespaces) {
-  const { resources: proxies, tokensRefreshed } = await _fetchCollection({
+  const {
+    resources: proxies,
+    watches,
+    tokensRefreshed,
+  } = await _fetchCollection({
     resourceType: apiResourceTypes.PROXY,
     cloud,
     namespaces,
     create: ({ data, namespace }) => new Proxy({ data, namespace, cloud }),
   });
-  return { proxies, tokensRefreshed };
+  return { proxies, watches, tokensRefreshed };
 };
 
 /**
@@ -373,13 +508,21 @@ const _fetchProxies = async function (cloud, namespaces) {
  * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
  *  if necessary.
  * @param {Array<Namespace>} namespaces List of namespaces.
- * @returns {Promise<Object>} Never fails, always resolves in
- *  `{ sshKeys: { [index: string]: Array<SshKey|Object> }, tokensRefreshed: boolean }`
- *  where the SSH keys are mapped per namespace name. If an error occurs trying
- *  to get any SSH key, it will be ignored/skipped.
+ * @returns {Promise<{
+ *   sshKeys: { [index: string]: Array<SshKey|Object> },
+ *   watches: Array<ApiWatch>,
+ *   tokensRefreshed: boolean
+ * }>} Always resolves, never fails.
+ *
+ *  - `sshKeys` are mapped per namespace name. If an error occurs trying
+ *      to get any SSH key, it will be ignored/skipped.
  */
 const _fetchSshKeys = async function (cloud, namespaces) {
-  const { resources: sshKeys, tokensRefreshed } = await _fetchCollection({
+  const {
+    resources: sshKeys,
+    watches,
+    tokensRefreshed,
+  } = await _fetchCollection({
     resourceType: apiResourceTypes.PUBLIC_KEY,
     cloud,
     namespaces,
@@ -387,7 +530,7 @@ const _fetchSshKeys = async function (cloud, namespaces) {
       return new SshKey({ data, namespace, cloud });
     },
   });
-  return { sshKeys, tokensRefreshed };
+  return { sshKeys, watches, tokensRefreshed };
 };
 
 /**
@@ -396,19 +539,27 @@ const _fetchSshKeys = async function (cloud, namespaces) {
  * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
  *  if necessary.
  * @param {Array<Namespace>} namespaces List of namespaces.
- * @returns {Promise<Object>} Never fails, always resolves in
- *  `{ machines: { [index: string]: Array<Machine> }, tokensRefreshed: boolean }`
- *  where the Machines are mapped per namespace name. If an error occurs trying to get
- *  any Machine, it will be ignored/skipped.
+ * @returns {Promise<{
+ *   machines: { [index: string]: Array<Machine> },
+ *   watches: Array<ApiWatch>,
+ *   tokensRefreshed: boolean
+ * }>} Always resolves, never fails.
+ *
+ *  - `machines` are mapped per namespace name. If an error occurs trying to get
+ *      any Machine, it will be ignored/skipped.
  */
 const _fetchMachines = async function (cloud, namespaces) {
-  const { resources: machines, tokensRefreshed } = await _fetchCollection({
+  const {
+    resources: machines,
+    watches,
+    tokensRefreshed,
+  } = await _fetchCollection({
     resourceType: apiResourceTypes.MACHINE,
     cloud,
     namespaces,
     create: ({ data, namespace }) => new Machine({ data, namespace, cloud }),
   });
-  return { machines, tokensRefreshed };
+  return { machines, watches, tokensRefreshed };
 };
 
 /**
@@ -421,13 +572,21 @@ const _fetchMachines = async function (cloud, namespaces) {
  *  NOTE: Each namespace is expected to already contain all known Credentials,
  *   SSH Keys, Proxies, Machines, and Licenses that this Cluster might reference.
  *
- * @returns {Promise<Object>} Never fails, always resolves in
- *  `{ clusters: { [index: string]: Array<Cluster|Object> }, tokensRefreshed: boolean }`
- *  where the clusters are mapped per namespace name. If an error occurs trying to get
- *  any cluster, it will be ignored/skipped.
+ * @returns {Promise<{
+ *   clusters: { [index: string]: Array<Cluster|Object> },
+ *   watches: Array<ApiWatch>,
+ *   tokensRefreshed: boolean
+ * }>} Always resolves, never fails.
+ *
+ *  - `clusters` are mapped per namespace name. If an error occurs trying to get
+ *      any cluster, it will be ignored/skipped.
  */
 const _fetchClusters = async function (cloud, namespaces) {
-  const { resources: clusters, tokensRefreshed } = await _fetchCollection({
+  const {
+    resources: clusters,
+    watches,
+    tokensRefreshed,
+  } = await _fetchCollection({
     resourceType: apiResourceTypes.CLUSTER,
     cloud,
     namespaces,
@@ -435,7 +594,7 @@ const _fetchClusters = async function (cloud, namespaces) {
       return new Cluster({ data, namespace, cloud });
     },
   });
-  return { clusters, tokensRefreshed };
+  return { clusters, watches, tokensRefreshed };
 };
 
 /**
@@ -453,6 +612,7 @@ const _fetchNamespaces = async function (cloud, preview = false) {
   //  what we're syncing
   const {
     resources: { [apiResourceTypes.NAMESPACE]: namespaces },
+    watches,
     tokensRefreshed,
   } = await _fetchCollection({
     resourceType: apiResourceTypes.NAMESPACE,
@@ -477,9 +637,14 @@ const _fetchNamespaces = async function (cloud, preview = false) {
       (ns) =>
         !ignoredNamespaces.includes(ns.name) && hasReadPermissions(ns.name)
     ),
+    watches,
     tokensRefreshed,
   };
 };
+
+//
+// DATACLOUD CLASS
+//
 
 /**
  * Performs scheduled and on-demand data fetching of a given Cloud.
@@ -499,6 +664,7 @@ export class DataCloud extends EventDispatcher {
 
     let _loaded = false; // true if we've fetched data at least once, successfully
     let _fetching = false; // anytime we're fetching new data
+    let _watches = [];
     let _namespaces = [];
     let _cloud = null; // starts null, but once set, can never be null/undefined again
     let _error = null;
@@ -574,7 +740,7 @@ export class DataCloud extends EventDispatcher {
         if (!_loaded && !!newValue) {
           _loaded = true;
           this.cloud.loaded = _loaded;
-          this.dispatchEvent(DATA_CLOUD_EVENTS.LOADED, this);
+          this.dispatchEvent(DATA_CLOUD_EVENTS.LOADED);
         }
       },
     });
@@ -592,7 +758,26 @@ export class DataCloud extends EventDispatcher {
         if (!!newValue !== _fetching) {
           _fetching = !!newValue;
           this.cloud.fetching = _fetching;
-          this.dispatchEvent(DATA_CLOUD_EVENTS.FETCHING_CHANGE, this);
+          this.dispatchEvent(DATA_CLOUD_EVENTS.FETCHING_CHANGE);
+        }
+      },
+    });
+
+    // TODO[PRODX-22469]: Remove if we drop watches.
+    /**
+     * @member {Array<ApiWatch>} watches List of active API watches if we're currently watching
+     *  API endpoints for changes; empty if we're doing full data fetches at a set interval.
+     */
+    Object.defineProperty(this, 'watches', {
+      enumerable: true,
+      get() {
+        return _watches;
+      },
+      set(newValue) {
+        if (newValue !== _watches) {
+          DEV_ENV &&
+            rtv.verify({ watches: newValue }, { watches: [[apiWatchTs]] });
+          _watches = newValue;
         }
       },
     });
@@ -619,7 +804,7 @@ export class DataCloud extends EventDispatcher {
               { namespaces: [[rtv.CLASS_OBJECT, { ctor: Namespace }]] }
             );
           _namespaces = newValue;
-          this.dispatchEvent(DATA_CLOUD_EVENTS.DATA_UPDATED, this);
+          this.dispatchEvent(DATA_CLOUD_EVENTS.DATA_UPDATED);
         }
       },
     });
@@ -636,7 +821,7 @@ export class DataCloud extends EventDispatcher {
       set(newValue) {
         if (newValue !== _error) {
           _error = newValue || null;
-          this.dispatchEvent(DATA_CLOUD_EVENTS.ERROR_CHANGE, this);
+          this.dispatchEvent(DATA_CLOUD_EVENTS.ERROR_CHANGE);
         }
       },
     });
@@ -677,16 +862,16 @@ export class DataCloud extends EventDispatcher {
     //  succession because of CloudStore updates or expired tokens that got refreshed
     this.addEventListener(DATA_CLOUD_EVENTS.FETCH_DATA, this.onFetchData);
 
-    // start fetching new data on a regular interval (i.e. don't just rely on
-    //  `cloud` properties changing to trigger a fetch) so we discover changes
-    //  in the Cloud (e.g. new clusters, namespaces removed, etc)
-    this.resetInterval();
-
-    // schedule the initial data load/fetch
-    this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA, this);
+    // schedule the initial data load/fetch, afterwhich we'll either start watching or polling
+    this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA);
   }
 
+  //
+  // CONVENIENCE GETTERS
+  //
+
   /**
+   * @readonly
    * @member {boolean} loading True if we're loading/fetching Cloud data for the __first__ time;
    *  false otherwise.
    * @see {@link DataCloud.fetching}
@@ -695,7 +880,26 @@ export class DataCloud extends EventDispatcher {
     return !this.loaded && this.fetching;
   }
 
+  // TODO[PRODX-22469]: Remove if we drop watches.
   /**
+   * @readonly
+   * @member {boolean} watching True if we're actively watching the API for changes; false
+   *  if we're only doing full data fetches at a set interval.
+   */
+  get watching() {
+    return this.watches.length > 0;
+  }
+
+  /**
+   * @readonly
+   * @member {boolean} polling True if polling interval is active.
+   */
+  get polling() {
+    return !!this._updateInterval;
+  }
+
+  /**
+   * @readonly
    * @member {Array<Namespace>} syncedNamespaces List of namespaces the Cloud is syncing;
    *  empty if none or the namespaces haven't been successfully fetched at least once yet.
    */
@@ -706,6 +910,7 @@ export class DataCloud extends EventDispatcher {
   }
 
   /**
+   * @readonly
    * @member {Array<Namespace>} ignoredNamespaces List of namespaces the Cloud is not syncing;
    *  empty if none or the namespaces haven't been successfully fetched at least once yet.
    */
@@ -715,25 +920,62 @@ export class DataCloud extends EventDispatcher {
     );
   }
 
-  /**
-   * Clears the data fetch interval if it's active, and optionally establishes a new
-   *  interval.
-   * @param {boolean} [restart] If true, a new interval is established. Either way,
-   *  the existing interval, if any, is stopped/cleared.
-   */
-  resetInterval(restart = true) {
-    if (this._updateInterval) {
-      clearInterval(this._updateInterval);
-      this._updateInterval = null;
-    }
+  //
+  // EVENT HANDLERS
+  //
 
-    if (restart) {
+  /** Called when the Cloud's sync-related properties have changed. */
+  onCloudSyncChange = () => {
+    if (!this.fetching) {
+      logger.log(
+        'DataCloud.onCloudSyncChange()',
+        `Cloud sync props have changed: Fetching new data now; dataCloud=${this}`
+      );
+      this.fetchNow(); // NOTE: fetching will implicitly cancel all watches, if any
+    }
+  };
+
+  /** Called when __this__ DataCloud should fetch new data from its Cloud. */
+  onFetchData = () => this.fetchData();
+
+  //
+  // METHODS
+  //
+
+  /**
+   * Starts the data fetch interval only if it isn't already active.
+   */
+  startInterval() {
+    if (!this.polling) {
       this._updateInterval = setInterval(() => {
         // NOTE: dispatch the event instead of calling fetchData() directly so that
         //  we don't duplicate an existing request to fetch the data if one has
         //  just been scheduled
-        this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA, this);
+        this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA);
       }, FETCH_INTERVAL);
+      logger.log('DataCloud.startInterval()', 'Polling interval started');
+    }
+  }
+
+  /**
+   * Clears the data fetch interval if it's active, and optionally establishes a new
+   *  interval.
+   * @param {boolean} [restart] If true (default), a new interval is established if one was
+   *  active. Either way, the existing interval, if any, is stopped/cleared.
+   * @param {boolean} [force] If true, a new interval is established even if one
+   *  was not active.
+   */
+  resetInterval(restart = true, force = false) {
+    let wasActive = false;
+    if (this.polling) {
+      wasActive = true;
+      clearInterval(this._updateInterval);
+      this._updateInterval = null;
+      logger.log('DataCloud.resetInterval()', 'Polling interval stopped');
+    }
+
+    if (restart && (wasActive || force)) {
+      this.startInterval();
     }
   }
 
@@ -747,31 +989,366 @@ export class DataCloud extends EventDispatcher {
     this.resetInterval(false);
   }
 
-  /** Called when the Cloud's sync-related properties have changed. */
-  onCloudSyncChange = () => {
-    if (!this.fetching) {
-      logger.log(
-        'DataCloud.onCloudSyncChange()',
-        `Cloud sync props have changed: Fetching new data now; dataCloud=${this}`
-      );
-      this.fetchNow();
-    }
-  };
-
   /**
    * Trigger an immediate data fetch outside the normal fetch interval, causing the
-   *  interval to be reset to X minutes after this fetch. Does nothing if currently
-   *  fetching data.
+   *  interval (if running) to be reset to X minutes after this fetch. Does nothing
+   *  if currently fetching data.
    */
   fetchNow() {
     if (!this.fetching) {
-      this.resetInterval();
-      this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA, this);
+      this.resetInterval(false); // we'll restart it after data has been fetched
+      this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA);
     }
   }
 
-  /** Called when __this__ DataCloud should fetch new data from its Cloud. */
-  onFetchData = () => this.fetchData();
+  // TODO[PRODX-22469]: Remove if we drop watches. Currently untested code because of body
+  //  extraction issue (see other related comments).
+  /**
+   * Generates a watch runner and controller for a given watch and runs it.
+   * @param {ApiWatch} watch Watch details.
+   */
+  watchCollection(watch) {
+    DEV_ENV && rtv.verify({ watch }, { watch: apiWatchTs });
+
+    watch.controller = new AbortController();
+
+    watch.run = async () => {
+      let polling = true;
+      let canceled = false;
+      watch.controller.signal.addEventListener('abort', () => {
+        polling = false;
+        canceled = true;
+      });
+
+      while (polling) {
+        const { body, error, status } = await cloudRequest({
+          cloud: watch.cloud,
+          method: 'list',
+          resourceType: watch.resourceType,
+          args: {
+            ...watch.args,
+            resourceVersion: watch.resourceVersion, // version implies watch on 'list' API
+            namespaceName: watch.namespace?.name,
+            signal: watch.controller.signal,
+          },
+        });
+
+        if (canceled) {
+          logger.log(
+            'DataCloud.watchCollection()',
+            `Watch canceled: resourceType=${logValue(
+              watch.resourceType
+            )}, namespace=${logValue(watch.namespace?.name)}`
+          );
+          return; // exit loop
+        }
+
+        if (error) {
+          if (status < 200 || status > 299) {
+            logger.warn(
+              'DataCloud.watchCollection()',
+              `Ignoring failed watch request: resourceType=${logValue(
+                watch.resourceType
+              )}, namespace=${logValue(
+                watch.namespace?.name
+              )}, status=${status}, error=${logValue(error)}`
+            );
+          }
+          // else, really ignore as it's likely a timeout waiting for a response; we'll just
+          //  loop around and make another watch request
+        } else {
+          // response of a watch is a string potentially containing multiple JSON documents,
+          //  separated by a newline if successful and something changed, or it's a single
+          //  JSON document describing an error
+          const docs = body.split('\n');
+
+          const changes = docs.map((doc) => {
+            try {
+              return JSON.parse(doc);
+            } catch (err) {
+              logger.warn(
+                'DataCloud.watchCollection()',
+                `Ignoring watch result doc due to parsing error: resourceType=${logValue(
+                  watch.resourceType
+                )}, namespace=${logValue(
+                  watch.namespace?.name
+                )}, error=${logValue(err.message)}`
+              );
+            }
+          });
+
+          if (
+            changes.length === 1 &&
+            changes[0].type === apiChangeTypes.ERROR
+          ) {
+            if (changes[0].object?.code === 410) {
+              // re-fetch ALL data (stopping all watches) as other watches will also begin expiring
+              //  (they typically aren't valid for more than 5 minutes because servers don't retain
+              //  change history from a given `resourceVersion` for more than that duration)
+              logger.info(
+                'DataCloud.watchCollection()',
+                `At least one watch has expired: Scheduling full data fetch; resourceType=${logValue(
+                  watch.resourceType
+                )}, namespace=${logValue(watch.namespace?.name)}`
+              );
+              this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA);
+            }
+            return; // exit loop
+          }
+
+          if (
+            changes.length > 0 &&
+            watch.resourceType === apiResourceTypes.NAMESPACE
+          ) {
+            // NOTE: probably easier to just stop all watches and redo full fetch because
+            //  this could affect what we fetch if it was synced and now gone, or should
+            //  be ignored, etc., and namespaces hopefully don't come/go/change nearly as
+            //  often as the other types might
+            logger.log(
+              'DataCloud.watchCollection()',
+              'Detected changes to at least one namespace: Scheduling full data fetch'
+            );
+            this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA);
+            return; // exit loop
+          }
+
+          const updates = [];
+          changes.forEach((change) => {
+            switch (watch.resourceType) {
+              case apiResourceTypes.CLUSTER:
+              case apiResourceTypes.MACHINE:
+              case apiResourceTypes.PUBLIC_KEY:
+              case apiResourceTypes.RHEL_LICENSE:
+              case apiResourceTypes.PROXY: {
+                const ResourceConstructor =
+                  resourceConstructors[watch.resourcetype];
+                const existingIdx = watch.namespace.proxies.findIndex(
+                  (proxy) => proxy.name === change.object.metadata.name
+                );
+                if (
+                  change.type === apiChangeTypes.MODIFIED ||
+                  change.type === apiChangeTypes.DELETED
+                ) {
+                  // either way, we need to remove it
+                  if (existingIdx >= 0) {
+                    // just in case, check that we did find it
+                    logger.log(
+                      'DataCloud.watchCollection()',
+                      `Removing ${change.type} ${watch.resourceType} resource from namespace=${watch.namespace}`
+                    );
+                    const [resource] = watch.namespace.proxies.splice(
+                      existingIdx,
+                      1
+                    );
+
+                    if (change.type === apiChangeTypes.DELETED) {
+                      updates.push({
+                        type: change.type,
+                        resource,
+                      });
+                    }
+
+                    if (watch.resourceType === apiResourceTypes.MACHINE) {
+                      // remove from cluster also, if we can find it
+                      const cluster = watch.namespace.clusters.find(
+                        (c) => c.name === resource.clusterName
+                      );
+                      if (cluster) {
+                        const list = resource.isController
+                          ? 'controllers'
+                          : 'workers';
+                        const machineIdx = cluster[list].findIndex(
+                          (m) => m.name === resource.name
+                        );
+                        if (machineIdx >= 0) {
+                          cluster[list].splice(machineIdx, 1);
+                        }
+                      }
+                    }
+                  }
+                }
+
+                if (
+                  change.type === apiChangeTypes.ADDED ||
+                  change.type === apiChangeTypes.MODIFIED
+                ) {
+                  // add new or replace the old we just removed
+                  const resource = new ResourceConstructor({
+                    data: change.object,
+                    namespace: watch.namespace,
+                    cloud: watch.cloud,
+                  });
+                  const prop = resourceToNamespaceProp[watch.resourceType];
+                  logger.log(
+                    'DataCloud.watchCollection()',
+                    `Inserting ${change.type} ${watch.resourceType} resource into namespace=${watch.namespace}`
+                  );
+                  watch.namespace[prop].push(resource);
+
+                  updates.push({
+                    type: change.type,
+                    resource,
+                  });
+
+                  if (watch.resourceType === apiResourceTypes.MACHINE) {
+                    // add to cluster also, if we can find it
+                    const cluster = watch.namespace.clusters.find(
+                      (c) => c.name === resource.clusterName
+                    );
+                    if (cluster) {
+                      const list = resource.isController
+                        ? 'controllers'
+                        : 'workers';
+                      cluster[list].push(resource);
+                    }
+                  }
+                }
+
+                break;
+              }
+
+              default: // must be a credential type
+                if (
+                  !Object.values(apiCredentialTypes).includes(
+                    watch.resourceType
+                  )
+                ) {
+                  throw new Error(
+                    `Unknown watch resourceType=${logValue(
+                      watch.resourceType
+                    )}; expected a credential type`
+                  );
+                }
+
+                break;
+            }
+          });
+
+          if (updates.length > 0) {
+            logger.log(
+              'DataCloud.watchCollection()',
+              `Sending resource update event for ${updates.length} resources`
+            );
+
+            // NOTE: __send__, not dispatch, to make sure listeners receive all updates across
+            //  a series of events
+            this.sendEvent(DATA_CLOUD_EVENTS.RESOURCE_UPDATED, { updates });
+          }
+        }
+      }
+    };
+
+    watch.run(); // don't await
+  }
+
+  // TODO[PRODX-22469]: Remove if we drop watches.
+  /**
+   * Starts watching the API for changes.
+   *
+   * Does nothing if already watching the API for changes.
+   *
+   * @param {Array<Watch>} newWatches
+   */
+  startWatching(newWatches) {
+    DEV_ENV && rtv.verify({ newWatches }, { newWatches: [[apiWatchTs]] });
+
+    if (this.watching) {
+      logger.warn(
+        'DataCloud.startWatching()',
+        'Already watching API for changes: Ignoring new watches'
+      );
+      return;
+    }
+
+    // NOTE: it's the same for every namespace, so we're expecting a set number of watches
+    //  on a set of API resources per __synced__ namespace, and then one additional watch
+    //  for the NAMESPACE resource (to watch for new/deleted/updated namespaces); if we
+    //  don't have this, then something is wrong, and we bail
+    const watchesByType = {
+      [apiResourceTypes.NAMESPACE]: [],
+      [apiResourceTypes.CLUSTER]: [],
+      [apiResourceTypes.MACHINE]: [],
+      [apiResourceTypes.PUBLIC_KEY]: [],
+      [apiResourceTypes.RHEL_LICENSE]: [],
+      [apiResourceTypes.PROXY]: [],
+      ...Object.values(apiCredentialTypes).reduce((acc, type) => {
+        acc[type] = [];
+        return acc;
+      }, {}),
+    };
+
+    newWatches.forEach((watch) => {
+      watchesByType[watch.resourceType].push(watch);
+    });
+
+    const valid = Object.entries(watchesByType).every(
+      ([resourceType, watches]) => {
+        if (resourceType === apiResourceTypes.NAMESPACE) {
+          // there must always be exactly 1 watch for the NAMESPACE resource because everyone
+          //  should have permission to list the namespaces they have access to, and namespaces
+          //  are a singular, mgmt cluster-wide resource type
+          if (watches.length !== 1) {
+            logger.error(
+              'DataCloud.startWatching()',
+              `Unable to start watching: Incorrect number of watches for resourceType=${logValue(
+                resourceType
+              )}, expected=1, watches=${watches.length}`
+            );
+            return false; // break: invalid
+          }
+        }
+        // else, we can't have any expectations about the other watches because we don't know
+        //  the user's permissions: any APIs they don't have access to will be missing a watch
+
+        return watches.every((watch) => {
+          if (watch.run) {
+            logger.error(
+              'DataCloud.startWatching()',
+              `Unable to start watching: At least one watch is already running; resourceType=${logValue(
+                resourceType
+              )}, namespace=${logValue(watch.namespace?.name)}`
+            );
+            return false; // break: invalid
+          }
+
+          return true; // valid
+        });
+      }
+    );
+
+    if (valid && newWatches.length > 0) {
+      logger.log(
+        'DataCloud.startWatching()',
+        'Starting API watches for efficient change detection'
+      );
+
+      newWatches.forEach((watch) => {
+        this.watchCollection(watch);
+      });
+
+      this.watches = newWatches;
+    }
+  }
+
+  // TODO[PRODX-22469]: Remove if we drop watches.
+  /**
+   * Stops all watches, if any, and forcefully resets/restarts the full data fetch interval.
+   *
+   * Does nothing if there are no watches.
+   */
+  stopWatching() {
+    if (!this.watching) {
+      return;
+    }
+
+    logger.log('DataCloud.stopWatching()', 'Canceling all active watches');
+
+    this.watches.forEach((watch) => {
+      watch.controller.abort();
+    });
+
+    this.watches = [];
+  }
 
   /**
    * Fetches new data from the `cloud`. Add event listeners to get notified when
@@ -805,8 +1382,13 @@ export class DataCloud extends EventDispatcher {
       return;
     }
 
+    logger.log(
+      'DataCloud.fetchData()',
+      `Fetching full data for dataCloud=${this}`
+    );
     this.fetching = true;
-    logger.log('DataCloud.fetchData()', `Fetching data for dataCloud=${this}`);
+
+    this.stopWatching();
 
     // NOTE: we always fetch ALL namespaces (which should be quite cheap to do)
     //  since we need to discover new ones, and know when existing ones are removed
@@ -869,11 +1451,40 @@ export class DataCloud extends EventDispatcher {
       fetchedNamespaces.forEach((namespace) => {
         namespace.clusters = clusterResults.clusters[namespace.name] || [];
       });
+
+      // TODO[PRODX-22469]: Disabling watches until a solution can be found to the behavior
+      //  where a watch request's response comes back almost immediately as status 200, but
+      //  then attempting to extract the body with `response.text()` in netUtils.js#tryExtractBody()
+      //  NEVER resolves. It just hangs.
+      // I thought this might be similar to this issue: https://github.com/node-fetch/node-fetch/issues/665
+      // And solution (for node-fetch 2.x): https://github.com/node-fetch/node-fetch#custom-highwatermark
+      // But, alas, that didn't help at all. No clue what's going on. Works great in Postman,
+      //  so clearly, the issue is with how we're handling these types of long-poll requests
+      //  in netUtil.js#request(), but not sure what to do.
+      //
+      // this.startWatching([
+      //   ...nsResults.watches,
+      //   ...credResults.watches,
+      //   ...keyResults.watches,
+      //   ...proxyResults.watches,
+      //   ...licenseResults.watches,
+      //   ...machineResults.watches,
+      //   ...clusterResults.watches,
+      // ]);
+      //
+      // if (this.watching) {
+      //   this.resetInterval(false);
+      // } else {
+      //   logger.info('DataCloud.fetchData()', 'Unable to start watching for changes: Falling back to polling');
+      //   this.startInterval(); // noop if already running
+      // }
+      this.startInterval(); // noop if already running
     } else {
       logger.log(
         'DataCloud.fetchData()',
         `Preview only: Skipping all but namespace fetch; dataCloud=${this}`
       );
+      this.startInterval(); // noop if already running
     }
 
     // update the synced vs ignored namespace lists of the Cloud
@@ -896,7 +1507,7 @@ export class DataCloud extends EventDispatcher {
 
     logger.log(
       'DataCloud.fetchData()',
-      `Data fetch complete; dataCloud=${this}`
+      `Full data fetch complete; dataCloud=${this}`
     );
     this.fetching = false;
   }
@@ -913,7 +1524,7 @@ export class DataCloud extends EventDispatcher {
       const handler = () => {
         if (this.cloud.connected) {
           this.cloud.removeEventListener(CLOUD_EVENTS.STATUS_CHANGE, handler);
-          this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA, this);
+          this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA);
         }
       };
       this.cloud.addEventListener(CLOUD_EVENTS.STATUS_CHANGE, handler);
@@ -930,7 +1541,10 @@ export class DataCloud extends EventDispatcher {
   toString() {
     return `{DataCloud loaded: ${this.loaded}, fetching: ${
       this.fetching
-    }, preview: ${this.preview}, namespaces: ${
+    }, watching: ${
+      // TODO[PRODX-22469]: Remove if we drop watches.
+      this.watching
+    }, polling: ${this.polling}, preview: ${this.preview}, namespaces: ${
       this.loaded ? this.namespaces.length : '-1'
     }, error: ${this.error}, cloud: ${this.cloud}}`;
   }

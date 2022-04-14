@@ -60,7 +60,10 @@ export class ResourceClient {
     };
   }
 
-  request(url, { options = {}, expectedStatuses = [200], errorMessage }) {
+  request(
+    url,
+    { options = {}, expectedStatuses = [200], errorMessage, extractBodyMethod }
+  ) {
     return request(
       `${this.baseUrl}/${this.apiPrefix}/${url}`,
       {
@@ -71,7 +74,7 @@ export class ResourceClient {
           ...((options && options.headers) || {}),
         },
       },
-      { expectedStatuses, errorMessage }
+      { expectedStatuses, errorMessage, extractBodyMethod }
     );
   }
 
@@ -90,16 +93,31 @@ export class ResourceClient {
    * @param {Object} options
    * @param {string} options.namespaceName
    * @param {number} [options.limit] To limit the number of items fetched.
+   * @param {string} [options.resourceVersion] If specified, establishes a __watch__ on the
+   *  __collection__, from that version on (to get change notifications via long-poll).
+   *  NOTE: This is __not__ related to `options.resourceName`.
    * @param {string} [options.resourceName] Name of the resource to scope a sub-resource query.
    *  Required in order to use `subResourceType`.
    * @param {string} [options.subResourceType] Sub-resource type, scoped to `resourceName`.
    *  Ignored if `resourceName` is falsy. Value from the `apiResourceTypes` enum.
+   * @param {any} [options.requestOptions] Any remaining properties in the `options` object are
+   *  passed down to the raw request as node-fetch options.
    */
   list(
     resourceType,
-    { namespaceName, limit, resourceName, subResourceType } = {}
+    {
+      namespaceName,
+      limit,
+      resourceVersion,
+      resourceName,
+      subResourceType,
+      ...requestOptions
+    } = {}
   ) {
-    const paramStr = buildQueryString({ limit });
+    const paramStr = buildQueryString({
+      limit,
+      ...(resourceVersion ? { watch: 1, resourceVersion } : {}),
+    });
 
     let url = `${namespacePrefix(namespaceName)}${resourceType}`;
     if (resourceName && subResourceType) {
@@ -109,6 +127,13 @@ export class ResourceClient {
 
     return this.request(url, {
       errorMessage: strings.apiClient.error.failedToGetList(resourceType),
+      extractBodyMethod: resourceVersion ? 'text' : 'json', // watches respond with multiple JSON documents
+      options: {
+        // TODO[PRODX-22469]: A timeout helps, but still, we never get content from the body.
+        //  We just get a timeout error waiting for body content.
+        // timeout: resourceVersion ? 30000 : 0, // milliseconds (0 -> Infinity)
+        ...requestOptions,
+      },
     });
   }
 

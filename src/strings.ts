@@ -117,9 +117,12 @@ export const apiUtil: Dict = {
 
 export const netUtil: Dict = {
   error: {
-    requestFailed: (url = 'unknown') => `Network request to ${url} failed`,
-    invalidResponseData: (url = 'unknown') =>
-      `Extracting response data for ${url} failed: Invalid response format.`,
+    requestFailed: (url = 'unknown', error) =>
+      `Network request to ${url} failed.${error ? ` ${error}` : ''}`,
+    invalidResponseData: (url = 'unknown', error) =>
+      `Failed to extract response data for ${url}: ${
+        error || 'Invalid response format.'
+      }`,
     reason: (message = '') => `Reason: "${message}"`,
     serverResponse: (statusText = '') => `Server response: "${statusText}".`,
     responseCode: (status = -1) => `Server response code: ${status}`,
