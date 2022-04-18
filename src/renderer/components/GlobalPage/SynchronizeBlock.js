@@ -13,6 +13,7 @@ import {
   makeCheckboxesInitialState,
 } from '../hooks/useCheckboxes';
 import { sortNamespaces } from '../EnhancedTable/tableUtil';
+import { WarningIcon } from '../WarningIcon';
 
 const { Button, Icon } = Renderer.Component;
 
@@ -53,6 +54,8 @@ const ProjectsBody = styled.div(() => ({
   paddingLeft: layout.grid * 9.5,
   paddingRight: layout.grid * 9.5,
   paddingBottom: layout.grid * 1.5,
+  overflow: 'auto',
+  maxHeight: `calc(100vh - ${layout.grid * 148}px)`,
 }));
 
 const ProjectsList = styled.ul(() => ({
@@ -63,6 +66,8 @@ const ProjectsList = styled.ul(() => ({
 }));
 
 const SynchronizeProjectsButtonWrapper = styled.div(() => ({
+  display: 'flex',
+  alignItems: 'center',
   marginTop: layout.grid * 4,
 }));
 
@@ -81,11 +86,22 @@ const SortButton = styled.button`
     isRotated ? 'rotate(180deg)' : 'rotate(0deg)'};
 `;
 
+const Warning = styled.div`
+  display: flex;
+  align-items: center;
+  margin-left: ${layout.pad * 2.5}px;
+`;
+
+const WarningMessage = styled.p`
+  margin-left: ${layout.pad / 2}px;
+`;
+
 export const SynchronizeBlock = ({ dataCloud, onAdd }) => {
   const [syncAll, setSyncAll] = useState(false);
   const { setCheckboxValue, getCheckboxValue, getSyncedData } = useCheckboxes(
     makeCheckboxesInitialState(dataCloud)
   );
+  const { syncedNamespaces, ignoredNamespaces } = getSyncedData();
 
   // @type {object} sorted object of projects
   const [projectsList, setProjectsList] = useState([
@@ -115,7 +131,6 @@ export const SynchronizeBlock = ({ dataCloud, onAdd }) => {
 
   const onSynchronize = () => {
     const { cloud } = dataCloud;
-    const { syncedNamespaces, ignoredNamespaces } = getSyncedData();
 
     cloud.syncAll = syncAll;
     cloud.updateSyncedProjects(syncedNamespaces, ignoredNamespaces);
@@ -175,6 +190,12 @@ export const SynchronizeBlock = ({ dataCloud, onAdd }) => {
           onClick={onSynchronize}
           disabled={!projectsList.length}
         />
+        {(syncedNamespaces.length > 10 || syncAll) && (
+          <Warning>
+            <WarningIcon size={22} fill="var(--colorWarning)" />
+            <WarningMessage>{synchronizeBlock.warning()}</WarningMessage>
+          </Warning>
+        )}
       </SynchronizeProjectsButtonWrapper>
     </Content>
   );
