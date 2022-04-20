@@ -953,7 +953,10 @@ export class DataCloud extends EventDispatcher {
         //  just been scheduled
         this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA);
       }, FETCH_INTERVAL);
-      logger.log('DataCloud.startInterval()', 'Polling interval started');
+      logger.log(
+        'DataCloud.startInterval()',
+        `Polling interval started; dataCloud=${logValue(this.cloud.cloudUrl)}`
+      );
     }
   }
 
@@ -971,7 +974,10 @@ export class DataCloud extends EventDispatcher {
       wasActive = true;
       clearInterval(this._updateInterval);
       this._updateInterval = null;
-      logger.log('DataCloud.resetInterval()', 'Polling interval stopped');
+      logger.log(
+        'DataCloud.resetInterval()',
+        `Polling interval stopped; dataCloud=${logValue(this.cloud.cloudUrl)}`
+      );
     }
 
     if (restart && (wasActive || force)) {
@@ -1038,7 +1044,9 @@ export class DataCloud extends EventDispatcher {
             'DataCloud.watchCollection()',
             `Watch canceled: resourceType=${logValue(
               watch.resourceType
-            )}, namespace=${logValue(watch.namespace?.name)}`
+            )}, namespace=${logValue(
+              watch.namespace?.name
+            )}; dataCloud=${logValue(this.cloud.cloudUrl)}`
           );
           return; // exit loop
         }
@@ -1051,7 +1059,9 @@ export class DataCloud extends EventDispatcher {
                 watch.resourceType
               )}, namespace=${logValue(
                 watch.namespace?.name
-              )}, status=${status}, error=${logValue(error)}`
+              )}, status=${status}, error=${logValue(
+                error
+              )}; dataCloud=${logValue(this.cloud.cloudUrl)}`
             );
           }
           // else, really ignore as it's likely a timeout waiting for a response; we'll just
@@ -1072,7 +1082,9 @@ export class DataCloud extends EventDispatcher {
                   watch.resourceType
                 )}, namespace=${logValue(
                   watch.namespace?.name
-                )}, error=${logValue(err.message)}`
+                )}, error=${logValue(err.message)}; dataCloud=${logValue(
+                  this.cloud.cloudUrl
+                )}`
               );
             }
           });
@@ -1089,7 +1101,9 @@ export class DataCloud extends EventDispatcher {
                 'DataCloud.watchCollection()',
                 `At least one watch has expired: Scheduling full data fetch; resourceType=${logValue(
                   watch.resourceType
-                )}, namespace=${logValue(watch.namespace?.name)}`
+                )}, namespace=${logValue(
+                  watch.namespace?.name
+                )}; dataCloud=${logValue(this.cloud.cloudUrl)}`
               );
               this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA);
             }
@@ -1106,7 +1120,9 @@ export class DataCloud extends EventDispatcher {
             //  often as the other types might
             logger.log(
               'DataCloud.watchCollection()',
-              'Detected changes to at least one namespace: Scheduling full data fetch'
+              `Detected changes to at least one namespace: Scheduling full data fetch; dataCloud=${logValue(
+                this.cloud.cloudUrl
+              )}`
             );
             this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA);
             return; // exit loop
@@ -1134,7 +1150,11 @@ export class DataCloud extends EventDispatcher {
                     // just in case, check that we did find it
                     logger.log(
                       'DataCloud.watchCollection()',
-                      `Removing ${change.type} ${watch.resourceType} resource from namespace=${watch.namespace}`
+                      `Removing ${change.type} ${
+                        watch.resourceType
+                      } resource from namespace=${
+                        watch.namespace
+                      }; dataCloud=${logValue(this.cloud.cloudUrl)}`
                     );
                     const [resource] = watch.namespace.proxies.splice(
                       existingIdx,
@@ -1181,7 +1201,11 @@ export class DataCloud extends EventDispatcher {
                   const prop = resourceToNamespaceProp[watch.resourceType];
                   logger.log(
                     'DataCloud.watchCollection()',
-                    `Inserting ${change.type} ${watch.resourceType} resource into namespace=${watch.namespace}`
+                    `Inserting ${change.type} ${
+                      watch.resourceType
+                    } resource into namespace=${
+                      watch.namespace
+                    }; dataCloud=${logValue(this.cloud.cloudUrl)}`
                   );
                   watch.namespace[prop].push(resource);
 
@@ -1227,7 +1251,9 @@ export class DataCloud extends EventDispatcher {
           if (updates.length > 0) {
             logger.log(
               'DataCloud.watchCollection()',
-              `Sending resource update event for ${updates.length} resources`
+              `Sending resource update event for ${
+                updates.length
+              } resources; dataCloud=${logValue(this.cloud.cloudUrl)}`
             );
 
             // NOTE: __send__, not dispatch, to make sure listeners receive all updates across
@@ -1255,7 +1281,9 @@ export class DataCloud extends EventDispatcher {
     if (this.watching) {
       logger.warn(
         'DataCloud.startWatching()',
-        'Already watching API for changes: Ignoring new watches'
+        `Already watching API for changes: Ignoring new watches; dataCloud=${logValue(
+          this.cloud.cloudUrl
+        )}`
       );
       return;
     }
@@ -1292,7 +1320,9 @@ export class DataCloud extends EventDispatcher {
               'DataCloud.startWatching()',
               `Unable to start watching: Incorrect number of watches for resourceType=${logValue(
                 resourceType
-              )}, expected=1, watches=${watches.length}`
+              )}, expected=1, watches=${watches.length}; dataCloud=${logValue(
+                this.cloud.cloudUrl
+              )}`
             );
             return false; // break: invalid
           }
@@ -1306,7 +1336,9 @@ export class DataCloud extends EventDispatcher {
               'DataCloud.startWatching()',
               `Unable to start watching: At least one watch is already running; resourceType=${logValue(
                 resourceType
-              )}, namespace=${logValue(watch.namespace?.name)}`
+              )}, namespace=${logValue(
+                watch.namespace?.name
+              )}; dataCloud=${logValue(this.cloud.cloudUrl)}`
             );
             return false; // break: invalid
           }
@@ -1319,7 +1351,9 @@ export class DataCloud extends EventDispatcher {
     if (valid && newWatches.length > 0) {
       logger.log(
         'DataCloud.startWatching()',
-        'Starting API watches for efficient change detection'
+        `Starting API watches for efficient change detection; dataCloud=${logValue(
+          this.cloud.cloudUrl
+        )}`
       );
 
       newWatches.forEach((watch) => {
@@ -1341,7 +1375,10 @@ export class DataCloud extends EventDispatcher {
       return;
     }
 
-    logger.log('DataCloud.stopWatching()', 'Canceling all active watches');
+    logger.log(
+      'DataCloud.stopWatching()',
+      `Canceling all active watches; dataCloud=${logValue(this.cloud.cloudUrl)}`
+    );
 
     this.watches.forEach((watch) => {
       watch.controller.abort();
