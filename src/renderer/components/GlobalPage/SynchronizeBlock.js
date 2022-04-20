@@ -8,12 +8,12 @@ import {
 } from '../TriStateCheckbox/TriStateCheckbox';
 import { layout } from '../styles';
 import { synchronizeBlock } from '../../../strings';
+import { projectsCountBeforeWarning } from '../../../constants';
 import {
   useCheckboxes,
   makeCheckboxesInitialState,
 } from '../hooks/useCheckboxes';
 import { sortNamespaces } from '../EnhancedTable/tableUtil';
-import { WarningIcon } from '../WarningIcon';
 
 const { Button, Icon } = Renderer.Component;
 
@@ -95,6 +95,10 @@ const Warning = styled.div`
 const WarningMessage = styled.p`
   margin-left: ${layout.pad / 2}px;
 `;
+
+const warningIconStyle = {
+  color: 'var(--colorWarning)',
+};
 
 export const SynchronizeBlock = ({ dataCloud, onAdd }) => {
   const [syncAll, setSyncAll] = useState(false);
@@ -190,9 +194,9 @@ export const SynchronizeBlock = ({ dataCloud, onAdd }) => {
           onClick={onSynchronize}
           disabled={!projectsList.length}
         />
-        {(syncedNamespaces.length > 10 || syncAll) && (
+        {(syncedNamespaces.length >= projectsCountBeforeWarning || syncAll) && (
           <Warning>
-            <WarningIcon size={22} fill="var(--colorWarning)" />
+            <Icon material="warning_amber" style={warningIconStyle} />
             <WarningMessage>{synchronizeBlock.warning()}</WarningMessage>
           </Warning>
         )}

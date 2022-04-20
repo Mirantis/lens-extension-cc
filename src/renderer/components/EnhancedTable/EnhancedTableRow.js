@@ -20,9 +20,9 @@ import { sortNamespaces } from './tableUtil';
 import { IpcRenderer } from '../../IpcRenderer';
 import * as consts from '../../../constants';
 import { CloudNamespace } from '../../../common/CloudNamespace';
-import { WarningIcon } from '../WarningIcon';
 
-const { Icon, MenuItem, MenuActions, ConfirmDialog } = Renderer.Component;
+const { Icon, MenuItem, MenuActions, ConfirmDialog, Tooltip } =
+  Renderer.Component;
 
 const EnhRowsWrapper = styled.div`
   display: contents;
@@ -86,50 +86,26 @@ const EnhMore = styled.div`
 const Warning = styled.div`
   position: relative;
   margin-left: ${layout.pad * 2.5}px;
-
-  &:hover {
-    div {
-      opacity: 1;
-      visibility: visible;
-    }
-  }
-`;
-
-const WarningTooltip = styled.div`
-  content: '';
-  position: absolute;
-  top: 50%;
-  right: -${layout.grid * 5}px;
-  display: block;
-  min-width: ${layout.grid * 62.5}px;
-  line-height: 1.3;
-  padding: ${layout.grid * 2.5}px;
-  background: var(--tooltipBackground);
-  border-radius: ${layout.grid * 2.5}px;
-  transform: translate(100%, -50%);
-  box-sizing: content-box;
   opacity: 0;
   visibility: hidden;
+  pointer-events: none;
 
-  &::before {
-    content: '';
-    display: block;
-    width: 0;
-    height: 0;
-    border-style: solid;
-    border-width: ${layout.grid * 2.5}px ${layout.grid * 2.5}px
-      ${layout.grid * 2.5}px 0;
-    border-color: transparent var(--tooltipBackground) transparent transparent;
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translate(-100%, -50%);
-  }
+  ${({ isVisible }) =>
+    isVisible &&
+    `
+    opacity: 1;
+    visibility: visible;
+    pointer-events: all;
+  `}
 `;
 
 const expandIconStyles = {
   color: 'var(--textColorPrimary)',
   fontSize: 'calc(var(--font-size) * 1.8)',
+};
+
+const warningIconStyle = {
+  color: 'var(--colorWarning)',
 };
 
 const getCloudMenuItems = (cloud, cloudActions) => [
@@ -242,6 +218,10 @@ export const EnhancedTableRow = ({
     syncedNamespaces,
     ignoredNamespaces,
   ]);
+
+  const isWarningVisible =
+    withCheckboxes &&
+    (syncedNamespaces.length >= consts.projectsCountBeforeWarning || syncAll);
 
   const setOpenedList = (name) => {
     if (openNamespaces.includes(name)) {
@@ -374,14 +354,16 @@ export const EnhancedTableRow = ({
             {getExpandIcon(isOpenFirstLevel)}
           </EnhCollapseBtn>
           {makeNameCell(cloud.name, true)}
-          {withCheckboxes && (syncedNamespaces.length > 10 || syncAll) && (
-            <Warning>
-              <WarningIcon size={22} fill="var(--colorWarning)" />
-              <WarningTooltip>
-                {strings.synchronizeBlock.warning()}
-              </WarningTooltip>
-            </Warning>
-          )}
+          <Warning isVisible={isWarningVisible}>
+            <Icon
+              material="warning_amber"
+              style={warningIconStyle}
+              id={`tooltip-for-${cloud.name}-cloud`}
+            />
+            <Tooltip targetId={`tooltip-for-${cloud.name}-cloud`}>
+              {strings.synchronizeBlock.warning()}
+            </Tooltip>
+          </Warning>
         </EnhTableRowCell>
         {withCheckboxes && (
           <EnhTableRowCell>
