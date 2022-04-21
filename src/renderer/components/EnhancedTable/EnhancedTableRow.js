@@ -220,8 +220,7 @@ export const EnhancedTableRow = ({
   ]);
 
   const isWarningVisible =
-    withCheckboxes &&
-    (syncedNamespaces.length >= consts.projectsCountBeforeWarning || syncAll);
+    syncedNamespaces.length >= consts.projectsCountBeforeWarning || syncAll;
 
   const setOpenedList = (name) => {
     if (openNamespaces.includes(name)) {
@@ -354,16 +353,18 @@ export const EnhancedTableRow = ({
             {getExpandIcon(isOpenFirstLevel)}
           </EnhCollapseBtn>
           {makeNameCell(cloud.name, true)}
-          <Warning isVisible={isWarningVisible}>
-            <Icon
-              material="warning_amber"
-              style={warningIconStyle}
-              id={`tooltip-for-${cloud.name}-cloud`}
-            />
-            <Tooltip targetId={`tooltip-for-${cloud.name}-cloud`}>
-              {strings.synchronizeBlock.warning()}
-            </Tooltip>
-          </Warning>
+          {withCheckboxes && (
+            <Warning isVisible={isWarningVisible}>
+              <Icon
+                material="warning_amber"
+                style={warningIconStyle}
+                id={`tooltip-for-${cloud.name}-cloud`}
+              />
+              <Tooltip targetId={`tooltip-for-${cloud.name}-cloud`}>
+                {strings.synchronizeBlock.warning()}
+              </Tooltip>
+            </Warning>
+          )}
         </EnhTableRowCell>
         {withCheckboxes && (
           <EnhTableRowCell>
