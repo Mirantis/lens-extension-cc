@@ -4,6 +4,7 @@ export const mccPascalName = 'Mcc'; // PascalCase, for prefixing with other name
 export const mccCodeName = mccPascalName.toUpperCase();
 export const mccShortName = 'Container Cloud';
 export const mccFullName = `Mirantis ${mccShortName}`;
+export const projectsCountBeforeWarning = 10; // The maximum number of projects, after which the warning icon will appear
 
 const mccEntityGroup = `entity.${mccCodeName}.dev`.toLowerCase();
 const lensCatalogGroup = 'catalog.k8slens.dev';

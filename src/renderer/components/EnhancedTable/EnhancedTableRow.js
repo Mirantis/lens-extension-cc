@@ -21,7 +21,8 @@ import { IpcRenderer } from '../../IpcRenderer';
 import * as consts from '../../../constants';
 import { CloudNamespace } from '../../../common/CloudNamespace';
 
-const { Icon, MenuItem, MenuActions, ConfirmDialog } = Renderer.Component;
+const { Icon, MenuItem, MenuActions, ConfirmDialog, Tooltip } =
+  Renderer.Component;
 
 const EnhRowsWrapper = styled.div`
   display: contents;
@@ -82,9 +83,29 @@ const EnhMore = styled.div`
   cursor: pointer;
 `;
 
+const Warning = styled.div`
+  position: relative;
+  margin-left: ${layout.pad * 2.5}px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+
+  ${({ isVisible }) =>
+    isVisible &&
+    `
+    opacity: 1;
+    visibility: visible;
+    pointer-events: all;
+  `}
+`;
+
 const expandIconStyles = {
   color: 'var(--textColorPrimary)',
   fontSize: 'calc(var(--font-size) * 1.8)',
+};
+
+const warningIconStyle = {
+  color: 'var(--colorWarning)',
 };
 
 const getCloudMenuItems = (cloud, cloudActions) => [
@@ -179,15 +200,28 @@ export const EnhancedTableRow = ({
   const [isOpenFirstLevel, setIsOpenFirstLevel] = useState(false);
   const [openNamespaces, setOpenNamespaces] = useState([]);
 
+  const { syncedNamespaces, ignoredNamespaces } = getSyncedData();
+
   useEffect(() => {
     if (isSyncStarted && typeof getDataToSync === 'function') {
-      const { syncedNamespaces, ignoredNamespaces } = getSyncedData();
       getDataToSync(
         { syncedNamespaces, ignoredNamespaces, syncAll },
         cloud.cloudUrl
       );
     }
-  }, [getDataToSync, isSyncStarted, getSyncedData, syncAll, cloud.cloudUrl]);
+  }, [
+    getDataToSync,
+    isSyncStarted,
+    getSyncedData,
+    syncAll,
+    cloud.cloudUrl,
+    syncedNamespaces,
+    ignoredNamespaces,
+  ]);
+
+  const isWarningVisible =
+    withCheckboxes &&
+    (syncedNamespaces.length >= consts.projectsCountBeforeWarning || syncAll);
 
   const setOpenedList = (name) => {
     if (openNamespaces.includes(name)) {
@@ -210,11 +244,13 @@ export const EnhancedTableRow = ({
           ? ` (${strings.connectionStatuses.cloud.disconnected()})`
           : '';
       return (
-        <TriStateCheckbox
-          label={`${name}${autoSyncSuffix}`}
-          onChange={() => setCheckboxValue({ name, isParent })}
-          value={getCheckboxValue({ name, isParent })}
-        />
+        <>
+          <TriStateCheckbox
+            label={`${name}${autoSyncSuffix}`}
+            onChange={() => setCheckboxValue({ name, isParent })}
+            value={getCheckboxValue({ name, isParent })}
+          />
+        </>
       );
     }
     autoSyncSuffix =
@@ -318,6 +354,16 @@ export const EnhancedTableRow = ({
             {getExpandIcon(isOpenFirstLevel)}
           </EnhCollapseBtn>
           {makeNameCell(cloud.name, true)}
+          <Warning isVisible={isWarningVisible}>
+            <Icon
+              material="warning_amber"
+              style={warningIconStyle}
+              id={`tooltip-for-${cloud.name}-cloud`}
+            />
+            <Tooltip targetId={`tooltip-for-${cloud.name}-cloud`}>
+              {strings.synchronizeBlock.warning()}
+            </Tooltip>
+          </Warning>
         </EnhTableRowCell>
         {withCheckboxes && (
           <EnhTableRowCell>

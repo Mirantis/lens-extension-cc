@@ -78,6 +78,8 @@ export const synchronizeBlock = {
   error: {
     noProjects: () => 'Select at least one project to sync',
   },
+  warning: () =>
+    'Synchronizing a large number of projects can cause performance issues',
 };
 
 export const syncView: Dict = {
