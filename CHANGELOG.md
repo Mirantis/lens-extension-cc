@@ -2,10 +2,11 @@
 
 ## UNRELEASED
 
-⚠️ This is an early alpha build and is not fully functional/tested.
+⚠️ This is an early release build and is not fully tested.
 
-- Resources contained projects are no longer displayed when adding a new management cluster, as well as in the Selective Sync view for any in un-synced projects.
+- Resources contained in projects are no longer displayed when adding a new management cluster, as well as in the Selective Sync view for any in un-synced projects.
 - Added synced proxy and license counts for synced projects in the Sync View.
+- Added warning about potential sync and management cluster performance when the number of synced projects exceeds (or may exceed through "future sync") 10 or more (per management cluster). This is an API limitation, not an extension limitation.
 
 ## v4.0.0-alpha.4
 
