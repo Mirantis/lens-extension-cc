@@ -103,9 +103,17 @@ export function useCheckboxes(initialState) {
       ) {
         return;
       }
+
+      const isSomeChildrenChecked =
+        Object.values(checkboxesState.children).some((el) => el === false) &&
+        Object.values(checkboxesState.children).some((el) => el === true);
+      const parentValue = isSomeChildrenChecked
+        ? true
+        : !checkboxesState.parent;
+
       setCheckboxesState({
-        parent: !checkboxesState.parent,
-        children: getNewChildren(!checkboxesState.parent),
+        parent: parentValue,
+        children: getNewChildren(parentValue),
       });
     } else {
       const newChildren = { ...checkboxesState.children };
