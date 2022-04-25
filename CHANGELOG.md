@@ -7,6 +7,8 @@
 - Resources contained in projects are no longer displayed when adding a new management cluster, as well as in the Selective Sync view for any in un-synced projects.
 - Added synced proxy and license counts for synced projects in the Sync View.
 - Added warning about potential sync and management cluster performance when the number of synced projects exceeds (or may exceed through "future sync") 10 or more (per management cluster). This is an API limitation, not an extension limitation.
+- Fixed issue with "select all" checkboxes sometimes being out-of-sync with child states.
+- Fixed issue with "select all" checkboxes going from partial to unchecked instead of checked.
 
 ## v4.0.0-alpha.4
 

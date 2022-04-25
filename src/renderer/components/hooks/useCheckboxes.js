@@ -60,13 +60,16 @@ export function useCheckboxes(initialState) {
     }
 
     if (
-      checkboxesState.parent &&
-      childrenCheckboxes.some((el) => el === false) &&
+      (childrenCheckboxes.some((el) => el === false) ||
+        childrenCheckboxes.some((el) => el === undefined)) &&
       childrenCheckboxes.some((el) => el === true)
     ) {
       return checkValues.MIXED;
     }
-    if (checkboxesState.parent) {
+    if (
+      checkboxesState.parent &&
+      childrenCheckboxes.every((el) => el === true)
+    ) {
       return checkValues.CHECKED;
     }
     return checkValues.UNCHECKED;
@@ -100,9 +103,17 @@ export function useCheckboxes(initialState) {
       ) {
         return;
       }
+
+      const isSomeChildrenChecked =
+        Object.values(checkboxesState.children).some((el) => el === false) &&
+        Object.values(checkboxesState.children).some((el) => el === true);
+      const parentValue = isSomeChildrenChecked
+        ? true
+        : !checkboxesState.parent;
+
       setCheckboxesState({
-        parent: !checkboxesState.parent,
-        children: getNewChildren(!checkboxesState.parent),
+        parent: parentValue,
+        children: getNewChildren(parentValue),
       });
     } else {
       const newChildren = { ...checkboxesState.children };
