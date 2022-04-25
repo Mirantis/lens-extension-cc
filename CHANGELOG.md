@@ -9,6 +9,8 @@
 - Added warning about potential sync and management cluster performance when the number of synced projects exceeds (or may exceed through "future sync") 10 or more (per management cluster). This is an API limitation, not an extension limitation.
 - Fixed issue with "select all" checkboxes sometimes being out-of-sync with child states.
 - Fixed issue with "select all" checkboxes going from partial to unchecked instead of checked.
+- The `kubelogin` binary is now being packaged with the extension to remove the need for users to download and install it separately.
+    - The extension will support macOS x64/arm64, Linux x64, and Windows x64 (the platforms which Lens supports).
 
 ## v4.0.0-alpha.4
 
