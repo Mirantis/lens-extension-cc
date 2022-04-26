@@ -6,9 +6,11 @@
 # testing
 /coverage
 
-# production
+# distribution
 /dist
 /dist_babel
+/tmp
+/bin
 
 # misc
 .DS_Store

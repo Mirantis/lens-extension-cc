@@ -2,6 +2,36 @@
 // Templates used to generate various configuration files
 //
 
+import process from 'process';
+import path from 'path';
+
+/**
+ * @returns {string} The absolute path to the `kubelogin` binary for the current OS.
+ */
+const getKubeloginPath = function () {
+  // NOTE: __dirname will be in relation to where this code is executed from by
+  //  Lens, which is from /node_modules/@mirantis/lens-extension-cc/dist
+  const binPath = '../bin';
+
+  switch (process.platform) {
+    case 'darwin': // macOS
+      return path.resolve(
+        __dirname,
+        binPath,
+        `kubelogin-macos-${process.arch === 'arm64' ? 'arm64' : 'amd64'}`
+      );
+
+    case 'win32': // Windows
+      return path.resolve(__dirname, binPath, 'kubelogin-win-amd64.exe');
+
+    // various Linux distributions (other than darwin) and also 'android' (which
+    //  we'll just treat as Linux to keep the code simpler, since Lens doesn't
+    //  support it anyway)
+    default:
+      return path.resolve(__dirname, binPath, 'kubelogin-linux-amd64');
+  }
+};
+
 /**
  * Generates a kubeconfig context name for a cluster in the same way that MCC does
  *  when it generates cluster-specific kubeconfig files.
@@ -89,9 +119,8 @@ export const mkKubeConfig = function ({
               // See https://github.com/int128/kubelogin#setup for this config
               exec: {
                 apiVersion: 'client.authentication.k8s.io/v1beta1',
-                command: 'kubectl',
+                command: getKubeloginPath(),
                 args: [
-                  'oidc-login',
                   'get-token',
                   `--oidc-issuer-url=${cluster.idpIssuerUrl}`,
                   `--oidc-client-id=${cluster.idpClientId}`,
