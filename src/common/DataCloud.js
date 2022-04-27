@@ -17,6 +17,7 @@ import {
   apiCredentialTypes,
   apiChangeTypes,
 } from '../api/apiConstants';
+import * as strings from '../strings';
 
 // TODO[PRODX-22469]: Remove if we drop watches.
 /**
@@ -144,10 +145,15 @@ export const DATA_CLOUD_EVENTS = Object.freeze({
  *  set this interval such that it's most likely this will be the request that causes
  *  tokens to be refreshed, and then subsequent requests for remaining data (clusters,
  *  SSH keys, etc.) will proceed with new, valid tokens.
- *
- * @type {number}
  */
 const FETCH_INTERVAL = 4.85 * 60 * 1000; // 4:51 minutes (AVOID exactly 5 minutes)
+
+/**
+ * Quick interval (ms) to use when an error has happened and any fetched data cannot be trusted.
+ *  The follow-up interval should be much quicker than the normal interval after a successful
+ *  fetch.
+ */
+const FETCH_INTERVAL_QUICK = 30 * 1000;
 
 /**
  * Gets the error message from an error, or returns the error as-is if it's already a string.
@@ -237,7 +243,8 @@ const _deserializeCollection = function (
  * @returns {Promise<{
  *   resources: { [index: string]: Array<Resource> },
  *   watches: Array<ApiWatch>,
- *   tokensRefreshed: boolean
+ *   tokensRefreshed: boolean,
+ *   errors?: { [index: string]: { message: string, status: number, resourceType: string } }
  * }>} Always resolves, never fails.
  *
  *  - `resources` is a map of namespace name to list of `Resource`-based instances as returned
@@ -251,10 +258,12 @@ const _deserializeCollection = function (
  *      was retrieved from the fetch request. Each object will match the `apiWatchTs` Typeset
  *  - `tokensRefreshed` is true if the Cloud's API access tokens had to be refreshed while getting
  *      the `resources`.
+ *  - `errors` is defined if a at least one error occurred while fetching a collection, and is a
+ *      map of namespace name to error object.
  *
  *  NOTE: If `resourceType === apiResourceTypes.NAMESPACE` (i.e. fetching namespaces themselves),
- *   `resources` is a map with a single key which is the `apiResourceTypes.NAMESPACE` type
- *   mapped to the list of all namespaces in the Cloud.
+ *   `resources` and `errors` are maps with a single key which is the `apiResourceTypes.NAMESPACE`
+ *   type mapped to resources and errors, respectively.
  */
 const _fetchCollection = async function ({
   resourceType,
@@ -277,7 +286,7 @@ const _fetchCollection = async function ({
       'DataCloud._fetchCollection',
       `Cannot fetch resources of type ${logValue(
         resourceType
-      )}: Not available; cloud=${cloud}`
+      )}: Not available; cloud=${logValue(cloud.cloudUrl)}`
     );
     return { resources: {}, watches: [], tokensRefreshed: false };
   }
@@ -295,7 +304,7 @@ const _fetchCollection = async function ({
     let items = [];
     if (error) {
       // if it's a 403 "access denied" issue, just log it but don't flag it
-      //  as an error since there are various mechianisms that could prevent
+      //  as an error since there are various mechanisms that could prevent
       //  a user from accessing certain resources in the API (disabled components,
       //  permissions, etc.)
       logger[status === 403 ? 'log' : 'error'](
@@ -303,9 +312,12 @@ const _fetchCollection = async function ({
         `${
           status === 403 ? '(IGNORED: Access denied) ' : ''
         }Failed to get "${resourceType}" resources, namespace=${
-          namespace?.name || namespace // undefined if `resourceType === apiResourceTypes.NAMESPACE`
+          logValue(namespace?.name || namespace) // undefined if `resourceType === apiResourceTypes.NAMESPACE`
         }, status=${status}, error="${getErrorMessage(error)}"`
       );
+      if (status === 403) {
+        error = undefined; // ignore
+      }
     } else {
       items = _deserializeCollection(resourceType, body, namespace, create);
     }
@@ -314,6 +326,9 @@ const _fetchCollection = async function ({
       items,
       namespace,
       resourceVersion: body?.metadata?.resourceVersion || null, // collection version
+      error: error
+        ? { message: getErrorMessage(error), status, resourceType }
+        : undefined,
     };
   };
 
@@ -359,20 +374,31 @@ const _fetchCollection = async function ({
   // NOTE: the loop above ensures that there are no error results; all items in
   //  `results` have the same shape
 
-  let resources;
+  const resources = {};
+  let errors = {};
   if (resourceType === apiResourceTypes.NAMESPACE) {
-    resources = { [apiResourceTypes.NAMESPACE]: results[0].items };
+    resources[apiResourceTypes.NAMESPACE] = results[0].items;
     watches[0].resourceVersion = results[0].resourceVersion;
+    if (results[0].error) {
+      errors[apiResourceTypes.NAMESPACE] = results[0].error;
+    }
   } else {
-    resources = results.reduce((acc, result, idx) => {
+    results.forEach((result, idx) => {
       const {
         namespace: { name: nsName },
         items,
+        error,
       } = result;
-      acc[nsName] = items;
+      resources[nsName] = items;
       watches[idx].resourceVersion = result.resourceVersion;
-      return acc;
-    }, {});
+      if (error) {
+        errors[nsName] = error;
+      }
+    });
+  }
+
+  if (Object.keys(errors).length <= 0) {
+    errors = undefined;
   }
 
   // remove any watches that didn't get a resource version (which means there was likely
@@ -380,7 +406,7 @@ const _fetchCollection = async function ({
   //  get a resource version to watch for changes)
   watches = watches.filter((w) => !!w.resourceVersion);
 
-  return { resources, watches, tokensRefreshed };
+  return { resources, watches, tokensRefreshed, errors };
 };
 
 /**
@@ -392,11 +418,14 @@ const _fetchCollection = async function ({
  * @returns {Promise<{
  *   credentials: { [index: string]: Array<Credential|Object> },
  *   watches: Array<ApiWatch>,
- *   tokensRefreshed: boolean
+ *   tokensRefreshed: boolean,
+ *   errorsOccurred: number,
  * }>} Always resolves, never fails.
  *
  *  - `credentials` is a map of namespace name to credential (regardless of type).
  *      If there's an error trying to get any credential, it will be skipped/ignored.
+ *  - `errorsOccurred` is true if at least one error ocurred (that couldn't be safely ignored)
+ *      while fetching resources.
  */
 const _fetchCredentials = async function (cloud, namespaces) {
   const results = await Promise.all(
@@ -412,21 +441,24 @@ const _fetchCredentials = async function (cloud, namespaces) {
     )
   );
 
-  // NOTE: `results` will be an array of `{ resources, tokensRefreshed }` because of each credential
-  //  type that was retrieved for each namespace
-  // NOTE: _fetchCollection() ensures there are no error results; all items in
-  //  `results` have the same shape
+  // NOTE: `results` will be an array of `{ resources, tokensRefreshed, errors }` because
+  //  of each credential type that was retrieved for each namespace
+  // NOTE: _fetchCollection() ensures there are no error results (though errors may be
+  //  reported in results); all items in `results` have the same shape
 
   let watches = [];
   let tokensRefreshed = false;
+  let errorsOccurred = false;
   const credentials = results.reduce((acc, result) => {
     const {
       resources,
       watches: resultWatches,
       tokensRefreshed: refreshed,
+      errors,
     } = result;
 
     tokensRefreshed = tokensRefreshed || refreshed;
+    errorsOccurred = errorsOccurred || !!errors;
     watches = [...watches, ...resultWatches];
 
     Object.keys(resources).forEach((nsName) => {
@@ -441,7 +473,7 @@ const _fetchCredentials = async function (cloud, namespaces) {
     return acc;
   }, {});
 
-  return { credentials, watches, tokensRefreshed };
+  return { credentials, watches, tokensRefreshed, errorsOccurred };
 };
 
 /**
@@ -453,24 +485,29 @@ const _fetchCredentials = async function (cloud, namespaces) {
  * @returns {Promise<{
  *   licenses: { [index: string]: Array<License> },
  *   watches: Array<ApiWatch>,
- *   tokensRefreshed: boolean
+ *   tokensRefreshed: boolean,
+ *   errorsOccurred: boolean,
  * }>} Always resolves, never fails.
  *
  *  - `licenses` are mapped per namespace name. If an error occurs trying to get
  *      any license, it will be ignored/skipped.
+ *  - `errorsOccurred` is true if at least one error ocurred (that couldn't be safely ignored)
+ *      while fetching resources.
  */
 const _fetchLicenses = async function (cloud, namespaces) {
   const {
     resources: licenses,
     watches,
     tokensRefreshed,
+    errors,
   } = await _fetchCollection({
     resourceType: apiResourceTypes.RHEL_LICENSE,
     cloud,
     namespaces,
     create: ({ data, namespace }) => new License({ data, namespace, cloud }),
   });
-  return { licenses, watches, tokensRefreshed };
+
+  return { licenses, watches, tokensRefreshed, errorsOccurred: !!errors };
 };
 
 /**
@@ -482,24 +519,29 @@ const _fetchLicenses = async function (cloud, namespaces) {
  * @returns {Promise<{
  *   proxies: { [index: string]: Array<Proxy> },
  *   watches: Array<ApiWatch>,
- *   tokensRefreshed: boolean
+ *   tokensRefreshed: boolean,
+ *   errorsOccurred: boolean,
  * }>} Always resolves, never fails.
  *
  *  - `proxies` are mapped per namespace name. If an error occurs trying to get
  *      any proxy, it will be ignored/skipped.
+ *  - `errorsOccurred` is true if at least one error ocurred (that couldn't be safely ignored)
+ *      while fetching resources.
  */
 const _fetchProxies = async function (cloud, namespaces) {
   const {
     resources: proxies,
     watches,
     tokensRefreshed,
+    errors,
   } = await _fetchCollection({
     resourceType: apiResourceTypes.PROXY,
     cloud,
     namespaces,
     create: ({ data, namespace }) => new Proxy({ data, namespace, cloud }),
   });
-  return { proxies, watches, tokensRefreshed };
+
+  return { proxies, watches, tokensRefreshed, errorsOccurred: !!errors };
 };
 
 /**
@@ -511,17 +553,21 @@ const _fetchProxies = async function (cloud, namespaces) {
  * @returns {Promise<{
  *   sshKeys: { [index: string]: Array<SshKey|Object> },
  *   watches: Array<ApiWatch>,
- *   tokensRefreshed: boolean
+ *   tokensRefreshed: boolean,
+ *   errorsOccurred: boolean,
  * }>} Always resolves, never fails.
  *
  *  - `sshKeys` are mapped per namespace name. If an error occurs trying
  *      to get any SSH key, it will be ignored/skipped.
+ *  - `errorsOccurred` is true if at least one error ocurred (that couldn't be safely ignored)
+ *      while fetching resources.
  */
 const _fetchSshKeys = async function (cloud, namespaces) {
   const {
     resources: sshKeys,
     watches,
     tokensRefreshed,
+    errors,
   } = await _fetchCollection({
     resourceType: apiResourceTypes.PUBLIC_KEY,
     cloud,
@@ -530,7 +576,8 @@ const _fetchSshKeys = async function (cloud, namespaces) {
       return new SshKey({ data, namespace, cloud });
     },
   });
-  return { sshKeys, watches, tokensRefreshed };
+
+  return { sshKeys, watches, tokensRefreshed, errorsOccurred: !!errors };
 };
 
 /**
@@ -542,24 +589,29 @@ const _fetchSshKeys = async function (cloud, namespaces) {
  * @returns {Promise<{
  *   machines: { [index: string]: Array<Machine> },
  *   watches: Array<ApiWatch>,
- *   tokensRefreshed: boolean
+ *   tokensRefreshed: boolean,
+ *   errorsOccurred: boolean,
  * }>} Always resolves, never fails.
  *
  *  - `machines` are mapped per namespace name. If an error occurs trying to get
  *      any Machine, it will be ignored/skipped.
+ *  - `errorsOccurred` is true if at least one error ocurred (that couldn't be safely ignored)
+ *      while fetching resources.
  */
 const _fetchMachines = async function (cloud, namespaces) {
   const {
     resources: machines,
     watches,
     tokensRefreshed,
+    errors,
   } = await _fetchCollection({
     resourceType: apiResourceTypes.MACHINE,
     cloud,
     namespaces,
     create: ({ data, namespace }) => new Machine({ data, namespace, cloud }),
   });
-  return { machines, watches, tokensRefreshed };
+
+  return { machines, watches, tokensRefreshed, errorsOccurred: !!errors };
 };
 
 /**
@@ -575,17 +627,21 @@ const _fetchMachines = async function (cloud, namespaces) {
  * @returns {Promise<{
  *   clusters: { [index: string]: Array<Cluster|Object> },
  *   watches: Array<ApiWatch>,
- *   tokensRefreshed: boolean
+ *   tokensRefreshed: boolean,
+ *   errorsOccurred: boolean,
  * }>} Always resolves, never fails.
  *
  *  - `clusters` are mapped per namespace name. If an error occurs trying to get
  *      any cluster, it will be ignored/skipped.
+ *  - `errorsOccurred` is true if at least one error ocurred (that couldn't be safely ignored)
+ *      while fetching resources.
  */
 const _fetchClusters = async function (cloud, namespaces) {
   const {
     resources: clusters,
     watches,
     tokensRefreshed,
+    errors,
   } = await _fetchCollection({
     resourceType: apiResourceTypes.CLUSTER,
     cloud,
@@ -594,7 +650,8 @@ const _fetchClusters = async function (cloud, namespaces) {
       return new Cluster({ data, namespace, cloud });
     },
   });
-  return { clusters, watches, tokensRefreshed };
+
+  return { clusters, watches, tokensRefreshed, errorsOccurred: !!errors };
 };
 
 /**
@@ -602,9 +659,13 @@ const _fetchClusters = async function (cloud, namespaces) {
  * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
  *  if necessary.
  * @param {boolean} [preview] True to create a preview version of the Namespace.
- * @returns {Promise<Object>} Never fails, always resolves in
- *  `{ namespaces: Array<Namespace>, tokensRefreshed: boolean, preview: boolean }`.
- *  If an error occurs trying to get any namespace, it will be ignored/skipped.
+ * @returns {Promise<{
+ *   namespaces: Array<Namespace>,
+ *   tokensRefreshed: boolean,
+ *   preview: boolean,
+ *   error?: { message: string, status: number, resourceType: string },
+ * }>} Never fails, always resolves. If an error occurs trying to get any namespace, it will
+ *  be ignored/skipped and then included in the `errors` property.
  */
 const _fetchNamespaces = async function (cloud, preview = false) {
   // NOTE: we always fetch ALL known namespaces because when we display metadata
@@ -614,6 +675,7 @@ const _fetchNamespaces = async function (cloud, preview = false) {
     resources: { [apiResourceTypes.NAMESPACE]: namespaces },
     watches,
     tokensRefreshed,
+    errors,
   } = await _fetchCollection({
     resourceType: apiResourceTypes.NAMESPACE,
     cloud,
@@ -639,6 +701,7 @@ const _fetchNamespaces = async function (cloud, preview = false) {
     ),
     watches,
     tokensRefreshed,
+    error: errors?.[apiResourceTypes.NAMESPACE],
   };
 };
 
@@ -872,6 +935,14 @@ export class DataCloud extends EventDispatcher {
 
   /**
    * @readonly
+   * @member {string} cloudUrl URL of the backing/wrapped Cloud object.
+   */
+  get cloudUrl() {
+    return this.cloud.cloudUrl;
+  }
+
+  /**
+   * @readonly
    * @member {boolean} loading True if we're loading/fetching Cloud data for the __first__ time;
    *  false otherwise.
    * @see {@link DataCloud.fetching}
@@ -944,18 +1015,22 @@ export class DataCloud extends EventDispatcher {
 
   /**
    * Starts the data fetch interval only if it isn't already active.
+   * @param {number} [duration] Duration (ms) of the interval.
    */
-  startInterval() {
+  startInterval(duration = FETCH_INTERVAL) {
     if (!this.polling) {
-      this._updateInterval = setInterval(() => {
+      this._updateInterval = setTimeout(() => {
+        this._updateInterval = null;
         // NOTE: dispatch the event instead of calling fetchData() directly so that
         //  we don't duplicate an existing request to fetch the data if one has
         //  just been scheduled
         this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA);
-      }, FETCH_INTERVAL);
+      }, duration);
       logger.log(
         'DataCloud.startInterval()',
-        `Polling interval started; dataCloud=${logValue(this.cloud.cloudUrl)}`
+        `Polling interval started; duration=${duration}ms; dataCloud=${logValue(
+          this.cloudUrl
+        )}`
       );
     }
   }
@@ -972,11 +1047,11 @@ export class DataCloud extends EventDispatcher {
     let wasActive = false;
     if (this.polling) {
       wasActive = true;
-      clearInterval(this._updateInterval);
+      clearTimeout(this._updateInterval);
       this._updateInterval = null;
       logger.log(
         'DataCloud.resetInterval()',
-        `Polling interval stopped; dataCloud=${logValue(this.cloud.cloudUrl)}`
+        `Polling interval stopped; dataCloud=${logValue(this.cloudUrl)}`
       );
     }
 
@@ -1046,7 +1121,7 @@ export class DataCloud extends EventDispatcher {
               watch.resourceType
             )}, namespace=${logValue(
               watch.namespace?.name
-            )}; dataCloud=${logValue(this.cloud.cloudUrl)}`
+            )}; dataCloud=${logValue(this.cloudUrl)}`
           );
           return; // exit loop
         }
@@ -1061,7 +1136,7 @@ export class DataCloud extends EventDispatcher {
                 watch.namespace?.name
               )}, status=${status}, error=${logValue(
                 error
-              )}; dataCloud=${logValue(this.cloud.cloudUrl)}`
+              )}; dataCloud=${logValue(this.cloudUrl)}`
             );
           }
           // else, really ignore as it's likely a timeout waiting for a response; we'll just
@@ -1083,7 +1158,7 @@ export class DataCloud extends EventDispatcher {
                 )}, namespace=${logValue(
                   watch.namespace?.name
                 )}, error=${logValue(err.message)}; dataCloud=${logValue(
-                  this.cloud.cloudUrl
+                  this.cloudUrl
                 )}`
               );
             }
@@ -1103,7 +1178,7 @@ export class DataCloud extends EventDispatcher {
                   watch.resourceType
                 )}, namespace=${logValue(
                   watch.namespace?.name
-                )}; dataCloud=${logValue(this.cloud.cloudUrl)}`
+                )}; dataCloud=${logValue(this.cloudUrl)}`
               );
               this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA);
             }
@@ -1121,7 +1196,7 @@ export class DataCloud extends EventDispatcher {
             logger.log(
               'DataCloud.watchCollection()',
               `Detected changes to at least one namespace: Scheduling full data fetch; dataCloud=${logValue(
-                this.cloud.cloudUrl
+                this.cloudUrl
               )}`
             );
             this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA);
@@ -1154,7 +1229,7 @@ export class DataCloud extends EventDispatcher {
                         watch.resourceType
                       } resource from namespace=${
                         watch.namespace
-                      }; dataCloud=${logValue(this.cloud.cloudUrl)}`
+                      }; dataCloud=${logValue(this.cloudUrl)}`
                     );
                     const [resource] = watch.namespace.proxies.splice(
                       existingIdx,
@@ -1205,7 +1280,7 @@ export class DataCloud extends EventDispatcher {
                       watch.resourceType
                     } resource into namespace=${
                       watch.namespace
-                    }; dataCloud=${logValue(this.cloud.cloudUrl)}`
+                    }; dataCloud=${logValue(this.cloudUrl)}`
                   );
                   watch.namespace[prop].push(resource);
 
@@ -1253,7 +1328,7 @@ export class DataCloud extends EventDispatcher {
               'DataCloud.watchCollection()',
               `Sending resource update event for ${
                 updates.length
-              } resources; dataCloud=${logValue(this.cloud.cloudUrl)}`
+              } resources; dataCloud=${logValue(this.cloudUrl)}`
             );
 
             // NOTE: __send__, not dispatch, to make sure listeners receive all updates across
@@ -1282,7 +1357,7 @@ export class DataCloud extends EventDispatcher {
       logger.warn(
         'DataCloud.startWatching()',
         `Already watching API for changes: Ignoring new watches; dataCloud=${logValue(
-          this.cloud.cloudUrl
+          this.cloudUrl
         )}`
       );
       return;
@@ -1321,7 +1396,7 @@ export class DataCloud extends EventDispatcher {
               `Unable to start watching: Incorrect number of watches for resourceType=${logValue(
                 resourceType
               )}, expected=1, watches=${watches.length}; dataCloud=${logValue(
-                this.cloud.cloudUrl
+                this.cloudUrl
               )}`
             );
             return false; // break: invalid
@@ -1338,7 +1413,7 @@ export class DataCloud extends EventDispatcher {
                 resourceType
               )}, namespace=${logValue(
                 watch.namespace?.name
-              )}; dataCloud=${logValue(this.cloud.cloudUrl)}`
+              )}; dataCloud=${logValue(this.cloudUrl)}`
             );
             return false; // break: invalid
           }
@@ -1352,7 +1427,7 @@ export class DataCloud extends EventDispatcher {
       logger.log(
         'DataCloud.startWatching()',
         `Starting API watches for efficient change detection; dataCloud=${logValue(
-          this.cloud.cloudUrl
+          this.cloudUrl
         )}`
       );
 
@@ -1377,7 +1452,7 @@ export class DataCloud extends EventDispatcher {
 
     logger.log(
       'DataCloud.stopWatching()',
-      `Canceling all active watches; dataCloud=${logValue(this.cloud.cloudUrl)}`
+      `Canceling all active watches; dataCloud=${logValue(this.cloudUrl)}`
     );
 
     this.watches.forEach((watch) => {
@@ -1419,17 +1494,33 @@ export class DataCloud extends EventDispatcher {
       return;
     }
 
+    this.fetching = true;
     logger.log(
       'DataCloud.fetchData()',
       `Fetching full data for dataCloud=${this}`
     );
-    this.fetching = true;
 
     this.stopWatching();
 
     // NOTE: we always fetch ALL namespaces (which should be quite cheap to do)
     //  since we need to discover new ones, and know when existing ones are removed
     const nsResults = await _fetchNamespaces(this.cloud, this.preview);
+
+    // NOTE: if we fail to get namespaces for whatever reason, we MUST abort the fetch;
+    //  if we don't, `nsResults.namespaces` will be empty and we'll assume all namespaces
+    //  have been deleted, resulting in all the user's sync settings being lost and all
+    //  items removed from the Catalog...
+    if (nsResults.error) {
+      this.error = nsResults.error.message;
+      logger.error(
+        'DataCloud.fetchData()',
+        `Failed to get namespaces: Aborting data fetch, will try again soon; dataCloud=${this}`
+      );
+      this.fetching = false;
+      this.startInterval(FETCH_INTERVAL_QUICK); // retry sooner rather than later
+      return;
+    }
+
     const allNamespaces = nsResults.namespaces.concat();
 
     // if we're not generating a preview, only fetch full data for synced namespaces
@@ -1441,18 +1532,22 @@ export class DataCloud extends EventDispatcher {
           this.cloud.syncedProjects.includes(ns.name)
         );
 
+    let errorsOccurred = false;
     if (!this.preview) {
       const credResults = await _fetchCredentials(
         this.cloud,
         fetchedNamespaces
       );
       const keyResults = await _fetchSshKeys(this.cloud, fetchedNamespaces);
-
       // map all the resources fetched so far into their respective Namespaces
       fetchedNamespaces.forEach((namespace) => {
         namespace.sshKeys = keyResults.sshKeys[namespace.name] || [];
         namespace.credentials = credResults.credentials[namespace.name] || [];
       });
+      errorsOccurred =
+        errorsOccurred ||
+        credResults.errorsOccurred ||
+        keyResults.errorsOccurred;
 
       const proxyResults = await _fetchProxies(this.cloud, fetchedNamespaces);
       const licenseResults = await _fetchLicenses(
@@ -1464,6 +1559,10 @@ export class DataCloud extends EventDispatcher {
         namespace.proxies = proxyResults.proxies[namespace.name] || [];
         namespace.licenses = licenseResults.licenses[namespace.name] || [];
       });
+      errorsOccurred =
+        errorsOccurred ||
+        proxyResults.errorsOccurred ||
+        licenseResults.errorsOccurred;
 
       // NOTE: fetch machines only AFTER licenses have been fetched and added
       //  into the Namespaces because the Machine resource expects to find Licenses
@@ -1475,6 +1574,7 @@ export class DataCloud extends EventDispatcher {
       fetchedNamespaces.forEach((namespace) => {
         namespace.machines = machineResults.machines[namespace.name] || [];
       });
+      errorsOccurred = errorsOccurred || machineResults.errorsOccurred;
 
       // NOTE: fetch clusters only AFTER everything else has been fetched and added
       //  into the Namespaces because the Cluster resource expects to find all the
@@ -1483,11 +1583,22 @@ export class DataCloud extends EventDispatcher {
         this.cloud,
         fetchedNamespaces
       );
-
       // map fetched clusters into their respective Namespaces
       fetchedNamespaces.forEach((namespace) => {
         namespace.clusters = clusterResults.clusters[namespace.name] || [];
       });
+      errorsOccurred = errorsOccurred || clusterResults.errorsOccurred;
+
+      if (errorsOccurred) {
+        this.error = strings.dataCloud.error.fetchErrorsOccurred();
+        logger.error(
+          'DataCloud.fetchData()',
+          `At least one error occurred while fetching cloud resources other than namespaces: Ignoring all data, will try again next poll; dataCloud=${this}`
+        );
+        this.fetching = false;
+        this.startInterval(FETCH_INTERVAL_QUICK); // retry sooner rather than later
+        return;
+      }
 
       // TODO[PRODX-22469]: Disabling watches until a solution can be found to the behavior
       //  where a watch request's response comes back almost immediately as status 200, but
@@ -1513,15 +1624,17 @@ export class DataCloud extends EventDispatcher {
       //   this.resetInterval(false);
       // } else {
       //   logger.info('DataCloud.fetchData()', 'Unable to start watching for changes: Falling back to polling');
-      //   this.startInterval(); // noop if already running
+      //   this.startInterval();
       // }
-      this.startInterval(); // noop if already running
+      this.startInterval();
     } else {
       logger.log(
         'DataCloud.fetchData()',
-        `Preview only: Skipping all but namespace fetch; dataCloud=${this}`
+        `Preview only: Skipping all but namespace fetch; dataCloud=${logValue(
+          this.cloudUrl
+        )}`
       );
-      this.startInterval(); // noop if already running
+      this.startInterval();
     }
 
     // update the synced vs ignored namespace lists of the Cloud
@@ -1535,18 +1648,18 @@ export class DataCloud extends EventDispatcher {
 
     if (!this.loaded) {
       // successfully loaded at least once
+      this.loaded = true;
       logger.log(
         'DataCloud.fetchData()',
         `Initial data load successful; dataCloud=${this}`
       );
-      this.loaded = true;
     }
 
+    this.fetching = false;
     logger.log(
       'DataCloud.fetchData()',
       `Full data fetch complete; dataCloud=${this}`
     );
-    this.fetching = false;
   }
 
   /**
@@ -1554,7 +1667,8 @@ export class DataCloud extends EventDispatcher {
    * @return {Promise<void>}
    */
   async reconnect() {
-    // WARNING: does not block because goes to browser and waits for user
+    // WARNING: does not block because goes to browser and waits for user so
+    //  promise will resolve before the full connection process is complete
     await this.cloud.connect();
 
     if (this.cloud.connecting) {
@@ -1569,7 +1683,9 @@ export class DataCloud extends EventDispatcher {
       this.error = getErrorMessage(this.cloud.connectError);
       logger.error(
         'DataCloud.reconnect()',
-        `Cloud connection failed, error="${this.error}", dataCloud=${this}`
+        `Cloud connection failed, error=${logValue(
+          this.error
+        )}, dataCloud=${this}`
       );
     }
   }
@@ -1583,6 +1699,6 @@ export class DataCloud extends EventDispatcher {
       this.watching
     }, polling: ${this.polling}, preview: ${this.preview}, namespaces: ${
       this.loaded ? this.namespaces.length : '-1'
-    }, error: ${this.error}, cloud: ${this.cloud}}`;
+    }, error: ${logValue(this.error)}, cloud: ${this.cloud}}`;
   }
 }

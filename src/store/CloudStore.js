@@ -182,7 +182,7 @@ export class CloudStore extends Common.Store.ExtensionStore {
         'CloudStore.onCloudChange()',
         `<${this.ipcMain ? 'MAIN' : 'RENDERER'}> Processing event=${logValue(
           name
-        )} on cloud=${cloud}`
+        )} on cloud=${logValue(cloud.cloudUrl)}`
       );
 
       // NOTE: this event doesn't mean we have a new Cloud instance; it just means
@@ -235,7 +235,9 @@ export class CloudStore extends Common.Store.ExtensionStore {
     if (this.ipcMain) {
       logger.log(
         'CloudStore.listenForChanges()',
-        `<MAIN> Subscribing to ALL EXCEPT loading/fetching/prop changes for cloud=${cloud}`
+        `<MAIN> Subscribing to ALL EXCEPT loading/fetching/prop changes for cloud=${logValue(
+          cloud.cloudUrl
+        )}`
       );
       const excludedEvents = [
         CLOUD_EVENTS.LOADED_CHANGE, // not stored on disk
@@ -248,7 +250,9 @@ export class CloudStore extends Common.Store.ExtensionStore {
     } else {
       logger.log(
         'CloudStore.listenForChanges()',
-        `<RENDERER> Subscribing to ONLY sync and prop changes for cloud=${cloud}`
+        `<RENDERER> Subscribing to ONLY sync and prop changes for cloud=${logValue(
+          cloud.cloudUrl
+        )}`
       );
       eventNames = [
         CLOUD_EVENTS.SYNC_CHANGE, // selective sync changes only happend on RENDERER
