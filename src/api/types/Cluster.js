@@ -363,7 +363,7 @@ export class Cluster extends Node {
             keyName
           )} for cluster=${logValue(this.name)}, namespace=${logValue(
             this.namespace.name
-          )}, cloud=${this.cloud}`
+          )}, cloud=${logValue(this.cloud.cloudUrl)}`
         );
       }
     });
@@ -379,7 +379,7 @@ export class Cluster extends Node {
             credName
           )} for cluster=${logValue(this.name)}, namespace=${logValue(
             this.namespace.name
-          )}, cloud=${this.cloud}`
+          )}, cloud=${logValue(this.cloud.cloudUrl)}`
         );
       }
     }
@@ -395,7 +395,7 @@ export class Cluster extends Node {
             proxyName
           )} for cluster=${logValue(this.name)}, namespace=${logValue(
             this.namespace.name
-          )}, cloud=${this.cloud}`
+          )}, cloud=${logValue(this.cloud.cloudUrl)}`
         );
       }
     }
@@ -415,7 +415,9 @@ export class Cluster extends Node {
         'Cluster.constructor()',
         `Unable to find any machines for cluster=${logValue(
           this.name
-        )}, namespace=${logValue(this.namespace.name)}, cloud=${this.cloud}`
+        )}, namespace=${logValue(this.namespace.name)}, cloud=${logValue(
+          this.cloud.cloudUrl
+        )}`
       );
     } else {
       // look for the first machine that has a license, and assume that's the one

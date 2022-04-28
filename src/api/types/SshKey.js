@@ -99,9 +99,13 @@ export class SshKey extends Resource {
   toString() {
     const propStr = `${super.toString()}, namespace: ${logValue(
       this.namespace.name
-    )}, publicKey: "${this.publicKey.slice(0, 15)}..${this.publicKey.slice(
-      -15
-    )}"`;
+    )}, publicKey: "${
+      // NOTE: some public keys can have newlines at the end for some reason
+      this.publicKey.slice(0, 15).replaceAll('\n', '')
+    }..${
+      // NOTE: some public keys can have newlines at the end for some reason
+      this.publicKey.slice(-15).replaceAll('\n', '')
+    }"`;
 
     if (Object.getPrototypeOf(this).constructor === SshKey) {
       return `{SshKey ${propStr}}`;

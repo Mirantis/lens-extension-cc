@@ -847,7 +847,7 @@ export class Cloud extends EventDispatcher {
             throw new Error(
               `Cannot add unknown namespace ${logValue(
                 name
-              )} to synced set in cloud=${this}`
+              )} to synced set in cloud=${logValue(this.cloudUrl)}`
             );
           }
 
@@ -863,7 +863,7 @@ export class Cloud extends EventDispatcher {
             throw new Error(
               `Cannot add unknown namespace ${logValue(
                 name
-              )} to ignored set in cloud=${this}`
+              )} to ignored set in cloud=${logValue(this.cloudUrl)}`
             );
           }
 
@@ -912,7 +912,7 @@ export class Cloud extends EventDispatcher {
           throw new Error(
             `cloudUrl cannot be changed; spec.cloudUrl=${logValue(
               spec.cloudUrl
-            )}, cloud=${this}`
+            )}, cloud=${logValue(this.cloudUrl)}`
           );
         }
 
@@ -985,6 +985,8 @@ export class Cloud extends EventDispatcher {
 
     // tokens are tied to the user, so clear that too
     this.username = null;
+
+    logger.log('Cloud.resetTokens()', `Tokens reset; cloud=${this}`);
   }
 
   /**
@@ -1028,6 +1030,8 @@ export class Cloud extends EventDispatcher {
     } else {
       this.refreshTokenValidTill = new Date(now + this.refreshExpiresIn * 1000);
     }
+
+    logger.log('Cloud.updateTokens()', `Tokens updated; cloud=${this}`);
   }
 
   /**

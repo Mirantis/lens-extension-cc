@@ -110,10 +110,20 @@ export const managementClusters = {
   },
 };
 
+export const dataCloud: Dict = {
+  error: {
+    fetchErrorsOccurred: () =>
+      'At least one error occurred while fetching resources',
+  },
+};
+
 export const apiUtil: Dict = {
   error: {
     sessionExpired: () => 'Session expired',
     invalidCredentials: () => 'Invalid credentials',
+    noTokens: () => 'Access token is missing',
+    invalidResourceType: (type) =>
+      `Unknown or unmapped resource type "${type}"`,
   },
 };
 

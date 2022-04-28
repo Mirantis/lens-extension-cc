@@ -237,7 +237,7 @@ export class SyncManager extends Singleton {
 
     // NOTE: just in case the delete came at a strange time during sync, the most effective,
     //  sure way of removing the entities is not to loop through `dataCloud.syncedNamespaces`,
-    //  but rather to simply find all entities related to its `dataCloud.cloud.cloudUrl` and
+    //  but rather to simply find all entities related to its `dataCloud.cloudUrl` and
     //  just remove them
     let deleteCount = 0;
 
@@ -254,7 +254,7 @@ export class SyncManager extends Singleton {
         while (
           (idx = list.findIndex((item) => {
             // entities and models have the same basic interface
-            return item.metadata.cloudUrl === dataCloud.cloud.cloudUrl;
+            return item.metadata.cloudUrl === dataCloud.cloudUrl;
           })) >= 0
         ) {
           const item = list[idx];
@@ -518,7 +518,7 @@ export class SyncManager extends Singleton {
       (idx = this.catalogSource.findIndex((entity) => {
         return (
           kinds.includes(entity.metadata.kind) &&
-          entity.metadata.cloudUrl === dataCloud.cloud.cloudUrl &&
+          entity.metadata.cloudUrl === dataCloud.cloudUrl &&
           !cloudResourceIds[entity.metadata.uid]
         );
       })) >= 0
@@ -567,7 +567,7 @@ export class SyncManager extends Singleton {
       (idx = storeList.findIndex((model) => {
         // the UID should be unique, but just to be extra safe, we compare the Cloud URL too
         return (
-          model.metadata.cloudUrl === dataCloud.cloud.cloudUrl &&
+          model.metadata.cloudUrl === dataCloud.cloudUrl &&
           !cloudResourceIds[model.metadata.uid]
         );
       })) >= 0
@@ -775,7 +775,11 @@ export class SyncManager extends Singleton {
       this.ipcMain.capture(
         'info',
         'SyncManager.updateClusterEntities()',
-        `Have added=${newEntities.length}, updated=${catUpdateCount}, deleted=${catDelCount} cluster Catalog entities for dataCloud=${dataCloud}`
+        `Have added=${
+          newEntities.length
+        }, updated=${catUpdateCount}, deleted=${catDelCount} cluster Catalog entities for dataCloud=${logValue(
+          dataCloud.cloudUrl
+        )}`
       );
 
       // add all the new models to the temporary store
@@ -784,7 +788,11 @@ export class SyncManager extends Singleton {
       this.ipcMain.capture(
         'info',
         'SyncManager.updateClusterEntities()',
-        `Will add=${newModels.length}, update=${storeUpdateCount}, delete=${storeDelCount} cluster SyncStore models for dataCloud=${dataCloud}`
+        `Will add=${
+          newModels.length
+        }, update=${storeUpdateCount}, delete=${storeDelCount} cluster SyncStore models for dataCloud=${logValue(
+          dataCloud.cloudUrl
+        )}`
       );
 
       this.ipcMain.capture(
@@ -891,7 +899,11 @@ export class SyncManager extends Singleton {
       this.ipcMain.capture(
         'info',
         'SyncManager.updateCatalogEntities()',
-        `Have added=${newEntities.length}, updated=${catUpdateCount}, deleted=${catDelCount} ${type} Catalog entities for dataCloud=${dataCloud}`
+        `Have added=${
+          newEntities.length
+        }, updated=${catUpdateCount}, deleted=${catDelCount} ${type} Catalog entities for dataCloud=${logValue(
+          dataCloud.cloudUrl
+        )}`
       );
 
       // add all the new models to the temporary store
@@ -900,7 +912,11 @@ export class SyncManager extends Singleton {
       this.ipcMain.capture(
         'info',
         'SyncManager.updateCatalogEntities()',
-        `Will add=${newModels.length}, update=${storeUpdateCount}, delete=${storeDelCount} ${type} SyncStore models for dataCloud=${dataCloud}`
+        `Will add=${
+          newModels.length
+        }, update=${storeUpdateCount}, delete=${storeDelCount} ${type} SyncStore models for dataCloud=${logValue(
+          dataCloud.cloudUrl
+        )}`
       );
     });
 
@@ -1118,7 +1134,7 @@ export class SyncManager extends Singleton {
         this.ipcMain.capture(
           'info',
           'SyncManager.handleSyncNow()',
-          `Syncing now; dataCloud=${dc}`
+          `Syncing now; dataCloud=${logValue(cloudUrl)}`
         );
         dc.fetchNow();
       } else {
@@ -1149,7 +1165,7 @@ export class SyncManager extends Singleton {
         this.ipcMain.capture(
           'info',
           'SyncManager.handleReconnect()',
-          `Reconnecting; dataCloud=${dc}`
+          `Reconnecting; dataCloud=${logValue(cloudUrl)}`
         );
         dc.reconnect();
       } else {
