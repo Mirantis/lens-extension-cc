@@ -107,7 +107,9 @@ export const catalogEntityModelTs = {
   },
 };
 
-/** Map of phase name to phase value as understood by Lens. */
+/**
+ * Map of phase name to LENS phase value (related to Lens' connection status with the cluster).
+ */
 export const clusterEntityPhases = Object.freeze({
   CONNECTING: 'connecting',
   CONNECTED: 'connected',

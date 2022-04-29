@@ -126,3 +126,12 @@ export const apiChangeTypes = Object.freeze({
   MODIFIED: 'MODIFIED',
   DELETED: 'DELETED',
 });
+
+/**
+ * Map of API namespace (status) phases to value.
+ * @type {{ [index: string], string }}
+ */
+export const apiNamespacePhases = Object.freeze({
+  ACTIVE: 'Active',
+  TERMINATING: 'Terminating',
+});

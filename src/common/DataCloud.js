@@ -16,6 +16,7 @@ import {
   apiResourceTypes,
   apiCredentialTypes,
   apiChangeTypes,
+  apiNamespacePhases,
 } from '../api/apiConstants';
 import * as strings from '../strings';
 
@@ -697,7 +698,9 @@ const _fetchNamespaces = async function (cloud, preview = false) {
     namespaces: filter(
       namespaces,
       (ns) =>
-        !ignoredNamespaces.includes(ns.name) && hasReadPermissions(ns.name)
+        ns.phase !== apiNamespacePhases.TERMINATING &&
+        !ignoredNamespaces.includes(ns.name) &&
+        hasReadPermissions(ns.name)
     ),
     watches,
     tokensRefreshed,
