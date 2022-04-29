@@ -1,14 +1,13 @@
 import * as rtv from 'rtvjs';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
 import { apiKinds, apiLabels } from '../apiConstants';
-import { resourceTs } from './Resource';
-import { Node } from './Node';
+import { Node, nodeTs } from './Node';
 import { logger, logValue } from '../../util/logger';
 
 /**
  * Typeset for an MCC Machine API resource.
  */
-export const machineTs = mergeRtvShapes({}, resourceTs, {
+export const machineTs = mergeRtvShapes({}, nodeTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
   //  related to what we expect to find in order to create a `Credential` class instance
 

@@ -1,17 +1,15 @@
 import * as rtv from 'rtvjs';
 import { merge } from 'lodash';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
-import { Resource, resourceTs } from './Resource';
-import { Namespace } from './Namespace';
+import { NamedResource, namedResourceTs } from './NamedResource';
 import { entityLabels } from '../../catalog/catalogEntities';
 import { SshKeyEntity, sshKeyEntityPhases } from '../../catalog/SshKeyEntity';
 import { apiKinds } from '../apiConstants';
-import { logValue } from '../../util/logger';
 
 /**
  * Typeset for an MCC SSH Key API resource.
  */
-export const sshKeyTs = mergeRtvShapes({}, resourceTs, {
+export const sshKeyTs = mergeRtvShapes({}, namedResourceTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
   //  related to what we expect to find in order to create a `Credential` class instance
 
@@ -25,7 +23,7 @@ export const sshKeyTs = mergeRtvShapes({}, resourceTs, {
  * MCC ssh key API resource.
  * @class SshKey
  */
-export class SshKey extends Resource {
+export class SshKey extends NamedResource {
   /**
    * @constructor
    * @param {Object} params
@@ -34,23 +32,7 @@ export class SshKey extends Resource {
    * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
    */
   constructor({ data, namespace, cloud }) {
-    super({ data, cloud, typeset: sshKeyTs });
-
-    DEV_ENV &&
-      rtv.verify(
-        { namespace },
-        {
-          namespace: [rtv.CLASS_OBJECT, { ctor: Namespace }],
-        }
-      );
-
-    /** @member {Namespace} namespace */
-    Object.defineProperty(this, 'namespace', {
-      enumerable: true,
-      get() {
-        return namespace;
-      },
-    });
+    super({ data, namespace, cloud, typeset: sshKeyTs });
 
     /** @member {string} publicKey */
     Object.defineProperty(this, 'publicKey', {
@@ -97,9 +79,7 @@ export class SshKey extends Resource {
 
   /** @returns {string} A string representation of this instance for logging/debugging. */
   toString() {
-    const propStr = `${super.toString()}, namespace: ${logValue(
-      this.namespace.name
-    )}, publicKey: "${
+    const propStr = `${super.toString()}, publicKey: "${
       // NOTE: some public keys can have newlines at the end for some reason
       this.publicKey.slice(0, 15).replaceAll('\n', '')
     }..${

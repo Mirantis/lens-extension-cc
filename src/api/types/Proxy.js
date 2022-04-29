@@ -1,8 +1,7 @@
 import * as rtv from 'rtvjs';
 import { merge } from 'lodash';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
-import { Resource, resourceTs } from './Resource';
-import { Namespace } from './Namespace';
+import { NamedResource, namedResourceTs } from './NamedResource';
 import { entityLabels } from '../../catalog/catalogEntities';
 import { ProxyEntity, proxyEntityPhases } from '../../catalog/ProxyEntity';
 import { apiKinds, apiLabels } from '../apiConstants';
@@ -11,7 +10,7 @@ import { logValue } from '../../util/logger';
 /**
  * Typeset for an MCC Proxy API resource.
  */
-export const proxyTs = mergeRtvShapes({}, resourceTs, {
+export const proxyTs = mergeRtvShapes({}, namedResourceTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
   //  related to what we expect to find in order to create a `Credential` class instance
 
@@ -34,7 +33,7 @@ export const proxyTs = mergeRtvShapes({}, resourceTs, {
  * MCC proxy API resource.
  * @class Proxy
  */
-export class Proxy extends Resource {
+export class Proxy extends NamedResource {
   /**
    * @constructor
    * @param {Object} params
@@ -43,21 +42,7 @@ export class Proxy extends Resource {
    * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
    */
   constructor({ data, namespace, cloud }) {
-    super({ data, cloud, typeset: proxyTs });
-
-    DEV_ENV &&
-      rtv.verify(
-        { namespace },
-        { namespace: [rtv.CLASS_OBJECT, { ctor: Namespace }] }
-      );
-
-    /** @member {Namespace} namespace */
-    Object.defineProperty(this, 'namespace', {
-      enumerable: true,
-      get() {
-        return namespace;
-      },
-    });
+    super({ data, namespace, cloud, typeset: proxyTs });
 
     /** @member {string} region */
     Object.defineProperty(this, 'region', {
@@ -122,9 +107,9 @@ export class Proxy extends Resource {
 
   /** @returns {string} A string representation of this instance for logging/debugging. */
   toString() {
-    const propStr = `${super.toString()}, namespace: ${logValue(
-      this.namespace.name
-    )}, http: ${logValue(this.httpProxy)}, https: ${logValue(this.httpsProxy)}`;
+    const propStr = `${super.toString()}, http: ${logValue(
+      this.httpProxy
+    )}, https: ${logValue(this.httpsProxy)}`;
 
     if (Object.getPrototypeOf(this).constructor === Proxy) {
       return `{Proxy ${propStr}}`;

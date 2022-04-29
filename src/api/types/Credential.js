@@ -2,19 +2,17 @@ import * as rtv from 'rtvjs';
 import { merge, pick } from 'lodash';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
 import { apiCredentialKinds, apiLabels } from '../apiConstants';
-import { Resource, resourceTs } from './Resource';
-import { Namespace } from './Namespace';
+import { NamedResource, namedResourceTs } from './NamedResource';
 import { entityLabels } from '../../catalog/catalogEntities';
 import {
   CredentialEntity,
   credentialEntityPhases,
 } from '../../catalog/CredentialEntity';
-import { logValue } from '../../util/logger';
 
 /**
  * Typeset for an MCC Credential API resource.
  */
-export const credentialTs = mergeRtvShapes({}, resourceTs, {
+export const credentialTs = mergeRtvShapes({}, namedResourceTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
   //  related to what we expect to find in order to create a `Credential` class instance
 
@@ -40,7 +38,7 @@ export const credentialTs = mergeRtvShapes({}, resourceTs, {
  * MCC credential API resource.
  * @class Credential
  */
-export class Credential extends Resource {
+export class Credential extends NamedResource {
   /**
    * @constructor
    * @param {Object} params
@@ -51,28 +49,13 @@ export class Credential extends Resource {
   constructor({ data, namespace, cloud }) {
     super({
       data,
+      namespace,
       cloud,
       // NOTE: BYOCredential objects do not have a `status` for some reason
       typeset:
         data.kind === apiCredentialKinds.BYO_CREDENTIAL
           ? pick(credentialTs, ['metadata', 'spec'])
           : credentialTs,
-    });
-
-    DEV_ENV &&
-      rtv.verify(
-        { namespace },
-        {
-          namespace: [rtv.CLASS_OBJECT, { ctor: Namespace }],
-        }
-      );
-
-    /** @member {Namespace} namespace */
-    Object.defineProperty(this, 'namespace', {
-      enumerable: true,
-      get() {
-        return namespace;
-      },
     });
 
     /** @member {string} region */
@@ -139,9 +122,7 @@ export class Credential extends Resource {
 
   /** @returns {string} A string representation of this instance for logging/debugging. */
   toString() {
-    const propStr = `${super.toString()}, namespace: ${logValue(
-      this.namespace.name
-    )}, valid: ${this.valid}`;
+    const propStr = `${super.toString()}, valid: ${this.valid}`;
 
     if (Object.getPrototypeOf(this).constructor === Credential) {
       return `{Credential ${propStr}}`;

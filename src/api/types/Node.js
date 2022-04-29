@@ -1,14 +1,22 @@
-import * as rtv from 'rtvjs';
+import { mergeRtvShapes } from '../../util/mergeRtvShapes';
 import { apiKinds, apiLabels } from '../apiConstants';
-import { Resource } from './Resource';
-import { Namespace } from './Namespace';
+import { NamedResource, namedResourceTs } from './NamedResource';
 import * as strings from '../../strings';
+
+/**
+ * Typeset for a namespaced Machine and Cluster resources.
+ */
+export const nodeTs = mergeRtvShapes({}, namedResourceTs, {
+  // NOTE: this is not intended to be fully-representative; we only list the properties
+  //  related to what we expect to find in order to create a `Credential` class instance
+  // nothing specific for now
+});
 
 /**
  * Base class for namespaced Machine and Cluster resources.
  * @class Node
  */
-export class Node extends Resource {
+export class Node extends NamedResource {
   /**
    * @constructor
    * @param {Object} params
@@ -18,30 +26,7 @@ export class Node extends Resource {
    * @param {rtv.Typeset} params.typeset Typeset for verifying the data.
    */
   constructor({ data, namespace, cloud, typeset }) {
-    super({
-      data,
-      cloud,
-      typeset,
-    });
-
-    DEV_ENV &&
-      rtv.verify(
-        { namespace },
-        {
-          namespace: [rtv.CLASS_OBJECT, { ctor: Namespace }],
-        }
-      );
-
-    /**
-     * @readonly
-     * @member {Namespace} namespace
-     */
-    Object.defineProperty(this, 'namespace', {
-      enumerable: true,
-      get() {
-        return namespace;
-      },
-    });
+    super({ data, namespace, cloud, typeset });
 
     /**
      * @readonly
@@ -129,5 +114,17 @@ export class Node extends Resource {
         return !!data.status?.providerStatus?.ready;
       },
     });
+  }
+
+  /** @returns {string} A string representation of this instance for logging/debugging. */
+  toString() {
+    const propStr = `${super.toString()}`;
+
+    if (Object.getPrototypeOf(this).constructor === Node) {
+      return `{Node ${propStr}}`;
+    }
+
+    // this is actually an extended class instance, so return only the properties
+    return propStr;
   }
 }
