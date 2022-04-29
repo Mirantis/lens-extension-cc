@@ -1,20 +1,18 @@
 import * as rtv from 'rtvjs';
 import { merge } from 'lodash';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
-import { Resource, resourceTs } from './Resource';
-import { Namespace } from './Namespace';
+import { NamedResource, namedResourceTs } from './NamedResource';
 import { entityLabels } from '../../catalog/catalogEntities';
 import {
   LicenseEntity,
   licenseEntityPhases,
 } from '../../catalog/LicenseEntity';
 import { apiKinds } from '../apiConstants';
-import { logValue } from '../../util/logger';
 
 /**
  * Typeset for an MCC License API resource.
  */
-export const licenseTs = mergeRtvShapes({}, resourceTs, {
+export const licenseTs = mergeRtvShapes({}, namedResourceTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
   //  related to what we expect to find in order to create a `Credential` class instance
 
@@ -25,7 +23,7 @@ export const licenseTs = mergeRtvShapes({}, resourceTs, {
  * MCC license API resource.
  * @class License
  */
-export class License extends Resource {
+export class License extends NamedResource {
   /**
    * @constructor
    * @param {Object} params
@@ -34,23 +32,7 @@ export class License extends Resource {
    * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
    */
   constructor({ data, namespace, cloud }) {
-    super({ data, cloud, typeset: licenseTs });
-
-    DEV_ENV &&
-      rtv.verify(
-        { namespace },
-        {
-          namespace: [rtv.CLASS_OBJECT, { ctor: Namespace }],
-        }
-      );
-
-    /** @member {Namespace} namespace */
-    Object.defineProperty(this, 'namespace', {
-      enumerable: true,
-      get() {
-        return namespace;
-      },
-    });
+    super({ data, namespace, cloud, typeset: licenseTs });
   }
 
   /**
@@ -86,9 +68,7 @@ export class License extends Resource {
 
   /** @returns {string} A string representation of this instance for logging/debugging. */
   toString() {
-    const propStr = `${super.toString()}, namespace: ${logValue(
-      this.namespace.name
-    )}`;
+    const propStr = `${super.toString()}`;
 
     if (Object.getPrototypeOf(this).constructor === License) {
       return `{License ${propStr}}`;

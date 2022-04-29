@@ -2,8 +2,7 @@ import * as rtv from 'rtvjs';
 import { get, merge } from 'lodash';
 import { Common } from '@k8slens/extensions';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
-import { resourceTs } from './Resource';
-import { Node } from './Node';
+import { Node, nodeTs } from './Node';
 import {
   entityLabels,
   clusterEntityPhases,
@@ -29,7 +28,7 @@ const getServerUrl = function (data) {
 /**
  * Typeset for an MCC Cluster API resource.
  */
-export const clusterTs = mergeRtvShapes({}, resourceTs, {
+export const clusterTs = mergeRtvShapes({}, nodeTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
   //  related to what we expect to find in order to create a `Credential` class instance
 
