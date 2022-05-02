@@ -1,6 +1,6 @@
 # ChangeLog
 
-## UNRELEASED
+## v4.0.0-beta.0
 
 ⚠️ This is an early release build and is not fully tested.
 
