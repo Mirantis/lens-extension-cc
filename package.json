@@ -59,7 +59,7 @@
     "download:kubelogin:windows": "sh -c \"[[ -f ./bin/kubelogin-win-amd64.exe ]] || (mkdir -p ./tmp && cd ./tmp && curl -slL https://github.com/int128/kubelogin/releases/download/v1.25.1/kubelogin_windows_amd64.zip | tar -xz && mv kubelogin.exe ../bin/kubelogin-win-amd64.exe && chmod +x ../bin/kubelogin-win-amd64.exe && cd .. && rm -rf ./tmp)\""
   },
   "devDependencies": {
-    "@babel/cli": "^7.17.6",
+    "@babel/cli": "^7.17.10",
     "@babel/core": "^7.17.9",
     "@babel/eslint-parser": "^7.17.0",
     "@babel/plugin-proposal-class-properties": "^7.16.7",
