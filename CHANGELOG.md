@@ -11,6 +11,7 @@
 - Fixed issue with "select all" checkboxes going from partial to unchecked instead of checked.
 - The `kubelogin` binary is now being packaged with the extension to remove the need for users to download and install it separately.
     - The extension will support macOS x64/arm64, Linux x64, and Windows x64 (the platforms which Lens supports).
+- Fixed issue where terminated (but not yet completely deleted) projects would remain listed as either synced or syncable.
 
 ## v4.0.0-alpha.4
 
