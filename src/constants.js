@@ -121,6 +121,14 @@ export const ipcEvents = deepFreeze({
      * - `fetching`: New fetching state.
      */
     CLOUD_FETCHING_CHANGE: 'cloudFetchingChange',
+
+    SUSPEND: 'Main.Power.onSuspend',
+    RESUME: 'Main.Power.onResume',
+  },
+
+  network: {
+    OFFLINE_EVENT: 'network:offline',
+    ONLINE_EVENT: 'network:online',
   },
 
   /** Invoked on the `main` process only. Returns a promise to be awaited. */

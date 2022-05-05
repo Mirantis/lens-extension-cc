@@ -18,6 +18,7 @@ import {
   apiChangeTypes,
   apiNamespacePhases,
 } from '../api/apiConstants';
+import { ipcEvents } from '../constants';
 import * as strings from '../strings';
 
 // TODO[PRODX-22469]: Remove if we drop watches.
@@ -728,8 +729,9 @@ export class DataCloud extends EventDispatcher {
    * @param {boolean} [preview] If truthy, declares this instance is only for preview
    *  purposes (i.e. not used for actual sync to the Catalog), which reduces the amount
    *  of data fetched from the Cloud in order to make data fetching much faster.
+   * @param {Ipc} [ipc] Receive an instance of either a Main.Ipc or Renderer.Ipc class.
    */
-  constructor(cloud, preview) {
+  constructor(cloud, preview, ipc) {
     super();
 
     let _loaded = false; // true if we've fetched data at least once, successfully
@@ -934,6 +936,28 @@ export class DataCloud extends EventDispatcher {
 
     // schedule the initial data load/fetch, afterwhich we'll either start watching or polling
     this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA);
+
+    ipc.listen(ipcEvents.network.OFFLINE_EVENT, () => {
+      console.log('OFFLINE_EVENT');
+      try {
+        this.resetInterval(false);
+        // Need somehow to call event from main.ts here
+        // onSuspend(ipc);
+      } catch (error) {
+        this.logger.error(`error suspeding after ${ipcEvents.broadcast.OFFLINE_EVENT}`, error);
+      }
+    });
+
+    ipc.listen(ipcEvents.network.ONLINE_EVENT, () => {
+      console.log('ONLINE_EVENT');
+      try {
+        this.startInterval();
+        // Need somehow to call event from main.ts here too
+        // onResume(ipc);
+      } catch (error) {
+        this.logger.error(`error resuming after ${ipcEvents.broadcast.ONLINE_EVENT}`, error);
+      }
+    });
   }
 
   //

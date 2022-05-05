@@ -39,6 +39,8 @@ export default class ExtensionMain extends Main.LensExtension {
   onActivate() {
     logger.log('ExtensionMain.onActivate()', 'extension activated');
 
+    const ipc = IpcMain.createInstance(this);
+
     // NOTE: an extension can only have ONE registered Catalog Source
     this.addCatalogSource(consts.catalog.source, catalogSource);
 
@@ -49,6 +51,29 @@ export default class ExtensionMain extends Main.LensExtension {
 
     // AFTER load stores
     SyncManager.createInstance(this, catalogSource, IpcMain.getInstance());
+
+    /**
+     * @member {IpcMain} ipcMain I think this parameter should be passed from DataCloud.js
+     */
+    const onSuspend = (ipcMain) => {
+      ipcMain.broadcast(consts.ipcEvents.broadcast.SUSPEND);
+    };
+
+    /**
+     * @member {IpcMain} ipcMain I think this parameter should be passed from DataCloud.js
+     */
+    const onResume = (ipcMain) => {
+      ipcMain.broadcast(consts.ipcEvents.broadcast.RESUME);
+    };
+
+    // Not sure if this listeners should be here (another extension use them in main.ts)
+    ipc.listen(consts.ipcEvents.network.OFFLINE_EVENT, () => {
+      console.log('OFFLINE_EVENT');
+    });
+
+    ipc.listen(consts.ipcEvents.network.ONLINE_EVENT, () => {
+      console.log('ONLINE_EVENT');
+    });
   }
 
   onDeactivate() {

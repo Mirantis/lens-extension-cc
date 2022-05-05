@@ -958,7 +958,7 @@ export class SyncManager extends Singleton {
           `Detected new Cloud, creating new DataCloud for it; cloud=${cloud}`
         );
 
-        const dataCloud = new DataCloud(cloud);
+        const dataCloud = new DataCloud(cloud, false, this.ipcMain);
 
         dataCloud.addEventListener(
           DATA_CLOUD_EVENTS.DATA_UPDATED,
@@ -1311,7 +1311,7 @@ export class SyncManager extends Singleton {
 
     this.ipcMain.capture(
       'info',
-      'SyncManager.onDataUpdated()',
+      '.onDataUpdated()',
       `Done: Updated Catalog and SyncStore for changes in dataCloud=${dataCloud}`
     );
   };
