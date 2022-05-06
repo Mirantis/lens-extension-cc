@@ -204,6 +204,18 @@ export const clusterEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
     region: rtv.STRING,
     provider: rtv.STRING,
     currentVersion: rtv.STRING,
+    dashboardUrl: rtv.STRING,
+    lma: [
+      rtv.EXPECTED, // could be null, or an object
+      {
+        alertaUrl: [rtv.OPTIONAL, rtv.STRING],
+        alertManagerUrl: [rtv.OPTIONAL, rtv.STRING],
+        grafanaUrl: [rtv.OPTIONAL, rtv.STRING],
+        kibanaUrl: [rtv.OPTIONAL, rtv.STRING],
+        prometheusUrl: [rtv.OPTIONAL, rtv.STRING],
+        telemeterServerUrl: [rtv.OPTIONAL, rtv.STRING],
+      },
+    ],
   },
 
   // based on Lens `KubernetesClusterStatus` type

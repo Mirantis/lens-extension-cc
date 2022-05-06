@@ -207,9 +207,13 @@ const _deserializeCollection = function (
       } catch (err) {
         logger.warn(
           'DataCloud._deserializeCollection()',
-          `Ignoring "${resourceType}" resource type ${idx}${
-            namespace ? ` from namespace=${logValue(namespace.name)}` : ''
-          }: Could not be deserialized, error="${getErrorMessage(err)}"`,
+          `Ignoring ${logValue(
+            resourceType
+          )} resource index=${idx}: Could not be deserialized; name=${logValue(
+            data?.metadata?.name
+          )}; namespace=${logValue(namespace.name)}; error="${getErrorMessage(
+            err
+          )}"`,
           err
         );
         return undefined;
