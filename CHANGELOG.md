@@ -5,6 +5,8 @@
 ⚠️ This is an early release build and is not fully tested.
 
 - The `kubelogin` license is now included alongside the binaries.
+- The Mirantis Kubernetes Engine dashboard URL is now included (and clickable) in the cluster details panel (choose "View details" from the cluster's context menu).
+- The Mirantis StackLight URLs are now included (and clickable) in the cluster details panel, if StackLight is enabled on the cluster.
 
 ## v4.0.0-beta.0
 

@@ -40,7 +40,7 @@ export const mockDataCloud = {
           idpClientId: 'id',
           apiCertificate:
             'testsertificate==',
-          ucpUrl: 'https://123.12.123.1:1234',
+          dashboardUrl: 'https://123.12.123.1:1234',
           provider: 'provider-1',
           region: 'region-eu',
         },
@@ -67,7 +67,7 @@ export const mockDataCloud = {
           idpClientId: 'id',
           apiCertificate:
             'testsertificate==',
-          ucpUrl: 'https://123.12.123.1:1234',
+          dashboardUrl: 'https://123.12.123.1:1234',
           provider: 'provider-1',
           region: 'region-eu',
         },
@@ -120,7 +120,7 @@ export const mockDataCloud2 = {
           idpClientId: 'id',
           apiCertificate:
             'testsertificate==',
-          ucpUrl: 'https://123.12.123.1:1234',
+          dashboardUrl: 'https://123.12.123.1:1234',
           provider: 'provider-1',
           region: 'region-eu',
         },
@@ -147,7 +147,7 @@ export const mockDataCloud2 = {
           idpClientId: 'id',
           apiCertificate:
             'testsertificate==',
-          ucpUrl: 'https://123.12.123.1:1234',
+          dashboardUrl: 'https://123.12.123.1:1234',
           provider: 'provider-1',
           region: 'region-eu',
         },

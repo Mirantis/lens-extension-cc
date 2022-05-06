@@ -1,10 +1,16 @@
 import { deepFreeze } from './util/deepFreeze';
 
+// maximum number of projects (inclusive), at which point the warning icon will appear
+//  about potential performance issues
+export const projectsCountBeforeWarning = 10;
+
+export const companyName = 'Mirantis';
 export const mccPascalName = 'Mcc'; // PascalCase, for prefixing with other names
 export const mccCodeName = mccPascalName.toUpperCase();
 export const mccShortName = 'Container Cloud';
-export const mccFullName = `Mirantis ${mccShortName}`;
-export const projectsCountBeforeWarning = 10; // The maximum number of projects, after which the warning icon will appear
+export const mccFullName = `${companyName} ${mccShortName}`;
+
+export const mkeCodeName = 'MKE';
 
 const mccEntityGroup = `entity.${mccCodeName}.dev`.toLowerCase();
 const lensCatalogGroup = 'catalog.k8slens.dev';

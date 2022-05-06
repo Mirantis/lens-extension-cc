@@ -109,6 +109,33 @@ export const clusterTs = mergeRtvShapes({}, nodeTs, {
         // helm chart status
         helm: {
           ready: rtv.BOOLEAN,
+          releases: [
+            rtv.OPTIONAL,
+            {
+              stacklight: {
+                // yes, lower 'l'
+                alerta: {
+                  url: [rtv.OPTIONAL, rtv.STRING],
+                },
+                alertmanager: {
+                  // yes, lower 'm'
+                  url: [rtv.OPTIONAL, rtv.STRING],
+                },
+                grafana: {
+                  url: [rtv.OPTIONAL, rtv.STRING],
+                },
+                kibana: {
+                  url: [rtv.OPTIONAL, rtv.STRING],
+                },
+                prometheus: {
+                  url: [rtv.OPTIONAL, rtv.STRING],
+                },
+                telemeterServer: {
+                  url: [rtv.OPTIONAL, rtv.STRING],
+                },
+              },
+            },
+          ],
         },
 
         // overall readiness: true if all `conditions[*].ready` and `helm.ready` are true
@@ -234,6 +261,19 @@ export class Cluster extends Node {
     });
 
     /**
+     * True if this Cluster's providers are ready for use, which implies that
+     *  the `data.status.providerStatus` property exists.
+     *
+     * @member {boolean} providerReady
+     */
+    Object.defineProperty(this, 'providerReady', {
+      enumerable: true,
+      get() {
+        return !!data.status?.providerStatus?.ready;
+      },
+    });
+
+    /**
      * True if this Cluster has all the data necessary to generate a kubeConfig for it.
      *
      * NOTE: It's possible for the Cluster to be config-ready, but not overall `ready`.
@@ -248,11 +288,12 @@ export class Cluster extends Node {
         //  these fields are all available and defined, and cluster isn't being deleted
         return !!(
           !this.deleteInProgress &&
-          data.status?.providerStatus?.loadBalancerHost &&
-          data.status?.providerStatus?.apiServerCertificate &&
-          data.status?.providerStatus?.oidc?.certificate &&
-          data.status?.providerStatus?.oidc?.clientId &&
-          data.status?.providerStatus?.oidc?.ready
+          this.providerReady &&
+          data.status.providerStatus.loadBalancerHost &&
+          data.status.providerStatus.apiServerCertificate &&
+          data.status.providerStatus.oidc?.ready &&
+          data.status.providerStatus.oidc?.certificate &&
+          data.status.providerStatus.oidc?.clientId
         );
       },
     });
@@ -322,16 +363,52 @@ export class Cluster extends Node {
     });
 
     /**
-     * e.g. 'https://1.1.1.1:123'
+     * URL to the MKE instance for the mgmt cluster, e.g. 'https://1.1.1.1:123'
      * @readonly
-     * @member {string|null} ucpUrl
+     * @member {string|null} dashboardUrl
      */
-    Object.defineProperty(this, 'ucpUrl', {
+    Object.defineProperty(this, 'dashboardUrl', {
       enumerable: true,
       get() {
-        return this.configReady
+        return this.providerReady
           ? data.status.providerStatus.ucpDashboard
           : null;
+      },
+    });
+
+    /**
+     * Logging, Monitoring, and Alerting info, if ready.
+     * @readonly
+     * @member {{
+     *   alertaUrl?: string,
+     *   alertManagerUrl?: string,
+     *   grafanaUrl?: string,
+     *   kibanaUrl?: string,
+     *   prometheusUrl?: string,
+     *   telemeterServerUrl?: string,
+     * }|null} lma
+     */
+    Object.defineProperty(this, 'lma', {
+      enumerable: true,
+      get() {
+        if (
+          this.providerReady &&
+          data.status.providerStatus.helm?.ready &&
+          data.status.providerStatus.helm?.releases?.stacklight
+        ) {
+          const { stacklight: stackLight = {} } =
+            data.status.providerStatus.helm.releases;
+          return {
+            alertaUrl: stackLight.alerta?.url || undefined,
+            alertManagerUrl: stackLight.alertmanager?.url || undefined, // yes, different casing...
+            grafanaUrl: stackLight.grafana?.url || undefined,
+            kibanaUrl: stackLight.kibana?.url || undefined,
+            prometheusUrl: stackLight.prometheus?.url || undefined,
+            telemeterServerUrl: stackLight.telemeterServer?.url || undefined,
+          };
+        }
+
+        return null;
       },
     });
 
@@ -509,6 +586,8 @@ export class Cluster extends Node {
         region: this.region,
         provider: this.provider,
         currentVersion: this.currentVersion,
+        dashboardUrl: this.dashboardUrl,
+        lma: this.lma,
       },
       status: {
         // always starts off disconnected as far as Lens is concerned (because it

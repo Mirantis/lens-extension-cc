@@ -7,7 +7,13 @@
 //
 
 import pkg from '../package.json';
-import { mccCodeName, mccShortName, mccFullName } from './constants';
+import {
+  companyName,
+  mccCodeName,
+  mccShortName,
+  mccFullName,
+  mkeCodeName,
+} from './constants';
 
 export type Prop = (...tokens: any[]) => string;
 
@@ -248,10 +254,18 @@ export const catalog: Dict = {
           url: () => 'URL',
           region: () => 'Region',
           provider: () => 'Provider',
-          mccStatus: () => 'MCC Status',
+          mccStatus: () => `${mccCodeName} Status`,
           release: () => 'Release',
           managers: () => 'Managers',
           workers: () => 'Workers',
+          dashboardUrl: () => `${mkeCodeName} dashboard`,
+          lma: () => `${companyName} StackLight`,
+          alertaUrl: () => 'Alerta',
+          alertManagerUrl: () => 'Alert Manager',
+          grafanaUrl: () => 'Grafana',
+          kibanaUrl: () => 'Kibana',
+          prometheusUrl: () => 'Prometheus',
+          telemeterServerUrl: () => 'Telemeter Server',
         },
       },
     },
@@ -289,7 +303,7 @@ export const catalog: Dict = {
         props: {
           provider: () => 'Provider',
           region: () => 'Region',
-          mccStatus: () => 'MCC Status',
+          mccStatus: () => `${mccCodeName} Status`,
         },
         info: {
           status: (valid) => (valid ? 'Valid' : 'Invalid'),
