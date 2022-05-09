@@ -19,7 +19,7 @@ export const apiResourceTypes = Object.freeze({
   VSPHERE_CREDENTIAL: 'vspherecredentials',
   AZURE_CREDENTIAL: 'azurecredentials',
   BYO_CREDENTIAL: 'byocredentials',
-  METAL_CREDENTIAL: 'secrets',
+  SECRET: 'secrets',
   EVENT: 'events',
   CLUSTER_RELEASE: 'clusterreleases',
   KAAS_RELEASE: 'kaasreleases',
@@ -45,7 +45,6 @@ export const apiCredentialTypes = Object.freeze(
     'VSPHERE_CREDENTIAL',
     'AZURE_CREDENTIAL',
     'BYO_CREDENTIAL',
-    'METAL_CREDENTIAL',
   ])
 );
 
@@ -62,7 +61,6 @@ export const apiKinds = Object.freeze({
   AZURE_CREDENTIAL: 'AzureCredential',
   BYO_CREDENTIAL: 'BYOCredential',
   EQUINIX_CREDENTIAL: 'EquinixMetalCredential',
-  METAL_CREDENTIAL: 'Secret', // TODO: not sure of the actual kind in kube spec, need MCC+BM env
   OPENSTACK_CREDENTIAL: 'OpenStackCredential',
   VSPHERE_CREDENTIAL: 'VsphereCredential',
   RHEL_LICENSE: 'RHELLicense',
@@ -80,7 +78,6 @@ export const apiCredentialKinds = Object.freeze(
     'AZURE_CREDENTIAL',
     'BYO_CREDENTIAL',
     'EQUINIX_CREDENTIAL',
-    'METAL_CREDENTIAL',
     'OPENSTACK_CREDENTIAL',
     'VSPHERE_CREDENTIAL',
   ])
@@ -96,9 +93,6 @@ export const apiCredentialProviders = Object.freeze({
   AZURE_CREDENTIAL: 'azure',
   BYO_CREDENTIAL: 'byo',
   EQUINIX_CREDENTIAL: 'equinixmetal',
-  // TODO: there may be one more kind here for BM credentials (i.e. secrets)
-  //  but we first need to test this in an MCC+BM env
-  // METAL_CREDENTIAL: '',
   OPENSTACK_CREDENTIAL: 'openstack',
   VSPHERE_CREDENTIAL: 'vsphere',
 });

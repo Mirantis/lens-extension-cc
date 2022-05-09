@@ -62,7 +62,7 @@ export class KubernetesClient {
   ) {
     const url = {
       [apiResourceTypes.NAMESPACE]: resourceType,
-      [apiResourceTypes.METAL_CREDENTIAL]: `${apiResourceTypes.NAMESPACE}/${namespaceName}/${resourceType}`,
+      [apiResourceTypes.SECRET]: `${apiResourceTypes.NAMESPACE}/${namespaceName}/${resourceType}`,
       [apiResourceTypes.EVENT]: `${apiResourceTypes.NAMESPACE}/${namespaceName}/${resourceType}`,
     };
 
@@ -86,7 +86,7 @@ export class KubernetesClient {
   create(resourceType, { namespaceName, spec } = {}) {
     const url = {
       [apiResourceTypes.NAMESPACE]: resourceType,
-      [apiResourceTypes.METAL_CREDENTIAL]: `${apiResourceTypes.NAMESPACE}/${namespaceName}/${resourceType}`,
+      [apiResourceTypes.SECRET]: `${apiResourceTypes.NAMESPACE}/${namespaceName}/${resourceType}`,
     };
     return this.request(url[resourceType], {
       options: { method: 'POST', body: JSON.stringify(spec) },
@@ -100,7 +100,7 @@ export class KubernetesClient {
   delete(resourceType, { namespaceName, name } = {}) {
     const url = {
       [apiResourceTypes.NAMESPACE]: `${resourceType}/${name}`,
-      [apiResourceTypes.METAL_CREDENTIAL]: `${apiResourceTypes.NAMESPACE}/${namespaceName}/${resourceType}/${name}`,
+      [apiResourceTypes.SECRET]: `${apiResourceTypes.NAMESPACE}/${namespaceName}/${resourceType}/${name}`,
     };
     return this.request(url[resourceType], {
       options: { method: 'DELETE' },

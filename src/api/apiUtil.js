@@ -22,7 +22,7 @@ const typeToClient = {
   [apiResourceTypes.VSPHERE_CREDENTIAL]: ResourceClient,
   [apiResourceTypes.AZURE_CREDENTIAL]: ResourceClient,
   [apiResourceTypes.BYO_CREDENTIAL]: ResourceClient,
-  [apiResourceTypes.METAL_CREDENTIAL]: KubernetesClient,
+  [apiResourceTypes.SECRET]: KubernetesClient,
   [apiResourceTypes.EVENT]: KubernetesClient,
   [apiResourceTypes.CLUSTER_RELEASE]: ResourceClient,
   [apiResourceTypes.KAAS_RELEASE]: ResourceClient,

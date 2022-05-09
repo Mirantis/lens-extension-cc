@@ -95,6 +95,7 @@ export class CloudConfig {
       case apiResourceTypes.MACHINE: // fall-through
       case apiResourceTypes.PUBLIC_KEY: // fall-through
       case apiResourceTypes.NAMESPACE: // fall-through
+      case apiResourceTypes.SECRET: // fall-through
       case apiResourceTypes.EVENT: // fall-through
       case apiResourceTypes.CLUSTER_RELEASE: // fall-through
       case apiResourceTypes.KAAS_RELEASE: // fall-through
@@ -121,7 +122,6 @@ export class CloudConfig {
       case apiResourceTypes.BYO_CREDENTIAL:
         return isAvailable('byo');
 
-      case apiResourceTypes.METAL_CREDENTIAL:
       case apiResourceTypes.METAL_HOST:
         return isAvailable('baremetal');
 

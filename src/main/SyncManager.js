@@ -48,7 +48,6 @@ const nsPropToKinds = {
     apiKinds.VSPHERE_CREDENTIAL,
     apiKinds.AZURE_CREDENTIAL,
     apiKinds.BYO_CREDENTIAL,
-    apiKinds.METAL_CREDENTIAL,
   ],
 };
 
@@ -65,7 +64,6 @@ const kindToSyncStoreProp = {
   [apiKinds.VSPHERE_CREDENTIAL]: 'credentials',
   [apiKinds.AZURE_CREDENTIAL]: 'credentials',
   [apiKinds.BYO_CREDENTIAL]: 'credentials',
-  [apiKinds.METAL_CREDENTIAL]: 'credentials',
   [apiKinds.RHEL_LICENSE]: 'licenses',
   [apiKinds.PROXY]: 'proxies',
 };
