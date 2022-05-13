@@ -4092,10 +4092,10 @@ roarr@^2.15.3:
     semver-compare "^1.0.0"
     sprintf-js "^1.1.2"
 
-rtvjs@^4.0.0:
-  version "4.0.0"
-  resolved "https://registry.yarnpkg.com/rtvjs/-/rtvjs-4.0.0.tgz#7923b812676d4734ce2e631973b2e488e70380a7"
-  integrity sha512-KpMMeMSxz8PUavm0IcpW5I0m0r17TeXGxQwjqFCZfbDiOvXSe/l6NLymhLC5ABs8dqJsK6zNGsCdCIYzHWAnVw==
+rtvjs@^4.1.0:
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/rtvjs/-/rtvjs-4.1.0.tgz#415a2edb785ca890e7f000915f0f6c3a4e9d5eeb"
+  integrity sha512-c3HXRkg97trm8ByaHyN1xL4nRivwWZElC3dMH/7vbmlXNUCKP2Xpxd/JpYbRNviCQN6vxuppAB6SLlfMmZ0W1A==
 
 run-parallel@^1.1.9:
   version "1.1.10"
