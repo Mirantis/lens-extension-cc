@@ -122,13 +122,39 @@ export const ipcEvents = deepFreeze({
      */
     CLOUD_FETCHING_CHANGE: 'cloudFetchingChange',
 
-    SUSPEND: 'Main.Power.onSuspend',
-    RESUME: 'Main.Power.onResume',
-  },
+    /**
+     * System power is being suspended.
+     *
+     * Signature: `(event: string) => void`
+     */
+    POWER_SUSPEND: 'powerSuspend',
 
-  network: {
-    OFFLINE_EVENT: 'network:offline',
-    ONLINE_EVENT: 'network:online',
+    /**
+     * System power has been restored.
+     *
+     * Signature: `(event: string) => void`
+     */
+    POWER_RESUME: 'powerResume',
+
+    /**
+     * Network connection has dropped.
+     *
+     * NOTE: This is not 100% reliable because it's not always possible for Electron
+     *  to detect when the network is offline. For example, if the app is running in
+     *  a VM with its virtual network adapter configured to be "always on", yet the
+     *  host's network connection is dropped, the app will appear online when in fact
+     *  it's not.
+     *
+     * Signature: `(event: string) => void`
+     */
+    NETWORK_OFFLINE: 'networkOffline',
+
+    /**
+     * Network connection has been restored.
+     *
+     * Signature: `(event: string) => void`
+     */
+    NETWORK_ONLINE: 'networkOnline',
   },
 
   /** Invoked on the `main` process only. Returns a promise to be awaited. */

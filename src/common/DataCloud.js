@@ -724,14 +724,15 @@ const _fetchNamespaces = async function (cloud, preview = false) {
 export class DataCloud extends EventDispatcher {
   /**
    * @constructor
-   * @param {Cloud} cloud The Cloud that provides backing for the DataCloud to access
+   * @param {Object} params
+   * @param {Cloud} params.cloud The Cloud that provides backing for the DataCloud to access
    *  the API and determines which namespaces are synced.
-   * @param {boolean} [preview] If truthy, declares this instance is only for preview
+   * @param {IpcMain|IpcRenderer} params.ipc Singleton instance from either Main or Renderer thread.
+   * @param {boolean} [params.preview] If truthy, declares this instance is only for preview
    *  purposes (i.e. not used for actual sync to the Catalog), which reduces the amount
    *  of data fetched from the Cloud in order to make data fetching much faster.
-   * @param {Ipc} [ipc] Receive an instance of either a Main.Ipc or Renderer.Ipc class.
    */
-  constructor(cloud, preview, ipc) {
+  constructor({ cloud, ipc, preview = false }) {
     super();
 
     let _loaded = false; // true if we've fetched data at least once, successfully
@@ -937,27 +938,18 @@ export class DataCloud extends EventDispatcher {
     // schedule the initial data load/fetch, afterwhich we'll either start watching or polling
     this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA);
 
-    ipc.listen(ipcEvents.network.OFFLINE_EVENT, () => {
-      console.log('OFFLINE_EVENT');
-      try {
-        this.resetInterval(false);
-        // Need somehow to call event from main.ts here
-        // onSuspend(ipc);
-      } catch (error) {
-        this.logger.error(`error suspeding after ${ipcEvents.broadcast.OFFLINE_EVENT}`, error);
-      }
-    });
-
-    ipc.listen(ipcEvents.network.ONLINE_EVENT, () => {
-      console.log('ONLINE_EVENT');
-      try {
-        this.startInterval();
-        // Need somehow to call event from main.ts here too
-        // onResume(ipc);
-      } catch (error) {
-        this.logger.error(`error resuming after ${ipcEvents.broadcast.ONLINE_EVENT}`, error);
-      }
-    });
+    ipc.listen(ipcEvents.broadcast.POWER_SUSPEND, () =>
+      this.onSuspended(ipcEvents.broadcast.POWER_SUSPEND)
+    );
+    ipc.listen(ipcEvents.broadcast.POWER_RESUME, () =>
+      this.onResumed(ipcEvents.broadcast.POWER_RESUME)
+    );
+    ipc.listen(ipcEvents.broadcast.NETWORK_OFFLINE, () =>
+      this.onSuspended(ipcEvents.broadcast.NETWORK_OFFLINE)
+    );
+    ipc.listen(ipcEvents.broadcast.NETWORK_ONLINE, () =>
+      this.onResumed(ipcEvents.broadcast.NETWORK_ONLINE)
+    );
   }
 
   //
@@ -1039,6 +1031,36 @@ export class DataCloud extends EventDispatcher {
 
   /** Called when __this__ DataCloud should fetch new data from its Cloud. */
   onFetchData = () => this.fetchData();
+
+  /**
+   * Called when the system is getting suspended or network has been dropped.
+   * @param {string} event IPC event name.
+   */
+  onSuspended = (event) => {
+    if (this.polling) {
+      logger.info(
+        'DataCloud.onSuspended()',
+        `Stopping interval until network/power restored; event=${logValue(
+          event
+        )}; dataCloud=${logValue(this.cloudUrl)}`
+      );
+      this.resetInterval(false);
+    }
+  };
+
+  /**
+   * Called after the system has been resumed (i.e. awakened from sleep).
+   * @param {string} event IPC event name.
+   */
+  onResumed = (event) => {
+    logger.info(
+      'DataCloud.onResumed()',
+      `Fetching full data to resume sync; event=${logValue(
+        event
+      )}; dataCloud=${logValue(this.cloudUrl)}`
+    );
+    this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA);
+  };
 
   //
   // METHODS

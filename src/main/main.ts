@@ -36,47 +36,39 @@ export default class ExtensionMain extends Main.LensExtension {
     },
   ];
 
+  powerDisposers = [];
+
   onActivate() {
     logger.log('ExtensionMain.onActivate()', 'extension activated');
-
-    const ipc = IpcMain.createInstance(this);
 
     // NOTE: an extension can only have ONE registered Catalog Source
     this.addCatalogSource(consts.catalog.source, catalogSource);
 
-    IpcMain.createInstance(this);
+    const ipc = IpcMain.createInstance(this);
 
-    cloudStore.loadExtension(this, IpcMain.getInstance());
-    syncStore.loadExtension(this, IpcMain.getInstance());
+    cloudStore.loadExtension(this, ipc);
+    syncStore.loadExtension(this, ipc);
 
     // AFTER load stores
-    SyncManager.createInstance(this, catalogSource, IpcMain.getInstance());
-
-    /**
-     * @member {IpcMain} ipcMain I think this parameter should be passed from DataCloud.js
-     */
-    const onSuspend = (ipcMain) => {
-      ipcMain.broadcast(consts.ipcEvents.broadcast.SUSPEND);
-    };
-
-    /**
-     * @member {IpcMain} ipcMain I think this parameter should be passed from DataCloud.js
-     */
-    const onResume = (ipcMain) => {
-      ipcMain.broadcast(consts.ipcEvents.broadcast.RESUME);
-    };
-
-    // Not sure if this listeners should be here (another extension use them in main.ts)
-    ipc.listen(consts.ipcEvents.network.OFFLINE_EVENT, () => {
-      console.log('OFFLINE_EVENT');
+    SyncManager.createInstance({
+      extension: this,
+      catalogSource,
+      ipcMain: ipc,
     });
 
-    ipc.listen(consts.ipcEvents.network.ONLINE_EVENT, () => {
-      console.log('ONLINE_EVENT');
-    });
+    this.powerDisposers.push(
+      Main.Power.onSuspend(async () => ipc.notifyPowerSuspend())
+    );
+
+    this.powerDisposers.push(
+      Main.Power.onResume(async () => ipc.notifyPowerResume())
+    );
   }
 
   onDeactivate() {
-    logger.log('ExtensionMain.onDeactivate()', 'extension deactivated');
+    logger.log('ExtensionMain.onDeactivate()', 'Extension deactivated');
+
+    this.powerDisposers.forEach((disposer) => disposer());
+    this.powerDisposers = [];
   }
 }

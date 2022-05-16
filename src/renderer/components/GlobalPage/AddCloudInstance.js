@@ -61,7 +61,11 @@ export const AddCloudInstance = ({ onAdd, onCancel }) => {
     setLoading(true);
 
     // just use a minimal preview instance since it's throw-away
-    const dc = new DataCloud(cloud, true, IpcRenderer.getInstance());
+    const dc = new DataCloud({
+      cloud,
+      preview: true,
+      ipc: IpcRenderer.getInstance(),
+    });
 
     const loadingListener = () => {
       // when DataCloud loaded, it means it contains all needed data
