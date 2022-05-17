@@ -127,4 +127,14 @@ export class IpcMain extends Main.Ipc {
       fetching
     );
   }
+
+  /** Notifies listeners that power is being suspended. */
+  notifyPowerSuspend() {
+    this.broadcast(ipcEvents.broadcast.POWER_SUSPEND);
+  }
+
+  /** Notifies listeners that power has been restored. */
+  notifyPowerResume() {
+    this.broadcast(ipcEvents.broadcast.POWER_RESUME);
+  }
 }

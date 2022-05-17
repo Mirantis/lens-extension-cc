@@ -37,4 +37,14 @@ export class IpcRenderer extends Renderer.Ipc {
     super(extension);
     this.listen(ipcEvents.broadcast.LOGGER, this.handleLogger);
   }
+
+  /** Notifies listeners that network connectivity has been dropped. */
+  notifyNetworkOffline() {
+    this.broadcast(ipcEvents.broadcast.NETWORK_OFFLINE);
+  }
+
+  /** Notifies listeners that network connectivity has been restored. */
+  notifyNetworkOnline() {
+    this.broadcast(ipcEvents.broadcast.NETWORK_ONLINE);
+  }
 }

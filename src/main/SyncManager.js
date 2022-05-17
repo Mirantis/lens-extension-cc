@@ -80,12 +80,14 @@ const kindToNamespaceProp = kindToSyncStoreProp; // same property names for now
  */
 export class SyncManager extends Singleton {
   /**
-   * @param {LensExtension} extension Extension instance.
-   * @param {Array<CatalogEntity>} catalogSource Registered Lens Catalog source.
-   * @param {IpcMain} ipcMain Singleton instance for sending/receiving messages to/from Renderer.
+   * @param {Object} params
+   * @param {LensExtension} params.extension Extension instance.
+   * @param {Array<CatalogEntity>} params.catalogSource Registered Lens Catalog source.
+   * @param {IpcMain} params.ipcMain Singleton instance for sending/receiving messages
+   *  to/from Renderer.
    * @constructor
    */
-  constructor(extension, catalogSource, ipcMain) {
+  constructor({ extension, catalogSource, ipcMain }) {
     super();
 
     let _dataClouds = {};
@@ -958,7 +960,7 @@ export class SyncManager extends Singleton {
           `Detected new Cloud, creating new DataCloud for it; cloud=${cloud}`
         );
 
-        const dataCloud = new DataCloud(cloud);
+        const dataCloud = new DataCloud({ cloud, ipc: this.ipcMain });
 
         dataCloud.addEventListener(
           DATA_CLOUD_EVENTS.DATA_UPDATED,

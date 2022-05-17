@@ -7,6 +7,7 @@
 - The `kubelogin` license is now included alongside the binaries.
 - The Mirantis Kubernetes Engine dashboard URL is now included (and clickable) in the cluster details panel (choose "View details" from the cluster's context menu).
 - The Mirantis StackLight URLs are now included (and clickable) in the cluster details panel, if StackLight is enabled on the cluster.
+- Added detection for power suspend/resume and network offline/online events to auto-stop/resume sync operations.
 
 ## v4.0.0-beta.0
 

@@ -204,6 +204,14 @@ export default class ExtensionRenderer extends LensExtension {
   // METHODS
   //
 
+  protected handleNetworkOffline = () => {
+    IpcRenderer.getInstance().notifyNetworkOffline();
+  };
+
+  protected handleNetworkOnline = () => {
+    IpcRenderer.getInstance().notifyNetworkOnline();
+  };
+
   // WARNING: Lens calls this method more often that just when the extension
   //  gets activated. For example, it will call it _again_ if it adds a cluster
   //  page and the cluster page is activated.
@@ -236,6 +244,12 @@ export default class ExtensionRenderer extends LensExtension {
       );
     }
 
+    // NOTE: only the Renderer process has a window in Electron, so we listen here, but
+    //  still ultimately broadcast to all IPC listeners across both threads
+    // @see https://www.electronjs.org/docs/latest/tutorial/online-offline-events
+    window.addEventListener('offline', this.handleNetworkOffline);
+    window.addEventListener('online', this.handleNetworkOnline);
+
     // NOTE: Cluster page menu list must be STATIC. Checking here if the
     //  `Renderer.Catalog.catalogEntities.activeEntity` is an MCC cluster will
     //  not work. Neither will adding a mobx reaction like this
@@ -263,6 +277,9 @@ export default class ExtensionRenderer extends LensExtension {
   }
 
   onDeactivate() {
-    logger.log('ExtensionRenderer.onDeactivate()', 'extension deactivated');
+    logger.log('ExtensionRenderer.onDeactivate()', 'Extension deactivated');
+
+    window.removeEventListener('offline', this.handleNetworkOffline);
+    window.removeEventListener('online', this.handleNetworkOnline);
   }
 }

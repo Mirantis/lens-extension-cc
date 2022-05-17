@@ -6,6 +6,7 @@ import { ConnectionBlock } from './ConnectionBlock';
 import { SynchronizeBlock } from './SynchronizeBlock';
 import { CloseButton } from '../CloseButton/CloseButton';
 import { DataCloud, DATA_CLOUD_EVENTS } from '../../../common/DataCloud';
+import { IpcRenderer } from '../../IpcRenderer';
 import { Renderer } from '@k8slens/extensions';
 import { normalizeUrl } from '../../../util/netUtil';
 import { addCloudInstance } from '../../../strings';
@@ -60,7 +61,11 @@ export const AddCloudInstance = ({ onAdd, onCancel }) => {
     setLoading(true);
 
     // just use a minimal preview instance since it's throw-away
-    const dc = new DataCloud(cloud, true);
+    const dc = new DataCloud({
+      cloud,
+      preview: true,
+      ipc: IpcRenderer.getInstance(),
+    });
 
     const loadingListener = () => {
       // when DataCloud loaded, it means it contains all needed data
