@@ -1,13 +1,15 @@
 # ChangeLog
 
-## UNRELEASED
+## v4.0.0-beta.1
 
-⚠️ This is an early release build and is not fully tested.
+⚠️ This is an early release build and may still have some bugs.
 
 - The `kubelogin` license is now included alongside the binaries.
 - The Mirantis Kubernetes Engine dashboard URL is now included (and clickable) in the cluster details panel (choose "View details" from the cluster's context menu).
 - The Mirantis StackLight URLs are now included (and clickable) in the cluster details panel, if StackLight is enabled on the cluster.
 - Added detection for power suspend/resume and network offline/online events to auto-stop/resume sync operations.
+- Leveraged new [Minimum Viable Value](https://gitlab.com/stefcameron/rtvjs#minimum-viable-values) feature in RTV.js to reduce memory use.
+- Tested the extension against a number of corner case sync scenarios to improve quality.
 
 ## v4.0.0-beta.0
 
