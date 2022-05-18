@@ -28,6 +28,34 @@ const rules = {
   'no-use-before-define': 'error',
   'lines-between-class-members': 'error',
 
+  //// jest plugin
+
+  'jest/no-disabled-tests': 'error',
+  'jest/no-focused-tests': 'error',
+  'jest/no-identical-title': 'error',
+  'jest/valid-expect': 'error',
+  'jest/valid-title': 'error',
+
+  //// jest-dom plugin
+
+  // this rule is buggy, and doesn't seem to work well with the Testing Library's queries
+  'jest-dom/prefer-in-document': 'off',
+
+  //// testing-library plugin
+
+  // this prevents expect(document.querySelector('foo')), which is useful because not
+  //  all elements can be found using RTL queries (sticking to RTL queries probably
+  //  means less fragile tests, but then there are things we wouldn't be able to
+  //  test like whether something renders in Light mode or Dark mode as expected)
+  'testing-library/no-node-access': 'off',
+  // we use custom queries, which don't get added to `screen` (that's a miss in RTL, IMO),
+  //  which means we _must_ destructure the result from `render()` in order to get to
+  //  our custom queries
+  'testing-library/prefer-screen-queries': 'off',
+  // not much value in this one, and it's not sophisticated enough to detect all usage
+  //  scenarios so we get false-positives
+  'testing-library/await-async-utils': 'off',
+
   //// react plugin
 
   // we're using the new JSX transform that doesn't require 'react' import
@@ -50,15 +78,25 @@ const globals = {
   DEV_ENV: 'readonly',
   DEV_UNSAFE_NO_CERT: 'readonly',
   FEAT_CLUSTER_PAGE_ENABLED: 'readonly', // TODO[clusterpage]: remove flag
+  fetchMock: 'readonly', // from 'jest-fetch-mock' package
 };
+
+const baseExtends = [
+  'eslint:recommended',
+  'prettier', // always AFTER eslint:recommended
+  'plugin:jest-dom/recommended',
+  'plugin:testing-library/react',
+];
+
+const plugins = ['jest'];
 
 module.exports = {
   overrides: [
     {
-      files: ['**/*.js'],
+      // JavaScript files
+      files: ['**/*.js', '**/*.mjs'],
       extends: [
-        'eslint:recommended',
-        'prettier', // always AFTER eslint:recommended
+        ...baseExtends,
         'plugin:react/recommended',
         'plugin:react-hooks/recommended',
       ],
@@ -72,6 +110,7 @@ module.exports = {
       },
       globals,
       env,
+      plugins,
       rules: {
         ...rules,
 
@@ -96,17 +135,18 @@ module.exports = {
       },
     },
     {
+      // TypeScript files
       files: ['src/**/*.ts*'],
       parser: '@typescript-eslint/parser',
       parserOptions,
       extends: [
-        'eslint:recommended',
-        'prettier', // always AFTER eslint:recommended
+        ...baseExtends,
         'plugin:@typescript-eslint/eslint-recommended',
         'plugin:@typescript-eslint/recommended',
       ],
       globals,
       env,
+      plugins,
       rules: {
         ...rules,
         'no-use-before-define': 'off', // ESLint finds false-positives with React imports in TSX files
@@ -117,6 +157,14 @@ module.exports = {
         '@typescript-eslint/ban-types': 'off',
         '@typescript-eslint/ban-ts-comment': 'off',
         '@typescript-eslint/no-empty-interface': 'off',
+      },
+    },
+    {
+      // test files
+      files: ['**/__tests__/**/?(*.)+(spec|test).[jt]s?(x)'],
+      env: {
+        ...env,
+        'jest/globals': true,
       },
     },
   ],
