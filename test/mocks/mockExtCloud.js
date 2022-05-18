@@ -1,10 +1,8 @@
 export const mockDataCloud = {
   cloud: {
-    id_token:
-      'id-token-1',
+    id_token: 'id-token-1',
     expires_in: 100,
-    refresh_token:
-      'refresh-token-1',
+    refresh_token: 'refresh-token-1',
     refresh_expires_in: 200,
     idpClientId: null,
     username: 'user@test.com',
@@ -33,13 +31,10 @@ export const mockDataCloud = {
           isMgmtCluster: false,
           ready: true,
           serverUrl: 'https://123.12.12.12:123',
-          idpIssuerUrl:
-            'https://isseu-url.com',
-          idpCertificate:
-            'sertificate',
+          idpIssuerUrl: 'https://isseu-url.com',
+          idpCertificate: 'sertificate',
           idpClientId: 'id',
-          apiCertificate:
-            'testsertificate==',
+          apiCertificate: 'testsertificate==',
           dashboardUrl: 'https://123.12.123.1:1234',
           provider: 'provider-1',
           region: 'region-eu',
@@ -60,13 +55,10 @@ export const mockDataCloud = {
           isMgmtCluster: false,
           ready: true,
           serverUrl: 'https://123.12.12.12:123',
-          idpIssuerUrl:
-            'https://isseu-url.com',
-          idpCertificate:
-            'sertificate',
+          idpIssuerUrl: 'https://isseu-url.com',
+          idpCertificate: 'sertificate',
           idpClientId: 'id',
-          apiCertificate:
-            'testsertificate==',
+          apiCertificate: 'testsertificate==',
           dashboardUrl: 'https://123.12.123.1:1234',
           provider: 'provider-1',
           region: 'region-eu',
@@ -80,11 +72,9 @@ export const mockDataCloud = {
 
 export const mockDataCloud2 = {
   cloud: {
-    id_token:
-      'id-token-1',
+    id_token: 'id-token-1',
     expires_in: 100,
-    refresh_token:
-      'refresh-token-1',
+    refresh_token: 'refresh-token-1',
     refresh_expires_in: 200,
     idpClientId: null,
     username: 'anotheruser@test.com',
@@ -113,13 +103,10 @@ export const mockDataCloud2 = {
           isMgmtCluster: false,
           ready: true,
           serverUrl: 'https://123.12.12.12:123',
-          idpIssuerUrl:
-            'https://isseu-url.com',
-          idpCertificate:
-            'sertificate',
+          idpIssuerUrl: 'https://isseu-url.com',
+          idpCertificate: 'sertificate',
           idpClientId: 'id',
-          apiCertificate:
-            'testsertificate==',
+          apiCertificate: 'testsertificate==',
           dashboardUrl: 'https://123.12.123.1:1234',
           provider: 'provider-1',
           region: 'region-eu',
@@ -140,13 +127,10 @@ export const mockDataCloud2 = {
           isMgmtCluster: false,
           ready: true,
           serverUrl: 'https://123.12.12.12:123',
-          idpIssuerUrl:
-            'https://isseu-url.com',
-          idpCertificate:
-            'sertificate',
+          idpIssuerUrl: 'https://isseu-url.com',
+          idpCertificate: 'sertificate',
           idpClientId: 'id',
-          apiCertificate:
-            'testsertificate==',
+          apiCertificate: 'testsertificate==',
           dashboardUrl: 'https://123.12.123.1:1234',
           provider: 'provider-1',
           region: 'region-eu',
@@ -161,4 +145,4 @@ export const mockDataCloud2 = {
 export const mockedDataClouds = {
   'https://cloud-url.com': mockDataCloud,
   'https://cloud-url-2.com': mockDataCloud2,
-}
+};

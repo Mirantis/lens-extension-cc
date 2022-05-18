@@ -38,6 +38,7 @@ export const extension: Dict = {
 };
 
 export const closeButton: Dict = {
+  label: () => 'Close',
   title: () => 'ESC',
 };
 export const connectionBlock: Dict = {

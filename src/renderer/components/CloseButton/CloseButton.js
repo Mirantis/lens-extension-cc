@@ -39,7 +39,7 @@ const Esc = styled.div`
 
 export const CloseButton = ({ onClick }) => (
   <CloseButtonContent onClick={onClick}>
-    <CloseIconWrapper role="button" aria-label="Close">
+    <CloseIconWrapper role="button" aria-label={closeButton.label()}>
       <Icon material="close" />
     </CloseIconWrapper>
     <Esc aria-hidden="true">{closeButton.title()}</Esc>

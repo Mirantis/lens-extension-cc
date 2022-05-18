@@ -32,6 +32,7 @@ const loaders = [
 const plugins = [
   new DefinePlugin({
     DEV_ENV: JSON.stringify(buildTarget !== 'production'),
+    TEST_ENV: JSON.stringify(false), // always false (Jest configures it true always for tests)
     DEV_UNSAFE_NO_CERT: JSON.stringify(
       buildTarget !== 'production' &&
         process.env.DEV_UNSAFE_NO_CERT === 'thisisunsafe'
