@@ -3,13 +3,13 @@ import { Cloud, CLOUD_EVENTS } from './Cloud';
 import { filter } from 'lodash';
 import AbortController from 'abort-controller'; // TODO[PRODX-22469]: Remove package if we drop watches.
 import { cloudRequest, extractJwtPayload } from '../api/apiUtil';
-import { Namespace } from '../api/types/Namespace';
-import { Credential } from '../api/types/Credential';
-import { SshKey } from '../api/types/SshKey';
-import { Cluster } from '../api/types/Cluster';
-import { Machine } from '../api/types/Machine';
-import { Proxy } from '../api/types/Proxy';
-import { License } from '../api/types/License';
+import { Namespace, namespaceTs } from '../api/types/Namespace';
+import { Credential, credentialTs } from '../api/types/Credential';
+import { SshKey, sshKeyTs } from '../api/types/SshKey';
+import { Cluster, clusterTs } from '../api/types/Cluster';
+import { Machine, machineTs } from '../api/types/Machine';
+import { Proxy, proxyTs } from '../api/types/Proxy';
+import { License, licenseTs } from '../api/types/License';
 import { logger, logValue } from '../util/logger';
 import { EventDispatcher } from './EventDispatcher';
 import {
@@ -441,7 +441,8 @@ const _fetchCredentials = async function (cloud, namespaces) {
         cloud,
         namespaces,
         create: ({ data, namespace }) => {
-          return new Credential({ data, namespace, cloud });
+          const mvvData = rtv.verify(data, credentialTs).mvv;
+          return new Credential({ data: mvvData, namespace, cloud });
         },
       })
     )
@@ -510,7 +511,10 @@ const _fetchLicenses = async function (cloud, namespaces) {
     resourceType: apiResourceTypes.RHEL_LICENSE,
     cloud,
     namespaces,
-    create: ({ data, namespace }) => new License({ data, namespace, cloud }),
+    create: ({ data, namespace }) => {
+      const mvvData = rtv.verify(data, licenseTs).mvv;
+      return new License({ data: mvvData, namespace, cloud });
+    },
   });
 
   return { licenses, watches, tokensRefreshed, errorsOccurred: !!errors };
@@ -544,7 +548,10 @@ const _fetchProxies = async function (cloud, namespaces) {
     resourceType: apiResourceTypes.PROXY,
     cloud,
     namespaces,
-    create: ({ data, namespace }) => new Proxy({ data, namespace, cloud }),
+    create: ({ data, namespace }) => {
+      const mvvData = rtv.verify(data, proxyTs).mvv;
+      return new Proxy({ data: mvvData, namespace, cloud });
+    },
   });
 
   return { proxies, watches, tokensRefreshed, errorsOccurred: !!errors };
@@ -579,7 +586,8 @@ const _fetchSshKeys = async function (cloud, namespaces) {
     cloud,
     namespaces,
     create: ({ data, namespace }) => {
-      return new SshKey({ data, namespace, cloud });
+      const mvvData = rtv.verify(data, sshKeyTs).mvv;
+      return new SshKey({ data: mvvData, namespace, cloud });
     },
   });
 
@@ -614,7 +622,10 @@ const _fetchMachines = async function (cloud, namespaces) {
     resourceType: apiResourceTypes.MACHINE,
     cloud,
     namespaces,
-    create: ({ data, namespace }) => new Machine({ data, namespace, cloud }),
+    create: ({ data, namespace }) => {
+      const mvvData = rtv.verify(data, machineTs).mvv;
+      return new Machine({ data: mvvData, namespace, cloud });
+    },
   });
 
   return { machines, watches, tokensRefreshed, errorsOccurred: !!errors };
@@ -653,7 +664,8 @@ const _fetchClusters = async function (cloud, namespaces) {
     cloud,
     namespaces,
     create: ({ data, namespace }) => {
-      return new Cluster({ data, namespace, cloud });
+      const mvvData = rtv.verify(data, clusterTs).mvv;
+      return new Cluster({ data: mvvData, namespace, cloud });
     },
   });
 
@@ -685,7 +697,10 @@ const _fetchNamespaces = async function (cloud, preview = false) {
   } = await _fetchCollection({
     resourceType: apiResourceTypes.NAMESPACE,
     cloud,
-    create: ({ data }) => new Namespace({ data, cloud, preview }),
+    create: ({ data }) => {
+      const mvvData = rtv.verify(data, namespaceTs).mvv;
+      return new Namespace({ data: mvvData, cloud, preview });
+    },
   });
 
   const userRoles = extractJwtPayload(cloud.token).iam_roles || [];
