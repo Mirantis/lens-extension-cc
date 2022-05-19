@@ -24,8 +24,3 @@ configure({
   // @see https://github.com/mobxjs/mobx/issues/2784
   safeDescriptors: false,
 });
-
-// JSDom doesn't support queryCommandSupported() and execCommand() APIs
-//  but Lens' use of the Monaco Editor requires this one
-// @see https://github.com/jsdom/jsdom/issues/1742
-document.queryCommandSupported = () => false; // DEBUG TODO: once Lens fixes JS files in extensions package issue, this should no longer be needed

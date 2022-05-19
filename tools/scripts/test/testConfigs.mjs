@@ -52,7 +52,7 @@ export const getFileGlobs = function (allFilesGlob, isCoverage = false) {
 export const getCoverageGlobs = function () {
   // match any file with .js, .jsx, .ts, or .tsx extension
   // NOTE: we ignore .files like .eslintrc.js with `/[^.]` in this glob pattern
-  return getFileGlobs('**/[^.]*.[jt]s?(x)', true); // DEBUG TODO: add 't' to [j] for TS
+  return getFileGlobs('**/[^.]*.[jt]s?(x)', true);
 };
 
 /**
@@ -65,7 +65,7 @@ export const getTestMatchGlobs = function () {
   //  .jsx, .ts, or .tsx extension; and just test.<ext> or spec.<ext>;
   //  as long as the file is inside a __test__ directory at any depth
   //  within the code base
-  return getFileGlobs('**/__tests__/**/?(*.)+(spec|test).[jt]s?(x)'); // DEBUG TODO: add 't' to [j] for TS
+  return getFileGlobs('**/__tests__/**/?(*.)+(spec|test).[jt]s?(x)');
 };
 
 /**
@@ -171,7 +171,7 @@ export const baseConfig = function ({
         TEST_ENV: 'true',
       },
       transform: {
-        '^.+\\.(t|j)sx?$': '@swc/jest', // DEBUG TODO: also support TS/X files, need separate transpiler
+        '^.+\\.(t|j)sx?$': 'babel-jest',
         '.+\\.(css|styl|less|sass|scss|png|jpg|ttf|woff|woff2|otf)$':
           'jest-transform-stub',
       },
