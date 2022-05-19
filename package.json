@@ -87,7 +87,7 @@
     "electron": "^14.2.9",
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.5.0",
-    "eslint-plugin-react": "^7.29.4",
+    "eslint-plugin-react": "^7.30.0",
     "eslint-plugin-react-hooks": "^4.5.0",
     "mobx": "^6.5.0",
     "node-fetch": "^2.6.7",
