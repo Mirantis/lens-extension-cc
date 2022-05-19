@@ -39,8 +39,8 @@ const presetReact = [
 const presetTypescript = [
   '@babel/preset-typescript',
   {
-    isTSX: true,
-    jsxPragma: '@emotion/react',
+    // isTSX: true,
+    // jsxPragma: '@emotion/react',
     allExtensions: true,
   }
 ];
@@ -48,26 +48,30 @@ const presetTypescript = [
 const baseConfig = function () {
   return {
     presets: [
-      // @see https://babeljs.io/docs/en/babel-preset-env#options
-      [
-        // targets based on https://mirantis.jira.com/wiki/spaces/UIENG/pages/1995703215/Barracuda+Browser+Support+Matrix
-        '@babel/preset-env',
-        { targets: { electron: '14' } },
-      ],
+      presetEnv,
+      // DEBUG REMOVE
+      // // @see https://babeljs.io/docs/en/babel-preset-env#options
+      // [
+      //   // targets based on https://mirantis.jira.com/wiki/spaces/UIENG/pages/1995703215/Barracuda+Browser+Support+Matrix
+      //   '@babel/preset-env',
+      //   { targets: { electron: '14' } },
+      // ],
 
-      // what we care from this preset is JSX syntax support with
-      //  https://babeljs.io/docs/en/babel-plugin-syntax-jsx
-      //  as well as display name support with
-      //  https://babeljs.io/docs/en/babel-plugin-transform-react-display-name
-      [
-        '@babel/preset-react',
-        {
-          // use new React 16.14.0/17.0.0 JSX runtime
-          runtime: 'automatic',
-          // support the css prop, @see https://emotion.sh/docs/css-prop#babel-preset
-          importSource: '@emotion/react',
-        },
-      ],
+      presetReact,
+      // DEBUG REMOVE
+      // // what we care from this preset is JSX syntax support with
+      // //  https://babeljs.io/docs/en/babel-plugin-syntax-jsx
+      // //  as well as display name support with
+      // //  https://babeljs.io/docs/en/babel-plugin-transform-react-display-name
+      // [
+      //   '@babel/preset-react',
+      //   {
+      //     // use new React 16.14.0/17.0.0 JSX runtime
+      //     runtime: 'automatic',
+      //     // support the css prop, @see https://emotion.sh/docs/css-prop#babel-preset
+      //     importSource: '@emotion/react',
+      //   },
+      // ],
     ],
     plugins: [
       // support css prop, source maps, etc.
@@ -99,7 +103,11 @@ const buildEnv = function () {
 // overrides to the base config for the 'test' env
 const testEnv = function () {
   return {
-    // nothing special for now
+    presets: [
+      presetEnv,
+      presetTypescript,
+      presetReact,
+    ],
   };
 };
 
