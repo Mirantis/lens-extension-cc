@@ -1,24 +1,18 @@
-import React, { useCallback } from 'react';
-import { Common, Renderer } from '@k8slens/extensions';
+/* eslint-disable react/prop-types -- All components are inline */
+
+import { useCallback } from 'react';
+import { Renderer } from '@k8slens/extensions';
 import dayjs from 'dayjs';
 import dayjsRelativeTimePlugin from 'dayjs/plugin/relativeTime';
 import { SshKeyEntity } from '../catalog/SshKeyEntity';
 import { CredentialEntity } from '../catalog/CredentialEntity';
 import { ProxyEntity } from '../catalog/ProxyEntity';
 import { LicenseEntity } from '../catalog/LicenseEntity';
-import { LensKubernetesCluster } from '../catalog/catalogEntityTypes';
 import * as strings from '../strings';
 import * as consts from '../constants';
 import { openBrowser } from '../util/netUtil';
 
 dayjs.extend(dayjsRelativeTimePlugin);
-
-// NOTE: The following interface _should_ be exported by the Lens extension package
-//  as `Common.Types.CatalogEntityDetailsProps`, but it's not, which is a known bug
-//  that will hopefully be fixed "soon". In the meantime, we define it ourselves here.
-interface CatalogEntityDetailsProps<T extends Common.Catalog.CatalogEntity> {
-  entity: T;
-}
 
 const getCreatedValue = (createdAt) => {
   return `${dayjs(createdAt).format('MMMM DD, YYYY')} (${dayjs(
@@ -47,7 +41,7 @@ export const catalogEntityDetails = [
       `${consts.catalog.entities.kubeCluster.group}/${consts.catalog.entities.kubeCluster.versions.v1alpha1}`,
     ],
     components: {
-      Details: (props: CatalogEntityDetailsProps<LensKubernetesCluster>) => {
+      Details: (props) => {
         const handleOpenDashboard = useCallback(
           (event) => {
             event.preventDefault();
@@ -247,7 +241,7 @@ export const catalogEntityDetails = [
     kind: SshKeyEntity.kind,
     apiVersions: [SshKeyEntity.apiVersion],
     components: {
-      Details: (props: CatalogEntityDetailsProps<SshKeyEntity>) => (
+      Details: (props) => (
         <>
           <DrawerTitle
             title={strings.catalog.entities.common.details.title()}
@@ -275,7 +269,7 @@ export const catalogEntityDetails = [
     kind: CredentialEntity.kind,
     apiVersions: [CredentialEntity.apiVersion],
     components: {
-      Details: (props: CatalogEntityDetailsProps<CredentialEntity>) => (
+      Details: (props) => (
         <>
           <DrawerTitle
             title={strings.catalog.entities.common.details.title()}
@@ -315,7 +309,7 @@ export const catalogEntityDetails = [
     kind: ProxyEntity.kind,
     apiVersions: [ProxyEntity.apiVersion],
     components: {
-      Details: (props: CatalogEntityDetailsProps<ProxyEntity>) => (
+      Details: (props) => (
         <>
           <DrawerTitle
             title={strings.catalog.entities.common.details.title()}
@@ -353,7 +347,7 @@ export const catalogEntityDetails = [
     kind: LicenseEntity.kind,
     apiVersions: [LicenseEntity.apiVersion],
     components: {
-      Details: (props: CatalogEntityDetailsProps<LicenseEntity>) => (
+      Details: (props) => (
         <>
           <DrawerTitle
             title={strings.catalog.entities.common.details.title()}
