@@ -171,7 +171,7 @@ export const baseConfig = function ({
         TEST_ENV: 'true',
       },
       transform: {
-        '^.+\\.(t|j)sx?$': 'babel-jest',
+        '^.+\\.(t|j)sx?$': '@swc/jest',
         '.+\\.(css|styl|less|sass|scss|png|jpg|ttf|woff|woff2|otf)$':
           'jest-transform-stub',
       },
