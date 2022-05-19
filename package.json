@@ -45,7 +45,7 @@
     "lint": "eslint \"{*,src/**/*,tools/**/*,test/**/*,__mocks__/**/*}.+(js|mjs|ts*)\"",
     "test:unit": "jest --colors --config jest.config.mjs",
     "test:coverage": "yarn test:unit --coverage",
-    "test": "yarn lint && yarn fmt:check && yarn test:coverage",
+    "test": "yarn lint && yarn fmt:check && yarn test:unit",
     "prepack": "yarn build && yarn download:kubelogin:all && yarn download:kubelogin:license",
     "prepublishOnly": "yarn test",
     "create:bin:nix": "mkdir -p ./bin",

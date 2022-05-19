@@ -41,11 +41,11 @@ jobs:
       - name: Lint
         run: yarn lint
 
-      - name: Format check
+      - name: Format
         run: yarn fmt:check
 
       - name: Test
-        run: yarn test:unit
+        run: yarn test:unit # TODO[PRODX-24209] change to test:coverage (and also in package.json 'test' script)
 
       - name: Build
         run: yarn build
