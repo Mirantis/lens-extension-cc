@@ -52,7 +52,7 @@ export const getFileGlobs = function (allFilesGlob, isCoverage = false) {
 export const getCoverageGlobs = function () {
   // match any file with .js, .jsx, .ts, or .tsx extension
   // NOTE: we ignore .files like .eslintrc.js with `/[^.]` in this glob pattern
-  return getFileGlobs('**/[^.]*.[jt]s?(x)', true);
+  return getFileGlobs('**/[^.]*.[j]s?(x)', true); // DEBUG TODO: add 't' to [j] for TS
 };
 
 /**
@@ -65,7 +65,7 @@ export const getTestMatchGlobs = function () {
   //  .jsx, .ts, or .tsx extension; and just test.<ext> or spec.<ext>;
   //  as long as the file is inside a __test__ directory at any depth
   //  within the code base
-  return getFileGlobs('**/__tests__/**/?(*.)+(spec|test).[jt]s?(x)');
+  return getFileGlobs('**/__tests__/**/?(*.)+(spec|test).[j]s?(x)'); // DEBUG TODO: add 't' to [j] for TS
 };
 
 /**
@@ -171,7 +171,7 @@ export const baseConfig = function ({
         TEST_ENV: 'true',
       },
       transform: {
-        '^.+\\.(t|j)sx?$': 'babel-jest',
+        '.+\\.jsx?$': 'babel-jest', // DEBUG TODO: also support TS/X files, need separate transpiler
         '.+\\.(css|styl|less|sass|scss|png|jpg|ttf|woff|woff2|otf)$':
           'jest-transform-stub',
       },
@@ -180,7 +180,7 @@ export const baseConfig = function ({
         //  is ignored by Jest by default) that are shipped as ES6-only and need
         //  to be transpiled via 'babel-jest' configured in the 'transform' option
         // @see https://github.com/facebook/jest/issues/9292#issuecomment-569673251
-        'node_modules/(?!(' + 'monaco-editor' + '|react-monaco-editor' + ')/)',
+        'node_modules/(?!(monaco-editor|react-monaco-editor)/)',
       ],
       testMatch: testMatchGlobs,
 

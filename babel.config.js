@@ -13,6 +13,38 @@
 //  parsers, we cannot use MJS with Babel.
 //
 
+// @see https://babeljs.io/docs/en/babel-preset-env#options
+const presetEnv = [
+  // targets based on https://mirantis.jira.com/wiki/spaces/UIENG/pages/1995703215/Barracuda+Browser+Support+Matrix
+  '@babel/preset-env',
+  { targets: { electron: '14' } },
+];
+
+// what we care from this preset is JSX syntax support with
+//  https://babeljs.io/docs/en/babel-plugin-syntax-jsx
+//  as well as display name support with
+//  https://babeljs.io/docs/en/babel-plugin-transform-react-display-name
+const presetReact = [
+  '@babel/preset-react',
+  {
+    // use new React 16.14.0/17.0.0 JSX runtime
+    runtime: 'automatic',
+    // support the css prop, @see https://emotion.sh/docs/css-prop#babel-preset
+    importSource: '@emotion/react',
+  },
+];
+
+// NOTE: We only need this for running tests since Webpack ts-loader takes care
+// @see https://babeljs.io/docs/en/babel-preset-typescript#options
+const presetTypescript = [
+  '@babel/preset-typescript',
+  {
+    isTSX: true,
+    jsxPragma: '@emotion/react',
+    allExtensions: true,
+  }
+];
+
 const baseConfig = function () {
   return {
     presets: [

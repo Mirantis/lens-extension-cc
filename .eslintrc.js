@@ -136,7 +136,7 @@ module.exports = {
     },
     {
       // TypeScript files
-      files: ['src/**/*.ts*'],
+      files: ['**/*.ts*'],
       parser: '@typescript-eslint/parser',
       parserOptions,
       extends: [
@@ -165,6 +165,22 @@ module.exports = {
       env: {
         ...env,
         'jest/globals': true,
+      },
+      rules: {
+        ...rules,
+        'react/prop-types': 'off',
+      },
+    },
+    {
+      // mock files
+      files: ['__mocks__/**/*.[jt]s?(x)'],
+      env: {
+        ...env,
+        'jest/globals': true,
+      },
+      rules: {
+        ...rules,
+        'react/prop-types': 'off',
       },
     },
   ],
