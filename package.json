@@ -68,7 +68,7 @@
     "@babel/plugin-proposal-class-properties": "^7.17.12",
     "@babel/plugin-proposal-decorators": "^7.17.12",
     "@babel/plugin-transform-react-jsx": "^7.17.12",
-    "@babel/preset-env": "^7.17.12",
+    "@babel/preset-env": "^7.18.0",
     "@babel/preset-react": "^7.17.12",
     "@babel/preset-typescript": "^7.17.12",
     "@emotion/babel-plugin": "^11.9.2",
