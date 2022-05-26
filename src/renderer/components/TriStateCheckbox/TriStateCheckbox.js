@@ -77,7 +77,6 @@ export const TriStateCheckbox = ({ label, onChange, value }) => {
         </CheckboxControl>
         <CheckboxLabel>
           <CheckboxField
-            data-testid="checkbox-field"
             type="checkbox"
             checked={value !== checkValues.UNCHECKED}
             onChange={onChange}

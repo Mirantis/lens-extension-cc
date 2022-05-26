@@ -19,7 +19,7 @@ describe('/renderer/components/TriStateCheckbox', () => {
       />
     );
 
-    const checkboxEl = screen.getByTestId('checkbox-field');
+    const checkboxEl = screen.getBySelector('input[type="checkbox"]');
     expect(checkboxEl).toHaveAttribute('type', 'checkbox');
     expect(checkboxEl.parentNode).toHaveTextContent(randomString);
   });
@@ -34,7 +34,7 @@ describe('/renderer/components/TriStateCheckbox', () => {
         />
       );
 
-      const checkboxEl = screen.getByTestId('checkbox-field');
+      const checkboxEl = screen.getBySelector('input[type="checkbox"]');
 
       if (checkValue === 'CHECKED') {
         expect(
@@ -62,7 +62,7 @@ describe('/renderer/components/TriStateCheckbox', () => {
         />
       );
 
-      const checkboxEl = screen.getByTestId('checkbox-field');
+      const checkboxEl = screen.getBySelector('input[type="checkbox"]');
 
       if (checkValue === 'CHECKED' || checkValue === 'MIXED') {
         expect(checkboxEl.checked).toBe(true);
@@ -84,7 +84,7 @@ describe('/renderer/components/TriStateCheckbox', () => {
       />
     );
 
-    const checkboxEl = screen.getByTestId('checkbox-field');
+    const checkboxEl = screen.getBySelector('input[type="checkbox"]');
 
     await user.click(checkboxEl);
     expect(handler).toHaveBeenCalled();
