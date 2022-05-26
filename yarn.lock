@@ -1543,10 +1543,10 @@
     "@jridgewell/resolve-uri" "^3.0.3"
     "@jridgewell/sourcemap-codec" "^1.4.10"
 
-"@k8slens/extensions@^5.5.0":
-  version "5.5.0"
-  resolved "https://registry.yarnpkg.com/@k8slens/extensions/-/extensions-5.5.0.tgz#fd21400cf2747d0166037fe8559dd450ffff0361"
-  integrity sha512-Dxo2h3pajBlWNTXZs05ipumNOMqPI21ofk8O5kZawHNcn/gDinnv9JDCyv2Zf1kcVYUDKvWeem7pCx4rt1vwyA==
+"@k8slens/extensions@^5.5.1":
+  version "5.5.1"
+  resolved "https://registry.yarnpkg.com/@k8slens/extensions/-/extensions-5.5.1.tgz#bd798b10ba3d91b465ece489d55abe9d720a593b"
+  integrity sha512-tb6LJYzZfSXwuaFdFbn0ZH0Jh8p779IO6Ot3PkKlrm1pZIIwsnKIv5FhIRiH5zYPqy2aWNW5wjyzvPbYIaj3tA==
   dependencies:
     "@material-ui/core" "4.12.3"
     "@types/node" "14.17.14"
