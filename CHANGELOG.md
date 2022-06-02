@@ -1,5 +1,20 @@
 # ChangeLog
 
+## UNRELEASED
+
+🚨 __BREAKING:__ This is a major release that incorporates all the changes listed in previous __alpha__ and __beta__ pre-releases as detailed in this log.
+
+The main highlights are:
+
+- New Sync Manager replaces manual "select and add" functionality.
+- Main view is changed to the "Sync overview" where you can see what projects from what management clusters you're syncing.
+- Sync is done on a project level within a given management cluster.
+    - Multiple management clusters/projects can be synced at once.
+    - Adding, modifying, removing resources in MCC will automatically be reflected in Lens via sync.
+- All items (clusters, SSH keys, proxies, licenses, credentials) from a project are synced and added to the Lens Catalog.
+- MCC items in the Catalog have customized details panels which show metadata about each resource (as you would see in the MCC browser UI).
+- The [kubelogin](https://github.com/int128/kubelogin) binary is now packaged with the extension and used to obtain SSO access tokens post-sync, at the moment when a synced cluster is opened in Lens.
+
 ## v4.0.0-beta.1
 
 ⚠️ This is an early release build and may still have some bugs.
