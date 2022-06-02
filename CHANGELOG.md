@@ -7,6 +7,9 @@
 The main highlights are:
 
 - New Sync Manager replaces manual "select and add" functionality.
+- 🚨 Any clusters added using previous versions (v3 and older) will be dropped from Lens upon installing v4.
+    - There is (unfortunately) no migration path.
+    - Take note of your clusters, particularly which management clusters and projects they belonged to, and then sync them.
 - Main view is changed to the "Sync overview" where you can see what projects from what management clusters you're syncing.
 - Sync is done on a project level within a given management cluster.
     - Multiple management clusters/projects can be synced at once.
