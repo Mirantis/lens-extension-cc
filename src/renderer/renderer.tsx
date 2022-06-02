@@ -23,6 +23,7 @@ import { catalogEntityDetails } from './catalogEntityDetails';
 import { generateTopBarItems } from './topBarItems';
 import { openBrowser } from '../util/netUtil';
 import { generateEntityUrl } from '../catalog/catalogEntities';
+import { KubernetesCluster } from '@k8slens/extensions/dist/src/common/catalog-entities';
 
 const {
   LensExtension,
@@ -185,15 +186,18 @@ export default class ExtensionRenderer extends LensExtension {
   /**
    * Updates the cluster page menus with our custom cluster page menu item if
    *  the active Catalog entity is an MCC cluster.
-   * @param {Object} activeEntity
+   * @param {KubernetesCluster} cluster
    */
-  public async isEnabledForCluster(cluster): Promise<boolean> {
+  public async isEnabledForCluster(
+    cluster: KubernetesCluster
+  ): Promise<boolean> {
     // TODO[clusterpage]: remove flag
     if (FEAT_CLUSTER_PAGE_ENABLED) {
-      const entity = Renderer.Catalog.catalogEntities.getById(cluster.id);
+      const entity =
+        typeof cluster.metadata.id === 'string' // could also be an object for some reason
+          ? Renderer.Catalog.catalogEntities.getById(cluster.metadata.id)
+          : undefined;
 
-      // TODO[#498]: We should ALWAYS have an entity, but we may not.
-      //  https://github.com/lensapp/lens/issues/3790
       return entity?.metadata.source === consts.catalog.source;
     }
 
@@ -269,7 +273,15 @@ export default class ExtensionRenderer extends LensExtension {
           target: { pageId: ROUTE_CLUSTER_PAGE },
           title: strings.clusterPage.menuItem(),
           components: {
-            Icon: () => <ClusterPageIcon size={30} />,
+            Icon: () => (
+              <ClusterPageIcon
+                size={20}
+                style={{
+                  marginLeft: 4,
+                  marginRight: 11,
+                }}
+              />
+            ),
           },
         },
       ];
