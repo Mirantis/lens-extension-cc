@@ -19,7 +19,7 @@ const WelcomeContainer = styled.div(function () {
     top: 0,
     right: 0,
     bottom: 0,
-    fontSize: 'calc(var(--font-size) * 1.7)',
+    fontSize: '1.45em',
     lineHeight: '1.25',
     zIndex: 10,
     ...mixinPageStyles(),
@@ -40,6 +40,7 @@ const WelcomeInner = styled.div(function () {
   return {
     display: 'flex',
     flexDirection: 'column',
+    justifyContent: 'center',
     alignItems: 'flex-start',
     maxWidth: layout.grid * 180,
     width: '100%',
@@ -49,30 +50,33 @@ const WelcomeInner = styled.div(function () {
 
 const WelcomeIconWrapper = styled.div(function () {
   return {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
     width: '100%',
-    textAlign: 'center',
-    paddingTop: layout.grid * 8,
     marginBottom: layout.grid * 6,
   };
 });
 
 const WelcomeTitle = styled.h1(function () {
   return {
-    fontSize: 'calc(var(--font-size) * 2.6)',
-    lineHeight: '1.11',
+    fontSize: '1.5em',
     textAlign: 'center',
+    width: '100%',
     marginBottom: layout.grid * 6,
   };
 });
 
 const WelcomeDescription = styled.p(function () {
   return {
+    width: '100%',
     marginBottom: layout.grid * 9,
   };
 });
 
 const WelcomeList = styled.ul(function () {
   return {
+    width: '100%',
     marginBottom: layout.grid * 5,
 
     'li:not(:last-of-type)': {
@@ -88,6 +92,7 @@ const WelcomeList = styled.ul(function () {
 
 const WelcomeLink = styled.a(function () {
   return {
+    width: '100%',
     textDecoration: 'none',
     color: 'var(--primary)',
   };
@@ -95,8 +100,10 @@ const WelcomeLink = styled.a(function () {
 
 const WelcomeButtonWrapper = styled.div(function () {
   return {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
     width: '100%',
-    textAlign: 'center',
     marginTop: layout.grid * 12,
   };
 });
@@ -106,7 +113,7 @@ export const WelcomeView = ({ openAddCloud }) => (
     <WelcomeWrapper>
       <WelcomeInner>
         <WelcomeIconWrapper>
-          <ContainerCloudIcon size={100} fill="var(--textColorAccent)" />
+          <ContainerCloudIcon size={80} fill="var(--textColorAccent)" />
         </WelcomeIconWrapper>
         <WelcomeTitle
           dangerouslySetInnerHTML={{
