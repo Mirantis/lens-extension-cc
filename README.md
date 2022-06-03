@@ -170,8 +170,6 @@ Just reconnect when you're able and let the synchronization process update to th
 
 ## FAQ
 
-- I get an error, "Invalid redirect_uri", when I attempt to access or add my clusters.
-    - Make sure you have properly [configured](#keycloak-configuration) all your Keycloak clients for use with the extension.
 - I was able to add my cluster to Lens, but Lens fails to show it because of an authentication error.
     - Check if the cluster is only accessible over a private network (i.e. VPN) connection, and try opening it in Lens once connected to the network. Even though you can see the cluster in Container Cloud, as well as in the extension, accessing the cluster's details may still require a VPN connection in this case.
 
