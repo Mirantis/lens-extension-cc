@@ -6,6 +6,8 @@ A [Lens](https://k8slens.dev/) extension that enables you to connect to manageme
 
 Requires Lens `>= 5.5.0` and Mirantis Container Cloud `>= 2.19`
 
+> ⚠️ If you are upgrading from version 3.x to 4.x, please see our [upgrade instructions](#upgrading-from-v3-to-v4) __before upgrading__.
+
 ## Installing
 
 > 💬 If you plan on working on the extension code, follow the [development](./CONTRIBUTING.md#development) instructions instead of these.
@@ -198,6 +200,12 @@ LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS=1 snap run lens
 __Windows__
 
 TBD. If someone would like to share the syntax on Windows, we will add it here. Please open an issue on the repo to let us know.
+
+## Upgrading from v3 to v4
+
+As the extension underwent a near complete rewrite for version 4 which provides a completely new way of getting Mirantis Container Cloud clusters into Lens (manual, single selection to full synchronization across multiple management clusters), clusters previously added to Lens via the extension __are no longer supported__ and __will be removed__ from Lens upon upgrading.
+
+__Before upgrading to v4__, be sure to take note of which clusters you added, and from which management cluster and project they came from, so you can [add those management clusters](#adding-your-first-management-cluster) and select those projects in order to have those clusters synced into Lens.
 
 ## Contributing
 
