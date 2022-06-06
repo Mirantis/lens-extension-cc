@@ -189,11 +189,15 @@ There are some legitimate reasons to use self-signed certificates, however, and 
 
 __macOS__
 
+From a Terminal:
+
 ```bash
 $ LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS=1 /Applications/Lens.app/Contents/MacOS/Lens
 ```
 
 __Linux__
+
+From a Terminal:
 
 ```bash
 LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS=1 snap run lens
@@ -203,7 +207,14 @@ LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS=1 snap run lens
 
 __Windows__
 
-TBD. If someone would like to share the syntax on Windows, we will add it here. Please open an issue on the repo to let us know.
+From a Command Prompt:
+
+```
+set LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS=1
+C:\Users\USERNAME\AppData\Local\Programs\Lens\Lens.exe
+```
+
+> 💬 Replace `USERNAME` with your Windows username.
 
 ## Upgrading from v3 to v4
 
