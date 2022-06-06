@@ -37,7 +37,7 @@ Mirantis Container Cloud instances that use third-party SSO authentication via _
 
 The extension does not support management clusters using the old basic authentication method.
 
-## Authentication flow
+## Authorization flow
 
 When connecting to a management cluster that uses SSO, Lens will open its SSO authorization page in your default browser.
 
@@ -174,6 +174,10 @@ Just reconnect when you're able and let the synchronization process update to th
 
 - I was able to add my cluster to Lens, but Lens fails to show it because of an authentication error.
     - Check if the cluster is only accessible over a private network (i.e. VPN) connection, and try opening it in Lens once connected to the network. Even though you can see the cluster in Container Cloud, as well as in the extension, accessing the cluster's details may still require a VPN connection in this case.
+- My management cluster gets disconnected after a while.
+    - Access tokens (which are obtained by the extension when you [authorize access](#authorization-flow) to your management clusters) have a ~5 minute lifespan and come with refresh tokens that last up to ~30 minutes.
+    - Typically, the extension is able to renew these tokens for a few hours, but once the renewal is no longer possible (for security reasons, a more recent authorization becomes necessary), a management cluster will become disconnected even while Lens is still running.
+    - Quitting Lens for more than 30 minutes will definitely result in disconnection as the access token (which has a ~5 minute lifespan) as well as the refresh token, which has a ~30 minute lifespan, will both have expired.
 
 ## Security
 
@@ -203,9 +207,17 @@ TBD. If someone would like to share the syntax on Windows, we will add it here. 
 
 ## Upgrading from v3 to v4
 
+### Manually added clusters no longer supported
+
 As the extension underwent a near complete rewrite for version 4 which provides a completely new way of getting Mirantis Container Cloud clusters into Lens (manual, single selection to full synchronization across multiple management clusters), clusters previously added to Lens via the extension __are no longer supported__ and __will be removed__ from Lens upon upgrading.
 
 __Before upgrading to v4__, be sure to take note of which clusters you added, and from which management cluster and project they came from, so you can [add those management clusters](#adding-your-first-management-cluster) and select those projects in order to have those clusters synced into Lens.
+
+### Add to Lens from MCC no longer supported
+
+The minimum supported version of Mirantis Container Cloud is `2.19` as the browser UI no longer has the old __Add to Lens__ cluster context menu item that the extension no longer supports.
+
+If you're using an older version of MCC and attempt to use the _Add to Lens_ menu item in the browser UI, you will get an error message in the extension in Lens.
 
 ## Contributing
 
