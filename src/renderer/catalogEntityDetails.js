@@ -95,9 +95,9 @@ export const catalogEntityDetails = [
 
         return (
           <>
-            <DrawerTitle
-              title={strings.catalog.entities.common.details.title()}
-            />
+            <DrawerTitle>
+              {strings.catalog.entities.common.details.title()}
+            </DrawerTitle>
             <DrawerItem
               name={strings.catalog.entities.common.details.props.uid()}
             >
@@ -167,9 +167,9 @@ export const catalogEntityDetails = [
             </DrawerItem>
             {Object.keys(props.entity.spec.lma || {}).length > 0 ? (
               <>
-                <DrawerTitle
-                  title={strings.catalog.entities.cluster.details.props.lma()}
-                />
+                <DrawerTitle>
+                  {strings.catalog.entities.cluster.details.props.lma()}
+                </DrawerTitle>
 
                 {props.entity.spec.lma.alertaUrl ? (
                   <DrawerItem
@@ -243,9 +243,9 @@ export const catalogEntityDetails = [
     components: {
       Details: (props) => (
         <>
-          <DrawerTitle
-            title={strings.catalog.entities.common.details.title()}
-          />
+          <DrawerTitle>
+            {strings.catalog.entities.common.details.title()}
+          </DrawerTitle>
           <DrawerItem
             name={strings.catalog.entities.common.details.props.uid()}
           >
@@ -271,9 +271,9 @@ export const catalogEntityDetails = [
     components: {
       Details: (props) => (
         <>
-          <DrawerTitle
-            title={strings.catalog.entities.common.details.title()}
-          />
+          <DrawerTitle>
+            {strings.catalog.entities.common.details.title()}
+          </DrawerTitle>
           <DrawerItem
             name={strings.catalog.entities.common.details.props.uid()}
           >
@@ -311,9 +311,9 @@ export const catalogEntityDetails = [
     components: {
       Details: (props) => (
         <>
-          <DrawerTitle
-            title={strings.catalog.entities.common.details.title()}
-          />
+          <DrawerTitle>
+            {strings.catalog.entities.common.details.title()}
+          </DrawerTitle>
           <DrawerItem
             name={strings.catalog.entities.common.details.props.uid()}
           >
@@ -349,9 +349,9 @@ export const catalogEntityDetails = [
     components: {
       Details: (props) => (
         <>
-          <DrawerTitle
-            title={strings.catalog.entities.common.details.title()}
-          />
+          <DrawerTitle>
+            {strings.catalog.entities.common.details.title()}
+          </DrawerTitle>
           <DrawerItem
             name={strings.catalog.entities.common.details.props.uid()}
           >
