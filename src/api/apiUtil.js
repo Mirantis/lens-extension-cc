@@ -138,12 +138,13 @@ export async function cloudLogout(cloud) {
  * @param {string} options.resourceType One of the keys (i.e. API resource types) from
  *  the `typeToClient` map. This is the API resource type on which to call the `method`.
  * @param {Object} [options.args] Optional arguments for the `method` on the `resourceType`.
- * @returns {Object} If successful, `{body: Object, tokensRefreshed: boolean, cloud: Cloud}`;
+ * @returns {Object} If successful, `{body: Object, tokensRefreshed: boolean, cloud: Cloud, url: string, path: string}`;
  *  otherwise, `{error: string, status: number, tokensRefreshed: boolean, cloud: Cloud}`.
  *  `tokensRefreshed` is true if the cloud's access token had expired and was successfully
  *  refreshed during the process of making the request (which may still have failed afterward,
  *  using the updated token). In either case, `cloud` is a reference to the original `cloud`
- *  given to make the request.
+ *  given to make the request. `url` is the full URL used for the request. `path` is the
+ *  full path used for the request, without leading '/', less the protocol, host, and port.
  */
 export async function cloudRequest({ cloud, method, resourceType, args }) {
   // NOTE: it's useless to fetch if we don't have a token, or we can't refresh it
@@ -168,7 +169,10 @@ export async function cloudRequest({ cloud, method, resourceType, args }) {
 
   // the first attempt to fetch
   let k8sClient = new Client(cloud.cloudUrl, cloud.token, resourceType);
-  let { response, error, body } = await k8sClient[method](resourceType, args);
+  let { response, error, body, url } = await k8sClient[method](
+    resourceType,
+    args
+  );
 
   if (response?.status === 401) {
     // assume token is expired, try to refresh
@@ -185,7 +189,10 @@ export async function cloudRequest({ cloud, method, resourceType, args }) {
 
     // try to fetch again with updated token
     k8sClient = new Client(cloud.cloudUrl, cloud.token, resourceType);
-    ({ response, error, body } = await k8sClient[method](resourceType, args));
+    ({ response, error, body, url } = await k8sClient[method](
+      resourceType,
+      args
+    ));
   }
 
   return {
@@ -194,5 +201,7 @@ export async function cloudRequest({ cloud, method, resourceType, args }) {
     tokensRefreshed, // may have been refreshed and _then_ error occurred, so always include
     error,
     status: error ? response?.status ?? 0 : undefined,
+    url,
+    path: url?.replace(`${cloud.cloudUrl}/`, ''),
   };
 }

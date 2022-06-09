@@ -113,11 +113,12 @@ export function buildQueryString(params) {
  *  deemed to have failed (per other options); otherwise, a generated message
  *  is used, based on response status.
  * @returns {Object} If successful, the object has this shape:
- *  `{response: Response, expectedStatuses, body: any}`:
+ *  `{response: Response, expectedStatuses, body: any, url: string}`:
  *  - response: The Fetch Response object.
  *  - expectedStatuses: The list provided when the request was initiated.
  *  - body: The result of calling the `extractBodyMethod` on the Fetch Response.
  *    If the method was falsy (other than `undefined`), this value is `null`.
+ *  - url: The full URL used for the request.
  *
  *  On failure, `{error: string, response: Response|undefined, expectedStatuses}`:
  *  - error: Error message, either `options.errorMessage` if specified, or generated.
@@ -144,6 +145,7 @@ export async function request(
     });
   } catch (e) {
     return {
+      url,
       expectedStatuses,
       error: `${
         errorMessage || strings.netUtil.error.requestFailed(url)
@@ -152,7 +154,7 @@ export async function request(
   }
 
   if (response.status === 401) {
-    return { response, expectedStatuses, error: 'Unauthorized' };
+    return { url, response, expectedStatuses, error: 'Unauthorized' };
   }
 
   if (
@@ -177,6 +179,7 @@ export async function request(
 
       if (message) {
         return {
+          url,
           response,
           expectedStatuses,
           error:
@@ -189,6 +192,7 @@ export async function request(
     // else, fall back to generic message
 
     return {
+      url,
       response,
       expectedStatuses,
       error:
@@ -204,6 +208,7 @@ export async function request(
     const extracted = await tryExtractBody(response, extractBodyMethod);
     if (extracted.error) {
       return {
+        url,
         response,
         expectedStatuses,
         error: strings.netUtil.error.invalidResponseData(url, extracted.error),
@@ -212,5 +217,5 @@ export async function request(
     body = extracted.body;
   }
 
-  return { response, expectedStatuses, body };
+  return { url, response, expectedStatuses, body };
 }
