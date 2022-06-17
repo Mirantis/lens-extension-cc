@@ -61,6 +61,7 @@
     "download:kubelogin:license:nix": "yarn create:bin:nix && ([[ -f ./bin/kubelogin-license.txt ]] || curl -slL https://raw.githubusercontent.com/int128/kubelogin/v1.25.1/LICENSE > ./bin/kubelogin-license.txt)",
     "download:kubelogin:license:windows": "yarn create:bin:windows && sh -c \"[[ -f ./bin/kubelogin-license.txt ]] || curl -slL https://raw.githubusercontent.com/int128/kubelogin/v1.25.1/LICENSE > ./bin/kubelogin-license.txt\""
   },
+  "dependencies": {},
   "devDependencies": {
     "@babel/cli": "^7.17.10",
     "@babel/core": "^7.18.5",
