@@ -194,6 +194,19 @@ Button.propTypes = {
   primary: propTypes.bool,
 };
 
+export const Icon = ({ interactive, smallest, ...props }) => {
+  const classes = [
+    smallest ? 'smallest' : '',
+    interactive ? 'interactive' : '',
+  ];
+  return <i className={classes.join()} {...props} />;
+};
+
+Icon.propTypes = {
+  interactive: propTypes.bool,
+  smallest: propTypes.bool,
+};
+
 export const Renderer = {
   Ipc,
   Component: {
@@ -202,7 +215,7 @@ export const Renderer = {
       error: () => {},
     },
     Button: Button,
-    Icon: (props) => <i {...props} />,
+    Icon: Icon,
     ConfirmDialog: {
       // eslint-disable-next-line no-undef
       open: jest.fn(),
