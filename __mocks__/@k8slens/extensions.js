@@ -1,6 +1,7 @@
 import { computed, makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react';
 import React from 'react';
+import propTypes from 'prop-types';
 import ReactSelect, { components } from 'react-select';
 import ReactSelectCreatable from 'react-select/creatable';
 
@@ -180,6 +181,19 @@ export const Common = {
   },
 };
 
+const Button = ({ label, primary, ...props }) => {
+  return (
+    <button className={primary ? 'primary' : ''} {...props}>
+      {label}
+    </button>
+  );
+};
+
+Button.propTypes = {
+  label: propTypes.string,
+  primary: propTypes.bool,
+};
+
 export const Renderer = {
   Ipc,
   Component: {
@@ -187,11 +201,7 @@ export const Renderer = {
     Notifications: {
       error: () => {},
     },
-    Button: (props) => {
-      // render label as text so that we can use .getByText
-      // eslint-disable-next-line react/prop-types
-      return <button disabled={props.disabled}>{props.label}</button>;
-    },
+    Button: Button,
     Icon: (props) => <i {...props} />,
     ConfirmDialog: {
       // eslint-disable-next-line no-undef

@@ -349,11 +349,11 @@ export const welcome: Dict = {
   titleHtml: () => `Welcome to the <br/>${mccFullName} for Lens Extention`,
   description: () =>
     `This extension enables you to connect to multiple ${mccFullName} management clusters through Lens. You can now leverage Lens for basic lifecycle management operations such as:`,
-  listItemsHtml: () => `
-    <li>Synchronizing projects to view their resources in the Lens Catalog</li>
-    <li>Monitoring real-time cluster status and resource utilization in Lens</li>
-    <li>Filtering synced resources and viewing their details in the Lens Catalog</li>
-  `,
+  listItems: () => [
+    'Synchronizing projects to view their resources in the Lens Catalog',
+    'Monitoring real-time cluster status and resource utilization in Lens',
+    'Filtering synced resources and viewing their details in the Lens Catalog',
+  ],
   link: {
     label: () => 'And more!',
   },
