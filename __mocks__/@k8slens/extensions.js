@@ -136,6 +136,26 @@ class KubernetesCluster {
   }
 }
 
+class Spinner extends React.Component {
+  static defaultProps = {
+    singleColor: true,
+    center: false,
+  };
+
+  render() {
+    const { center, singleColor, ...props } = this.props;
+
+    return (
+      <div
+        {...props}
+        className={`Spinner ${center ? 'center' : ''} ${
+          singleColor ? 'singleColor' : ''
+        }`}
+      />
+    );
+  }
+}
+
 export const Main = {
   K8sApi: {
     KubeObject: null,
@@ -211,6 +231,7 @@ export const Renderer = {
   Ipc,
   Component: {
     Select,
+    Spinner,
     Notifications: {
       error: () => {},
     },
