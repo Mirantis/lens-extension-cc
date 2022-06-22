@@ -108,6 +108,8 @@ const WelcomeButtonWrapper = styled.div(function () {
   };
 });
 
+const welcomeListItems = strings.welcome.listItems();
+
 export const WelcomeView = ({ openAddCloud }) => (
   <WelcomeContainer>
     <WelcomeWrapper>
@@ -121,11 +123,11 @@ export const WelcomeView = ({ openAddCloud }) => (
           }}
         />
         <WelcomeDescription>{strings.welcome.description()}</WelcomeDescription>
-        <WelcomeList
-          dangerouslySetInnerHTML={{
-            __html: strings.welcome.listItemsHtml(),
-          }}
-        />
+        <WelcomeList>
+          {welcomeListItems.map((item, index) => (
+            <li key={index}>{item}</li>
+          ))}
+        </WelcomeList>
         <WelcomeLink href={constants.repository.readmeUrl} target="_blank">
           {strings.welcome.link.label()}
         </WelcomeLink>
