@@ -136,6 +136,18 @@ class KubernetesCluster {
   }
 }
 
+class CatalogEntity {
+  constructor(props) {
+    Object.assign(this, props);
+  }
+}
+
+class CatalogCategory {
+  constructor(props) {
+    Object.assign(this, props);
+  }
+}
+
 class Spinner extends React.Component {
   static defaultProps = {
     singleColor: true,
@@ -167,11 +179,18 @@ export const Main = {
       KubeObject: class KubeObject {},
     },
   },
+  Catalog: {
+    catalogCategories: {
+      add: () => () => {},
+    },
+  },
 };
 
 export const Common = {
   Catalog: {
     KubernetesCluster,
+    CatalogEntity,
+    CatalogCategory,
     catalogEntities: {
       activeEntity: observable.object({}),
       getItemsForCategory: () => [],
@@ -249,6 +268,7 @@ export const Renderer = {
     },
     catalogCategories: {
       getForGroupKind: () => Common.Catalog.KubernetesCluster,
+      add: () => () => {},
     },
   },
   K8sApi: {
