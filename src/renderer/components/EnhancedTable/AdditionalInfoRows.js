@@ -5,7 +5,15 @@ import { layout } from '../styles';
 import { managementClusters } from '../../../strings';
 import { CloudNamespace } from '../../../common/CloudNamespace';
 
-const EnhInfoRowsWrapper = styled.div`
+const EnhInfoRowsWrapper = styled.td`
+  display: contents;
+`;
+
+const EnhInfoRowsTable = styled.table`
+  display: contents;
+`;
+
+const EnhInfoRowsBody = styled.tbody`
   display: contents;
 `;
 
@@ -61,14 +69,18 @@ export const AdditionalInfoRows = ({ namespace, emptyCellsCount }) => {
   ];
   return (
     <EnhInfoRowsWrapper>
-      {listOfInfo.map(({ infoName, infoCount }) => (
-        <EnhTableInfoRow key={infoName}>
-          <EnhTableInfoRowCell isFirst>
-            {infoName} ({infoCount})
-          </EnhTableInfoRowCell>
-          {generateTableCells(emptyCellsCount)}
-        </EnhTableInfoRow>
-      ))}
+      <EnhInfoRowsTable>
+        <EnhInfoRowsBody>
+          {listOfInfo.map(({ infoName, infoCount }) => (
+            <EnhTableInfoRow key={infoName}>
+              <EnhTableInfoRowCell isFirst>
+                {infoName} ({infoCount})
+              </EnhTableInfoRowCell>
+              {generateTableCells(emptyCellsCount)}
+            </EnhTableInfoRow>
+          ))}
+        </EnhInfoRowsBody>
+      </EnhInfoRowsTable>
     </EnhInfoRowsWrapper>
   );
 };
