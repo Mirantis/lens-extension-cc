@@ -410,7 +410,7 @@ export const EnhancedTableRow = ({
 };
 
 EnhancedTableRow.propTypes = {
-  cloud: PropTypes.instanceOf(Cloud).isRequired,
+  cloud: PropTypes.object.isRequired, // expecting Cloud instance
   withCheckboxes: PropTypes.bool,
   isSyncStarted: PropTypes.bool,
   getDataToSync: PropTypes.func,

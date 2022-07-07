@@ -101,16 +101,67 @@ export const Select = observer(_Select);
 class Singleton {
   static instances = new WeakMap();
 
-  static getInstance(_this) {
-    return Singleton.instances.get(_this);
+  static creating = '';
+
+  constructor() {
+    if (Singleton.creating.length === 0) {
+      throw new TypeError('A singleton class must be created by createInstance()');
+    }
   }
 
-  static createInstance(_this, ...args) {
+  /**
+   * Creates the single instance of the child class if one was not already created.
+   *
+   * Multiple calls will return the same instance.
+   * Essentially throwing away the arguments to the subsequent calls.
+   *
+   * Note: this is a racy function, if two (or more) calls are racing to call this function
+   * only the first's arguments will be used.
+   * @param this Implicit argument that is the child class type
+   * @param args The constructor arguments for the child class
+   * @returns An instance of the child class
+   */
+  static createInstance(this, ...args) {
     if (!Singleton.instances.has(this)) {
-      Singleton.instances.set(this, new _this(...args));
+      if (Singleton.creating.length > 0) {
+        throw new TypeError(`Cannot create a second singleton (${this.name}) while creating a first (${Singleton.creating})`);
+      }
+
+      try {
+        Singleton.creating = this.name;
+        Singleton.instances.set(this, new this(...args));
+      } finally {
+        Singleton.creating = '';
+      }
     }
 
-    return this.getInstance(_this);
+    return Singleton.instances.get(this);
+  }
+
+  /**
+   * Get the instance of the child class that was previously created.
+   * @param this Implicit argument that is the child class type
+   * @param strict If false will return `undefined` instead of throwing when an instance doesn't exist.
+   * Default: `true`
+   * @returns An instance of the child class
+   */
+  static getInstance(this, strict = true) {
+    if (!Singleton.instances.has(this) && strict) {
+      throw new TypeError(`instance of ${this.name} is not created`);
+    }
+
+    return Singleton.instances.get(this);
+  }
+
+  /**
+   * Delete the instance of the child class.
+   *
+   * Note: this doesn't prevent callers of `getInstance` from storing the result in a global.
+   *
+   * There is *no* way in JS or TS to prevent globals like that.
+   */
+  static resetInstance() {
+    Singleton.instances.delete(this);
   }
 }
 
@@ -168,23 +219,31 @@ class Spinner extends React.Component {
   }
 }
 
-export const Main = {
-  K8sApi: {
-    KubeObject: null,
-    K8sApi: {
-      forRemoteCluster: jest.fn(() => ({
-        list: jest.fn(() => Promise.resolve([])),
-        patch: jest.fn(() => Promise.resolve({})),
-      })),
-      KubeObject: class KubeObject {},
-    },
-  },
-  Catalog: {
-    catalogCategories: {
-      add: () => () => {},
-    },
-  },
+const Button = ({ label, primary, ...props }) => {
+  return (
+    <button className={primary ? 'primary' : ''} {...props}>
+      {label}
+    </button>
+  );
 };
+
+Button.propTypes = {
+  label: propTypes.string,
+  primary: propTypes.bool,
+};
+
+export const Icon = ({ interactive, smallest, ...props }) => {
+  const classes = [
+    smallest ? 'smallest' : '',
+    interactive ? 'interactive' : '',
+  ];
+  return <i className={classes.join()} {...props} />;
+};
+
+Icon.propTypes = {
+  interactive: propTypes.bool,
+  smallest: propTypes.bool,
+}
 
 export const Common = {
   Catalog: {
@@ -220,30 +279,22 @@ export const Common = {
   },
 };
 
-const Button = ({ label, primary, ...props }) => {
-  return (
-    <button className={primary ? 'primary' : ''} {...props}>
-      {label}
-    </button>
-  );
-};
-
-Button.propTypes = {
-  label: propTypes.string,
-  primary: propTypes.bool,
-};
-
-export const Icon = ({ interactive, smallest, ...props }) => {
-  const classes = [
-    smallest ? 'smallest' : '',
-    interactive ? 'interactive' : '',
-  ];
-  return <i className={classes.join()} {...props} />;
-};
-
-Icon.propTypes = {
-  interactive: propTypes.bool,
-  smallest: propTypes.bool,
+export const Main = {
+  K8sApi: {
+    KubeObject: null,
+    K8sApi: {
+      forRemoteCluster: jest.fn(() => ({
+        list: jest.fn(() => Promise.resolve([])),
+        patch: jest.fn(() => Promise.resolve({})),
+      })),
+      KubeObject: class KubeObject {},
+    },
+  },
+  Catalog: {
+    catalogCategories: {
+      add: () => () => {},
+    },
+  },
 };
 
 export const Renderer = {
