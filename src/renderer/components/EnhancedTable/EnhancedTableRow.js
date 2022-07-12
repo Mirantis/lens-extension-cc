@@ -13,7 +13,7 @@ import {
   useCheckboxes,
   makeCheckboxesInitialState,
 } from '../hooks/useCheckboxes';
-import { Cloud, CONNECTION_STATUSES } from '../../../common/Cloud';
+import { CONNECTION_STATUSES } from '../../../common/Cloud';
 import { openBrowser } from '../../../util/netUtil';
 import { useClouds } from '../../store/CloudProvider';
 import { sortNamespaces } from './tableUtil';
@@ -410,7 +410,11 @@ export const EnhancedTableRow = ({
 };
 
 EnhancedTableRow.propTypes = {
-  cloud: PropTypes.object.isRequired, // expecting Cloud instance
+  // expecting Cloud instance (can't use `instanceOf(Cloud)` because we can't fake the Cloud
+  //  class during unit tests; Jest mocks don't see capable of doing it in a way that still
+  //  passes PropTypes.instanceof(Cloud))
+  cloud: PropTypes.object.isRequired,
+
   withCheckboxes: PropTypes.bool,
   isSyncStarted: PropTypes.bool,
   getDataToSync: PropTypes.func,
