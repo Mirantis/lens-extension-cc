@@ -1,25 +1,25 @@
 import { get, orderBy } from 'lodash';
 
-const SELECTIVE_HEAD_CELL_VALUES = {
+export const SELECTIVE_HEAD_CELL_VALUES = {
   NAME: 'NAME',
   AUTOSYNC: 'AUTOSYNC',
   URL: 'URL',
 };
 
-const selectivePathToData = {
+export const selectivePathToData = {
   [SELECTIVE_HEAD_CELL_VALUES.NAME]: ['name'],
   [SELECTIVE_HEAD_CELL_VALUES.AUTOSYNC]: ['syncAll'],
   [SELECTIVE_HEAD_CELL_VALUES.URL]: ['cloudUrl'],
 };
 
-const HEAD_CELL_VALUES = {
+export const HEAD_CELL_VALUES = {
   NAME: 'NAME',
   URL: 'URL',
   USERNAME: 'USERNAME',
   STATUS: 'STATUS',
 };
 
-const pathToData = {
+export const pathToData = {
   [HEAD_CELL_VALUES.NAME]: ['name'],
   [HEAD_CELL_VALUES.URL]: ['cloudUrl'],
   [HEAD_CELL_VALUES.USERNAME]: ['username'],
