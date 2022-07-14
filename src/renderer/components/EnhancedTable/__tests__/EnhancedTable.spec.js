@@ -165,7 +165,7 @@ describe('/renderer/components/EnhancedTable/EnhancedTable', () => {
     });
     expect(thirdTimeSortedByNameCloudsName).toEqual(expectedAscCloudsName);
 
-    // Clouds should be ordered by |asc|
+    // Clouds should be ordered by |desc|
     // after clicking on header cell,
     // which is not equal to current sortedBy
     await user.click(screen.getByText('URL'));
