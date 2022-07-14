@@ -1,11 +1,15 @@
 /* istanbul ignore file */
 import { CloudNamespace } from '../common/CloudNamespace';
+import { EventDispatcher } from '../common/EventDispatcher';
 
-export const makeFakeCloud = function (options) {
-  const cloud = {
-    ...options,
-  };
+export const makeFakeCloud = function (props) {
+  // a Cloud is expected to be an EventDispatcher, so start from there
+  const cloud = new EventDispatcher();
 
+  Object.keys(props).forEach((key) => (cloud[key] = props[key]));
+
+  // check if `props` has `namespaces` and `syncedNamespaces` and convert the plain
+  //  objects into CloudNamespace instances
   ['namespaces', 'syncedNamespaces'].forEach((prop) => {
     if (cloud[prop]) {
       cloud[prop] = cloud[prop].map((ns) => {
