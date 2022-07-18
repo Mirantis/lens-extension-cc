@@ -223,6 +223,14 @@ Icon.propTypes = {
   smallest: propTypes.bool,
 };
 
+const Tooltip = ({ children }) => {
+  return <div role="tooltip">{children}</div>;
+};
+
+Tooltip.propTypes = {
+  children: propTypes.node,
+};
+
 // @see https://github.com/lensapp/lens/blob/master/src/renderer/components/menu/menu.tsx
 const MenuItem = ({ children, ...props }) => <li {...props}>{children}</li>;
 
@@ -369,6 +377,7 @@ export const Renderer = {
     },
     Button,
     Icon,
+    Tooltip,
     MenuItem,
     Menu,
     MenuActions,

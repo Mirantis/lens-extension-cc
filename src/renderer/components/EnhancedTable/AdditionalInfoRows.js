@@ -17,6 +17,10 @@ const EnhInfoRowsBody = styled.tbody`
   display: contents;
 `;
 
+const EnhInfoRow = styled.tr`
+  display: contents;
+`;
+
 const EnhTableInfoRow = styled.tr`
   &:nth-of-type(odd) {
     background-color: var(--layoutTabsBackground);
@@ -68,20 +72,22 @@ export const AdditionalInfoRows = ({ namespace, emptyCellsCount }) => {
     },
   ];
   return (
-    <EnhInfoRowsWrapper>
-      <EnhInfoRowsTable>
-        <EnhInfoRowsBody>
-          {listOfInfo.map(({ infoName, infoCount }) => (
-            <EnhTableInfoRow key={infoName}>
-              <EnhTableInfoRowCell isFirst>
-                {infoName} ({infoCount})
-              </EnhTableInfoRowCell>
-              {generateTableCells(emptyCellsCount)}
-            </EnhTableInfoRow>
-          ))}
-        </EnhInfoRowsBody>
-      </EnhInfoRowsTable>
-    </EnhInfoRowsWrapper>
+    <EnhInfoRow>
+      <EnhInfoRowsWrapper>
+        <EnhInfoRowsTable>
+          <EnhInfoRowsBody>
+            {listOfInfo.map(({ infoName, infoCount }) => (
+              <EnhTableInfoRow key={infoName}>
+                <EnhTableInfoRowCell isFirst>
+                  {infoName} ({infoCount})
+                </EnhTableInfoRowCell>
+                {generateTableCells(emptyCellsCount)}
+              </EnhTableInfoRow>
+            ))}
+          </EnhInfoRowsBody>
+        </EnhInfoRowsTable>
+      </EnhInfoRowsWrapper>
+    </EnhInfoRow>
   );
 };
 
