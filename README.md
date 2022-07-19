@@ -91,7 +91,7 @@ Finally, click on __Synchronize selected projects__ to complete the setup.
 
 ![Sync View](./docs/v4-04-sync-overview.png)
 
-After adding a new management cluster, you'll be show the __Sync View__. As highlighted, the __Name__ column on the far left shows the short name for the management cluster, along with all synced projects. Under each project, you'll find the number of resources that have been synced to Lens and are available in the Catalog.
+After adding a new management cluster, you'll be shown the __Sync View__. As highlighted, the __Name__ column on the far left shows the short name for the management cluster, along with all synced projects. Under each project, you'll find the number of resources that have been synced to Lens and are available in the Catalog.
 
 The highlighted __Status__ column on the far right shows the current sync status of each project, as well as the connection status to the management cluster. As sync takes place periodically (every 5 minutes or so), the management cluster's status will change from "Connected" to "Updating" whenever it's synchronizing.
 
