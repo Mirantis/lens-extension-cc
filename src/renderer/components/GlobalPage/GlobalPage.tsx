@@ -29,6 +29,7 @@ export const GlobalPage = function () {
   //  do is use `mobx` to observe changes to `Theme.getActiveTheme().name`
   // TRACKING: https://github.com/Mirantis/lens-extension-cc/issues/24
   useEffect(function () {
+    /* istanbul ignore next -- JSDom does not support the MutationObserver API */
     const observer = new MutationObserver(function (
       mutations: MutationRecord[]
     ) {
