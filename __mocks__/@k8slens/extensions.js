@@ -252,9 +252,9 @@ export class ConfirmDialog extends React.Component {
   }
 }
 
-const Button = ({ label, primary, waiting, ...props }) => {
+const Button = ({ label, primary, waiting, plain, ...props }) => {
   return (
-    <button className={cx({ primary, waiting })} {...props}>
+    <button className={cx({ primary, waiting, plain })} {...props}>
       {label}
     </button>
   );
@@ -264,6 +264,23 @@ Button.propTypes = {
   label: propTypes.string,
   primary: propTypes.bool,
   waiting: propTypes.bool,
+  plain: propTypes.bool,
+};
+
+const Input = ({ trim, ...props }) => {
+  return <input className={cx({ trim })} {...props} />;
+};
+
+Input.propTypes = {
+  trim: propTypes.bool,
+};
+
+const Tooltip = ({ children }) => {
+  return <div role="tooltip">{children}</div>;
+};
+
+Tooltip.propTypes = {
+  children: propTypes.node,
 };
 
 export const Icon = ({ interactive, smallest, ...props }) => {
@@ -273,14 +290,6 @@ export const Icon = ({ interactive, smallest, ...props }) => {
 Icon.propTypes = {
   interactive: propTypes.bool,
   smallest: propTypes.bool,
-};
-
-const Tooltip = ({ children }) => {
-  return <div role="tooltip">{children}</div>;
-};
-
-Tooltip.propTypes = {
-  children: propTypes.node,
 };
 
 // @see https://github.com/lensapp/lens/blob/master/src/renderer/components/menu/menu.tsx
@@ -463,8 +472,9 @@ export const Renderer = {
     Spinner,
     Notifications,
     Button,
-    Icon,
+    Input,
     Tooltip,
+    Icon,
     MenuItem,
     Menu,
     MenuActions,
