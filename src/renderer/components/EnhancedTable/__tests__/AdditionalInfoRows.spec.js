@@ -1,30 +1,28 @@
 import { render } from 'testingUtility';
 import { AdditionalInfoRows } from '../AdditionalInfoRows';
-import { makeFakeCloud } from '../../../../__tests__/cloudTestUtil';
+import { Cloud } from '../../../../common/__tests__/MockCloud';
 
 describe('/renderer/components/EnhancedRable/AdditionalInfoRows', () => {
   let fakeCloud;
 
   beforeEach(() => {
-    fakeCloud = {
-      'http://foo.com': makeFakeCloud({
-        name: 'foo',
-        cloudUrl: 'http://foo.com',
-        namespaces: [
-          {
-            cloudUrl: 'https://container-cloud.int.mirantis.com',
-            clusterCount: 4,
-            credentialCount: 4,
-            licenseCount: 1,
-            machineCount: 12,
-            name: 'default',
-            proxyCount: 0,
-            sshKeyCount: 2,
-            synced: true,
-          },
-        ],
-      }),
-    };
+    fakeCloud = new Cloud('http://foo.com', {
+      name: 'foo',
+      cloudUrl: 'http://foo.com',
+      namespaces: [
+        {
+          cloudUrl: 'https://container-cloud.int.mirantis.com',
+          clusterCount: 4,
+          credentialCount: 4,
+          licenseCount: 1,
+          machineCount: 12,
+          name: 'default',
+          proxyCount: 0,
+          sshKeyCount: 2,
+          synced: true,
+        },
+      ],
+    });
   });
 
   it('renders |without| empty cells', () => {
@@ -32,9 +30,7 @@ describe('/renderer/components/EnhancedRable/AdditionalInfoRows', () => {
       <table>
         <tbody>
           <tr>
-            <AdditionalInfoRows
-              namespace={fakeCloud['http://foo.com'].namespaces[0]}
-            />
+            <AdditionalInfoRows namespace={fakeCloud.namespaces[0]} />
           </tr>
         </tbody>
       </table>
@@ -53,7 +49,7 @@ describe('/renderer/components/EnhancedRable/AdditionalInfoRows', () => {
         <tbody>
           <tr>
             <AdditionalInfoRows
-              namespace={fakeCloud['http://foo.com'].namespaces[0]}
+              namespace={fakeCloud.namespaces[0]}
               emptyCellsCount={testEmptyCellsCount}
             />
           </tr>

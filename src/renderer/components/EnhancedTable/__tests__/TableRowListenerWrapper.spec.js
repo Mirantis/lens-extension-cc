@@ -1,5 +1,6 @@
 import mockConsole from 'jest-mock-console';
-import { render, screen, waitFor } from 'testingUtility';
+import { render, screen, sleep } from 'testingUtility';
+import userEvent from '@testing-library/user-event';
 import { TableRowListenerWrapper } from '../TableRowListenerWrapper';
 import { Cloud } from '../../../../common/__tests__/MockCloud';
 import { CONNECTION_STATUSES, CLOUD_EVENTS } from '../../../../common/Cloud';
@@ -10,8 +11,10 @@ import * as strings from '../../../../strings';
 
 describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
   const extension = {};
+  let user;
 
   beforeEach(() => {
+    user = userEvent.setup();
     mockConsole(); // automatically restored after each test
 
     IpcRenderer.createInstance(extension);
@@ -82,7 +85,7 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
     ],
   });
 
-  let connectedFakeCloud = new Cloud('http://foobar.com', {
+  const connectedFakeCloud = new Cloud('http://foobar.com', {
     name: 'foobar',
     cloudUrl: 'http://foobar.com',
     status: CONNECTION_STATUSES.CONNECTED,
@@ -202,12 +205,82 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
     ).toBeInTheDocument();
   });
 
-  it('triggers onCloudStatusChange() by dispatching status change event', async () => {
+  [CLOUD_EVENTS.STATUS_CHANGE, CLOUD_EVENTS.FETCHING_CHANGE].forEach(
+    (event) => {
+      it(`triggers |${
+        event === CLOUD_EVENTS.STATUS_CHANGE
+          ? 'onCloudStatusChange()'
+          : 'onCloudFetchingChange()'
+      }| by dispatching |${event}| event`, async () => {
+        const fakeCloud = new Cloud('http://barfoo.com', {
+          name: 'barfoo',
+          cloudUrl: 'http://barfoo.com',
+          status: CONNECTION_STATUSES.DISCONNECTED,
+          fetching: true,
+          syncedProjects: ['barfoo'],
+          namespaces: [
+            {
+              cloudUrl: 'https://barfoo.com',
+              clusterCount: 4,
+              credentialCount: 4,
+              licenseCount: 1,
+              machineCount: 12,
+              name: 'namespace 1',
+              proxyCount: 0,
+              sshKeyCount: 2,
+              synced: true,
+            },
+          ],
+          syncedNamespaces: [
+            {
+              cloudUrl: 'https://barfoo.com',
+              clusterCount: 4,
+              credentialCount: 4,
+              licenseCount: 1,
+              machineCount: 12,
+              name: 'namespace 1',
+              proxyCount: 0,
+              sshKeyCount: 2,
+              synced: true,
+            },
+          ],
+        });
+
+        render(
+          <CloudProvider>
+            <table>
+              <tbody>
+                <TableRowListenerWrapper
+                  cloud={fakeCloud}
+                  withCheckboxes={false}
+                  isSyncStarted={false}
+                  getDataToSync={() => {}}
+                />
+              </tbody>
+            </table>
+          </CloudProvider>
+        );
+
+        if (event === CLOUD_EVENTS.STATUS_CHANGE) {
+          fakeCloud.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE);
+        } else {
+          fakeCloud.dispatchEvent(CLOUD_EVENTS.FETCHING_CHANGE);
+        }
+
+        await sleep(10);
+        expect(
+          screen.getByText(strings.connectionStatuses.cloud.updating())
+        ).toBeInTheDocument();
+      });
+    }
+  );
+
+  it('triggers |onCloudSyncChange()| by dispatching |syncChange| event', async () => {
     const fakeCloud = new Cloud('http://barfoo.com', {
       name: 'barfoo',
       cloudUrl: 'http://barfoo.com',
       status: CONNECTION_STATUSES.DISCONNECTED,
-      fetching: false,
+      fetching: true,
       syncedProjects: ['barfoo'],
       namespaces: [
         {
@@ -216,7 +289,7 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
           credentialCount: 4,
           licenseCount: 1,
           machineCount: 12,
-          name: 'barfoo',
+          name: 'namespace 1',
           proxyCount: 0,
           sshKeyCount: 2,
           synced: true,
@@ -229,7 +302,7 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
           credentialCount: 4,
           licenseCount: 1,
           machineCount: 12,
-          name: 'barfoo',
+          name: 'namespace 1',
           proxyCount: 0,
           sshKeyCount: 2,
           synced: true,
@@ -252,6 +325,13 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
       </CloudProvider>
     );
 
-    await waitFor(() => fakeCloud.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE));
+    fakeCloud.dispatchEvent(CLOUD_EVENTS.SYNC_CHANGE);
+
+    await user.click(
+      document.querySelector('i[material="chevron_right"]').parentNode
+    );
+
+    await sleep(10);
+    expect(screen.getByText(fakeCloud.namespaces[0].name)).toBeInTheDocument();
   });
 });
