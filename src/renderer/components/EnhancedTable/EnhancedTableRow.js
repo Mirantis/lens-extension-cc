@@ -24,7 +24,19 @@ import { CloudNamespace } from '../../../common/CloudNamespace';
 const { Icon, MenuItem, MenuActions, ConfirmDialog, Tooltip } =
   Renderer.Component;
 
-const EnhRowsWrapper = styled.div`
+const EnhRow = styled.tr`
+  display: contents;
+`;
+
+const EnhRowsWrapper = styled.td`
+  display: contents;
+`;
+
+const EnhRowsInnerTable = styled.table`
+  display: contents;
+`;
+
+const EnhRowsInnerBody = styled.tbody`
   display: contents;
 `;
 
@@ -380,30 +392,41 @@ export const EnhancedTableRow = ({
       </EnhTableRow>
       {isOpenFirstLevel &&
         sortNamespaces(namespaces).map((namespace) => (
-          <EnhRowsWrapper key={namespace.name}>
-            <EnhTableRow>
-              <EnhTableRowCell
-                isFirstLevel
-                isUnSynced={!namespace.synced}
-                withCheckboxes={withCheckboxes}
-              >
-                {namespace.synced && (
-                  <EnhCollapseBtn onClick={() => setOpenedList(namespace.name)}>
-                    {getExpandIcon(openNamespaces.includes(namespace.name))}
-                  </EnhCollapseBtn>
-                )}
-                {makeNameCell(namespace.name)}
-              </EnhTableRowCell>
-              {renderNamespaceRows(namespace)}
-            </EnhTableRow>
+          <EnhRow key={namespace.name}>
+            <EnhRowsWrapper>
+              <EnhRowsInnerTable>
+                <EnhRowsInnerBody>
+                  <EnhTableRow>
+                    <EnhTableRowCell
+                      isFirstLevel
+                      isUnSynced={!namespace.synced}
+                      withCheckboxes={withCheckboxes}
+                    >
+                      {namespace.synced && (
+                        <EnhCollapseBtn
+                          onClick={() => setOpenedList(namespace.name)}
+                        >
+                          {getExpandIcon(
+                            openNamespaces.includes(namespace.name)
+                          )}
+                        </EnhCollapseBtn>
+                      )}
+                      {makeNameCell(namespace.name)}
+                    </EnhTableRowCell>
+                    {renderNamespaceRows(namespace)}
+                  </EnhTableRow>
 
-            {openNamespaces.includes(namespace.name) && namespace.synced && (
-              <AdditionalInfoRows
-                namespace={namespace}
-                emptyCellsCount={withCheckboxes ? 2 : 4}
-              />
-            )}
-          </EnhRowsWrapper>
+                  {openNamespaces.includes(namespace.name) &&
+                    namespace.synced && (
+                      <AdditionalInfoRows
+                        namespace={namespace}
+                        emptyCellsCount={withCheckboxes ? 2 : 4}
+                      />
+                    )}
+                </EnhRowsInnerBody>
+              </EnhRowsInnerTable>
+            </EnhRowsWrapper>
+          </EnhRow>
         ))}
     </>
   );
