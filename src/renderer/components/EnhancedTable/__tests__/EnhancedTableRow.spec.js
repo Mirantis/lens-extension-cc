@@ -2,16 +2,19 @@ import mockConsole from 'jest-mock-console';
 import { render, screen, sleep } from 'testingUtility';
 import userEvent from '@testing-library/user-event';
 import { EnhancedTableRow } from '../EnhancedTableRow';
-import { Cloud } from '../../../../common/__tests__/MockCloud';
-import { CloudProvider } from '../../../store/CloudProvider';
+import { Cloud, mkCloudJson } from '../../../../common/Cloud';
+import { CloudProvider, useClouds } from '../../../store/CloudProvider';
 import { IpcRenderer } from '../../../IpcRenderer';
 import { CloudStore } from '../../../../store/CloudStore';
 import * as strings from '../../../../strings';
+
+jest.mock('../../../../common/Cloud');
 
 describe('/renderer/components/EnhancedTable/EnhancedTable', () => {
   const extension = {};
   let fakeCloudFoo;
   let fakeCloudWithoutNamespaces;
+  let fakeCloudWithoutNamespacesJson;
   let user;
 
   const colorGreen = {
@@ -26,33 +29,24 @@ describe('/renderer/components/EnhancedTable/EnhancedTable', () => {
     user = userEvent.setup();
     mockConsole(); // automatically restored after each test
 
-    fakeCloudWithoutNamespaces = new Cloud('http://bar.com', {
+    fakeCloudWithoutNamespacesJson = mkCloudJson({
       name: 'bar',
       cloudUrl: 'http://bar.com',
       loaded: true,
       connected: true,
-      username: null,
-      id_token: null,
-      expires_in: null,
-      syncAll: false,
-      tokenExpiresAt: null,
-      _tokenValidTill: null,
-      refresh_token: null,
-      refresh_expires_in: null,
-      refreshExpiresAt: null,
-      _refreshValidTill: null,
-      namespaces: [],
     });
+
+    fakeCloudWithoutNamespaces = new Cloud(fakeCloudWithoutNamespacesJson);
 
     IpcRenderer.createInstance(extension);
     CloudStore.initStore('cloud-store', {
       clouds: {
-        'http://bar.com': fakeCloudWithoutNamespaces,
+        'http://bar.com': fakeCloudWithoutNamespacesJson,
       },
     });
     CloudStore.createInstance().loadExtension(extension);
 
-    fakeCloudFoo = new Cloud('http://foo.com', {
+    fakeCloudFoo = new Cloud({
       name: 'foo',
       cloudUrl: 'http://foo.com',
       namespaces: [
@@ -190,25 +184,36 @@ describe('/renderer/components/EnhancedTable/EnhancedTable', () => {
   });
 
   it('renders', async () => {
-    render(
-      <CloudProvider>
+    const Table = () => {
+      const { clouds } = useClouds();
+
+      return (
         <table>
           <tbody>
-            <EnhancedTableRow
-              cloud={fakeCloudWithoutNamespaces}
-              withCheckboxes={false}
-              isSyncStarted={false}
-              getDataToSync={() => {}}
-              namespaces={fakeCloudWithoutNamespaces.namespaces}
-              status={{
-                cloudStatus: strings.connectionStatuses.cloud.disconnected(),
-                namespaceStatus:
-                  strings.connectionStatuses.namespace.disconnected(),
-                styles: colorGray,
-              }}
-            />
+            {Object.values(clouds).map((cloud) => (
+              <EnhancedTableRow
+                key={cloud.name}
+                cloud={cloud}
+                withCheckboxes={false}
+                isSyncStarted={false}
+                getDataToSync={() => {}}
+                namespaces={cloud.namespaces}
+                status={{
+                  cloudStatus: strings.connectionStatuses.cloud.connected(),
+                  namespaceStatus:
+                    strings.connectionStatuses.namespace.connected(),
+                  styles: colorGray,
+                }}
+              />
+            ))}
           </tbody>
         </table>
+      );
+    };
+
+    render(
+      <CloudProvider>
+        <Table />
       </CloudProvider>
     );
 
