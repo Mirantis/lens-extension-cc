@@ -2,7 +2,7 @@ import mockConsole from 'jest-mock-console';
 import { render, screen, sleep } from 'testingUtility';
 import userEvent from '@testing-library/user-event';
 import { EnhancedTableRow } from '../EnhancedTableRow';
-import { Cloud, mkCloudJson } from '../../../../common/Cloud';
+import { Cloud, mkCloudJson } from '../../../../common/Cloud'; // MOCKED
 import { CloudProvider, useClouds } from '../../../store/CloudProvider';
 import { IpcRenderer } from '../../../IpcRenderer';
 import { CloudStore } from '../../../../store/CloudStore';
