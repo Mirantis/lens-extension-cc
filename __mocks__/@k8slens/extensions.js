@@ -197,6 +197,70 @@ class Spinner extends React.Component {
   }
 }
 
+let confirmDialogInstance;
+
+export class ConfirmDialog extends React.Component {
+  constructor(props) {
+    super(props);
+
+    if (confirmDialogInstance) {
+      throw new Error('only one instance expected at any given time');
+    }
+    confirmDialogInstance = this;
+
+    this.state = {
+      isOpen: false,
+    };
+  }
+
+  static open = (props) => {
+    const { ok } = props;
+
+    confirmDialogInstance.setState({
+      isOpen: true,
+    });
+
+    ok();
+  };
+
+  render() {
+    return (
+      this.state.isOpen && (
+        <div className="confirm-buttons">
+          <button className="cancel"></button>
+          <button className="ok"></button>
+        </div>
+      )
+    );
+  }
+}
+
+let utilInstance;
+
+export class Util extends React.Component {
+  constructor() {
+    super();
+    if (utilInstance) {
+      throw new Error('only one instance expected at any given time');
+    }
+    utilInstance = this;
+
+    this.state = {
+      url: null,
+    };
+  }
+
+  static openExternal = (url) => {
+    utilInstance.setState({
+      url: url,
+    });
+  };
+
+  render() {
+    return this.state.url && <div>External url: {this.state.url}</div>;
+  }
+}
+
 const Button = ({ label, primary, ...props }) => {
   return (
     <button className={primary ? 'primary' : ''} {...props}>
@@ -327,10 +391,14 @@ export const Common = {
   Store: {
     ExtensionStore,
   },
-  Util: {
-    Singleton,
-    getAppVersion: () => '1.0.0',
-  },
+  // Util: {
+  //   Singleton,
+  //   getAppVersion: () => '1.0.0',
+  //   openExternal: (url) => {
+  //     console.log(url);
+  //   }
+  // },
+  Util,
   logger: {
     // eslint-disable-next-line no-console
     info: console.info,
@@ -381,10 +449,7 @@ export const Renderer = {
     MenuItem,
     Menu,
     MenuActions,
-    ConfirmDialog: {
-      // eslint-disable-next-line no-undef
-      open: jest.fn(),
-    },
+    ConfirmDialog,
   },
   Catalog: {
     KubernetesCluster,

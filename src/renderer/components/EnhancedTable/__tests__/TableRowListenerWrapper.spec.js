@@ -2,12 +2,18 @@ import mockConsole from 'jest-mock-console';
 import { render, screen, sleep } from 'testingUtility';
 import userEvent from '@testing-library/user-event';
 import { TableRowListenerWrapper } from '../TableRowListenerWrapper';
-import { Cloud } from '../../../../common/__tests__/MockCloud';
-import { CONNECTION_STATUSES, CLOUD_EVENTS } from '../../../../common/Cloud';
+import {
+  Cloud,
+  mkCloudJson,
+  CONNECTION_STATUSES,
+  CLOUD_EVENTS,
+} from '../../../../common/Cloud'; // MOCKED
 import { CloudProvider } from '../../../store/CloudProvider';
 import { IpcRenderer } from '../../../IpcRenderer';
 import { CloudStore } from '../../../../store/CloudStore';
 import * as strings from '../../../../strings';
+
+jest.mock('../../../../common/Cloud');
 
 describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
   const extension = {};
@@ -21,7 +27,7 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
     CloudStore.createInstance().loadExtension(extension);
   });
 
-  const disconnectedFakeCloud = new Cloud('https://foo.com', {
+  const disconnectedFakeCloudJson = mkCloudJson({
     name: 'foo',
     cloudUrl: 'http://foo.com',
     status: CONNECTION_STATUSES.DISCONNECTED,
@@ -38,22 +44,9 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
         synced: true,
       },
     ],
-    syncedNamespaces: [
-      {
-        cloudUrl: 'https://foo.com',
-        clusterCount: 4,
-        credentialCount: 4,
-        licenseCount: 1,
-        machineCount: 12,
-        name: 'foo',
-        proxyCount: 0,
-        sshKeyCount: 2,
-        synced: true,
-      },
-    ],
   });
 
-  const connectingFakeCloud = new Cloud('http://bar.com', {
+  const connectingFakeCloudJson = mkCloudJson({
     name: 'bar',
     cloudUrl: 'http://bar.com',
     status: CONNECTION_STATUSES.CONNECTING,
@@ -70,22 +63,9 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
         synced: true,
       },
     ],
-    syncedNamespaces: [
-      {
-        cloudUrl: 'https://bar.com',
-        clusterCount: 4,
-        credentialCount: 4,
-        licenseCount: 1,
-        machineCount: 12,
-        name: 'bar',
-        proxyCount: 0,
-        sshKeyCount: 2,
-        synced: true,
-      },
-    ],
   });
 
-  const connectedFakeCloud = new Cloud('http://foobar.com', {
+  const connectedFakeCloudJson = mkCloudJson({
     name: 'foobar',
     cloudUrl: 'http://foobar.com',
     status: CONNECTION_STATUSES.CONNECTED,
@@ -102,20 +82,11 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
         synced: true,
       },
     ],
-    syncedNamespaces: [
-      {
-        cloudUrl: 'https://foobar.com',
-        clusterCount: 4,
-        credentialCount: 4,
-        licenseCount: 1,
-        machineCount: 12,
-        name: 'foobar',
-        proxyCount: 0,
-        sshKeyCount: 2,
-        synced: true,
-      },
-    ],
   });
+
+  const disconnectedFakeCloud = new Cloud(disconnectedFakeCloudJson);
+  const connectingFakeCloud = new Cloud(connectingFakeCloudJson);
+  const connectedFakeCloud = new Cloud(connectedFakeCloudJson);
 
   [disconnectedFakeCloud, connectingFakeCloud, connectedFakeCloud].forEach(
     (cloud) => {
@@ -153,7 +124,7 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
   );
 
   it('renders a table row when cloud is fetching', () => {
-    const fetchingFakeCloud = new Cloud('http://barfoo.com', {
+    const fetchingFakeCloudJson = mkCloudJson({
       name: 'barfoo',
       cloudUrl: 'http://barfoo.com',
       fetching: true,
@@ -170,20 +141,9 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
           synced: true,
         },
       ],
-      syncedNamespaces: [
-        {
-          cloudUrl: 'https://barfoo.com',
-          clusterCount: 4,
-          credentialCount: 4,
-          licenseCount: 1,
-          machineCount: 12,
-          name: 'barfoo',
-          proxyCount: 0,
-          sshKeyCount: 2,
-          synced: true,
-        },
-      ],
     });
+
+    const fetchingFakeCloud = new Cloud(fetchingFakeCloudJson);
 
     render(
       <CloudProvider>
@@ -212,12 +172,11 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
           ? 'onCloudStatusChange()'
           : 'onCloudFetchingChange()'
       }| by dispatching |${event}| event`, async () => {
-        const fakeCloud = new Cloud('http://barfoo.com', {
+        const fakeCloudJson = mkCloudJson({
           name: 'barfoo',
           cloudUrl: 'http://barfoo.com',
           status: CONNECTION_STATUSES.DISCONNECTED,
           fetching: true,
-          syncedProjects: ['barfoo'],
           namespaces: [
             {
               cloudUrl: 'https://barfoo.com',
@@ -231,20 +190,9 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
               synced: true,
             },
           ],
-          syncedNamespaces: [
-            {
-              cloudUrl: 'https://barfoo.com',
-              clusterCount: 4,
-              credentialCount: 4,
-              licenseCount: 1,
-              machineCount: 12,
-              name: 'namespace 1',
-              proxyCount: 0,
-              sshKeyCount: 2,
-              synced: true,
-            },
-          ],
         });
+
+        const fakeCloud = new Cloud(fakeCloudJson);
 
         render(
           <CloudProvider>
@@ -276,12 +224,11 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
   );
 
   it('triggers |onCloudSyncChange()| by dispatching |syncChange| event', async () => {
-    const fakeCloud = new Cloud('http://barfoo.com', {
+    const fakeCloudJson = mkCloudJson({
       name: 'barfoo',
       cloudUrl: 'http://barfoo.com',
       status: CONNECTION_STATUSES.DISCONNECTED,
       fetching: true,
-      syncedProjects: ['barfoo'],
       namespaces: [
         {
           cloudUrl: 'https://barfoo.com',
@@ -295,20 +242,9 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
           synced: true,
         },
       ],
-      syncedNamespaces: [
-        {
-          cloudUrl: 'https://barfoo.com',
-          clusterCount: 4,
-          credentialCount: 4,
-          licenseCount: 1,
-          machineCount: 12,
-          name: 'namespace 1',
-          proxyCount: 0,
-          sshKeyCount: 2,
-          synced: true,
-        },
-      ],
     });
+
+    const fakeCloud = new Cloud(fakeCloudJson);
 
     render(
       <CloudProvider>
