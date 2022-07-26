@@ -2,7 +2,7 @@ import mockConsole from 'jest-mock-console';
 import { render, screen } from 'testingUtility';
 import userEvent from '@testing-library/user-event';
 import { EnhancedTable } from '../EnhancedTable';
-import { Cloud, mkCloudJson } from '../../../../common/Cloud'; // MOCKED
+import { Cloud } from '../../../../common/Cloud'; // MOCKED
 import { CloudProvider } from '../../../store/CloudProvider';
 import { IpcRenderer } from '../../../IpcRenderer';
 import { CloudStore } from '../../../../store/CloudStore';
@@ -12,9 +12,7 @@ jest.mock('../../../../common/Cloud');
 describe('/renderer/components/EnhancedTable/EnhancedTable', () => {
   const extension = {};
   let fakeCloudFoo;
-  let fakeCloudFooJson;
   let fakeCloudBar;
-  let fakeCloudBarJson;
   let user;
 
   beforeEach(() => {
@@ -23,7 +21,7 @@ describe('/renderer/components/EnhancedTable/EnhancedTable', () => {
 
     IpcRenderer.createInstance(extension);
 
-    fakeCloudFooJson = mkCloudJson({
+    fakeCloudFoo = new Cloud({
       cloudUrl: 'http://foo.com',
       name: 'foo',
       namespaces: [
@@ -41,7 +39,7 @@ describe('/renderer/components/EnhancedTable/EnhancedTable', () => {
       ],
     });
 
-    fakeCloudBarJson = mkCloudJson({
+    fakeCloudBar = new Cloud({
       cloudUrl: 'http://bar.com',
       name: 'bar',
       namespaces: [
@@ -58,9 +56,6 @@ describe('/renderer/components/EnhancedTable/EnhancedTable', () => {
         },
       ],
     });
-
-    fakeCloudFoo = new Cloud(fakeCloudFooJson);
-    fakeCloudBar = new Cloud(fakeCloudBarJson);
 
     CloudStore.createInstance().loadExtension(extension);
   });

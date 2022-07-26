@@ -10,10 +10,7 @@ import {
 import { CloudProvider, useClouds } from '../../../store/CloudProvider';
 import { IpcRenderer } from '../../../IpcRenderer';
 import { CloudStore } from '../../../../store/CloudStore';
-import {
-  ConfirmDialog,
-  Util,
-} from '../../../../../__mocks__/@k8slens/extensions';
+import { ConfirmDialog } from '../../../../../__mocks__/@k8slens/extensions';
 import * as strings from '../../../../strings';
 
 jest.mock('../../../../common/Cloud');
@@ -38,13 +35,11 @@ describe('/renderer/components/EnhancedTable/EnhancedTable', () => {
   });
 
   describe('render', () => {
-    let fakeCloudFoo,
-      fakeCloudFooJson,
-      fakeCloudWithoutNamespaces,
-      fakeCloudWithoutNamespacesJson;
+    let fakeCloudFoo;
+    let fakeCloudWithoutNamespaces;
 
     beforeEach(() => {
-      fakeCloudFooJson = mkCloudJson({
+      fakeCloudFoo = new Cloud({
         name: 'foo',
         cloudUrl: 'http://foo.com',
         namespaces: [
@@ -62,16 +57,13 @@ describe('/renderer/components/EnhancedTable/EnhancedTable', () => {
         ],
       });
 
-      fakeCloudWithoutNamespacesJson = mkCloudJson({
+      fakeCloudWithoutNamespaces = new Cloud({
         name: 'bar',
         cloudUrl: 'http://bar.com',
         loaded: true,
         connected: true,
         status: CONNECTION_STATUSES.DISCONNECTED,
       });
-
-      fakeCloudFoo = new Cloud(fakeCloudFooJson);
-      fakeCloudWithoutNamespaces = new Cloud(fakeCloudWithoutNamespacesJson);
 
       CloudStore.createInstance().loadExtension(extension);
     });
@@ -378,6 +370,8 @@ describe('/renderer/components/EnhancedTable/EnhancedTable', () => {
     });
 
     it('triggers open in browser action by clicking on "Open in browser" button', async () => {
+      const logSpy = jest.spyOn(console, 'log');
+
       CloudStore.initStore('cloud-store', {
         clouds: {
           'http://bar.com': fakeCloudJson,
@@ -387,15 +381,23 @@ describe('/renderer/components/EnhancedTable/EnhancedTable', () => {
 
       render(
         <CloudProvider>
-          <Util />
           <Table />
         </CloudProvider>
       );
 
       await user.click(screen.getByText('Open in browser'));
+
+      const searchInMultiDim = (arr, str) => {
+        return (
+          arr.find((t) => {
+            return t.find((i) => i === str);
+          }) && true
+        );
+      };
+
       expect(
-        screen.getByText(`External url: ${fakeCloudJson.cloudUrl}`)
-      ).toBeInTheDocument();
+        searchInMultiDim(logSpy.mock.calls, 'External url: http://bar.com')
+      ).toBe(true);
     });
   });
 });

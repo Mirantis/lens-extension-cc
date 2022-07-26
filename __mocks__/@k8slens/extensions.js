@@ -210,54 +210,44 @@ export class ConfirmDialog extends React.Component {
 
     this.state = {
       isOpen: false,
+      ok: null,
+      cancel: null,
     };
   }
 
   static open = (props) => {
-    const { ok } = props;
+    const { ok, cancel } = props;
 
     confirmDialogInstance.setState({
       isOpen: true,
+      ok,
+      cancel,
     });
+  };
 
-    ok();
+  ok = () => {
+    this.state.ok?.();
+    this.setState({
+      isOpen: false,
+    });
+  };
+
+  cancel = () => {
+    this.state.cancel?.();
+    this.setState({
+      isOpen: false,
+    });
   };
 
   render() {
     return (
       this.state.isOpen && (
         <div className="confirm-buttons">
-          <button className="cancel"></button>
-          <button className="ok"></button>
+          <button className="cancel" onClick={this.cancel}></button>
+          <button className="ok" onClick={this.ok}></button>
         </div>
       )
     );
-  }
-}
-
-let utilInstance;
-
-export class Util extends React.Component {
-  constructor() {
-    super();
-    if (utilInstance) {
-      throw new Error('only one instance expected at any given time');
-    }
-    utilInstance = this;
-
-    this.state = {
-      url: null,
-    };
-  }
-
-  static openExternal = (url) => {
-    utilInstance.setState({
-      url: url,
-    });
-  };
-
-  render() {
-    return this.state.url && <div>External url: {this.state.url}</div>;
   }
 }
 
@@ -391,14 +381,14 @@ export const Common = {
   Store: {
     ExtensionStore,
   },
-  // Util: {
-  //   Singleton,
-  //   getAppVersion: () => '1.0.0',
-  //   openExternal: (url) => {
-  //     console.log(url);
-  //   }
-  // },
-  Util,
+  Util: {
+    Singleton,
+    getAppVersion: () => '1.0.0',
+    openExternal: (url) => {
+      // eslint-disable-next-line no-console
+      console.log(`External url: ${url}`);
+    },
+  },
   logger: {
     // eslint-disable-next-line no-console
     info: console.info,

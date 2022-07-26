@@ -1,15 +1,14 @@
 import { render } from 'testingUtility';
 import { AdditionalInfoRows } from '../AdditionalInfoRows';
-import { Cloud, mkCloudJson } from '../../../../common/Cloud'; // MOCKED
+import { Cloud } from '../../../../common/Cloud'; // MOCKED
 
 jest.mock('../../../../common/Cloud');
 
 describe('/renderer/components/EnhancedRable/AdditionalInfoRows', () => {
   let fakeCloud;
-  let fakeCloudJson;
 
   beforeEach(() => {
-    fakeCloudJson = mkCloudJson({
+    fakeCloud = new Cloud({
       name: 'foo',
       cloudUrl: 'http://foo.com',
       namespaces: [
@@ -26,8 +25,6 @@ describe('/renderer/components/EnhancedRable/AdditionalInfoRows', () => {
         },
       ],
     });
-
-    fakeCloud = new Cloud(fakeCloudJson);
   });
 
   it('renders |without| empty cells', () => {

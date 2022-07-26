@@ -4,7 +4,6 @@ import userEvent from '@testing-library/user-event';
 import { TableRowListenerWrapper } from '../TableRowListenerWrapper';
 import {
   Cloud,
-  mkCloudJson,
   CONNECTION_STATUSES,
   CLOUD_EVENTS,
 } from '../../../../common/Cloud'; // MOCKED
@@ -27,104 +26,102 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
     CloudStore.createInstance().loadExtension(extension);
   });
 
-  const disconnectedFakeCloudJson = mkCloudJson({
-    name: 'foo',
-    cloudUrl: 'http://foo.com',
-    status: CONNECTION_STATUSES.DISCONNECTED,
-    namespaces: [
-      {
-        cloudUrl: 'https://foo.com',
-        clusterCount: 4,
-        credentialCount: 4,
-        licenseCount: 1,
-        machineCount: 12,
-        name: 'foo',
-        proxyCount: 0,
-        sshKeyCount: 2,
-        synced: true,
-      },
-    ],
-  });
+  (function () {
+    const disconnectedFakeCloud = new Cloud({
+      name: 'foo',
+      cloudUrl: 'http://foo.com',
+      status: CONNECTION_STATUSES.DISCONNECTED,
+      namespaces: [
+        {
+          cloudUrl: 'https://foo.com',
+          clusterCount: 4,
+          credentialCount: 4,
+          licenseCount: 1,
+          machineCount: 12,
+          name: 'foo',
+          proxyCount: 0,
+          sshKeyCount: 2,
+          synced: true,
+        },
+      ],
+    });
 
-  const connectingFakeCloudJson = mkCloudJson({
-    name: 'bar',
-    cloudUrl: 'http://bar.com',
-    status: CONNECTION_STATUSES.CONNECTING,
-    namespaces: [
-      {
-        cloudUrl: 'https://bar.com',
-        clusterCount: 4,
-        credentialCount: 4,
-        licenseCount: 1,
-        machineCount: 12,
-        name: 'bar',
-        proxyCount: 0,
-        sshKeyCount: 2,
-        synced: true,
-      },
-    ],
-  });
+    const connectingFakeCloud = new Cloud({
+      name: 'bar',
+      cloudUrl: 'http://bar.com',
+      status: CONNECTION_STATUSES.CONNECTING,
+      namespaces: [
+        {
+          cloudUrl: 'https://bar.com',
+          clusterCount: 4,
+          credentialCount: 4,
+          licenseCount: 1,
+          machineCount: 12,
+          name: 'bar',
+          proxyCount: 0,
+          sshKeyCount: 2,
+          synced: true,
+        },
+      ],
+    });
 
-  const connectedFakeCloudJson = mkCloudJson({
-    name: 'foobar',
-    cloudUrl: 'http://foobar.com',
-    status: CONNECTION_STATUSES.CONNECTED,
-    namespaces: [
-      {
-        cloudUrl: 'https://foobar.com',
-        clusterCount: 4,
-        credentialCount: 4,
-        licenseCount: 1,
-        machineCount: 12,
-        name: 'foobar',
-        proxyCount: 0,
-        sshKeyCount: 2,
-        synced: true,
-      },
-    ],
-  });
+    const connectedFakeCloud = new Cloud({
+      name: 'foobar',
+      cloudUrl: 'http://foobar.com',
+      status: CONNECTION_STATUSES.CONNECTED,
+      namespaces: [
+        {
+          cloudUrl: 'https://foobar.com',
+          clusterCount: 4,
+          credentialCount: 4,
+          licenseCount: 1,
+          machineCount: 12,
+          name: 'foobar',
+          proxyCount: 0,
+          sshKeyCount: 2,
+          synced: true,
+        },
+      ],
+    });
 
-  const disconnectedFakeCloud = new Cloud(disconnectedFakeCloudJson);
-  const connectingFakeCloud = new Cloud(connectingFakeCloudJson);
-  const connectedFakeCloud = new Cloud(connectedFakeCloudJson);
+    [disconnectedFakeCloud, connectingFakeCloud, connectedFakeCloud].forEach(
+      (cloud) => {
+        it(`renders a table row with |${cloud.status}| cloud status`, () => {
+          render(
+            <CloudProvider>
+              <table>
+                <tbody>
+                  <TableRowListenerWrapper
+                    cloud={cloud}
+                    withCheckboxes={false}
+                    isSyncStarted={false}
+                    getDataToSync={() => {}}
+                  />
+                </tbody>
+              </table>
+            </CloudProvider>
+          );
 
-  [disconnectedFakeCloud, connectingFakeCloud, connectedFakeCloud].forEach(
-    (cloud) => {
-      it(`renders a table row with |${cloud.status}| cloud status`, () => {
-        render(
-          <CloudProvider>
-            <table>
-              <tbody>
-                <TableRowListenerWrapper
-                  cloud={cloud}
-                  withCheckboxes={false}
-                  isSyncStarted={false}
-                  getDataToSync={() => {}}
-                />
-              </tbody>
-            </table>
-          </CloudProvider>
-        );
-
-        if (cloud.status === CONNECTION_STATUSES.DISCONNECTED) {
-          expect(
-            screen.getByText(strings.connectionStatuses.cloud.disconnected())
-          ).toBeInTheDocument();
-        } else if (cloud.status === CONNECTION_STATUSES.CONNECTING) {
-          expect(
-            screen.getByText(strings.connectionStatuses.cloud.connecting())
-          ).toBeInTheDocument();
-        } else if (cloud.status === CONNECTION_STATUSES.CONNECTED) {
-          expect(
-            screen.getByText(strings.connectionStatuses.cloud.connected())
-          ).toBeInTheDocument();
-        }
-      });
-    }
-  );
+          if (cloud.status === CONNECTION_STATUSES.DISCONNECTED) {
+            expect(
+              screen.getByText(strings.connectionStatuses.cloud.disconnected())
+            ).toBeInTheDocument();
+          } else if (cloud.status === CONNECTION_STATUSES.CONNECTING) {
+            expect(
+              screen.getByText(strings.connectionStatuses.cloud.connecting())
+            ).toBeInTheDocument();
+          } else if (cloud.status === CONNECTION_STATUSES.CONNECTED) {
+            expect(
+              screen.getByText(strings.connectionStatuses.cloud.connected())
+            ).toBeInTheDocument();
+          }
+        });
+      }
+    );
+  })();
 
   it('renders a table row when cloud is fetching', () => {
-    const fetchingFakeCloudJson = mkCloudJson({
+    const fetchingFakeCloud = new Cloud({
       name: 'barfoo',
       cloudUrl: 'http://barfoo.com',
       fetching: true,
@@ -142,8 +139,6 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
         },
       ],
     });
-
-    const fetchingFakeCloud = new Cloud(fetchingFakeCloudJson);
 
     render(
       <CloudProvider>
@@ -172,7 +167,7 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
           ? 'onCloudStatusChange()'
           : 'onCloudFetchingChange()'
       }| by dispatching |${event}| event`, async () => {
-        const fakeCloudJson = mkCloudJson({
+        const fakeCloud = new Cloud({
           name: 'barfoo',
           cloudUrl: 'http://barfoo.com',
           status: CONNECTION_STATUSES.DISCONNECTED,
@@ -191,8 +186,6 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
             },
           ],
         });
-
-        const fakeCloud = new Cloud(fakeCloudJson);
 
         render(
           <CloudProvider>
@@ -224,7 +217,7 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
   );
 
   it('triggers |onCloudSyncChange()| by dispatching |syncChange| event', async () => {
-    const fakeCloudJson = mkCloudJson({
+    const fakeCloud = new Cloud({
       name: 'barfoo',
       cloudUrl: 'http://barfoo.com',
       status: CONNECTION_STATUSES.DISCONNECTED,
@@ -243,8 +236,6 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
         },
       ],
     });
-
-    const fakeCloud = new Cloud(fakeCloudJson);
 
     render(
       <CloudProvider>
