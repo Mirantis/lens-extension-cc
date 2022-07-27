@@ -197,6 +197,60 @@ class Spinner extends React.Component {
   }
 }
 
+let confirmDialogInstance;
+
+export class ConfirmDialog extends React.Component {
+  constructor(props) {
+    super(props);
+
+    if (confirmDialogInstance) {
+      throw new Error('only one instance expected at any given time');
+    }
+    confirmDialogInstance = this;
+
+    this.state = {
+      isOpen: false,
+      ok: null,
+      cancel: null,
+    };
+  }
+
+  static open = (props) => {
+    const { ok, cancel } = props;
+
+    confirmDialogInstance.setState({
+      isOpen: true,
+      ok,
+      cancel,
+    });
+  };
+
+  ok = () => {
+    this.state.ok?.();
+    this.setState({
+      isOpen: false,
+    });
+  };
+
+  cancel = () => {
+    this.state.cancel?.();
+    this.setState({
+      isOpen: false,
+    });
+  };
+
+  render() {
+    return (
+      this.state.isOpen && (
+        <div className="confirm-buttons">
+          <button className="cancel" onClick={this.cancel}></button>
+          <button className="ok" onClick={this.ok}></button>
+        </div>
+      )
+    );
+  }
+}
+
 const Button = ({ label, primary, ...props }) => {
   return (
     <button className={primary ? 'primary' : ''} {...props}>
@@ -221,6 +275,14 @@ export const Icon = ({ interactive, smallest, ...props }) => {
 Icon.propTypes = {
   interactive: propTypes.bool,
   smallest: propTypes.bool,
+};
+
+const Tooltip = ({ children }) => {
+  return <div role="tooltip">{children}</div>;
+};
+
+Tooltip.propTypes = {
+  children: propTypes.node,
 };
 
 // @see https://github.com/lensapp/lens/blob/master/src/renderer/components/menu/menu.tsx
@@ -322,6 +384,10 @@ export const Common = {
   Util: {
     Singleton,
     getAppVersion: () => '1.0.0',
+    openExternal: (url) => {
+      // eslint-disable-next-line no-console
+      console.log(`External url: ${url}`);
+    },
   },
   logger: {
     // eslint-disable-next-line no-console
@@ -369,13 +435,11 @@ export const Renderer = {
     },
     Button,
     Icon,
+    Tooltip,
     MenuItem,
     Menu,
     MenuActions,
-    ConfirmDialog: {
-      // eslint-disable-next-line no-undef
-      open: jest.fn(),
-    },
+    ConfirmDialog,
   },
   Catalog: {
     KubernetesCluster,

@@ -2,10 +2,12 @@ import mockConsole from 'jest-mock-console';
 import { render, screen } from 'testingUtility';
 import userEvent from '@testing-library/user-event';
 import { EnhancedTable } from '../EnhancedTable';
-import { Cloud } from '../../../../common/__tests__/MockCloud';
+import { Cloud } from '../../../../common/Cloud'; // MOCKED
 import { CloudProvider } from '../../../store/CloudProvider';
 import { IpcRenderer } from '../../../IpcRenderer';
 import { CloudStore } from '../../../../store/CloudStore';
+
+jest.mock('../../../../common/Cloud');
 
 describe('/renderer/components/EnhancedTable/EnhancedTable', () => {
   const extension = {};
@@ -18,11 +20,10 @@ describe('/renderer/components/EnhancedTable/EnhancedTable', () => {
     mockConsole(); // automatically restored after each test
 
     IpcRenderer.createInstance(extension);
-    CloudStore.createInstance().loadExtension(extension);
 
-    fakeCloudFoo = new Cloud('http://foo.com', {
-      name: 'foo',
+    fakeCloudFoo = new Cloud({
       cloudUrl: 'http://foo.com',
+      name: 'foo',
       namespaces: [
         {
           cloudUrl: 'https://foo.com',
@@ -30,20 +31,7 @@ describe('/renderer/components/EnhancedTable/EnhancedTable', () => {
           credentialCount: 4,
           licenseCount: 1,
           machineCount: 12,
-          name: 'foo',
-          proxyCount: 0,
-          sshKeyCount: 2,
-          synced: true,
-        },
-      ],
-      syncedNamespaces: [
-        {
-          cloudUrl: 'https://foo.com',
-          clusterCount: 4,
-          credentialCount: 4,
-          licenseCount: 1,
-          machineCount: 12,
-          name: 'foo',
+          name: 'foo namespace',
           proxyCount: 0,
           sshKeyCount: 2,
           synced: true,
@@ -51,9 +39,9 @@ describe('/renderer/components/EnhancedTable/EnhancedTable', () => {
       ],
     });
 
-    fakeCloudBar = new Cloud('http://bar.com', {
-      name: 'bar',
+    fakeCloudBar = new Cloud({
       cloudUrl: 'http://bar.com',
+      name: 'bar',
       namespaces: [
         {
           cloudUrl: 'https://bar.com',
@@ -61,47 +49,30 @@ describe('/renderer/components/EnhancedTable/EnhancedTable', () => {
           credentialCount: 4,
           licenseCount: 1,
           machineCount: 12,
-          name: 'bar',
-          proxyCount: 0,
-          sshKeyCount: 2,
-          synced: true,
-        },
-      ],
-      syncedNamespaces: [
-        {
-          cloudUrl: 'https://bar.com',
-          clusterCount: 4,
-          credentialCount: 4,
-          licenseCount: 1,
-          machineCount: 12,
-          name: 'bar',
+          name: 'bar namespace',
           proxyCount: 0,
           sshKeyCount: 2,
           synced: true,
         },
       ],
     });
+
+    CloudStore.createInstance().loadExtension(extension);
   });
 
   [true, false].forEach((isSelectiveSyncView) => {
-    it(`|${
-      isSelectiveSyncView ? 'does not render' : 'renders'
-    }| a table when isSelectiveSyncView is |${isSelectiveSyncView}|`, () => {
+    it(`renders a table when isSelectiveSyncView is |${isSelectiveSyncView}|`, () => {
       render(
         <CloudProvider>
           <EnhancedTable
-            clouds={{ 'foo.com': fakeCloudFoo }}
+            clouds={{ 'http://foo.com': fakeCloudFoo }}
             isSyncStarted={false}
             isSelectiveSyncView={isSelectiveSyncView}
           />
         </CloudProvider>
       );
 
-      if (!isSelectiveSyncView) {
-        expect(document.querySelector('table')).toBeInTheDocument();
-      } else {
-        expect(document.querySelector('table')).not.toBeInTheDocument();
-      }
+      expect(document.querySelector('table')).toBeInTheDocument();
     });
   });
 
@@ -109,7 +80,10 @@ describe('/renderer/components/EnhancedTable/EnhancedTable', () => {
     render(
       <CloudProvider>
         <EnhancedTable
-          clouds={{ 'foo.com': fakeCloudFoo, 'bar.com': fakeCloudBar }}
+          clouds={{
+            'http://foo.com': fakeCloudFoo,
+            'https://bar.com': fakeCloudBar,
+          }}
           isSyncStarted={false}
         />
       </CloudProvider>

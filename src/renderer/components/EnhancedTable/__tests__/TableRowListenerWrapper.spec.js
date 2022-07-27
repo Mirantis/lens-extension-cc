@@ -2,12 +2,17 @@ import mockConsole from 'jest-mock-console';
 import { render, screen, sleep } from 'testingUtility';
 import userEvent from '@testing-library/user-event';
 import { TableRowListenerWrapper } from '../TableRowListenerWrapper';
-import { Cloud } from '../../../../common/__tests__/MockCloud';
-import { CONNECTION_STATUSES, CLOUD_EVENTS } from '../../../../common/Cloud';
+import {
+  Cloud,
+  CONNECTION_STATUSES,
+  CLOUD_EVENTS,
+} from '../../../../common/Cloud'; // MOCKED
 import { CloudProvider } from '../../../store/CloudProvider';
 import { IpcRenderer } from '../../../IpcRenderer';
 import { CloudStore } from '../../../../store/CloudStore';
 import * as strings from '../../../../strings';
+
+jest.mock('../../../../common/Cloud');
 
 describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
   const extension = {};
@@ -21,156 +26,106 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
     CloudStore.createInstance().loadExtension(extension);
   });
 
-  const disconnectedFakeCloud = new Cloud('https://foo.com', {
-    name: 'foo',
-    cloudUrl: 'http://foo.com',
-    status: CONNECTION_STATUSES.DISCONNECTED,
-    namespaces: [
-      {
-        cloudUrl: 'https://foo.com',
-        clusterCount: 4,
-        credentialCount: 4,
-        licenseCount: 1,
-        machineCount: 12,
-        name: 'foo',
-        proxyCount: 0,
-        sshKeyCount: 2,
-        synced: true,
-      },
-    ],
-    syncedNamespaces: [
-      {
-        cloudUrl: 'https://foo.com',
-        clusterCount: 4,
-        credentialCount: 4,
-        licenseCount: 1,
-        machineCount: 12,
-        name: 'foo',
-        proxyCount: 0,
-        sshKeyCount: 2,
-        synced: true,
-      },
-    ],
-  });
-
-  const connectingFakeCloud = new Cloud('http://bar.com', {
-    name: 'bar',
-    cloudUrl: 'http://bar.com',
-    status: CONNECTION_STATUSES.CONNECTING,
-    namespaces: [
-      {
-        cloudUrl: 'https://bar.com',
-        clusterCount: 4,
-        credentialCount: 4,
-        licenseCount: 1,
-        machineCount: 12,
-        name: 'bar',
-        proxyCount: 0,
-        sshKeyCount: 2,
-        synced: true,
-      },
-    ],
-    syncedNamespaces: [
-      {
-        cloudUrl: 'https://bar.com',
-        clusterCount: 4,
-        credentialCount: 4,
-        licenseCount: 1,
-        machineCount: 12,
-        name: 'bar',
-        proxyCount: 0,
-        sshKeyCount: 2,
-        synced: true,
-      },
-    ],
-  });
-
-  const connectedFakeCloud = new Cloud('http://foobar.com', {
-    name: 'foobar',
-    cloudUrl: 'http://foobar.com',
-    status: CONNECTION_STATUSES.CONNECTED,
-    namespaces: [
-      {
-        cloudUrl: 'https://foobar.com',
-        clusterCount: 4,
-        credentialCount: 4,
-        licenseCount: 1,
-        machineCount: 12,
-        name: 'foobar',
-        proxyCount: 0,
-        sshKeyCount: 2,
-        synced: true,
-      },
-    ],
-    syncedNamespaces: [
-      {
-        cloudUrl: 'https://foobar.com',
-        clusterCount: 4,
-        credentialCount: 4,
-        licenseCount: 1,
-        machineCount: 12,
-        name: 'foobar',
-        proxyCount: 0,
-        sshKeyCount: 2,
-        synced: true,
-      },
-    ],
-  });
-
-  [disconnectedFakeCloud, connectingFakeCloud, connectedFakeCloud].forEach(
-    (cloud) => {
-      it(`renders a table row with |${cloud.status}| cloud status`, () => {
-        render(
-          <CloudProvider>
-            <table>
-              <tbody>
-                <TableRowListenerWrapper
-                  cloud={cloud}
-                  withCheckboxes={false}
-                  isSyncStarted={false}
-                  getDataToSync={() => {}}
-                />
-              </tbody>
-            </table>
-          </CloudProvider>
-        );
-
-        if (cloud.status === CONNECTION_STATUSES.DISCONNECTED) {
-          expect(
-            screen.getByText(strings.connectionStatuses.cloud.disconnected())
-          ).toBeInTheDocument();
-        } else if (cloud.status === CONNECTION_STATUSES.CONNECTING) {
-          expect(
-            screen.getByText(strings.connectionStatuses.cloud.connecting())
-          ).toBeInTheDocument();
-        } else if (cloud.status === CONNECTION_STATUSES.CONNECTED) {
-          expect(
-            screen.getByText(strings.connectionStatuses.cloud.connected())
-          ).toBeInTheDocument();
-        }
-      });
-    }
-  );
-
-  it('renders a table row when cloud is fetching', () => {
-    const fetchingFakeCloud = new Cloud('http://barfoo.com', {
-      name: 'barfoo',
-      cloudUrl: 'http://barfoo.com',
-      fetching: true,
+  (function () {
+    const disconnectedFakeCloud = new Cloud({
+      name: 'foo',
+      cloudUrl: 'http://foo.com',
+      status: CONNECTION_STATUSES.DISCONNECTED,
       namespaces: [
         {
-          cloudUrl: 'https://barfoo.com',
+          cloudUrl: 'https://foo.com',
           clusterCount: 4,
           credentialCount: 4,
           licenseCount: 1,
           machineCount: 12,
-          name: 'barfoo',
+          name: 'foo',
           proxyCount: 0,
           sshKeyCount: 2,
           synced: true,
         },
       ],
-      syncedNamespaces: [
+    });
+
+    const connectingFakeCloud = new Cloud({
+      name: 'bar',
+      cloudUrl: 'http://bar.com',
+      status: CONNECTION_STATUSES.CONNECTING,
+      namespaces: [
+        {
+          cloudUrl: 'https://bar.com',
+          clusterCount: 4,
+          credentialCount: 4,
+          licenseCount: 1,
+          machineCount: 12,
+          name: 'bar',
+          proxyCount: 0,
+          sshKeyCount: 2,
+          synced: true,
+        },
+      ],
+    });
+
+    const connectedFakeCloud = new Cloud({
+      name: 'foobar',
+      cloudUrl: 'http://foobar.com',
+      status: CONNECTION_STATUSES.CONNECTED,
+      namespaces: [
+        {
+          cloudUrl: 'https://foobar.com',
+          clusterCount: 4,
+          credentialCount: 4,
+          licenseCount: 1,
+          machineCount: 12,
+          name: 'foobar',
+          proxyCount: 0,
+          sshKeyCount: 2,
+          synced: true,
+        },
+      ],
+    });
+
+    [disconnectedFakeCloud, connectingFakeCloud, connectedFakeCloud].forEach(
+      (cloud) => {
+        it(`renders a table row with |${cloud.status}| cloud status`, () => {
+          render(
+            <CloudProvider>
+              <table>
+                <tbody>
+                  <TableRowListenerWrapper
+                    cloud={cloud}
+                    withCheckboxes={false}
+                    isSyncStarted={false}
+                    getDataToSync={() => {}}
+                  />
+                </tbody>
+              </table>
+            </CloudProvider>
+          );
+
+          if (cloud.status === CONNECTION_STATUSES.DISCONNECTED) {
+            expect(
+              screen.getByText(strings.connectionStatuses.cloud.disconnected())
+            ).toBeInTheDocument();
+          } else if (cloud.status === CONNECTION_STATUSES.CONNECTING) {
+            expect(
+              screen.getByText(strings.connectionStatuses.cloud.connecting())
+            ).toBeInTheDocument();
+          } else if (cloud.status === CONNECTION_STATUSES.CONNECTED) {
+            expect(
+              screen.getByText(strings.connectionStatuses.cloud.connected())
+            ).toBeInTheDocument();
+          }
+        });
+      }
+    );
+  })();
+
+  it('renders a table row when cloud is fetching', () => {
+    const fetchingFakeCloud = new Cloud({
+      name: 'barfoo',
+      cloudUrl: 'http://barfoo.com',
+      fetching: true,
+      namespaces: [
         {
           cloudUrl: 'https://barfoo.com',
           clusterCount: 4,
@@ -212,26 +167,12 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
           ? 'onCloudStatusChange()'
           : 'onCloudFetchingChange()'
       }| by dispatching |${event}| event`, async () => {
-        const fakeCloud = new Cloud('http://barfoo.com', {
+        const fakeCloud = new Cloud({
           name: 'barfoo',
           cloudUrl: 'http://barfoo.com',
           status: CONNECTION_STATUSES.DISCONNECTED,
           fetching: true,
-          syncedProjects: ['barfoo'],
           namespaces: [
-            {
-              cloudUrl: 'https://barfoo.com',
-              clusterCount: 4,
-              credentialCount: 4,
-              licenseCount: 1,
-              machineCount: 12,
-              name: 'namespace 1',
-              proxyCount: 0,
-              sshKeyCount: 2,
-              synced: true,
-            },
-          ],
-          syncedNamespaces: [
             {
               cloudUrl: 'https://barfoo.com',
               clusterCount: 4,
@@ -276,26 +217,12 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
   );
 
   it('triggers |onCloudSyncChange()| by dispatching |syncChange| event', async () => {
-    const fakeCloud = new Cloud('http://barfoo.com', {
+    const fakeCloud = new Cloud({
       name: 'barfoo',
       cloudUrl: 'http://barfoo.com',
       status: CONNECTION_STATUSES.DISCONNECTED,
       fetching: true,
-      syncedProjects: ['barfoo'],
       namespaces: [
-        {
-          cloudUrl: 'https://barfoo.com',
-          clusterCount: 4,
-          credentialCount: 4,
-          licenseCount: 1,
-          machineCount: 12,
-          name: 'namespace 1',
-          proxyCount: 0,
-          sshKeyCount: 2,
-          synced: true,
-        },
-      ],
-      syncedNamespaces: [
         {
           cloudUrl: 'https://barfoo.com',
           clusterCount: 4,

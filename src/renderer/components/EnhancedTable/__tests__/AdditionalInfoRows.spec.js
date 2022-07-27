@@ -1,17 +1,19 @@
 import { render } from 'testingUtility';
 import { AdditionalInfoRows } from '../AdditionalInfoRows';
-import { Cloud } from '../../../../common/__tests__/MockCloud';
+import { Cloud } from '../../../../common/Cloud'; // MOCKED
+
+jest.mock('../../../../common/Cloud');
 
 describe('/renderer/components/EnhancedRable/AdditionalInfoRows', () => {
   let fakeCloud;
 
   beforeEach(() => {
-    fakeCloud = new Cloud('http://foo.com', {
+    fakeCloud = new Cloud({
       name: 'foo',
       cloudUrl: 'http://foo.com',
       namespaces: [
         {
-          cloudUrl: 'https://container-cloud.int.mirantis.com',
+          cloudUrl: 'http://foo.com',
           clusterCount: 4,
           credentialCount: 4,
           licenseCount: 1,
@@ -29,9 +31,7 @@ describe('/renderer/components/EnhancedRable/AdditionalInfoRows', () => {
     render(
       <table>
         <tbody>
-          <tr>
-            <AdditionalInfoRows namespace={fakeCloud.namespaces[0]} />
-          </tr>
+          <AdditionalInfoRows namespace={fakeCloud.namespaces[0]} />
         </tbody>
       </table>
     );
@@ -47,12 +47,10 @@ describe('/renderer/components/EnhancedRable/AdditionalInfoRows', () => {
     render(
       <table>
         <tbody>
-          <tr>
-            <AdditionalInfoRows
-              namespace={fakeCloud.namespaces[0]}
-              emptyCellsCount={testEmptyCellsCount}
-            />
-          </tr>
+          <AdditionalInfoRows
+            namespace={fakeCloud.namespaces[0]}
+            emptyCellsCount={testEmptyCellsCount}
+          />
         </tbody>
       </table>
     );
