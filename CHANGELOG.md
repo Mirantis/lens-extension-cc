@@ -1,6 +1,6 @@
 # ChangeLog
 
-## UNRELEASED
+## v4.0.0
 
 🚨 __BREAKING:__ This is a major release that incorporates all the changes listed in previous __alpha__ and __beta__ pre-releases as detailed in this log.
 
