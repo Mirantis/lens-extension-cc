@@ -1,5 +1,11 @@
 # ChangeLog
 
+## v5.0.0
+
+- 🚨 __BREAKING:__ Make the extension compatible with Lens 6 while unintentionally/forcibly dropping support for Lens 5.
+    - The Lens Extensions API does not allow an extension to support multiple major versions of Lens, even if it would work on an API level.
+    - You can use `v4.0.0` with Lens 5 by installing it with `@mirantis/lens-extension-cc@4.0.0` in the Extensions View in Lens, but __we will no longer be supporting it__. Bug fixes and new features will only be added to our new `v5.0.0` release going forward.
+
 ## v4.0.0
 
 🚨 __BREAKING:__ This is a major release that incorporates all the changes listed in previous __alpha__ and __beta__ pre-releases as detailed in this log.
