@@ -1501,10 +1501,10 @@
     "@jridgewell/resolve-uri" "^3.0.3"
     "@jridgewell/sourcemap-codec" "^1.4.10"
 
-"@k8slens/extensions@^5.5.4":
-  version "5.5.4"
-  resolved "https://registry.yarnpkg.com/@k8slens/extensions/-/extensions-5.5.4.tgz#54e0dc4e94402819d48d85e07ca2e5fccd0d9bc7"
-  integrity sha512-/vwAoJCRV6l8KwUoRojg7ISU5PL968dEfrmtW5Yypi4oqyyoYKHAHPYfpLgtq+/Pu2mcDgBbw2ZujHZl3TURlQ==
+"@k8slens/extensions@^6.0.0":
+  version "6.0.0"
+  resolved "https://registry.yarnpkg.com/@k8slens/extensions/-/extensions-6.0.0.tgz#41a1fc5ae4dfa763a22d94def37d085f5c85d0ff"
+  integrity sha512-No8XfnbQjnMCDdYWp4oZSkzNo5AqaU/yAdUj3akcmaomUC31dhOyIn14Ah9YebkKV/FlW6Y+usSjtuMNZgoJkg==
   dependencies:
     "@material-ui/core" "4.12.3"
     "@types/node" "14.17.14"
@@ -1513,6 +1513,9 @@
     "@types/react-router" "^5.1.18"
     "@types/react-router-dom" "^5.3.3"
     conf "^7.0.1"
+    mobx "^6.5.0"
+    mobx-react "^7.3.0"
+    react-select "^5.3.2"
     typed-emitter "^1.3.1"
 
 "@material-ui/core@4.12.3":
@@ -5134,14 +5137,14 @@ mobx-react-lite@^3.4.0:
   resolved "https://registry.yarnpkg.com/mobx-react-lite/-/mobx-react-lite-3.4.0.tgz#d59156a96889cdadad751e5e4dab95f28926dfff"
   integrity sha512-bRuZp3C0itgLKHu/VNxi66DN/XVkQG7xtoBVWxpvC5FhAqbOCP21+nPhULjnzEqd7xBMybp6KwytdUpZKEgpIQ==
 
-mobx-react@^7.5.2:
+mobx-react@^7.3.0, mobx-react@^7.5.2:
   version "7.5.2"
   resolved "https://registry.yarnpkg.com/mobx-react/-/mobx-react-7.5.2.tgz#362d6dc7271698caf3b56229c3c68fb0b30e682e"
   integrity sha512-NP44ONwSqTy+3KlD7y9k7xbsuGD+8mgUj3IeI65SbxF1IOB42/j9TbosgUEDn//CCuU6OmQ7k9oiu9eSpRBHnw==
   dependencies:
     mobx-react-lite "^3.4.0"
 
-mobx@^6.6.1:
+mobx@^6.5.0, mobx@^6.6.1:
   version "6.6.1"
   resolved "https://registry.yarnpkg.com/mobx/-/mobx-6.6.1.tgz#70ee6aa82f25aeb7e7d522bd621207434e509318"
   integrity sha512-7su3UZv5JF+ohLr2opabjbUAERfXstMY+wiBtey8yNAPoB8H187RaQXuhFjNkH8aE4iHbDWnhDFZw0+5ic4nGQ==
@@ -5615,7 +5618,7 @@ react-is@^18.0.0:
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-18.1.0.tgz#61aaed3096d30eacf2a2127118b5b41387d32a67"
   integrity sha512-Fl7FuabXsJnV5Q1qIOQwx/sagGF18kogb4gpfcG4gjLBWO0WDiiz1ko/ExayuxE7InyQkBLkxRFG5oxY6Uu3Kg==
 
-react-select@^5.4.0:
+react-select@^5.3.2, react-select@^5.4.0:
   version "5.4.0"
   resolved "https://registry.yarnpkg.com/react-select/-/react-select-5.4.0.tgz#81f6ac73906126706f104751ee14437bd16798f4"
   integrity sha512-CjE9RFLUvChd5SdlfG4vqxZd55AZJRrLrHzkQyTYeHlpOztqcgnyftYAolJ0SGsBev6zAs6qFrjm6KU3eo2hzg==
