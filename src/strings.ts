@@ -426,3 +426,9 @@ export const contextMenus: Dict = {
     openInBrowser: () => 'Open in browser',
   },
 };
+
+export const wizard: Dict = {
+  back: () => 'Back',
+  next: () => 'Next',
+  finish: () => 'Finish',
+};
