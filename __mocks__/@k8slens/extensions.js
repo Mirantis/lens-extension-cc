@@ -4,6 +4,7 @@ import React from 'react';
 import propTypes from 'prop-types';
 import ReactSelect, { components } from 'react-select';
 import ReactSelectCreatable from 'react-select/creatable';
+import { cx } from '@emotion/css';
 
 const { Menu: SelectMenu } = components;
 
@@ -251,9 +252,9 @@ export class ConfirmDialog extends React.Component {
   }
 }
 
-const Button = ({ label, primary, ...props }) => {
+const Button = ({ label, primary, waiting, ...props }) => {
   return (
-    <button className={primary ? 'primary' : ''} {...props}>
+    <button className={cx({ primary, waiting })} {...props}>
       {label}
     </button>
   );
@@ -262,14 +263,11 @@ const Button = ({ label, primary, ...props }) => {
 Button.propTypes = {
   label: propTypes.string,
   primary: propTypes.bool,
+  waiting: propTypes.bool,
 };
 
 export const Icon = ({ interactive, smallest, ...props }) => {
-  const classes = [
-    smallest ? 'smallest' : '',
-    interactive ? 'interactive' : '',
-  ];
-  return <i className={classes.join()} {...props} />;
+  return <i className={cx({ smallest, interactive })} {...props} />;
 };
 
 Icon.propTypes = {
@@ -368,6 +366,39 @@ class ExtensionStore extends Singleton {
   }
 }
 
+const createNotification = function (status, message, { timeout = 5000 }) {
+  if (!['ok', 'info', 'error'].includes(status)) {
+    throw new Error(`Mock: Unsupported notification type "${status}"`);
+  }
+
+  const noteEl = document.createElement('div');
+  noteEl.className = `notification ${status}`;
+  noteEl.innerHTML = `
+    <div class="message">${message || ''}</div>
+  `;
+
+  document.body.appendChild(noteEl);
+
+  if (timeout > 0) {
+    setTimeout(() => document.body.removeChild(noteEl), timeout);
+  }
+};
+
+const Notifications = {
+  ok(message, options) {
+    createNotification('ok', message, options);
+  },
+  info(message, options) {
+    createNotification('info', message, options);
+  },
+  shortInfo(message, options) {
+    createNotification('info', message, options);
+  },
+  error(message, options) {
+    createNotification('error', message, options);
+  },
+};
+
 export const Common = {
   Catalog: {
     KubernetesCluster,
@@ -430,9 +461,7 @@ export const Renderer = {
   Component: {
     Select,
     Spinner,
-    Notifications: {
-      error: () => {},
-    },
+    Notifications,
     Button,
     Icon,
     Tooltip,
