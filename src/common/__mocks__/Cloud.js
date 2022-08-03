@@ -18,6 +18,9 @@ export const CLOUD_EVENTS = Object.freeze({
   PROP_CHANGE: 'propChange',
 });
 
+// cloud name, which will run failed scenario in connect() method
+export const MOCK_CONNECT_FAILURE_CLOUD_NAME = 'failed-cloud';
+
 export const mkCloudJson = (props) =>
   Object.assign(
     {
@@ -63,7 +66,10 @@ export class Cloud extends EventDispatcher {
       //  getters on the real Cloud in Cloud.js, but just straight properties here
       {
         loaded: false,
-        connected: false,
+        connecting: false,
+        connectError: null,
+        config: null,
+        status: CONNECTION_STATUSES.DISCONNECTED,
       },
 
       // what we got to make the Cloud instance from for testing purposes
@@ -102,5 +108,48 @@ export class Cloud extends EventDispatcher {
 
   destroy() {
     // nothing to do in mock for now
+  }
+
+  async loadConfig() {
+    this.config = {};
+    this.connectError = null;
+    this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, {
+      isFromStore: false,
+    });
+  }
+
+  async connect() {
+    if (this.connecting) {
+      return;
+    }
+
+    // set initial values
+    this.loaded = false;
+    this.connecting = true;
+    this.connectError = null;
+    this.config = null;
+    this.status = CONNECTION_STATUSES.CONNECTING;
+
+    await this.loadConfig();
+
+    if (this.config) {
+      if (this.name !== MOCK_CONNECT_FAILURE_CLOUD_NAME) {
+        this.loaded = true;
+        this.connecting = false;
+        this.connectError = null;
+        this.status = CONNECTION_STATUSES.CONNECTED;
+        // eslint-disable-next-line no-console -- is used for testing
+        console.log(`${this.name} cloud is connected!`);
+      } else {
+        this.loaded = false;
+        this.connecting = false;
+        this.connectError = 'failed-connection';
+        this.status = CONNECTION_STATUSES.DISCONNECTED;
+        // eslint-disable-next-line no-console -- is used for testing
+        console.log(`${this.name} cloud is disconnected!`);
+      }
+    } else {
+      this.connecting = false;
+    }
   }
 }
