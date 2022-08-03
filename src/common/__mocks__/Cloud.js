@@ -96,7 +96,7 @@ export class Cloud extends EventDispatcher {
     return this.namespaces.filter((ns) => ns.synced);
   }
 
-  update() {
+  update(spec, isFromStore = false) {
     // nothing to do in mock for now
   }
 

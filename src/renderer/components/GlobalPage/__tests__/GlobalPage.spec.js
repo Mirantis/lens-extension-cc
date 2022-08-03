@@ -11,7 +11,7 @@ describe('/renderer/components/GlobalPage/GlobalPage', () => {
   const extension = {};
 
   beforeEach(() => {
-    mockConsole(); // automatically restored after each test
+    mockConsole(['log', 'info', 'warn']); // automatically restored after each test
 
     IpcRenderer.createInstance(extension);
     CloudStore.createInstance().loadExtension(extension);

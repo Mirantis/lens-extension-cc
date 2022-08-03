@@ -18,6 +18,16 @@ const lensEntityGroup = 'entity.k8slens.dev';
 const v1alpha1 = 'v1alpha1';
 const v1alpha2 = 'v1alpha2';
 
+/** Supported mgmt cluster provider types. */
+export const providerTypes = Object.freeze({
+  AWS: 'aws',
+  AZURE: 'azure',
+  BYO: 'byo',
+  EQUINIX: 'equinix',
+  OPENSTACK: 'openstack',
+  VSPHERE: 'vsphere',
+});
+
 /** Catalog-related constants. */
 export const catalog = deepFreeze({
   /**

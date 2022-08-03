@@ -48,7 +48,7 @@ export const expectErrorBoundary = function (
 ) {
   // even though we're rendering with an ErrorBoundary instance, React will still
   //  print the error to the console, so we need to eliminate the expected noise
-  const restoreConsole = mockConsole();
+  const restoreConsole = mockConsole(['log', 'info', 'warn']);
 
   const { queryByTestId } = renderer(component);
   expect(queryByTestId(GLOBAL_ERROR_BOUNDARY_TESTID)).toHaveTextContent(text);

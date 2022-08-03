@@ -424,6 +424,7 @@ export const contextMenus: Dict = {
   },
   namespace: {
     openInBrowser: () => 'Open in browser',
+    createCluster: () => 'Create cluster',
   },
 };
 
@@ -431,4 +432,43 @@ export const wizard: Dict = {
   back: () => 'Back',
   next: () => 'Next',
   finish: () => 'Finish',
+};
+
+export const createClusterWizard: Dict = {
+  title: () => 'Create new cluster',
+  lastLabel: () => 'Create cluster',
+  steps: {
+    general: {
+      stepTitle: () => 'General',
+      chooseProvider: () => 'Choose your provider',
+      providerRequirements: () => 'Provider requirements',
+      fields: {
+        clusterNameLabel: () => 'Cluster name',
+      },
+    },
+    provider: {
+      stepLabel: () => 'Provider', // same for all providers
+      equinix: {
+        stepTitle: () => 'Equinix provider settings',
+        fields: {
+          facilityLabel: () => 'Facility',
+          vlanIdLabel: () => 'VLAN ID',
+        },
+      },
+    },
+    cluster: {
+      stepTitle: () => 'Cluster settings',
+      fields: {},
+    },
+    monitor: {
+      stepTitle: () => 'StackLight monitoring',
+      stepLabel: () => 'Monitoring',
+      fields: {},
+    },
+    node: {
+      stepTitle: () => 'Node pools',
+      stepLabel: () => 'Nodes',
+      fields: {},
+    },
+  },
 };

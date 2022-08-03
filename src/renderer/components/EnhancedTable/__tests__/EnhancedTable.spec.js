@@ -17,7 +17,7 @@ describe('/renderer/components/EnhancedTable/EnhancedTable', () => {
 
   beforeEach(() => {
     user = userEvent.setup();
-    mockConsole(); // automatically restored after each test
+    mockConsole(['log', 'info', 'warn']); // automatically restored after each test
 
     IpcRenderer.createInstance(extension);
 
