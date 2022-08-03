@@ -13,7 +13,6 @@ import {
   useCheckboxes,
   makeCheckboxesInitialState,
 } from '../hooks/useCheckboxes';
-import { sortNamespaces } from '../EnhancedTable/tableUtil';
 
 const { Button, Icon } = Renderer.Component;
 
@@ -174,7 +173,7 @@ export const SynchronizeBlock = ({ dataCloud, onAdd }) => {
             synchronizeBlock.noProjectsFound()
           ) : (
             <ProjectsList>
-              {sortNamespaces(projectsList).map((namespace) => (
+              {projectsList.map((namespace) => (
                 <li key={namespace.name}>
                   <TriStateCheckbox
                     value={getCheckboxValue({ name: namespace.name })}
