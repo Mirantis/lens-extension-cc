@@ -1,6 +1,6 @@
 import { computed, makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react';
-import React from 'react';
+import React, { useState } from 'react';
 import propTypes from 'prop-types';
 import ReactSelect, { components } from 'react-select';
 import ReactSelectCreatable from 'react-select/creatable';
@@ -258,6 +258,36 @@ class ConfirmDialog extends React.Component {
   }
 }
 
+const Input = ({ trim, ...props }) => {
+  const [errorMessage, setErrorMessage] = useState();
+  const [isValid, setIsValid] = useState(true);
+
+  const validate = (event) => {
+    props.validators.forEach((validator) => {
+      if (!validator.validate(event.target.value)) {
+        setIsValid(validator.validate(event.target.value));
+        setErrorMessage(validator.message());
+      }
+    });
+  };
+
+  const handleChange = (event) => {
+    props?.onChange(event.target.value, event);
+    validate(event);
+  };
+
+  return (
+    <>
+      <input className={cx({ trim })} {...props} onChange={handleChange} />
+      {!isValid && errorMessage.length && <p>{errorMessage}</p>}
+    </>
+  );
+};
+
+Input.propTypes = {
+  trim: propTypes.bool,
+};
+
 const Button = ({ label, primary, waiting, plain, ...props }) => {
   return (
     <button className={cx({ primary, waiting, plain })} {...props}>
@@ -271,14 +301,6 @@ Button.propTypes = {
   primary: propTypes.bool,
   waiting: propTypes.bool,
   plain: propTypes.bool,
-};
-
-const Input = ({ trim, ...props }) => {
-  return <input className={cx({ trim })} {...props} />;
-};
-
-Input.propTypes = {
-  trim: propTypes.bool,
 };
 
 const Tooltip = ({ children }) => {
