@@ -56,7 +56,7 @@ const TopBarItem = function ({ extension }) {
     >
       <GlobalPageIcon size={24} fill={hover ? colorHover : colorNormal} />
       <TopBarExtensionTitle hover={hover}>
-        {strings.extension.statusBar['label']()}
+        {strings.extension.topBar['label']()}
       </TopBarExtensionTitle>
     </TopBarExtension>
   );

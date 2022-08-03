@@ -128,6 +128,24 @@ export default class ExtensionRenderer extends LensExtension {
       pathSchema: `/${EXT_EVENT_OAUTH_CODE}`,
       handler: this.handleProtocolOauthCode,
     },
+
+    // legacy APIs we no longer support
+    {
+      pathSchema: '/kubeConfig',
+      handler() {
+        Notifications.error(strings.extension.legacy.kubeConfigProtocol(), {
+          timeout: 0,
+        });
+      },
+    },
+    {
+      pathSchema: '/addClusters',
+      handler() {
+        Notifications.error(strings.extension.legacy.addClustersProtocol(), {
+          timeout: 0,
+        });
+      },
+    },
   ];
 
   /**

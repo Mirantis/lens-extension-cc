@@ -29,11 +29,14 @@ export const noteOwner = `(${pkg.name})`;
 
 // strings for main, renderer, and page modules
 export const extension: Dict = {
-  appMenu: {
-    label: () => 'Add Cloud Clusters',
-  },
-  statusBar: {
+  topBar: {
     label: () => mccFullName,
+  },
+  legacy: {
+    kubeConfigProtocol: () =>
+      `The "Add cluster to Lens" feature is no longer supported. The extension uses a new synchronization feature to automatically add your clusters (and more) to the Lens Catalog. Get started by adding your management cluster(s) to the extension by clicking on the "${mccFullName}" item in the Lens top bar.`,
+    addClustersProtocol: () =>
+      `The "Add clusters to Lens" feature is no longer supported. The extension uses a new synchronization feature to automatically add your clusters (and more) to the Lens Catalog. Get started by adding your management cluster(s) to the extension by clicking on the "${mccFullName}" item in the Lens top bar.`,
   },
 };
 
