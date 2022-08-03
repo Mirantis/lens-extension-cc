@@ -1,6 +1,6 @@
 # ChangeLog
 
-## UNRELEASED
+## v5.0.1
 
 - Fixed bug with sorting items in the Sync View.
 - Added friendly error handlers for protocol requests that are no longer supported, but may still come when people are using a version of MCC older than 2.19:
