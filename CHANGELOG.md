@@ -1,5 +1,9 @@
 # ChangeLog
 
+## UNRELEASED
+
+- Fixed bug with sorting items in the Sync View.
+
 ## v5.0.0
 
 - 🚨 __BREAKING:__ Make the extension compatible with Lens 6 while unintentionally/forcibly dropping support for Lens 5.
