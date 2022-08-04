@@ -1,11 +1,11 @@
 import mockConsole from 'jest-mock-console';
 import { render, screen } from 'testingUtility';
 import userEvent from '@testing-library/user-event';
-import { SyncView } from '../SyncView';
 import { CloudProvider } from '../../../store/CloudProvider';
 import { IpcRenderer } from '../../../IpcRenderer';
 import { CloudStore } from '../../../../store/CloudStore';
 import * as strings from '../../../../strings';
+import { SyncView } from '../SyncView';
 
 describe('/renderer/components/GlobalPage/SyncView', () => {
   const extension = {};
@@ -13,7 +13,7 @@ describe('/renderer/components/GlobalPage/SyncView', () => {
 
   beforeEach(() => {
     user = userEvent.setup();
-    mockConsole(); // automatically restored after each test
+    mockConsole(['log', 'info', 'warn']); // automatically restored after each test
 
     IpcRenderer.createInstance(extension);
   });
@@ -56,6 +56,7 @@ describe('/renderer/components/GlobalPage/SyncView', () => {
             namespaces: [
               {
                 name: 'namespace 1',
+                cloudUrl: 'https://foo.com',
                 clusterCount: 4,
                 machineCount: 12,
                 sshKeyCount: 2,
@@ -66,6 +67,7 @@ describe('/renderer/components/GlobalPage/SyncView', () => {
               },
               {
                 name: 'namespace 2',
+                cloudUrl: 'https://foo.com',
                 clusterCount: 1,
                 machineCount: 6,
                 sshKeyCount: 9,
@@ -76,6 +78,7 @@ describe('/renderer/components/GlobalPage/SyncView', () => {
               },
               {
                 name: 'namespace 3',
+                cloudUrl: 'https://foo.com',
                 clusterCount: 0,
                 machineCount: 0,
                 sshKeyCount: 0,
@@ -86,6 +89,7 @@ describe('/renderer/components/GlobalPage/SyncView', () => {
               },
               {
                 name: 'namespace 4',
+                cloudUrl: 'https://foo.com',
                 clusterCount: 2,
                 machineCount: 10,
                 sshKeyCount: 3,
@@ -96,6 +100,7 @@ describe('/renderer/components/GlobalPage/SyncView', () => {
               },
               {
                 name: 'namespace 5',
+                cloudUrl: 'https://foo.com',
                 clusterCount: 2,
                 machineCount: 10,
                 sshKeyCount: 1,
@@ -121,7 +126,7 @@ describe('/renderer/components/GlobalPage/SyncView', () => {
       expect(screen.getByText(strings.syncView.title())).toBeInTheDocument();
     });
 
-    it('show ConnectionBlock component by clicking on connect button and close it by clicking on cancel button', async () => {
+    it('shows ConnectionBlock component by clicking on connect button and close it by clicking on cancel button', async () => {
       render(
         <CloudProvider>
           <SyncView />
@@ -139,7 +144,7 @@ describe('/renderer/components/GlobalPage/SyncView', () => {
       expect(screen.queryByText(connectionBlockTitle)).not.toBeInTheDocument();
     });
 
-    it('open Selective Sync view by clicking on syncView button and close it by clicking on cancel button', async () => {
+    it('opens Selective Sync view by clicking on syncView button and close it by clicking on cancel button', async () => {
       render(
         <CloudProvider>
           <SyncView />
@@ -164,7 +169,7 @@ describe('/renderer/components/GlobalPage/SyncView', () => {
       ).not.toBeInTheDocument();
     });
 
-    it('synchronize selected projects', async () => {
+    it('synchronizes selected projects', async () => {
       render(
         <CloudProvider>
           <SyncView />

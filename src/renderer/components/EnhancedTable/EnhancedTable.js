@@ -31,6 +31,8 @@ export const EnhancedTable = ({
   isSelectiveSyncView,
   isSyncStarted,
   getDataToSync,
+  getCloudMenuItems,
+  getNamespaceMenuItems,
 }) => {
   const { path, headCellValue } = getTableData(isSelectiveSyncView);
   const [sortedBy, setSortedBy] = useState(headCellValue.NAME);
@@ -64,6 +66,8 @@ export const EnhancedTable = ({
               withCheckboxes={isSelectiveSyncView}
               isSyncStarted={isSyncStarted}
               getDataToSync={getDataToSync}
+              getCloudMenuItems={getCloudMenuItems}
+              getNamespaceMenuItems={getNamespaceMenuItems}
             />
           );
         })}
@@ -80,9 +84,36 @@ EnhancedTable.propTypes = {
   isSelectiveSyncView: PropTypes.bool,
   isSyncStarted: PropTypes.bool.isRequired,
   getDataToSync: PropTypes.func,
+
+  /**
+   * Called to get context menu items for a given Cloud.
+   *
+   * Signature: `(cloud: Cloud) => Array<{ title: string, disabled?: boolean, onClick: () => void }>`
+   *
+   * - `cloud`: The Cloud for which to get items.
+   * - Returns: Array of objects that describe menu items in the Lens MenuItem component.
+   *     The `title` property becomes the item's `children`, and the rest of the properties
+   *     are props spread onto a `MenuItem` component.
+   */
+  getCloudMenuItems: PropTypes.func,
+
+  /**
+   * Called to get context menu items for a given Namespace in a Cloud.
+   *
+   * Signature: `(cloud: Cloud, namespace: CloudNamespace) => Array<{ title: string, disabled?: boolean, onClick: () => void }>`
+   *
+   * - `cloud`: The Cloud for which to get items.
+   * - `namespace`: A namespace in the `cloud` for which to get items.
+   * - Returns: Array of objects that describe menu items in the Lens MenuItem component.
+   *     The `title` property becomes the item's `children`, and the rest of the properties
+   *     are props spread onto a `MenuItem` component.
+   */
+  getNamespaceMenuItems: PropTypes.func,
 };
 
 EnhancedTable.defaultProps = {
   isSelectiveSyncView: false,
   getDataToSync: null,
+  getCloudMenuItems: () => [],
+  getNamespaceMenuItems: () => [],
 };

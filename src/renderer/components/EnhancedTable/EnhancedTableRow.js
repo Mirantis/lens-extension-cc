@@ -1,10 +1,10 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
+import { omit } from 'lodash';
 import { Renderer } from '@k8slens/extensions';
 import { layout } from '../styles';
 import { AdditionalInfoRows } from './AdditionalInfoRows';
-import * as strings from '../../../strings';
 import {
   checkValues,
   TriStateCheckbox,
@@ -13,16 +13,12 @@ import {
   useCheckboxes,
   makeCheckboxesInitialState,
 } from '../hooks/useCheckboxes';
-import { CONNECTION_STATUSES } from '../../../common/Cloud';
-import { openBrowser } from '../../../util/netUtil';
-import { useClouds } from '../../store/CloudProvider';
 import { sortNamespaces } from './tableUtil';
-import { IpcRenderer } from '../../IpcRenderer';
 import * as consts from '../../../constants';
+import * as strings from '../../../strings';
 import { CloudNamespace } from '../../../common/CloudNamespace';
 
-const { Icon, MenuItem, MenuActions, ConfirmDialog, Tooltip } =
-  Renderer.Component;
+const { Icon, MenuItem, MenuActions, Tooltip } = Renderer.Component;
 
 const EnhRow = styled.tr`
   display: contents;
@@ -120,82 +116,6 @@ const warningIconStyle = {
   color: 'var(--colorWarning)',
 };
 
-const getCloudMenuItems = (cloud, cloudActions) => [
-  {
-    title: strings.contextMenus.cloud.reconnect(),
-    name: 'reconnect',
-    disabled: cloud.status === CONNECTION_STATUSES.CONNECTED,
-    onClick: () => {
-      // NOTE: this returns a promise, but we don't care about the result
-      IpcRenderer.getInstance().invoke(
-        consts.ipcEvents.invoke.RECONNECT,
-        cloud.cloudUrl
-      );
-    },
-  },
-  {
-    title: strings.contextMenus.cloud.remove(),
-    name: 'remove',
-    disabled: cloud.fetching,
-    onClick: () => {
-      const { name: cloudName, cloudUrl, syncedProjects, connected } = cloud;
-      const isConnected = connected && cloud.loaded;
-      if (isConnected && !cloud.namespaces.length) {
-        cloudActions.removeCloud(cloudUrl);
-      } else {
-        ConfirmDialog.open({
-          ok: () => {
-            cloudActions.removeCloud(cloudUrl);
-          },
-          labelOk:
-            strings.contextMenus.cloud.confirmDialog.confirmButtonLabel(),
-          message: (
-            <div
-              dangerouslySetInnerHTML={{
-                __html: strings.contextMenus.cloud.confirmDialog.messageHtml(
-                  cloudName,
-                  syncedProjects
-                ),
-              }}
-            />
-          ),
-        });
-      }
-    },
-  },
-  {
-    title: strings.contextMenus.cloud.sync(),
-    name: 'sync',
-    disabled:
-      cloud.status === CONNECTION_STATUSES.DISCONNECTED || cloud.fetching,
-    onClick: async () => {
-      // NOTE: this returns a promise, but we don't care about the result
-      IpcRenderer.getInstance().invoke(
-        consts.ipcEvents.invoke.SYNC_NOW,
-        cloud.cloudUrl
-      );
-    },
-  },
-  {
-    title: strings.contextMenus.cloud.openInBrowser(),
-    name: 'openInBrowser',
-    disabled: false,
-    onClick: () => {
-      openBrowser(cloud.cloudUrl);
-    },
-  },
-];
-
-const getNamespaceMenuItems = (cloud, namespace) => [
-  {
-    title: strings.contextMenus.namespace.openInBrowser(),
-    name: 'openInBrowser',
-    onClick: () => {
-      openBrowser(`${cloud.cloudUrl}/projects/${namespace.name}`);
-    },
-  },
-];
-
 export const EnhancedTableRow = ({
   cloud,
   withCheckboxes,
@@ -203,8 +123,9 @@ export const EnhancedTableRow = ({
   getDataToSync,
   namespaces,
   status,
+  getCloudMenuItems,
+  getNamespaceMenuItems,
 }) => {
-  const { actions: cloudActions } = useClouds();
   const { getCheckboxValue, setCheckboxValue, getSyncedData } = useCheckboxes(
     makeCheckboxesInitialState(cloud)
   );
@@ -299,7 +220,7 @@ export const EnhancedTableRow = ({
     if (withCheckboxes) {
       return null;
     }
-    const cloudMenuItems = getCloudMenuItems(cloud, cloudActions);
+    const cloudMenuItems = getCloudMenuItems(cloud);
     const { cloudStatus, styles } = status;
     return (
       <>
@@ -308,13 +229,9 @@ export const EnhancedTableRow = ({
         <EnhTableRowCell isRightAligned>
           <EnhMore>
             <MenuActions>
-              {cloudMenuItems.map((item) => {
+              {cloudMenuItems.map((item, idx) => {
                 return (
-                  <MenuItem
-                    key={`cloud-${item.name}`}
-                    disabled={item.disabled}
-                    onClick={item.onClick}
-                  >
+                  <MenuItem {...omit(item, ['title'])} key={`cloud-${idx}`}>
                     {item.title}
                   </MenuItem>
                 );
@@ -340,11 +257,11 @@ export const EnhancedTableRow = ({
         <EnhTableRowCell isRightAligned>
           <EnhMore>
             <MenuActions>
-              {namespaceMenuItems.map((item) => {
+              {namespaceMenuItems.map((item, idx) => {
                 return (
                   <MenuItem
-                    key={`${namespace.name}-${item.name}`}
-                    onClick={item.onClick}
+                    {...omit(item, ['title'])}
+                    key={`${namespace.name}-${idx}`}
                   >
                     {item.title}
                   </MenuItem>
@@ -448,10 +365,37 @@ EnhancedTableRow.propTypes = {
     namespaceStatus: PropTypes.string.isRequired,
     styles: PropTypes.object.isRequired,
   }).isRequired,
+
+  /**
+   * Called to get context menu items for a given Cloud.
+   *
+   * Signature: `(cloud: Cloud) => Array<{ title: string, disabled?: boolean, onClick: () => void }>`
+   *
+   * - `cloud`: The Cloud for which to get items.
+   * - Returns: Array of objects that describe menu items in the Lens MenuItem component.
+   *     The `title` property becomes the item's `children`, and the rest of the properties
+   *     are props spread onto a `MenuItem` component.
+   */
+  getCloudMenuItems: PropTypes.func,
+
+  /**
+   * Called to get context menu items for a given Namespace in a Cloud.
+   *
+   * Signature: `(cloud: Cloud, namespace: CloudNamespace) => Array<{ title: string, disabled?: boolean, onClick: () => void }>`
+   *
+   * - `cloud`: The Cloud for which to get items.
+   * - `namespace`: A namespace in the `cloud` for which to get items.
+   * - Returns: Array of objects that describe menu items in the Lens MenuItem component.
+   *     The `title` property becomes the item's `children`, and the rest of the properties
+   *     are props spread onto a `MenuItem` component.
+   */
+  getNamespaceMenuItems: PropTypes.func,
 };
 
 EnhancedTableRow.defaultProps = {
   withCheckboxes: false,
   isSyncStarted: false,
   getDataToSync: null,
+  getCloudMenuItems: () => [],
+  getNamespaceMenuItems: () => [],
 };

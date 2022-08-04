@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState } from 'react';
+import { createContext, useContext, useMemo, useState, useEffect } from 'react';
 import * as rtv from 'rtvjs';
 import { autorun } from 'mobx';
 import { ProviderStore } from './ProviderStore';
@@ -47,6 +47,7 @@ class CloudProviderStore extends ProviderStore {
 }
 
 const pr = new CloudProviderStore();
+let mounted = false; // avoid state updates after unmounting
 
 const CloudContext = createContext();
 
@@ -86,7 +87,7 @@ const _handleAutoRun = function () {
     storeChanged = true;
   });
 
-  if (storeChanged) {
+  if (mounted && storeChanged) {
     pr.onChange();
   }
 };
@@ -238,12 +239,19 @@ export const CloudProvider = function (props) {
   const value = useMemo(() => [state, setState], [state]);
 
   pr.setState = setState;
+  mounted = true;
 
   // @see https://mobx.js.org/reactions.html#autorun
   // NOTE: I have no idea why, but using a reaction() like we do in the SyncStore
   //  on MAIN (which works fine there) is DOA here on RENDERER: the reaction is
   //  never called except on first-run; only autorun() works
   autorun(_handleAutoRun);
+
+  useEffect(function () {
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return <CloudContext.Provider value={value} {...props} />;
 };

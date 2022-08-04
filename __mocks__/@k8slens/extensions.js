@@ -200,12 +200,12 @@ class Spinner extends React.Component {
 
 let confirmDialogInstance;
 
-export class ConfirmDialog extends React.Component {
+class ConfirmDialog extends React.Component {
   constructor(props) {
     super(props);
 
     if (confirmDialogInstance) {
-      throw new Error('only one instance expected at any given time');
+      throw new Error('MOCK: only one instance expected at any given time');
     }
     confirmDialogInstance = this;
 
@@ -218,6 +218,12 @@ export class ConfirmDialog extends React.Component {
 
   static open = (props) => {
     const { ok, cancel } = props;
+
+    if (!confirmDialogInstance) {
+      throw new Error(
+        'MOCK: When testing something that uses ConfirmDialog, <ConfirmDialog /> must be rendered alongside the component being rendered with render().\n-> Try `render(<><ConfirmDialog /><ComponentToTest /></>)`'
+      );
+    }
 
     confirmDialogInstance.setState({
       isOpen: true,

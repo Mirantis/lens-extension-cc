@@ -7,6 +7,7 @@ import { layout } from '../styles';
 import { normalizeUrl } from '../../../util/netUtil';
 import { connectionBlock } from '../../../strings';
 import { useClouds } from '../../store/CloudProvider';
+import { RequiredMark } from '../RequiredMark';
 
 const {
   Component: { Input, Button },
@@ -39,11 +40,6 @@ const Field = styled.div(() => ({
 const ButtonWrapper = styled.div(() => ({
   marginTop: layout.gap,
 }));
-
-const RequiredMark = styled.span`
-  color: var(--colorError);
-  margin-left: ${layout.grid}px;
-`;
 
 const mkCloudAlreadySyncedValidator = (clouds) => ({
   message: () => connectionBlock.notice.urlAlreadyUsed(),
@@ -85,7 +81,7 @@ export const ConnectionBlock = ({ loading, handleClusterConnect }) => {
       <Field>
         <label htmlFor="lecc-cluster-name">
           {connectionBlock.clusterName.label()}
-          <RequiredMark>*</RequiredMark>
+          <RequiredMark />
         </label>
         <Input
           type="text"
@@ -103,7 +99,7 @@ export const ConnectionBlock = ({ loading, handleClusterConnect }) => {
       <Field>
         <label htmlFor="lecc-cluster-url">
           {connectionBlock.clusterUrl.label()}
-          <RequiredMark>*</RequiredMark>
+          <RequiredMark />
         </label>
         <Input
           type="url"
