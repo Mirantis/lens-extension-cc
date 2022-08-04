@@ -1,6 +1,7 @@
 import { useCallback, useState, useEffect } from 'react';
 import propTypes from 'prop-types';
 import { Renderer } from '@k8slens/extensions';
+import * as rtv from 'rtvjs';
 import { WizardStep } from '../Wizard/WizardStep';
 import * as strings from '../../../strings';
 import { RequiredMark } from '../RequiredMark';
@@ -20,6 +21,12 @@ const getNextEnabled = function (data) {
   return !!(provider.facility && provider.vlanId);
 };
 
+// describes this step's expected data structure
+export const equinixProviderTs = {
+  vlanId: [rtv.EXPECTED, rtv.STRING],
+  facility: [rtv.EXPECTED, rtv.STRING],
+};
+
 export const EquinixProvider = function ({
   // eslint-disable-next-line react/prop-types -- doesn't support prop type spread we're using
   step: { onChange, stepIndex },
@@ -32,6 +39,11 @@ export const EquinixProvider = function ({
   if (!data.provider) {
     // initialize step data
     data.provider = { vlanId: null, facility: null };
+  } else {
+    // NOTE: `exactShapes` helps ensure that we know when we've added a new property
+    //  in the code somewhere but didn't add it to the step's RTV typeset
+    DEV_ENV &&
+      rtv.verify(data.provider, equinixProviderTs, { exactShapes: true });
   }
 
   const [facility, setFacility] = useState(data.provider.facility);
