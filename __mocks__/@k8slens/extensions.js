@@ -1,6 +1,6 @@
 import { computed, makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import propTypes from 'prop-types';
 import ReactSelect, { components } from 'react-select';
 import ReactSelectCreatable from 'react-select/creatable';
@@ -258,6 +258,57 @@ class ConfirmDialog extends React.Component {
   }
 }
 
+const Input = ({ trim, ...props }) => {
+  const [errorMessages, setErrorMessages] = useState([]);
+
+  const validate = (value) => {
+    const errors = [];
+
+    for (const validator of props.validators) {
+      if (errors.length) {
+        // stop validation check if there is an error already
+        break;
+      }
+
+      if (!validator.validate(value)) {
+        errors.push(validator.message());
+      }
+    }
+
+    setErrorMessages(errors);
+
+    return errors;
+  };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- only run this on first render; run validators in handleChange() afterward
+  useEffect(() => validate(props.value), []);
+
+  const handleChange = (event) => {
+    const isValid = !validate(event.target.value).length;
+
+    if (isValid) {
+      props?.onChange(event.target.value, event);
+    }
+  };
+
+  return (
+    <>
+      <input className={cx({ trim })} {...props} onChange={handleChange} />
+      {errorMessages.length > 0 && (
+        <div className="errors">
+          {errorMessages.map((error, i) => (
+            <p key={i}>{error}</p>
+          ))}
+        </div>
+      )}
+    </>
+  );
+};
+
+Input.propTypes = {
+  trim: propTypes.bool,
+};
+
 const Button = ({ label, primary, waiting, plain, ...props }) => {
   return (
     <button className={cx({ primary, waiting, plain })} {...props}>
@@ -271,14 +322,6 @@ Button.propTypes = {
   primary: propTypes.bool,
   waiting: propTypes.bool,
   plain: propTypes.bool,
-};
-
-const Input = ({ trim, ...props }) => {
-  return <input className={cx({ trim })} {...props} />;
-};
-
-Input.propTypes = {
-  trim: propTypes.bool,
 };
 
 const Tooltip = ({ children }) => {
