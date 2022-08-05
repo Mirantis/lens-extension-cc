@@ -1,6 +1,6 @@
 import { computed, makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import propTypes from 'prop-types';
 import ReactSelect, { components } from 'react-select';
 import ReactSelectCreatable from 'react-select/creatable';
@@ -259,27 +259,48 @@ class ConfirmDialog extends React.Component {
 }
 
 const Input = ({ trim, ...props }) => {
-  const [errorMessage, setErrorMessage] = useState();
-  const [isValid, setIsValid] = useState(true);
+  const [errorMessages, setErrorMessages] = useState([]);
 
-  const validate = (event) => {
-    props.validators.forEach((validator) => {
-      if (!validator.validate(event.target.value)) {
-        setIsValid(validator.validate(event.target.value));
-        setErrorMessage(validator.message());
+  const validate = (value) => {
+    const errors = [];
+
+    for (const validator of props.validators) {
+      if (errors.length) {
+        // stop validation check if there is an error already
+        break;
       }
-    });
+
+      if (!validator.validate(value)) {
+        errors.push(validator.message());
+      }
+    }
+
+    setErrorMessages(errors);
+
+    return errors;
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- only run this on first render; run validators in handleChange() afterward
+  useEffect(() => validate(props.value), []);
+
   const handleChange = (event) => {
-    props?.onChange(event.target.value, event);
-    validate(event);
+    const isValid = !validate(event.target.value).length;
+
+    if (isValid) {
+      props?.onChange(event.target.value, event);
+    }
   };
 
   return (
     <>
       <input className={cx({ trim })} {...props} onChange={handleChange} />
-      {!isValid && errorMessage.length && <p>{errorMessage}</p>}
+      {errorMessages.length > 0 && (
+        <div className="errors">
+          {errorMessages.map((error, i) => (
+            <p key={i}>{error}</p>
+          ))}
+        </div>
+      )}
     </>
   );
 };

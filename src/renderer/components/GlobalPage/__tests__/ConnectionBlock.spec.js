@@ -61,12 +61,12 @@ describe('/renderer/components/GlobalPage/ConnectionBlock', () => {
       );
 
       const testUrl = 'https://foo.com/';
-      const inputUrl = document.getElementById('lecc-cluster-url');
+      const inputUrlEl = document.getElementById('lecc-cluster-url');
 
       await user.click(
         screen.getByText(strings.connectionBlock.button.label())
       );
-      await user.type(inputUrl, testUrl);
+      await user.type(inputUrlEl, testUrl);
 
       expect(
         screen.getByText(strings.connectionBlock.notice.info())
@@ -88,11 +88,11 @@ describe('/renderer/components/GlobalPage/ConnectionBlock', () => {
       );
 
       const testUrl = 'https://foo.com/';
-      const inputUrl = document.getElementById('lecc-cluster-url');
+      const inputUrlEl = document.getElementById('lecc-cluster-url');
 
-      await user.type(inputUrl, testUrl);
+      await user.type(inputUrlEl, testUrl);
 
-      expect(inputUrl.value).toBe(testUrl);
+      expect(inputUrlEl.value).toBe(testUrl);
     });
 
     it('triggers handleClusterConnect handler by clicking on submit button', async () => {
@@ -168,7 +168,7 @@ describe('/renderer/components/GlobalPage/ConnectionBlock', () => {
       );
 
       const testInvalidName = '...';
-      const inputName = document.getElementById('lecc-cluster-name');
+      const inputNameEl = document.getElementById('lecc-cluster-name');
 
       // input should be valid after render
       // error message isn't visible
@@ -178,9 +178,9 @@ describe('/renderer/components/GlobalPage/ConnectionBlock', () => {
         )
       ).not.toBeInTheDocument();
 
-      await user.type(inputName, testInvalidName);
+      await user.type(inputNameEl, testInvalidName);
 
-      inputName.blur();
+      inputNameEl.blur();
 
       // input should be in error state
       // after typing a wrong cloud name
@@ -210,7 +210,7 @@ describe('/renderer/components/GlobalPage/ConnectionBlock', () => {
 
       const testAlreadySyncedName = 'foobar';
 
-      const inputName = document.getElementById('lecc-cluster-name');
+      const inputNameEl = document.getElementById('lecc-cluster-name');
 
       // input should be valid after render
       // error message isn't visible
@@ -218,9 +218,9 @@ describe('/renderer/components/GlobalPage/ConnectionBlock', () => {
         screen.queryByText(strings.connectionBlock.notice.nameAlreadyUsed())
       ).not.toBeInTheDocument();
 
-      await user.type(inputName, testAlreadySyncedName);
+      await user.type(inputNameEl, testAlreadySyncedName);
 
-      inputName.blur();
+      inputNameEl.blur();
 
       // input should be in error state
       // after typing a cloud name, which is already synced
@@ -248,7 +248,7 @@ describe('/renderer/components/GlobalPage/ConnectionBlock', () => {
 
       const testAlreadySyncedUrl = 'http://barfoo.com';
 
-      const inputUrl = document.getElementById('lecc-cluster-url');
+      const inputUrlEl = document.getElementById('lecc-cluster-url');
 
       // input should be valid after render
       // error message isn't visible
@@ -256,9 +256,9 @@ describe('/renderer/components/GlobalPage/ConnectionBlock', () => {
         screen.queryByText(strings.connectionBlock.notice.urlAlreadyUsed())
       ).not.toBeInTheDocument();
 
-      await user.type(inputUrl, testAlreadySyncedUrl);
+      await user.type(inputUrlEl, testAlreadySyncedUrl);
 
-      inputUrl.blur();
+      inputUrlEl.blur();
 
       // input should be in error state
       // after typing a cloud url, which is already synced
