@@ -1,6 +1,7 @@
 import { useCallback, useState, useEffect } from 'react';
 import propTypes from 'prop-types';
 import { Renderer } from '@k8slens/extensions';
+import * as rtv from 'rtvjs';
 import { WizardStep } from '../Wizard/WizardStep';
 import { RequiredMark } from '../RequiredMark';
 import { providerTypes } from '../../../constants';
@@ -21,6 +22,16 @@ const getNextEnabled = function (data) {
   return !!(general.clusterName && general.providerType);
 };
 
+// describes this step's expected data structure
+export const generalStepTs = {
+  clusterName: [rtv.EXPECTED, rtv.STRING],
+  providerType: [
+    rtv.EXPECTED,
+    rtv.STRING,
+    { oneOf: Object.values(providerTypes) },
+  ],
+};
+
 // eslint-disable-next-line react/prop-types -- doesn't support prop type spread we're using
 export const GeneralStep = function ({ step: { onChange, stepIndex }, data }) {
   //
@@ -33,6 +44,10 @@ export const GeneralStep = function ({ step: { onChange, stepIndex }, data }) {
       clusterName: null,
       providerType: providerTypes.EQUINIX, // default to most popular
     };
+  } else {
+    // NOTE: `exactShapes` helps ensure that we know when we've added a new property
+    //  in the code somewhere but didn't add it to the step's RTV typeset
+    DEV_ENV && rtv.verify(data.general, generalStepTs, { exactShapes: true });
   }
 
   const [clusterName, setClusterName] = useState(

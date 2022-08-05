@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import propTypes from 'prop-types';
+import * as rtv from 'rtvjs';
 import { WizardStep } from '../Wizard/WizardStep';
 
 /**
@@ -13,6 +14,9 @@ const getNextEnabled = function (data) {
   return !!cluster; // TODO
 };
 
+// describes this step's expected data structure
+export const clusterStepTs = {};
+
 // eslint-disable-next-line react/prop-types -- doesn't support prop type spread we're using
 export const ClusterStep = function ({ step: { onChange, stepIndex }, data }) {
   //
@@ -24,6 +28,10 @@ export const ClusterStep = function ({ step: { onChange, stepIndex }, data }) {
     data.cluster = {
       // TODO
     };
+  } else {
+    // NOTE: `exactShapes` helps ensure that we know when we've added a new property
+    //  in the code somewhere but didn't add it to the step's RTV typeset
+    DEV_ENV && rtv.verify(data.cluster, clusterStepTs, { exactShapes: true });
   }
 
   //
