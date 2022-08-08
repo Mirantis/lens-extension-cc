@@ -261,6 +261,7 @@ export const generateEntityUrl = (entity) => {
  * @param {CatalogEntity|Object} item
  * @returns {string} String representation for a log entry.
  */
+/* istanbul ignore next -- for debug/logging only */
 const _itemToString = function (item) {
   const type = item instanceof CatalogEntity ? 'Entity' : 'Model';
 
@@ -291,6 +292,7 @@ const _itemToString = function (item) {
  * @param {Object} model
  * @returns {string} String representation for a log entry.
  */
+/* istanbul ignore next -- for debug/logging only */
 export const modelToString = function (model) {
   DEV_ENV && rtv.verify({ model }, { model: catalogEntityModelTs });
   return _itemToString(model);
@@ -301,6 +303,7 @@ export const modelToString = function (model) {
  * @param {CatalogEntity} entity
  * @returns {string} String representation for a log entry.
  */
+/* istanbul ignore next -- for debug/logging only */
 export const entityToString = function (entity) {
   if (!(entity instanceof CatalogEntity)) {
     throw new Error('entity must be an instance of CatalogEntity');
