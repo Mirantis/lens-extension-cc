@@ -79,7 +79,7 @@
     "@emotion/react": "^11.10.0",
     "@emotion/styled": "^11.10.0",
     "@k8slens/extensions": "^6.0.0",
-    "@testing-library/dom": "^8.16.1",
+    "@testing-library/dom": "^8.17.1",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^12.1.4",
     "@testing-library/user-event": "^14.4.2",
