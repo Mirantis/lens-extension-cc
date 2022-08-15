@@ -117,7 +117,6 @@ export const AddCloudInstance = ({ onAdd, onCancel }) => {
     let newCloud = new Cloud(normUrl);
     newCloud.name = clusterName;
     const statusListener = () => {
-      // Looks like we don't get here
       if (newCloud.status === CONNECTION_STATUSES.CONNECTING) {
         setLoading(true);
       } else {

@@ -35,6 +35,7 @@ describe('/renderer/components/EnhancedTable/EnhancedTable', () => {
 
     beforeEach(() => {
       fakeCloudFoo = new Cloud({
+        __mockStatus: CONNECTION_STATUSES.CONNECTED,
         name: 'foo',
         cloudUrl: 'http://foo.com',
         namespaces: [
@@ -53,11 +54,9 @@ describe('/renderer/components/EnhancedTable/EnhancedTable', () => {
       });
 
       fakeCloudWithoutNamespaces = new Cloud({
+        __mockStatus: CONNECTION_STATUSES.CONNECTED,
         name: 'bar',
         cloudUrl: 'http://bar.com',
-        loaded: true,
-        connected: true,
-        status: CONNECTION_STATUSES.DISCONNECTED,
       });
 
       CloudStore.createInstance().loadExtension(extension);

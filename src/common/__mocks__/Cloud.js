@@ -1,6 +1,10 @@
 import { EventDispatcher } from '../EventDispatcher';
 import { CloudNamespace } from '../CloudNamespace';
 
+const hasPassed = function (date) {
+  return date instanceof Date ? date.getTime() - Date.now() < 0 : false;
+};
+
 // duplicate export from real Cloud.js since we're mocking the module
 export const CONNECTION_STATUSES = Object.freeze({
   CONNECTED: 'connected',
@@ -42,6 +46,20 @@ export const mkCloudJson = (props) =>
     props
   );
 
+export const generateOAuthTokens = () => {
+  const now = Date.now();
+  const fiveMin = 5 * 60; // seconds (5 minutes)
+  const thirtyMin = 30 * 60; // seconds (30 minutes)
+  return {
+    id_token: 'token',
+    expires_in: fiveMin,
+    tokenExpiresAt: new Date(now + fiveMin * 1000).getTime(),
+    refresh_token: 'token',
+    refresh_expires_in: fiveMin,
+    refreshExpiresAt: new Date(now + thirtyMin * 1000).getTime(),
+  };
+};
+
 export class Cloud extends EventDispatcher {
   constructor(urlOrSpec, ipcMain) {
     super();
@@ -52,6 +70,8 @@ export class Cloud extends EventDispatcher {
       );
     }
 
+    const json = mkCloudJson();
+
     // create most of the instance by assigning onto it properties from the spec
     //  given to the constructor, relying on a default cloud JSON if a URL was
     //  given instead of the spec
@@ -59,22 +79,52 @@ export class Cloud extends EventDispatcher {
       this,
 
       // defaults
-      mkCloudJson(),
+      {
+        cloudUrl: json.cloudUrl,
+        name: json.name,
+        syncAll: json.syncAll,
+        username: json.username,
+        token: json.id_token,
+        expiresIn: json.expires_in,
+        tokenValidTill: new Date(json.tokenExpiresAt),
+        refreshToken: json.refresh_token,
+        refreshExpiresIn: json.refresh_expires_in,
+        refreshTokenValidTill: new Date(json.refreshExpiresAt),
+        namespaces: json.namespaces,
+      },
 
       // properties that the real Cloud in Cloud.js adds that we need by default,
       //  but which might get overridden by the spec in `urlOrSpec`; these are
-      //  getters on the real Cloud in Cloud.js, but just straight properties here
+      //  getters (and sometimes setters) on the real Cloud in Cloud.js
       {
-        loaded: false,
-        connecting: false,
-        connectError: null,
-        config: null,
-        status: CONNECTION_STATUSES.DISCONNECTED,
+        _loaded: false, // NOTE: it's the DataCloud that eventually sets this to true
+        _connecting: false,
+        _connectError: null,
+        _config: null,
+        _updatingFromStore: false,
+        ipcMain,
+        fetching: false,
       },
 
       // what we got to make the Cloud instance from for testing purposes
       typeof urlOrSpec === 'string' ? { cloudUrl: urlOrSpec } : urlOrSpec
     );
+
+    // check for special MOCK-only property that determines initial state so it's not
+    //  necessary to always go through the connection sequence
+    if (this.__mockStatus) {
+      if (this.__mockStatus === CONNECTION_STATUSES.CONNECTED) {
+        this.loaded = true;
+        this.config = {};
+        if (!this.token) {
+          // assume tokens weren't given in spec: create some because they're necessary
+          //  in order for the cloud to be determined 'connected'
+          this.updateTokens(generateOAuthTokens());
+        }
+      } else if (this.__mockStatus === CONNECTION_STATUSES.CONNECTING) {
+        this.connecting = true;
+      }
+    }
 
     // convert plain object namespaces into CloudNamespace instances if they aren't already
     this.namespaces = this.namespaces.map((ns) => {
@@ -98,58 +148,199 @@ export class Cloud extends EventDispatcher {
     });
   }
 
+  get loaded() {
+    return this._loaded;
+  }
+
+  set loaded(newValue) {
+    if (this._loaded !== !!newValue) {
+      this._loaded = !!newValue;
+      this.dispatchEvent(CLOUD_EVENTS.LOADED_CHANGE, {
+        isFromStore: this._updatingFromStore,
+      });
+      this.ipcMain?.notifyCloudLoadedChange(this.cloudUrl, this._loaded);
+    }
+  }
+
+  get connecting() {
+    return this._connecting;
+  }
+
+  set connecting(newValue) {
+    if (this._connecting !== !!newValue) {
+      this._connecting = !!newValue;
+      this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, {
+        isFromStore: this._updatingFromStore,
+      });
+      this.ipcMain?.notifyCloudStatusChange(this.cloudUrl, {
+        connecting: this._connecting,
+        connectError: this.connectError,
+      });
+    }
+  }
+
+  get connected() {
+    return this.status === CONNECTION_STATUSES.CONNECTED;
+  }
+
+  get connectError() {
+    return this._connectError;
+  }
+
+  set connectError(newValue) {
+    const validValue =
+      (newValue instanceof Error ? newValue.message : newValue) || null;
+    if (validValue !== this._connectError) {
+      this._connectError = validValue || null;
+      this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, {
+        isFromStore: this._updatingFromStore,
+      });
+      this.ipcMain?.notifyCloudStatusChange(this.cloudUrl, {
+        connecting: this.connecting,
+        connectError: this._connectError,
+      });
+    }
+  }
+
+  get config() {
+    return this._config;
+  }
+
+  set config(newValue) {
+    if (newValue !== this._config) {
+      this._config = newValue || null;
+      this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, {
+        isFromStore: this._updatingFromStore,
+      }); // affects status
+    }
+  }
+
+  get status() {
+    if (this.connecting) {
+      return CONNECTION_STATUSES.CONNECTING;
+    }
+
+    if (!this.connectError && this.token && this.refreshTokenValid) {
+      if (this.ipcMain && !this.config) {
+        return CONNECTION_STATUSES.CONNECTING;
+      }
+
+      return CONNECTION_STATUSES.CONNECTED;
+    }
+
+    return CONNECTION_STATUSES.DISCONNECTED;
+  }
+
+  get ignoredProjects() {
+    return this.namespaces.filter((ns) => !ns.synced).map((ns) => ns.name);
+  }
+
+  get syncedProjects() {
+    return this.namespaces.filter((ns) => ns.synced).map((ns) => ns.name);
+  }
+
   get syncedNamespaces() {
     return this.namespaces.filter((ns) => ns.synced);
   }
 
   update(spec, isFromStore = false) {
-    // nothing to do in mock for now
+    this._updatingFromStore = !!isFromStore;
+
+    // nothing to do for now
+
+    this._updatingFromStore = false;
   }
 
   destroy() {
     // nothing to do in mock for now
   }
 
-  async loadConfig() {
-    this.config = {};
-    this.connectError = null;
+  get refreshTokenValid() {
+    return !!this.refreshToken && !hasPassed(this.refreshTokenValidTill);
+  }
+
+  updateTokens(spec) {
+    this.token = spec.id_token;
+    this.expiresIn = spec.expires_in;
+    this.tokenValidTill = new Date(spec.tokenExpiresAt);
+    this.refreshToken = spec.refresh_token;
+    this.refreshExpiresIn = spec.refresh_expires_in;
+    this.refreshTokenValidTill = new Date(spec.refreshExpiresAt);
+
+    // if all the above were getters/setters like in the real Cloud class,
+    //  they would each dispatch these 2 events (except `username` which
+    //  would dispatch only a TOKEN_CHANGE)
+    this.dispatchEvent(CLOUD_EVENTS.TOKEN_CHANGE, {
+      isFromStore: this._updatingFromStore,
+    });
     this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, {
-      isFromStore: false,
+      isFromStore: this._updatingFromStore,
+    });
+  }
+
+  resetTokens() {
+    this.token = null;
+    this.expiresIn = null;
+    this.tokenValidTill = null;
+
+    this.refreshToken = null;
+    this.refreshExpiresIn = null;
+    this.refreshTokenValidTill = null;
+
+    // tokens are tied to the user, so clear that too
+    this.username = null;
+
+    // if all the above were getters/setters like in the real Cloud class,
+    //  they would each dispatch these 2 events (except `username` which
+    //  would dispatch only a TOKEN_CHANGE)
+    this.dispatchEvent(CLOUD_EVENTS.TOKEN_CHANGE, {
+      isFromStore: this._updatingFromStore,
+    });
+    this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, {
+      isFromStore: this._updatingFromStore,
+    });
+  }
+
+  async loadConfig() {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        this.config = {};
+        this.connectError = null;
+        resolve();
+      }, 10);
     });
   }
 
   async connect() {
-    if (this.connecting) {
-      return;
-    }
-
-    // set initial values
-    this.loaded = false;
-    this.connecting = true;
-    this.connectError = null;
-    this.config = null;
-    this.status = CONNECTION_STATUSES.CONNECTING;
-
-    await this.loadConfig();
-
-    if (this.config) {
-      if (this.name !== MOCK_CONNECT_FAILURE_CLOUD_NAME) {
-        this.loaded = true;
-        this.connecting = false;
-        this.connectError = null;
-        this.status = CONNECTION_STATUSES.CONNECTED;
-        // eslint-disable-next-line no-console -- is used for testing
-        console.log(`${this.name} cloud is connected!`);
-      } else {
-        this.loaded = false;
-        this.connecting = false;
-        this.connectError = 'failed-connection';
-        this.status = CONNECTION_STATUSES.DISCONNECTED;
-        // eslint-disable-next-line no-console -- is used for testing
-        console.log(`${this.name} cloud is disconnected!`);
+    return new Promise((resolve) => {
+      if (this.connecting) {
+        resolve();
+        return;
       }
-    } else {
-      this.connecting = false;
-    }
+
+      // set initial values
+      this.connecting = true;
+      this.connectError = null;
+      this.config = null;
+
+      this.loadConfig().then(() => {
+        if (this.config) {
+          // simulate SSO connection
+          setTimeout(() => {
+            if (this.name === MOCK_CONNECT_FAILURE_CLOUD_NAME) {
+              this.connectError = new Error('MOCK: cloud failed to connect');
+              this.resetTokens();
+            } else {
+              this.updateTokens(generateOAuthTokens());
+            }
+            this.connecting = false;
+            resolve();
+          }, 10);
+        } else {
+          this.connecting = false;
+          resolve();
+        }
+      });
+    });
   }
 }

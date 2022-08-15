@@ -15,22 +15,22 @@ const setParentCheckboxState = (children) => {
 };
 
 /**
- * @param {Cloud} cloud
+ * @param {DataCloud} dataCloud
  * @return {Object} {[namespaceName]: boolean}
  */
-const makeCheckboxesStateObj = (cloud) => {
-  return cloud.namespaces.reduce((acc, namespace) => {
+const makeCheckboxesStateObj = (dataCloud) => {
+  return dataCloud.namespaces.reduce((acc, namespace) => {
     acc[namespace.name] = namespace.synced;
     return acc;
   }, {});
 };
 
 /**
- * @param {Cloud} cloud
+ * @param {DataCloud} dataCloud
  * @return {{parent: (boolean), children: Object}}
  */
-export const makeCheckboxesInitialState = (cloud) => {
-  const children = makeCheckboxesStateObj(cloud);
+export const makeCheckboxesInitialState = (dataCloud) => {
+  const children = makeCheckboxesStateObj(dataCloud);
   return {
     parent: setParentCheckboxState(children),
     children,
