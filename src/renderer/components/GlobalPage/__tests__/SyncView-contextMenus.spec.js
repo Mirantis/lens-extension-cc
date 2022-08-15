@@ -32,10 +32,9 @@ describe('/renderer/components/GlobalPage/SyncView', () => {
 
     beforeEach(() => {
       fakeCloudJson = mkCloudJson({
+        __mockStatus: CONNECTION_STATUSES.CONNECTED,
         name: 'bar',
         cloudUrl: 'http://bar.com',
-        status: CONNECTION_STATUSES.CONNECTED,
-        syncedProjects: ['bar namespace'],
         namespaces: [
           {
             cloudUrl: 'https://bar.com',
@@ -52,18 +51,15 @@ describe('/renderer/components/GlobalPage/SyncView', () => {
       });
 
       fakeCloudWithoutNamespacesJson = mkCloudJson({
+        __mockStatus: CONNECTION_STATUSES.CONNECTED,
         name: 'bar',
         cloudUrl: 'http://bar.com',
-        loaded: true,
-        connected: true,
-        status: CONNECTION_STATUSES.DISCONNECTED,
         namespaces: [],
       });
 
       disconnectedFakeCloudJson = mkCloudJson({
         name: 'foo',
         cloudUrl: 'http://foo.com',
-        status: CONNECTION_STATUSES.DISCONNECTED,
         namespaces: [
           {
             cloudUrl: 'https://foo.com',

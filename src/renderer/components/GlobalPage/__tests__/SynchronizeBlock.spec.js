@@ -2,7 +2,7 @@ import mockConsole from 'jest-mock-console';
 import { render, screen } from 'testingUtility';
 import userEvent from '@testing-library/user-event';
 import { SynchronizeBlock } from '../SynchronizeBlock';
-import { Cloud, CONNECTION_STATUSES } from '../../../../common/Cloud'; // MOCKED
+import { Cloud } from '../../../../common/Cloud'; // MOCKED
 import { CloudProvider } from '../../../store/CloudProvider';
 import { IpcRenderer } from '../../../IpcRenderer';
 import { CloudStore } from '../../../../store/CloudStore';
@@ -27,7 +27,6 @@ describe('/renderer/components/GlobalPage/AddCloudInstance', () => {
     fakeCloud = new Cloud({
       name: 'bar',
       cloudUrl: 'http://bar.com',
-      status: CONNECTION_STATUSES.DISCONNECTED,
       namespaces: [
         {
           cloudUrl: 'https://bar.com',
@@ -57,7 +56,6 @@ describe('/renderer/components/GlobalPage/AddCloudInstance', () => {
     fakeCloudWithoutNamespaces = new Cloud({
       name: 'bar',
       cloudUrl: 'http://bar.com',
-      status: CONNECTION_STATUSES.DISCONNECTED,
       namespaces: [],
     });
 

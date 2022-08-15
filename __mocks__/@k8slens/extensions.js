@@ -424,7 +424,7 @@ class ExtensionStore extends Singleton {
   }
 }
 
-const createNotification = function (status, message, { timeout = 5000 }) {
+const createNotification = function (status, message, { timeout = 5000 } = {}) {
   if (!['ok', 'info', 'error'].includes(status)) {
     throw new Error(`Mock: Unsupported notification type "${status}"`);
   }

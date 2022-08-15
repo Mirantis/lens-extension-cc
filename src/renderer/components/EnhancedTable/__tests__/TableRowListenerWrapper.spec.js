@@ -30,7 +30,6 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
     const disconnectedFakeCloud = new Cloud({
       name: 'foo',
       cloudUrl: 'http://foo.com',
-      status: CONNECTION_STATUSES.DISCONNECTED,
       namespaces: [
         {
           cloudUrl: 'https://foo.com',
@@ -47,9 +46,9 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
     });
 
     const connectingFakeCloud = new Cloud({
+      __mockStatus: CONNECTION_STATUSES.CONNECTING,
       name: 'bar',
       cloudUrl: 'http://bar.com',
-      status: CONNECTION_STATUSES.CONNECTING,
       namespaces: [
         {
           cloudUrl: 'https://bar.com',
@@ -66,9 +65,9 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
     });
 
     const connectedFakeCloud = new Cloud({
+      __mockStatus: CONNECTION_STATUSES.CONNECTED,
       name: 'foobar',
       cloudUrl: 'http://foobar.com',
-      status: CONNECTION_STATUSES.CONNECTED,
       namespaces: [
         {
           cloudUrl: 'https://foobar.com',
@@ -170,7 +169,6 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
         const fakeCloud = new Cloud({
           name: 'barfoo',
           cloudUrl: 'http://barfoo.com',
-          status: CONNECTION_STATUSES.DISCONNECTED,
           fetching: true,
           namespaces: [
             {
@@ -220,7 +218,6 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
     const fakeCloud = new Cloud({
       name: 'barfoo',
       cloudUrl: 'http://barfoo.com',
-      status: CONNECTION_STATUSES.DISCONNECTED,
       fetching: true,
       namespaces: [
         {

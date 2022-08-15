@@ -119,9 +119,9 @@ describe('/renderer/components/GlobalPage/ConnectionBlock', () => {
 
     beforeEach(() => {
       fakeFooBarCloudJson = mkCloudJson({
+        __mockStatus: CONNECTION_STATUSES.CONNECTED,
         name: 'foobar',
         cloudUrl: 'http://foobar.com',
-        status: CONNECTION_STATUSES.CONNECTED,
         namespaces: [
           {
             cloudUrl: 'https://foobar.com',
@@ -138,9 +138,9 @@ describe('/renderer/components/GlobalPage/ConnectionBlock', () => {
       });
 
       fakeBarFooCloudJson = mkCloudJson({
+        __mockStatus: CONNECTION_STATUSES.CONNECTED,
         name: 'barfoo',
         cloudUrl: 'http://barfoo.com',
-        status: CONNECTION_STATUSES.CONNECTED,
         namespaces: [
           {
             cloudUrl: 'https://barfoo.com',

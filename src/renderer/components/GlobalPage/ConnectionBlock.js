@@ -115,7 +115,7 @@ export const ConnectionBlock = ({ loading, handleClusterConnect }) => {
         <ButtonWrapper>
           <Button
             primary
-            type="submit"
+            type="button"
             label={connectionBlock.button.label()}
             onClick={handleConnectClick}
             disabled={loading}
