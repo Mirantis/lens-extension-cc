@@ -5,13 +5,11 @@ import { ROUTE_GLOBAL_PAGE } from '../../routes';
 import * as strings from '../../strings';
 import * as topBarItems from '../topBarItems';
 
-describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
+describe('/renderer/topBarItems', () => {
   const extension = {
-    navigate: (route) => {
-      // eslint-disable-next-line no-console --- needed for testing onClick handled in TopBarExtension
-      console.log(`Navigated to ${route}`);
-    },
+    navigate: jest.fn(),
   };
+
   let user;
 
   beforeEach(() => {
@@ -20,55 +18,57 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
   });
 
   describe('generateTopBarItems()', () => {
-    const TopBarItem =
-      topBarItems.generateTopBarItems(extension)[0].components.Item;
-
-    it('generare only 1 top bar item', () => {
+    it('generate only one top bar item', () => {
       expect(topBarItems.generateTopBarItems(extension).length).toEqual(1);
     });
 
-    it('renders top bar item', () => {
-      render(<TopBarItem />);
+    describe('First top bar item', () => {
+      let TopBarItem;
 
-      expect(
-        screen.getByText(strings.extension.topBar['label']())
-      ).toBeInTheDocument();
-    });
+      beforeEach(() => {
+        TopBarItem =
+          topBarItems.generateTopBarItems(extension)[0].components.Item;
+      });
 
-    it('change GlobalPage icon color on hover', async () => {
-      render(<TopBarItem />);
+      it('renders top bar item', () => {
+        render(<TopBarItem />);
 
-      const colorNormal = 'var(--textColorPrimary)';
-      const colorHover = 'var(--textColorSecondary)';
+        expect(
+          screen.getByText(strings.extension.topBar['label']())
+        ).toBeInTheDocument();
+      });
 
-      expect(document.querySelector('svg')).toHaveStyle(`fill: ${colorNormal}`);
+      it('change GlobalPage icon color on hover', async () => {
+        render(<TopBarItem />);
 
-      await user.hover(document.querySelector('svg'));
-      expect(document.querySelector('svg')).toHaveStyle(`fill: ${colorHover}`);
+        const colorNormal = 'var(--textColorPrimary)';
+        const colorHover = 'var(--textColorSecondary)';
 
-      await user.unhover(document.querySelector('svg'));
-      expect(document.querySelector('svg')).toHaveStyle(`fill: ${colorNormal}`);
-    });
-
-    it('triggers', async () => {
-      const logSpy = jest.spyOn(console, 'log');
-      const searchInMultiDim = (arr, str) => {
-        return (
-          arr.find((t) => {
-            return t.find((i) => i === str);
-          }) && true
+        expect(document.querySelector('svg')).toHaveStyle(
+          `fill: ${colorNormal}`
         );
-      };
 
-      render(<TopBarItem />);
+        await user.hover(document.querySelector('svg'));
+        expect(document.querySelector('svg')).toHaveStyle(
+          `fill: ${colorHover}`
+        );
 
-      await user.click(
-        screen.getByText(strings.extension.topBar['label']()).parentNode
-      );
+        await user.unhover(document.querySelector('svg'));
+        expect(document.querySelector('svg')).toHaveStyle(
+          `fill: ${colorNormal}`
+        );
+      });
 
-      expect(
-        searchInMultiDim(logSpy.mock.calls, `Navigated to ${ROUTE_GLOBAL_PAGE}`)
-      ).toBe(true);
+      it('calls navigate handler by clicking on bar item', async () => {
+        render(<TopBarItem />);
+
+        await user.click(
+          screen.getByText(strings.extension.topBar['label']()).parentNode
+        );
+
+        expect(extension.navigate).toHaveBeenCalledTimes(1);
+        expect(extension.navigate).toHaveBeenCalledWith(ROUTE_GLOBAL_PAGE);
+      });
     });
   });
 });
