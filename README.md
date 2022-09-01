@@ -4,9 +4,9 @@
 
 A [Lens](https://k8slens.dev/) extension that enables you to connect to management clusters and synchronize their resources into the Lens Catalog.
 
-Requires Lens `>= 5.5.0` and Mirantis Container Cloud `>= 2.19`
+Requires Lens `>= 6.0.0` and Mirantis Container Cloud `>= 2.19`
 
-> ⚠️ If you are upgrading from version 3.x to 4.x, please see our [upgrade instructions](#upgrading-from-v3-to-v4) __before upgrading__.
+> ⚠️ If you are upgrading from __extension__ version 3.x to 4.x, please see our [upgrade instructions](#upgrading-from-v3-to-v4) __before upgrading__.
 
 ## Installing
 
