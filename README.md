@@ -178,6 +178,10 @@ Just reconnect when you're able and let the synchronization process update to th
     - Access tokens (which are obtained by the extension when you [authorize access](#authorization-flow) to your management clusters) have a ~5 minute lifespan and come with refresh tokens that last up to ~30 minutes.
     - Typically, the extension is able to renew these tokens for a few hours, but once the renewal is no longer possible (for security reasons, a more recent authorization becomes necessary), a management cluster will become disconnected even while Lens is still running.
     - Quitting Lens for more than 30 minutes will definitely result in disconnection as the access token (which has a ~5 minute lifespan) as well as the refresh token, which has a ~30 minute lifespan, will both have expired.
+- Lens keeps toggling my browser to authenticate with a synced cluster.
+    - This appears to be an issue with Lens, not the extension. The kubeconfig provided to Lens for the synced cluster is valid, though it's different from kubeconfigs normally used by Lens in that it doesn't contain any offline tokens. Instead, it causes Lens to go through the `kube-login` binary (bundled with the extension) to obtain SSO tokens, and `kube-login` goes through your system's default browser to obtain those tokens.
+    - Quitting and restarting Lens normally fixes the issue.
+    - If the issue persists after quitting Lens (and leaving it closed because you don't need to use it for a while), then you may need to check for rogue Lens-related processes in your operating system's process explorer app and kill those lingering ones for the behavior to stop.
 
 ## Security
 
