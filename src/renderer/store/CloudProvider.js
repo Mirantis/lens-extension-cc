@@ -13,6 +13,7 @@ class CloudProviderStore extends ProviderStore {
   // @override
   makeNew() {
     return {
+      ...super.makeNew(),
       clouds: {},
     };
   }
