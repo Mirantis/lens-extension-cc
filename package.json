@@ -95,7 +95,7 @@
     "babel-plugin-module-resolver": "^4.1.0",
     "browserslist": "^4.21.3",
     "dayjs": "^1.11.5",
-    "electron": "^15.5.7",
+    "electron": "^19.0.16",
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-jest": "^27.0.1",
