@@ -1,5 +1,9 @@
 # ChangeLog
 
+## v5.0.2
+
+- Updated [kubelogin](https://github.com/int128/kubelogin/releases) binary from v1.25.1 to v1.25.3
+
 ## v5.0.1
 
 - Fixed bug with sorting items in the Sync View.
