@@ -1,7 +1,7 @@
 {
   "name": "@mirantis/lens-extension-cc",
   "publisher": "mirantis",
-  "version": "5.0.1",
+  "version": "5.0.2",
   "description": "Lens extension that loads Mirantis Container Cloud clusters.",
   "engines": {
     "lens": "^6.0.0"
