@@ -166,7 +166,7 @@ class KubernetesCluster {
   }
 }
 
-class CatalogEntity {
+export class CatalogEntity {
   constructor(props) {
     Object.assign(this, props);
   }
