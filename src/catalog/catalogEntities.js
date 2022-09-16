@@ -81,6 +81,7 @@ export const catalogEntityModelTs = {
     //  if necessary
     namespace: rtv.STRING,
     cloudUrl: [rtv.STRING, (v) => !v.endsWith('/')], // no trailing slash
+    syncedAt: rtv.STRING,
   },
 
   // spec is specific to the type of entity being added to the Catalog; e.g. for a cluster,
