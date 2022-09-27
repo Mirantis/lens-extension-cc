@@ -222,8 +222,10 @@ export const catalog: Dict = {
         unknownValue: () => '<Unknown>', // when a value is null/undefined/empty
         props: {
           dateCreated: () => 'Date created',
+          lastSync: () => 'Last sync',
           uid: () => 'UID',
           serverStatus: () => `${mccCodeName} status`,
+          lensExtension: () => 'Lens Extension',
         },
       },
     },

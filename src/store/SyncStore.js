@@ -102,11 +102,34 @@ export class SyncStore extends Common.Store.ExtensionStore {
     );
   }
 
+  /**
+   * Add syncedAt property to entity metadata if it's undefined
+   */
+  upgradeEntities(store) {
+    Object.values(store).forEach((entities) => {
+      if (Array.isArray(entities)) {
+        entities.forEach((singleEntity) => {
+          if (
+            singleEntity &&
+            typeof singleEntity.metadata === 'object' &&
+            singleEntity.metadata !== null
+          ) {
+            if (!singleEntity.metadata.syncedAt) {
+              singleEntity.metadata.syncedAt = new Date(0).toISOString();
+            }
+          }
+        });
+      }
+    });
+  }
+
   // NOTE: this method is not just called when reading from disk; it's also called in the
   //  sync process between the Main and Renderer threads should code on either thread
   //  update any of the store's properties
   @action // prevent mobx from emitting a change event until the function returns
   fromStore(store) {
+    this.upgradeEntities(store);
+
     // NOTE: don't gate this with DEV_ENV because we want to do it every time so we
     //  can detect an invalid store JSON file that a user may have edited by hand
     const result = rtv.check({ store }, { store: storeTs });

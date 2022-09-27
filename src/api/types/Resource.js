@@ -48,6 +48,8 @@ export class Resource {
         }
       );
 
+    const _syncedDate = new Date();
+
     /** @member {Cloud} cloud */
     Object.defineProperty(this, 'cloud', {
       enumerable: true,
@@ -102,6 +104,14 @@ export class Resource {
       },
     });
 
+    /** @member {Date} syncedDate */
+    Object.defineProperty(this, 'syncedDate', {
+      enumerable: true,
+      get() {
+        return _syncedDate;
+      },
+    });
+
     /** @member {boolean|null} deleteInProgress */
     Object.defineProperty(this, 'deleteInProgress', {
       enumerable: true,
@@ -126,6 +136,7 @@ export class Resource {
         cloudUrl: this.cloud.cloudUrl,
         kind: this.kind,
         resourceVersion: this.resourceVersion,
+        syncedAt: this.syncedDate.toISOString(),
       },
       spec: {
         createdAt: this.createdDate.toISOString(),

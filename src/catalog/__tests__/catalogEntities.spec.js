@@ -94,6 +94,7 @@ describe('/renderer/catalogEntities', () => {
             description: 'description',
             source: 'mirantis-container-cloud',
             resourceVersion: 'resourceVersion',
+            syncedAt: '2021-12-03T20:38:04Z',
           },
           spec: {
             createdAt: '2021-12-03T20:38:04Z',
