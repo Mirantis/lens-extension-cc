@@ -1,8 +1,9 @@
 # ChangeLog
 
-## UNRELEASED
+## v5.1.0
 
 - Added new `Synced at` field in all the "View details" entity panels showing the last time at which the entity was synced from MCC.
+    - Note the timestamp will read `<Unknown>` for any entities that were synced using a previous version until they change in MCC and get updated in Lens during a subsequent sync.
 
 ## v5.0.2
 
