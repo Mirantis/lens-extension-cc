@@ -2,7 +2,7 @@
 
 ## UNRELEASED
 
-- Changed timestamp format in `Created at` and `Synced at` fields  in all the "View details" entity panels.
+- Changed timestamp format in `Created at` and `Synced at` fields in all the "View details" entity panels.
 
 ## v5.1.0
 
