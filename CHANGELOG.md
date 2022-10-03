@@ -1,5 +1,9 @@
 # ChangeLog
 
+## UNRELEASED
+
+- Changed timestamp format in `Created at` and `Synced at` fields in all the "View details" entity panels.
+
 ## v5.1.0
 
 - Added new `Synced at` field in all the "View details" entity panels showing the last time at which the entity was synced from MCC.

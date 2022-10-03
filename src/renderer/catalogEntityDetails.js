@@ -28,8 +28,8 @@ const getDateValue = (date) => {
   const dateObj = new Date(date);
   return dateObj.getTime() === 0
     ? unknownValue()
-    : `${dayjs(date).format('MMM DD, YYYY, HH:mm:ss')} (${dayjs(date).fromNow(
-        true
+    : `${dayjs(date).fromNow(true)} ago (${dayjs(date).format(
+        'YYYY-MM-DD HH:mm:ss'
       )})`;
 };
 
