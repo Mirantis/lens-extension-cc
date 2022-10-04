@@ -1,7 +1,7 @@
 import mockConsole from 'jest-mock-console';
 import { render, screen } from 'testingUtility';
 import userEvent from '@testing-library/user-event';
-import { ROUTE_GLOBAL_PAGE } from '../../routes';
+import { ROUTE_SYNC_VIEW } from '../../routes';
 import * as strings from '../../strings';
 import * as topBarItems from '../topBarItems';
 
@@ -67,7 +67,7 @@ describe('/renderer/topBarItems', () => {
         );
 
         expect(extension.navigate).toHaveBeenCalledTimes(1);
-        expect(extension.navigate).toHaveBeenCalledWith(ROUTE_GLOBAL_PAGE);
+        expect(extension.navigate).toHaveBeenCalledWith(ROUTE_SYNC_VIEW);
       });
     });
   });

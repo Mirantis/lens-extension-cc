@@ -72,7 +72,7 @@ const PageContainer = styled.div(() => ({
 // MAIN COMPONENT
 //
 
-export const ClusterView = function () {
+export const ClusterOverviewPage = function () {
   const { activeEntity: clusterEntity } = Renderer.Catalog.catalogEntities;
   if (
     !clusterEntity ||
@@ -83,7 +83,7 @@ export const ClusterView = function () {
     //  cluster (thanks to code in renderer.tsx) HOWEVER, Lens 5.2 has a lot of bugs
     //  around entity activation, so this is covering us just in case
     logger.error(
-      'ClusterView.render()',
+      'ClusterOverviewPage.render()',
       `Unable to render: Active Catalog entity ${
         clusterEntity
           ? `is not from source "${consts.catalog.source}"`
@@ -115,13 +115,13 @@ export const ClusterView = function () {
 
   return (
     <PageContainer>
-      <h2>{strings.clusterPage.title()}</h2>
+      <h2>{strings.clusterPage.pages.overview.title()}</h2>
       <PagePanel>
         <ClusterInfo>
           <li>
             <a href={browserUrl} target="_blank" rel="noreferrer">
               <Component.Icon material="open_in_new" />
-              <span>{strings.clusterView.infoPanel.viewInBrowser()}</span>
+              <span>{strings.clusterPage.pages.overview.viewInBrowser()}</span>
             </a>
           </li>
         </ClusterInfo>

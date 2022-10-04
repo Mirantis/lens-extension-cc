@@ -195,13 +195,18 @@ export const renderer: Dict = {
 };
 
 export const clusterPage: Dict = {
-  menuItem: () => mccShortName,
-  title: () => `${mccFullName} Cluster`,
-};
-
-export const clusterView: Dict = {
-  infoPanel: {
-    viewInBrowser: () => 'View in browser',
+  menuItems: {
+    group: () => mccShortName,
+    overview: () => 'Overview',
+    performance: () => 'Performance',
+    events: () => 'Events',
+    details: () => 'Details',
+  },
+  pages: {
+    overview: {
+      title: () => `${mccFullName} Cluster`,
+      viewInBrowser: () => 'View in browser',
+    },
   },
 };
 
