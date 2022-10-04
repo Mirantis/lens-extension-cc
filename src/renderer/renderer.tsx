@@ -1,13 +1,17 @@
 import React from 'react';
 import { Renderer } from '@k8slens/extensions';
 import { GlobalPage } from './components/GlobalPage/GlobalPage';
-import {
-  ClusterPage,
-  ClusterPageIcon,
-} from './components/ClusterPage/ClusterPage';
+import { ContainerCloudIcon as ClusterPageIcon } from './components/ContainerCloudIcon';
+import { ClusterOverviewPage } from './components/ClusterPage/ClusterOverviewPage';
 import * as strings from '../strings';
 import * as consts from '../constants';
-import { ROUTE_GLOBAL_PAGE, ROUTE_CLUSTER_PAGE } from '../routes';
+import {
+  ROUTE_SYNC_VIEW,
+  ROUTE_CLUSTER_OVERVIEW,
+  ROUTE_CLUSTER_PERFORMANCE,
+  ROUTE_CLUSTER_EVENTS,
+  ROUTE_CLUSTER_DETAILS,
+} from '../routes';
 import {
   EXT_EVENT_OAUTH_CODE,
   EXT_EVENT_ACTIVATE_CLUSTER,
@@ -32,6 +36,7 @@ const {
 } = Renderer;
 
 const logger: any = loggerUtil; // get around TS compiler's complaining
+const CLUSTER_PAGE_ID = 'mcc-cluster-page';
 
 declare const FEAT_CLUSTER_PAGE_ENABLED: any; // TODO[clusterpage]: remove
 
@@ -42,7 +47,7 @@ export default class ExtensionRenderer extends LensExtension {
 
   globalPages = [
     {
-      id: ROUTE_GLOBAL_PAGE,
+      id: ROUTE_SYNC_VIEW,
       components: {
         Page: () => <GlobalPage />,
       },
@@ -53,9 +58,27 @@ export default class ExtensionRenderer extends LensExtension {
   //  depending on what the active entity is at the time
   clusterPages = [
     {
-      id: ROUTE_CLUSTER_PAGE,
+      id: ROUTE_CLUSTER_OVERVIEW,
       components: {
-        Page: () => <ClusterPage />,
+        Page: () => <ClusterOverviewPage />,
+      },
+    },
+    {
+      id: ROUTE_CLUSTER_PERFORMANCE,
+      components: {
+        Page: () => <p>PERFORMANCE</p>,
+      },
+    },
+    {
+      id: ROUTE_CLUSTER_EVENTS,
+      components: {
+        Page: () => <p>EVENTS</p>,
+      },
+    },
+    {
+      id: ROUTE_CLUSTER_DETAILS,
+      components: {
+        Page: () => <p>DETAILS</p>,
       },
     },
   ];
@@ -95,7 +118,7 @@ export default class ExtensionRenderer extends LensExtension {
     if (lensCluster) {
       Renderer.Navigation.navigate(`/cluster/${lensCluster.metadata.uid}`);
     } else {
-      this.navigate(ROUTE_GLOBAL_PAGE);
+      this.navigate(ROUTE_SYNC_VIEW);
       Notifications.error(
         strings.renderer.clusterActions.error.clusterNotFound(
           `${namespace}/${clusterName}`
@@ -209,17 +232,12 @@ export default class ExtensionRenderer extends LensExtension {
   public async isEnabledForCluster(
     cluster: KubernetesCluster
   ): Promise<boolean> {
-    // TODO[clusterpage]: remove flag
-    if (FEAT_CLUSTER_PAGE_ENABLED) {
-      const entity =
-        typeof cluster.metadata.id === 'string' // could also be an object for some reason
-          ? Renderer.Catalog.catalogEntities.getById(cluster.metadata.id)
-          : undefined;
+    const entity =
+      typeof cluster.metadata.uid === 'string' // could also be an object for some reason
+        ? Renderer.Catalog.catalogEntities.getById(cluster.metadata.uid)
+        : undefined;
 
-      return entity?.metadata.source === consts.catalog.source;
-    }
-
-    return false;
+    return entity?.metadata.source === consts.catalog.source;
   }
 
   //
@@ -285,21 +303,54 @@ export default class ExtensionRenderer extends LensExtension {
     //   one cluster page is visible and another is not: It's all or nothing, and
     //   must be done by overriding the `isEnabledForCluster(cluster)` method on
     //   this class.
+    // TODO[clusterpage]: remove flag
     if (FEAT_CLUSTER_PAGE_ENABLED) {
       this.clusterPageMenus = [
         {
-          target: { pageId: ROUTE_CLUSTER_PAGE },
-          title: strings.clusterPage.menuItem(),
+          id: CLUSTER_PAGE_ID,
+          title: strings.clusterPage.menuItems.group(),
           components: {
             Icon: () => (
               <ClusterPageIcon
                 size={20}
                 style={{
-                  marginLeft: 4,
-                  marginRight: 11,
+                  alignSelf: 'center',
+                  marginLeft: 1,
                 }}
               />
             ),
+          },
+        },
+        {
+          parentId: CLUSTER_PAGE_ID,
+          target: { pageId: ROUTE_CLUSTER_OVERVIEW },
+          title: strings.clusterPage.menuItems.overview(),
+          components: {
+            Icon: null,
+          },
+        },
+        {
+          parentId: CLUSTER_PAGE_ID,
+          target: { pageId: ROUTE_CLUSTER_PERFORMANCE },
+          title: strings.clusterPage.menuItems.performance(),
+          components: {
+            Icon: null,
+          },
+        },
+        {
+          parentId: CLUSTER_PAGE_ID,
+          target: { pageId: ROUTE_CLUSTER_EVENTS },
+          title: strings.clusterPage.menuItems.events(),
+          components: {
+            Icon: null,
+          },
+        },
+        {
+          parentId: CLUSTER_PAGE_ID,
+          target: { pageId: ROUTE_CLUSTER_DETAILS },
+          title: strings.clusterPage.menuItems.details(),
+          components: {
+            Icon: null,
           },
         },
       ];
