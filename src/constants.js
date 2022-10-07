@@ -1,4 +1,13 @@
+import process from 'process';
 import { deepFreeze } from './util/deepFreeze';
+
+// NOTE: there seems to be a bug with Webpack in that if we use optional chaining (`?.`)
+//  to make this statement more terse, it just removes the `?` instead of (1) leaving
+//  it there like it should (and does for the rest of the code everywhere), or (2)
+//  transpiling it to what we've explicitly used here to get around this issue
+export const skipTlsVerify =
+  process.env.LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS &&
+  process.env.LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS.match(/^(true|yes|1)$/);
 
 // maximum number of projects (inclusive), at which point the warning icon will appear
 //  about potential performance issues
