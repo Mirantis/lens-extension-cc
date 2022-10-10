@@ -4,6 +4,7 @@
 
 - Changed timestamp format in `Created at` and `Synced at` fields in all the "View details" entity panels.
 - Updated Mirantis Container Cloud icon.
+- Fixed bug where setting the [LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS](./README.md#self-signed-certificates) flag on the command line was not reflected in generated cluster kubeConfig files.
 
 ## v5.1.0
 

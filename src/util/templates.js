@@ -4,6 +4,17 @@
 
 import process from 'process';
 import path from 'path';
+import { logger } from './logger';
+import { skipTlsVerify } from '../constants';
+
+if (skipTlsVerify) {
+  // SECURITY: get around issues with Clouds that have self-signed certificates (typically used
+  //  for internal test Clouds of various kinds)
+  logger.warn(
+    'templates',
+    'Generated cluster kubeConfig files will skip TLS verification: Be careful!'
+  );
+}
 
 /**
  * @returns {string} The absolute path to the `kubelogin` binary for the current OS.
@@ -125,6 +136,7 @@ export const mkKubeConfig = function ({
                   `--oidc-issuer-url=${cluster.idpIssuerUrl}`,
                   `--oidc-client-id=${cluster.idpClientId}`,
                   `--certificate-authority-data=${cluster.idpCertificate}`,
+                  ...(skipTlsVerify ? ['--insecure-skip-tls-verify'] : []),
                 ],
               },
             },

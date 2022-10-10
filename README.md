@@ -191,6 +191,10 @@ By default, the extension does not support management clusters that use self-sig
 
 There are some legitimate reasons to use self-signed certificates, however, and it is possible to enable the extension to skip certificate verification by starting Lens from the command line with a special `LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS` flag, where values of `1`, `true`, or `yes` will enable self-signed certificate support.
 
+> ⚠️ Using this flag will also configure generated cluster kubeConfig files to skip TLS verification, and restarting Lens without the flag will not cause those kubeConfig files to be regenerated.
+>
+> To force all kubeConfigs to be regenerated with/without the setting, remove the project to which the cluster belongs from your sync settings, and re-add it. Removing the entire management cluster and re-adding it will also cause all kubeConfigs for all synced clusters belonging to it to be regenerated.
+
 __macOS__
 
 From a Terminal:
