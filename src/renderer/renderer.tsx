@@ -232,6 +232,10 @@ export default class ExtensionRenderer extends LensExtension {
   public async isEnabledForCluster(
     cluster: KubernetesCluster
   ): Promise<boolean> {
+    //
+    // NOTE: This hook is or will soon (6.y.z) be DEPRECATED. Follow
+    //  https://github.com/lensapp/lens/issues/4591#issuecomment-1275204032
+    //
     const entity =
       typeof cluster.metadata.uid === 'string' // could also be an object for some reason
         ? Renderer.Catalog.catalogEntities.getById(cluster.metadata.uid)
@@ -303,6 +307,12 @@ export default class ExtensionRenderer extends LensExtension {
     //   one cluster page is visible and another is not: It's all or nothing, and
     //   must be done by overriding the `isEnabledForCluster(cluster)` method on
     //   this class.
+    //
+    // NOTE: In some 6.y.z release, they introduced `Renderer.Catalog.activeCluster`
+    //  which we could use __instead of the `public async isEnabledForCluster()` hook__
+    //  (which should now be deprecated, I think). See
+    //  https://github.com/lensapp/lens/issues/4591#issuecomment-1275204032
+    //
     // TODO[clusterpage]: remove flag
     if (FEAT_CLUSTER_PAGE_ENABLED) {
       this.clusterPageMenus = [
