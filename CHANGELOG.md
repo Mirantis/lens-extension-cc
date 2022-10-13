@@ -1,6 +1,6 @@
 # ChangeLog
 
-## UNRELEASED
+## v5.2.0
 
 - Changed timestamp format in `Created at` and `Synced at` fields in all the "View details" entity panels.
 - Updated Mirantis Container Cloud icon.
