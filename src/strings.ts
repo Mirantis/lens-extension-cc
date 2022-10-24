@@ -206,6 +206,33 @@ export const clusterPage: Dict = {
     overview: {
       title: () => `${mccFullName} Cluster`,
       viewInBrowser: () => 'View in browser',
+      summary: {
+        title: () => 'Summary',
+        clusterName: () => 'Cluster name',
+        mccStatus: () => 'MCC Status',
+        syncTime: () => 'Sync time',
+        provider: () => 'Provider',
+        managementCluster: () => 'Management cluster',
+        isManagementCluster: (isMgmtCluster) => (isMgmtCluster ? 'Yes' : 'No'),
+        releaseVersion: () => 'Release version',
+        namespace: () => 'Namespace',
+        clusterUrl: () => 'Cluster URL',
+        clusterObjects: {
+          title: () => 'Cluster objects',
+          credentials: (count) => (count > 1 ? 'Credentials' : 'Credential'),
+          sshKeys: (count) => (count > 1 ? 'SSH keys' : 'SSH key'),
+          rhelLicenses: (count) =>
+            count > 1 ? 'RHEL licenses' : 'RHEL license',
+          proxies: (count) => (count > 1 ? 'Proxies' : 'Proxy'),
+        },
+      },
+      health: {
+        title: () => 'Health',
+      },
+      clusterConditions: {
+        title: () => 'Cluster Conditions',
+        noStatus: () => 'No status information available',
+      },
     },
   },
 };

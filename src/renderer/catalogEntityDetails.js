@@ -24,7 +24,7 @@ const {
   },
 } = strings;
 
-const getDateValue = (date) => {
+export const getDateValue = (date) => {
   const dateObj = new Date(date);
   return dateObj.getTime() === 0
     ? unknownValue()
