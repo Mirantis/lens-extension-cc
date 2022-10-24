@@ -380,6 +380,46 @@ export const clusterPage: Dict = {
         noStatus: () => 'No status information available',
       },
     },
+    details: {
+      generalInformation: {
+        title: () => 'General information',
+        name: () => 'Name',
+        kind: () => 'Kind',
+        source: () => 'Source',
+        status: catalog.entities.common.details.props.serverStatus,
+        lastSync: catalog.entities.common.details.props.lastSync,
+        labels: () => 'Labels',
+      },
+      kubernetesInformation: {
+        title: () => 'Kubernetes information',
+        distribution: () => 'Distribution',
+        kubeletVersion: () => 'Kubelet Version',
+      },
+      mirantisContainerCloud: {
+        title: () => 'Mirantis Container Cloud',
+        uid: catalog.entities.common.details.props.uid,
+        dateCreated: catalog.entities.common.details.props.dateCreated,
+        isManagementCluster:
+          catalog.entities.cluster.details.props.isManagementCluster,
+        managementCluster:
+          catalog.entities.cluster.details.props.managementCluster,
+        clusterUrl: () => 'Cluster URL',
+        region: catalog.entities.cluster.details.props.region,
+        provider: catalog.entities.cluster.details.props.provider,
+        release: catalog.entities.cluster.details.props.release,
+        managers: catalog.entities.cluster.details.props.managers,
+        workers: catalog.entities.cluster.details.props.workers,
+        mkeDashboard: catalog.entities.cluster.details.props.dashboardUrl,
+      },
+      mirantisStacklight: {
+        title: catalog.entities.cluster.details.props.lma,
+        alerta: catalog.entities.cluster.details.props.alertaUrl,
+        alertManager: catalog.entities.cluster.details.props.alertManagerUrl,
+        grafana: catalog.entities.cluster.details.props.grafanaUrl,
+        kibana: catalog.entities.cluster.details.props.kibanaUrl,
+        prometheus: catalog.entities.cluster.details.props.prometheusUrl,
+      },
+    },
   },
 };
 

@@ -3,15 +3,9 @@ import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
 import { layout } from '../../styles';
 import * as strings from '../../../../strings';
-import * as consts from '../../../../constants';
 import { formatDate } from '../../../rendererUtil';
-import { AwsIcon } from '../icons/AwsIcon';
-import { AzureIcon } from '../icons/AzureIcon';
-import { ByoIcon } from '../icons/ByoIcon';
-import { EquinixIcon } from '../icons/EquinixIcon';
-import { OpenstackIcon } from '../icons/OpenstackIcon';
-import { VsphereIcon } from '../icons/VsphereIcon';
 import { PanelTitle } from '../PanelTitle';
+import { getProvider } from '../helpers';
 
 const {
   Component: { DrawerItem, Icon },
@@ -66,76 +60,11 @@ const EntityWrapper = styled.div(() => ({
   minWidth: layout.grid * 32.5,
 }));
 
-const ProviderWrapper = styled.div(() => ({
-  display: 'flex',
-  alignItems: 'center',
-}));
-
 const ServerStatus = styled.p`
   color: var(--colorSuccess);
   color: ${({ isReady }) =>
     isReady ? 'var(--colorSuccess)' : 'var(--textColorPrimary)'};
 `;
-
-/**
- * Returns provider icon depends on it name.
- * @param {string} provider Provider name.
- * @returns {HTMLElement} Provider icon.
- */
-const getProvider = (provider) => {
-  switch (provider) {
-    case consts.providerTypes.AWS:
-      return (
-        <ProviderWrapper>
-          <IconWrapper>
-            <AwsIcon size={28} fill="var(--textColorPrimary)" />
-          </IconWrapper>
-        </ProviderWrapper>
-      );
-    case consts.providerTypes.AZURE:
-      return (
-        <ProviderWrapper>
-          <IconWrapper>
-            <AzureIcon size={19} fill="var(--textColorPrimary)" />
-          </IconWrapper>
-        </ProviderWrapper>
-      );
-    case consts.providerTypes.BYO:
-      return (
-        <ProviderWrapper>
-          <IconWrapper>
-            <ByoIcon size={30} fill="var(--textColorPrimary)" />
-          </IconWrapper>
-        </ProviderWrapper>
-      );
-    case consts.providerTypes.EQUINIX:
-      return (
-        <ProviderWrapper>
-          <IconWrapper>
-            <EquinixIcon size={28} fill="var(--textColorPrimary)" />
-          </IconWrapper>
-        </ProviderWrapper>
-      );
-    case consts.providerTypes.OPENSTACK:
-      return (
-        <ProviderWrapper>
-          <IconWrapper>
-            <OpenstackIcon size={20} fill="var(--textColorPrimary)" />
-          </IconWrapper>
-        </ProviderWrapper>
-      );
-    case consts.providerTypes.VSPHERE:
-      return (
-        <ProviderWrapper>
-          <IconWrapper>
-            <VsphereIcon size={43} fill="var(--textColorPrimary)" />
-          </IconWrapper>
-        </ProviderWrapper>
-      );
-    default:
-      return unknownValue();
-  }
-};
 
 /**
  * Get string of entity labels and returns count of them
