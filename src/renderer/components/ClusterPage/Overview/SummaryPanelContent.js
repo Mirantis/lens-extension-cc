@@ -40,10 +40,6 @@ const ValueCell = styled.td(() => ({
   verticalAlign: 'top',
 }));
 
-const MccStatus = styled.p(() => ({
-  color: 'var(--colorSuccess)',
-}));
-
 const ClusterLink = styled.a(() => ({
   color: 'var(--primary)',
 }));
@@ -64,6 +60,12 @@ const ProviderWrapper = styled.span(() => ({
   display: 'flex',
   alignItems: 'center',
 }));
+
+const MccStatus = styled.p`
+  color: var(--colorSuccess);
+  color: ${({ isReady }) =>
+    isReady ? 'var(--colorSuccess)' : 'var(--textColorPrimary)'};
+`;
 
 export const SummaryPanelContent = ({ clusterEntity }) => {
   //
@@ -165,7 +167,9 @@ export const SummaryPanelContent = ({ clusterEntity }) => {
             {strings.clusterPage.pages.overview.summary.mccStatus()}
           </LabelCell>
           <ValueCell>
-            <MccStatus>{clusterEntity.status.phase}</MccStatus>
+            <MccStatus isReady={clusterEntity.spec.apiStatus === 'Ready'}>
+              {clusterEntity.spec.apiStatus}
+            </MccStatus>
           </ValueCell>
         </TableRow>
         <TableRow>
