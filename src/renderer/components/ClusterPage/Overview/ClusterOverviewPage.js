@@ -11,7 +11,6 @@ import { layout, mixinPageStyles } from '../../styles';
 import { logger } from '../../../../util/logger';
 import { clusterEntityModelTs } from '../../../../catalog/catalogEntities';
 import { SummaryPanelContent } from './SummaryPanelContent';
-import { ClusterConditionsPanelContent } from './ClusterConditionsPanelContent';
 
 //
 // INTERNAL STYLED COMPONENTS
@@ -26,6 +25,7 @@ const PageContainer = styled.div(() => ({
 const PagePanel = styled.div(() => ({
   width: '100%',
   backgroundColor: 'var(--contentColor)',
+  marginBottom: layout.grid * 5,
 }));
 
 const PagePanelHead = styled.div(() => ({
@@ -70,18 +70,6 @@ export const ClusterOverviewPage = function () {
   DEV_ENV && rtv.verify(clusterEntity, clusterEntityModelTs);
 
   //
-  // STATE
-  //
-
-  //
-  // EVENTS
-  //
-
-  //
-  // EFFECTS
-  //
-
-  //
   // RENDER
   //
 
@@ -93,17 +81,6 @@ export const ClusterOverviewPage = function () {
         </PagePanelHead>
         <PagePanelBody>
           <SummaryPanelContent clusterEntity={clusterEntity} />
-        </PagePanelBody>
-      </PagePanel>
-
-      <PagePanel>
-        <PagePanelHead>
-          <h2>
-            {strings.clusterPage.pages.overview.clusterConditions.title()}
-          </h2>
-        </PagePanelHead>
-        <PagePanelBody>
-          <ClusterConditionsPanelContent />
         </PagePanelBody>
       </PagePanel>
     </PageContainer>

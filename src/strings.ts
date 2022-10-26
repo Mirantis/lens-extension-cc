@@ -226,10 +226,6 @@ export const clusterPage: Dict = {
           proxies: (count) => (count > 1 ? 'Proxies' : 'Proxy'),
         },
       },
-      clusterConditions: {
-        title: () => 'Cluster Conditions',
-        noStatus: () => 'No status information available',
-      },
     },
   },
 };
