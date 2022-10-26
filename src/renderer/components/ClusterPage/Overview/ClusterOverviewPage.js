@@ -5,11 +5,12 @@
 import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
 import * as rtv from 'rtvjs';
+import * as strings from '../../../../strings';
 import * as consts from '../../../../constants';
-import { mixinPageStyles } from '../../styles';
+import { layout, mixinPageStyles } from '../../styles';
 import { logger } from '../../../../util/logger';
 import { clusterEntityModelTs } from '../../../../catalog/catalogEntities';
-import { SummaryPanel } from './SummaryPanel';
+import { ClusterConditionsPanelContent } from './ClusterConditionsPanelContent';
 
 //
 // INTERNAL STYLED COMPONENTS
@@ -19,6 +20,26 @@ const PageContainer = styled.div(() => ({
   ...mixinPageStyles(),
   display: 'flex',
   flexDirection: 'column',
+}));
+
+const PagePanel = styled.div(() => ({
+  width: '100%',
+  backgroundColor: 'var(--contentColor)',
+  marginBottom: layout.grid * 5,
+}));
+
+const PagePanelHead = styled.div(() => ({
+  backgroundColor: 'var(--drawerSubtitleBackground)',
+  paddingTop: layout.grid * 3.5,
+  paddingBottom: layout.grid * 3.5,
+  paddingLeft: layout.grid * 6,
+  paddingRight: layout.grid * 6,
+}));
+
+const PagePanelBody = styled.div(() => ({
+  paddingBottom: layout.grid * 6,
+  paddingLeft: layout.grid * 6,
+  paddingRight: layout.grid * 6,
 }));
 
 //
@@ -54,7 +75,18 @@ export const ClusterOverviewPage = function () {
 
   return (
     <PageContainer>
-      <SummaryPanel clusterEntity={clusterEntity} />
+      <PagePanel>
+        <PagePanelHead>
+          <h2>
+            {strings.clusterPage.pages.overview.clusterConditions.title()}
+          </h2>
+        </PagePanelHead>
+        <PagePanelBody>
+          <ClusterConditionsPanelContent
+            conditions={clusterEntity.status.providerStatus?.conditions || []}
+          />
+        </PagePanelBody>
+      </PagePanel>
     </PageContainer>
   );
 };
