@@ -23,27 +23,6 @@ const PageContainer = styled.div(() => ({
   flexDirection: 'column',
 }));
 
-const PanelsWrapper = styled.div(() => ({
-  display: 'flex',
-  flexWrap: 'wrap',
-  marginLeft: -(layout.grid * 1.5),
-  marginRight: -(layout.grid * 1.5),
-}));
-
-const HalfWidthPanelWrapper = styled.div(() => ({
-  width: '50%',
-  paddingLeft: layout.grid * 1.5,
-  paddingRight: layout.grid * 1.5,
-  paddingBottom: layout.grid * 5,
-}));
-
-const FullWidthPanelWrapper = styled.div(() => ({
-  width: '100%',
-  paddingLeft: layout.grid * 1.5,
-  paddingRight: layout.grid * 1.5,
-  paddingBottom: layout.grid * 5,
-}));
-
 const PagePanel = styled.div(() => ({
   width: '100%',
   backgroundColor: 'var(--contentColor)',
@@ -108,42 +87,25 @@ export const ClusterOverviewPage = function () {
 
   return (
     <PageContainer>
-      <PanelsWrapper>
-        <HalfWidthPanelWrapper>
-          <PagePanel>
-            <PagePanelHead>
-              <h2>{strings.clusterPage.pages.overview.summary.title()}</h2>
-            </PagePanelHead>
-            <PagePanelBody>
-              <SummaryPanelContent clusterEntity={clusterEntity} />
-            </PagePanelBody>
-          </PagePanel>
-        </HalfWidthPanelWrapper>
+      <PagePanel>
+        <PagePanelHead>
+          <h2>{strings.clusterPage.pages.overview.summary.title()}</h2>
+        </PagePanelHead>
+        <PagePanelBody>
+          <SummaryPanelContent clusterEntity={clusterEntity} />
+        </PagePanelBody>
+      </PagePanel>
 
-        <HalfWidthPanelWrapper>
-          <PagePanel>
-            <PagePanelHead>
-              <h2>{strings.clusterPage.pages.overview.health.title()}</h2>
-            </PagePanelHead>
-            <PagePanelBody>
-              <div>HEALTH PLACEHOLDER</div>
-            </PagePanelBody>
-          </PagePanel>
-        </HalfWidthPanelWrapper>
-
-        <FullWidthPanelWrapper>
-          <PagePanel>
-            <PagePanelHead>
-              <h2>
-                {strings.clusterPage.pages.overview.clusterConditions.title()}
-              </h2>
-            </PagePanelHead>
-            <PagePanelBody>
-              <ClusterConditionsPanelContent />
-            </PagePanelBody>
-          </PagePanel>
-        </FullWidthPanelWrapper>
-      </PanelsWrapper>
+      <PagePanel>
+        <PagePanelHead>
+          <h2>
+            {strings.clusterPage.pages.overview.clusterConditions.title()}
+          </h2>
+        </PagePanelHead>
+        <PagePanelBody>
+          <ClusterConditionsPanelContent />
+        </PagePanelBody>
+      </PagePanel>
     </PageContainer>
   );
 };
