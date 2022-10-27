@@ -10,7 +10,11 @@ import * as consts from '../../../../constants';
 import { layout, mixinPageStyles } from '../../styles';
 import { logger } from '../../../../util/logger';
 import { clusterEntityModelTs } from '../../../../catalog/catalogEntities';
-import { ClusterConditionsPanelContent } from './ClusterConditionsPanelContent';
+import { ClusterConditionsPanel } from './ClusterConditionsPanel';
+
+const {
+  Component: { DrawerTitle },
+} = Renderer;
 
 //
 // INTERNAL STYLED COMPONENTS
@@ -22,24 +26,11 @@ const PageContainer = styled.div(() => ({
   flexDirection: 'column',
 }));
 
-const PagePanel = styled.div(() => ({
-  width: '100%',
-  backgroundColor: 'var(--contentColor)',
-  marginBottom: layout.grid * 5,
-}));
-
-const PagePanelHead = styled.div(() => ({
-  backgroundColor: 'var(--drawerSubtitleBackground)',
-  paddingTop: layout.grid * 3.5,
-  paddingBottom: layout.grid * 3.5,
-  paddingLeft: layout.grid * 6,
-  paddingRight: layout.grid * 6,
-}));
-
-const PagePanelBody = styled.div(() => ({
-  paddingBottom: layout.grid * 6,
-  paddingLeft: layout.grid * 6,
-  paddingRight: layout.grid * 6,
+const DrawerTitleWrapper = styled.div(() => ({
+  paddingLeft: layout.pad * 3,
+  paddingRight: layout.pad * 3,
+  marginTop: -layout.pad * 3,
+  marginBottom: -layout.pad * 3,
 }));
 
 //
@@ -75,18 +66,15 @@ export const ClusterOverviewPage = function () {
 
   return (
     <PageContainer>
-      <PagePanel>
-        <PagePanelHead>
-          <h2>
-            {strings.clusterPage.pages.overview.clusterConditions.title()}
-          </h2>
-        </PagePanelHead>
-        <PagePanelBody>
-          <ClusterConditionsPanelContent
-            conditions={clusterEntity.status.providerStatus?.conditions || []}
-          />
-        </PagePanelBody>
-      </PagePanel>
+      <DrawerTitleWrapper>
+        <DrawerTitle>
+          {strings.clusterPage.pages.overview.clusterConditions.title()}
+        </DrawerTitle>
+      </DrawerTitleWrapper>
+
+      <ClusterConditionsPanel
+        conditions={clusterEntity.status.providerStatus?.conditions || []}
+      />
     </PageContainer>
   );
 };
