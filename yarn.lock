@@ -1174,7 +1174,7 @@
     source-map "^0.5.7"
     stylis "4.1.3"
 
-"@emotion/cache@^11.10.0", "@emotion/cache@^11.10.5", "@emotion/cache@^11.4.0":
+"@emotion/cache@^11.10.5", "@emotion/cache@^11.4.0":
   version "11.10.5"
   resolved "https://registry.yarnpkg.com/@emotion/cache/-/cache-11.10.5.tgz#c142da9351f94e47527ed458f7bbbbe40bb13c12"
   integrity sha512-dGYHWyzTdmK+f2+EnIGBpkz1lKc4Zbj2KHd4cX3Wi8/OWr5pKslNjc3yABKH4adRGCvSX4VDC0i04mrrq0aiRA==
@@ -1190,13 +1190,13 @@
   resolved "https://registry.yarnpkg.com/@emotion/core/-/core-11.0.0.tgz#d075867e07864119de7cfd5268c15012bd2d6290"
   integrity sha512-w4sE3AmHmyG6RDKf6mIbtHpgJUSJ2uGvPQb8VXFL7hFjMPibE8IiehG8cMX3Ztm4svfCQV6KqusQbeIOkurBcA==
 
-"@emotion/css-prettifier@^1.1.0":
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/@emotion/css-prettifier/-/css-prettifier-1.1.0.tgz#1b5ac1588af9525e583f56fa898abb7edb3c7d9e"
-  integrity sha512-ALZCKBcpC9FeA0D6HLc4Et3bwY06fOG63CqLtWwk4W/u7+bWjorRxS9yikcJ2aTmlKur/ST9eWm5ohzBmWlTOQ==
+"@emotion/css-prettifier@^1.1.1":
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/@emotion/css-prettifier/-/css-prettifier-1.1.1.tgz#87f3104c057a55674ff464f9c4fdf7326847f0ea"
+  integrity sha512-dtiZLNN3dWP0mo/+VTPkzNrjp1wL6VRHOOSMn3XpQM4D/7xOVHEIQR6lT5Yj5Omun1REog5NFZ+5hxj+LtTIyQ==
   dependencies:
     "@emotion/memoize" "^0.8.0"
-    stylis "4.0.13"
+    stylis "4.1.3"
 
 "@emotion/css@^11.10.5":
   version "11.10.5"
@@ -1226,16 +1226,16 @@
   dependencies:
     "@emotion/memoize" "^0.8.0"
 
-"@emotion/jest@^11.10.0":
-  version "11.10.0"
-  resolved "https://registry.yarnpkg.com/@emotion/jest/-/jest-11.10.0.tgz#a39c16d0a5794254e0e4c5caf3f11278a64ae4a4"
-  integrity sha512-jeevEzauWrjDPWt9BGITjKzgLd31Q6kZ35gmH77f+LSaU/Ie1bFfxroum0nQNPEHS+kUxh6unv9DQIw+DEr5Ug==
+"@emotion/jest@^11.10.5":
+  version "11.10.5"
+  resolved "https://registry.yarnpkg.com/@emotion/jest/-/jest-11.10.5.tgz#6aea1aec38e1c59e675702fa877644a6b1c18d05"
+  integrity sha512-LagosxybgisPlxfBGas9kGcNB5xTTX125WbjEVZiE3MEbb+dI4UYn0XIzrsilR8nUaQ5lH6yKUFrMmz7kB34vg==
   dependencies:
     "@babel/runtime" "^7.18.3"
-    "@emotion/css-prettifier" "^1.1.0"
+    "@emotion/css-prettifier" "^1.1.1"
     chalk "^4.1.0"
     specificity "^0.4.1"
-    stylis "4.0.13"
+    stylis "4.1.3"
 
 "@emotion/memoize@^0.8.0":
   version "0.8.0"
@@ -1266,11 +1266,6 @@
     "@emotion/unitless" "^0.8.0"
     "@emotion/utils" "^1.2.0"
     csstype "^3.0.2"
-
-"@emotion/sheet@^1.2.1":
-  version "1.2.1"
-  resolved "https://registry.yarnpkg.com/@emotion/sheet/-/sheet-1.2.1.tgz#0767e0305230e894897cadb6c8df2c51e61a6c2c"
-  integrity sha512-zxRBwl93sHMsOj4zs+OslQKg/uhF38MB+OMKoCrVuS0nyTkqnau+BM3WGEoOptg9Oz45T/aIGs1qbVAsEFo3nA==
 
 "@emotion/sheet@^1.2.1":
   version "1.2.1"
@@ -6280,11 +6275,6 @@ strip-json-comments@^3.1.0, strip-json-comments@^3.1.1:
   version "3.1.1"
   resolved "https://registry.yarnpkg.com/strip-json-comments/-/strip-json-comments-3.1.1.tgz#31f1281b3832630434831c310c01cccda8cbe006"
   integrity sha512-6fPc+R4ihwqP6N/aIv2f1gMH8lOVtWQHoqC4yK6oSDVVocumAsfCqjkXnqiYMhmMwS/mEHLp7Vehlt3ql6lEig==
-
-stylis@4.0.13:
-  version "4.0.13"
-  resolved "https://registry.yarnpkg.com/stylis/-/stylis-4.0.13.tgz#f5db332e376d13cc84ecfe5dace9a2a51d954c91"
-  integrity sha512-xGPXiFVl4YED9Jh7Euv2V220mriG9u4B2TA6Ybjc1catrstKD2PpIdU3U0RKpkVBC2EhmL/F0sPCr9vrFTNRag==
 
 stylis@4.1.3:
   version "4.1.3"
