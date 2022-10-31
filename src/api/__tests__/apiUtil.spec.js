@@ -10,6 +10,7 @@ const REFRESH_TOKENS = {
 };
 
 const testErrorMessage = 'error-message';
+const testSuccessBodyMessage = 'success';
 
 jest.mock('../../common/Cloud');
 jest.mock('../clients/ApiClient', () => {
@@ -18,7 +19,9 @@ jest.mock('../clients/ApiClient', () => {
   const ApiClient = class {
     refreshToken(refreshToken) {
       return Promise.resolve({
-        responce: {},
+        response: {
+          status: refreshToken === REFRESH_TOKENS.VALID ? 200 : 400,
+        },
         body: '',
         error: refreshToken === REFRESH_TOKENS.VALID ? '' : testErrorMessage,
       });
@@ -34,6 +37,28 @@ jest.mock('../clients/ApiClient', () => {
   return {
     ...original,
     ApiClient,
+  };
+});
+jest.mock('../clients/ResourceClient', () => {
+  const original = jest.requireActual('../clients/ResourceClient');
+
+  const ResourceClient = class {
+    list(resourceType) {
+      return Promise.resolve({
+        response: {
+          status: resourceType === 'vspherecredentials' ? 401 : 200,
+        },
+        error: resourceType === 'byocredentials' ? testErrorMessage : '',
+        body:
+          resourceType === 'vspherecredentials' ? '' : testSuccessBodyMessage,
+        url: '',
+      });
+    }
+  };
+
+  return {
+    ...original,
+    ResourceClient,
   };
 });
 
@@ -53,7 +78,7 @@ describe('/api/apiUtil', () => {
       refreshToken: REFRESH_TOKENS.VALID,
     });
 
-    // mockConsole(['log', 'info', 'warn', 'error']); // automatically restored after each test
+    mockConsole(['log', 'info', 'warn', 'error']); // automatically restored after each test
   });
 
   describe('extractJwtPayload()', () => {
@@ -66,8 +91,8 @@ describe('/api/apiUtil', () => {
 
     it('returns a JSON object if token provided', () => {
       expect(apiUtil.extractJwtPayload(testToken)).toMatchObject({
-        'foo': 123
-      })
+        foo: 123,
+      });
     });
   });
 
@@ -126,7 +151,6 @@ describe('/api/apiUtil', () => {
 
   describe('cloudRequest()', () => {
     let fakeCloudWithoutToken;
-    let fakeCloudWithToken;
     let fakeCloud;
 
     beforeEach(() => {
@@ -138,25 +162,6 @@ describe('/api/apiUtil', () => {
         cloudUrl: cloudUrl,
         __mockStatus: 'connected',
       });
-
-      fakeCloudWithToken = new Cloud({
-        cloudUrl: cloudUrl,
-        // token: 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjEsImlhdCI6MSwiYXV0aF90aW1lIjoxLCJqdGkiOiIxIiwiaXNzIjoiaHR0cHM6Ly90ZXN0LmNvbSIsImF1ZCI6InRlc3QiLCJzdWIiOiIxIiwidHlwIjoiSUQiLCJhenAiOiJ0ZXN0Iiwic2Vzc2lvbl9zdGF0ZSI6IjEiLCJhdF9oYXNoIjoiMSIsInNpZCI6IjEiLCJpYW1fcm9sZXMiOlsidDp0ZXN0OnRlc3RAdGVzdCJdLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsIm5hbWUiOiJOYW1lIFN1cm5hbWUiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJ0ZXN0QHRlc3QuY29tIiwiZ2l2ZW5fbmFtZSI6Ik5hbWUiLCJmYW1pbHlfbmFtZSI6IlN1cm5hbWUiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20ifQ.4frPaY8SIQnnew63eolalhYgoZEFI4jYwAGJs0tGwHI',
-        namespaces: [
-          {
-            cloudUrl: 'http://foo.com',
-            clusterCount: 4,
-            credentialCount: 4,
-            licenseCount: 1,
-            machineCount: 12,
-            name: 'default',
-            proxyCount: 0,
-            sshKeyCount: 2,
-            synced: true,
-          },
-        ],
-        __mockStatus: 'connected',
-      });
     });
 
     describe('errors', () => {
@@ -164,7 +169,7 @@ describe('/api/apiUtil', () => {
         const result = await apiUtil.cloudRequest({
           cloud: fakeCloudWithoutToken,
           method: 'list',
-          resourceType: apiResourceTypes.NAMESPACE,
+          resourceType: apiResourceTypes.AWS_CREDENTIAL,
         });
 
         expect(result.error).toBe(strings.apiUtil.error.noTokens());
@@ -183,19 +188,39 @@ describe('/api/apiUtil', () => {
           strings.apiUtil.error.invalidResourceType(invalidResourceType)
         );
       });
+
+      it('triggers an error when token is expired', async () => {
+        const result = await apiUtil.cloudRequest({
+          cloud: fakeCloud,
+          method: 'list',
+          resourceType: apiResourceTypes.VSPHERE_CREDENTIAL,
+        });
+
+        expect(result.status).toBe(401);
+      });
     });
 
     describe('successes', () => {
-      it('makes an authenticated request using the given Cloud', async () => {
+      it('makes an authenticated request using the given Cloud, error is |empty|', async () => {
         const result = await apiUtil.cloudRequest({
-          cloud: fakeCloudWithToken,
+          cloud: fakeCloud,
           method: 'list',
-          resourceType: apiResourceTypes.NAMESPACE,
+          resourceType: apiResourceTypes.AWS_CREDENTIAL,
         });
 
-        console.log(result);
+        expect(result.body).toBe(testSuccessBodyMessage);
+        expect(result.error).toBe('');
+      });
 
-        // expect(Object.keys(result)).toHaveLength(7);
+      it('makes an authenticated request using the given Cloud, error is |not empty|', async () => {
+        const result = await apiUtil.cloudRequest({
+          cloud: fakeCloud,
+          method: 'list',
+          resourceType: apiResourceTypes.BYO_CREDENTIAL,
+        });
+
+        expect(result.body).toBe(testSuccessBodyMessage);
+        expect(result.error).toBe(testErrorMessage);
       });
     });
   });
