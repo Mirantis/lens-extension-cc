@@ -3,8 +3,7 @@ import propTypes from 'prop-types';
 export const ByoIcon = function ({ size, fill, ...svgProps }) {
   return (
     <svg
-      width={size * 2.5}
-      height={size}
+      width={size}
       viewBox="0 0 20 8"
       fill="none"
       style={{ ...svgProps?.style }}

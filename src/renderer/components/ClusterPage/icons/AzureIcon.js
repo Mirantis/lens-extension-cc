@@ -3,8 +3,7 @@ import propTypes from 'prop-types';
 export const AzureIcon = function ({ size, fill, ...svgProps }) {
   return (
     <svg
-      width={size * 1.07}
-      height={size}
+      width={size}
       viewBox="0 0 14 13"
       fill="none"
       style={{ ...svgProps?.style }}

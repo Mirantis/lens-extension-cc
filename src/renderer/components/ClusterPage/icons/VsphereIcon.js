@@ -3,8 +3,7 @@ import propTypes from 'prop-types';
 export const VsphereIcon = function ({ size, fill, ...svgProps }) {
   return (
     <svg
-      width={size * 5.43}
-      height={size}
+      width={size}
       viewBox="0 0 38 7"
       fill="none"
       style={{ ...svgProps?.style }}

@@ -4,7 +4,6 @@ export const OpenstackIcon = function ({ size, fill, ...svgProps }) {
   return (
     <svg
       width={size}
-      height={size}
       viewBox="0 0 14 14"
       fill="none"
       style={{ ...svgProps?.style }}

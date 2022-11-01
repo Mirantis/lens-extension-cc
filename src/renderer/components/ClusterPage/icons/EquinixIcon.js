@@ -3,8 +3,7 @@ import propTypes from 'prop-types';
 export const EquinixIcon = function ({ size, fill, ...svgProps }) {
   return (
     <svg
-      width={size * 1.54}
-      height={size}
+      width={size}
       viewBox="0 0 20 13"
       fill="none"
       style={{ ...svgProps?.style }}

@@ -219,11 +219,11 @@ export const clusterPage: Dict = {
         clusterUrl: () => 'Cluster URL',
         clusterObjects: {
           title: () => 'Cluster objects',
-          credentials: (count) => (count > 1 ? 'Credentials' : 'Credential'),
-          sshKeys: (count) => (count > 1 ? 'SSH keys' : 'SSH key'),
+          credentials: (count) => (count === 1 ? 'Credential' : 'Credentials'),
+          sshKeys: (count) => (count === 1 ? 'SSH key' : 'SSH keys'),
           rhelLicenses: (count) =>
-            count > 1 ? 'RHEL licenses' : 'RHEL license',
-          proxies: (count) => (count > 1 ? 'Proxies' : 'Proxy'),
+            count === 1 ? 'RHEL license' : 'RHEL licenses',
+          proxies: (count) => (count === 1 ? 'Proxy' : 'Proxies'),
         },
       },
     },

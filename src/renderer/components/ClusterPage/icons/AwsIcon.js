@@ -3,8 +3,7 @@ import propTypes from 'prop-types';
 export const AwsIcon = function ({ size, fill, ...svgProps }) {
   return (
     <svg
-      width={size * 1.66}
-      height={size}
+      width={size}
       viewBox="0 0 20 12"
       fill="none"
       style={{ ...svgProps?.style }}

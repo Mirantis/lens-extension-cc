@@ -4,7 +4,7 @@ import { Renderer } from '@k8slens/extensions';
 import { layout } from '../../styles';
 import * as strings from '../../../../strings';
 import * as consts from '../../../../constants';
-import { getDateValue } from '../../../catalogEntityDetails';
+import { formatDate } from '../../../rendererUtil';
 import { AwsIcon } from '../icons/AwsIcon';
 import { AzureIcon } from '../icons/AzureIcon';
 import { ByoIcon } from '../icons/ByoIcon';
@@ -58,11 +58,11 @@ const IconWrapper = styled.span(() => ({
   marginRight: layout.grid * 3,
 }));
 
-const EntityCell = styled.td(() => ({
-  display: 'flex',
+const EntityWrapper = styled.span(() => ({
+  display: 'inline-flex',
   alignItems: 'center',
   marginRight: layout.grid * 3.5,
-  minWidth: layout.grid * 30,
+  minWidth: layout.grid * 32.5,
 }));
 
 const ProviderWrapper = styled.span(() => ({
@@ -76,86 +76,76 @@ const MccStatus = styled.p`
     isReady ? 'var(--colorSuccess)' : 'var(--textColorPrimary)'};
 `;
 
+/**
+ * Returns provider icon depends on it name.
+ * @param {string} provider Provider name.
+ * @returns {HTMLElement} Provider icon.
+ */
+const getProvider = (provider) => {
+  switch (provider) {
+    case consts.providerTypes.AWS:
+      return (
+        <ProviderWrapper>
+          <IconWrapper>
+            <AwsIcon size={28} fill="var(--textColorPrimary)" />
+          </IconWrapper>
+        </ProviderWrapper>
+      );
+    case consts.providerTypes.AZURE:
+      return (
+        <ProviderWrapper>
+          <IconWrapper>
+            <AzureIcon size={19} fill="var(--textColorPrimary)" />
+          </IconWrapper>
+        </ProviderWrapper>
+      );
+    case consts.providerTypes.BYO:
+      return (
+        <ProviderWrapper>
+          <IconWrapper>
+            <ByoIcon size={30} fill="var(--textColorPrimary)" />
+          </IconWrapper>
+        </ProviderWrapper>
+      );
+    case consts.providerTypes.EQUINIX:
+      return (
+        <ProviderWrapper>
+          <IconWrapper>
+            <EquinixIcon size={28} fill="var(--textColorPrimary)" />
+          </IconWrapper>
+        </ProviderWrapper>
+      );
+    case consts.providerTypes.OPENSTACK:
+      return (
+        <ProviderWrapper>
+          <IconWrapper>
+            <OpenstackIcon size={20} fill="var(--textColorPrimary)" />
+          </IconWrapper>
+        </ProviderWrapper>
+      );
+    case consts.providerTypes.VSPHERE:
+      return (
+        <ProviderWrapper>
+          <IconWrapper>
+            <VsphereIcon size={43} fill="var(--textColorPrimary)" />
+          </IconWrapper>
+        </ProviderWrapper>
+      );
+    default:
+      return unknownValue();
+  }
+};
+
+/**
+ * Get string of entity labels and returns count of them
+ * @param {string} clusterLabels Cluster labels.
+ * @returns {string} String with count of entity labels.
+ */
+const getClusterLabelsCount = (clusterLabels) => {
+  return clusterLabels ? `${clusterLabels.split(',').length} ` : '0 ';
+};
+
 export const SummaryPanel = ({ clusterEntity }) => {
-  //
-  // EVENTS
-  //
-
-  /**
-   * Returns provider icon with it name.
-   * @param {string} provider Provider name.
-   * @returns {HTMLElement} Provider info, including icon and name.
-   */
-  const getProvider = (provider) => {
-    switch (provider) {
-      case consts.providerTypes.AWS:
-        return (
-          <ProviderWrapper>
-            <IconWrapper>
-              <AwsIcon size={17} fill="var(--textColorPrimary)" />
-            </IconWrapper>
-            {provider}
-          </ProviderWrapper>
-        );
-      case consts.providerTypes.AZURE:
-        return (
-          <ProviderWrapper>
-            <IconWrapper>
-              <AzureIcon size={18} fill="var(--textColorPrimary)" />
-            </IconWrapper>
-            {provider}
-          </ProviderWrapper>
-        );
-      case consts.providerTypes.BYO:
-        return (
-          <ProviderWrapper>
-            <IconWrapper>
-              <ByoIcon size={12} fill="var(--textColorPrimary)" />
-            </IconWrapper>
-            {provider}
-          </ProviderWrapper>
-        );
-      case consts.providerTypes.EQUINIX:
-        return (
-          <ProviderWrapper>
-            <IconWrapper>
-              <EquinixIcon size={18} fill="var(--textColorPrimary)" />
-            </IconWrapper>
-            {provider}
-          </ProviderWrapper>
-        );
-      case consts.providerTypes.OPENSTACK:
-        return (
-          <ProviderWrapper>
-            <IconWrapper>
-              <OpenstackIcon size={20} fill="var(--textColorPrimary)" />
-            </IconWrapper>
-            {provider}
-          </ProviderWrapper>
-        );
-      case consts.providerTypes.VSPHERE:
-        return (
-          <ProviderWrapper>
-            <IconWrapper>
-              <VsphereIcon size={8} fill="var(--textColorPrimary)" />
-            </IconWrapper>
-            {provider}
-          </ProviderWrapper>
-        );
-      default:
-        return <>{strings.catalog.entities.common.details.unknownValue()}</>;
-    }
-  };
-
-  /**
-   * Get string of entity labels and returns count of them
-   * @param {string} clusterLabels Cluster labels.
-   * @returns {string} String with count of entity labels.
-   */
-  const getClusterLabelsCount = (clusterLabels) => {
-    return clusterLabels ? `${clusterLabels.split(',').length} ` : '0 ';
-  };
-
   //
   // RENDER
   //
@@ -190,9 +180,7 @@ export const SummaryPanel = ({ clusterEntity }) => {
         <DrawerItem
           name={strings.clusterPage.pages.overview.summary.syncTime()}
         >
-          {clusterEntity.metadata.syncedAt
-            ? getDateValue(clusterEntity.metadata.syncedAt)
-            : unknownValue()}
+          {formatDate(clusterEntity.metadata.syncedAt)}
         </DrawerItem>
         <DrawerItem
           name={strings.clusterPage.pages.overview.summary.provider()}
@@ -233,24 +221,20 @@ export const SummaryPanel = ({ clusterEntity }) => {
           name={strings.clusterPage.pages.overview.summary.clusterObjects.title()}
         >
           {!clusterEntity.spec.isMgmtCluster ? (
-            <table>
-              <tbody>
-                <tr>
-                  <EntityCell>
-                    <IconWrapper>
-                      <Icon material="verified_user" />
-                    </IconWrapper>
-                    {strings.clusterPage.pages.overview.summary.clusterObjects.credentials(
-                      getClusterLabelsCount(
-                        clusterEntity.metadata.labels['credential']
-                      )
-                    )}
-                    :
-                  </EntityCell>
-                  <td>{clusterEntity.metadata.labels['credential'] || '--'}</td>
-                </tr>
-              </tbody>
-            </table>
+            <div>
+              <EntityWrapper>
+                <IconWrapper>
+                  <Icon material="verified_user" />
+                </IconWrapper>
+                {strings.clusterPage.pages.overview.summary.clusterObjects.credentials(
+                  getClusterLabelsCount(
+                    clusterEntity.metadata.labels['credential']
+                  )
+                )}
+                :
+              </EntityWrapper>
+              <span>{clusterEntity.metadata.labels['credential'] || '--'}</span>
+            </div>
           ) : (
             <>
               <IconWrapper>
@@ -269,24 +253,20 @@ export const SummaryPanel = ({ clusterEntity }) => {
         </DrawerItem>
         <DrawerItem>
           {!clusterEntity.spec.isMgmtCluster ? (
-            <table>
-              <tbody>
-                <tr>
-                  <EntityCell>
-                    <IconWrapper>
-                      <Icon material="vpn_key" />
-                    </IconWrapper>
-                    {strings.clusterPage.pages.overview.summary.clusterObjects.sshKeys(
-                      getClusterLabelsCount(
-                        clusterEntity.metadata.labels['ssh-key']
-                      )
-                    )}
-                    :
-                  </EntityCell>
-                  <td>{clusterEntity.metadata.labels['ssh-key'] || '--'}</td>
-                </tr>
-              </tbody>
-            </table>
+            <div>
+              <EntityWrapper>
+                <IconWrapper>
+                  <Icon material="vpn_key" />
+                </IconWrapper>
+                {strings.clusterPage.pages.overview.summary.clusterObjects.sshKeys(
+                  getClusterLabelsCount(
+                    clusterEntity.metadata.labels['ssh-key']
+                  )
+                )}
+                :
+              </EntityWrapper>
+              <span>{clusterEntity.metadata.labels['ssh-key'] || '--'}</span>
+            </div>
           ) : (
             <>
               <IconWrapper>
@@ -301,24 +281,20 @@ export const SummaryPanel = ({ clusterEntity }) => {
         </DrawerItem>
         <DrawerItem>
           {!clusterEntity.spec.isMgmtCluster ? (
-            <table>
-              <tbody>
-                <tr>
-                  <EntityCell>
-                    <IconWrapper>
-                      <Icon material="card_membership" />
-                    </IconWrapper>
-                    {strings.clusterPage.pages.overview.summary.clusterObjects.rhelLicenses(
-                      getClusterLabelsCount(
-                        clusterEntity.metadata.labels['license']
-                      )
-                    )}
-                    :
-                  </EntityCell>
-                  <td>{clusterEntity.metadata.labels['license'] || '--'}</td>
-                </tr>
-              </tbody>
-            </table>
+            <div>
+              <EntityWrapper>
+                <IconWrapper>
+                  <Icon material="card_membership" />
+                </IconWrapper>
+                {strings.clusterPage.pages.overview.summary.clusterObjects.rhelLicenses(
+                  getClusterLabelsCount(
+                    clusterEntity.metadata.labels['license']
+                  )
+                )}
+                :
+              </EntityWrapper>
+              <span>{clusterEntity.metadata.labels['license'] || '--'}</span>
+            </div>
           ) : (
             <>
               <IconWrapper>
@@ -333,24 +309,18 @@ export const SummaryPanel = ({ clusterEntity }) => {
         </DrawerItem>
         <DrawerItem>
           {!clusterEntity.spec.isMgmtCluster ? (
-            <table>
-              <tbody>
-                <tr>
-                  <EntityCell>
-                    <IconWrapper>
-                      <Icon material="assistant_direction" />
-                    </IconWrapper>
-                    {strings.clusterPage.pages.overview.summary.clusterObjects.proxies(
-                      getClusterLabelsCount(
-                        clusterEntity.metadata.labels['proxy']
-                      )
-                    )}
-                    :
-                  </EntityCell>
-                  <td>{clusterEntity.metadata.labels['proxy'] || '--'}</td>
-                </tr>
-              </tbody>
-            </table>
+            <div>
+              <EntityWrapper>
+                <IconWrapper>
+                  <Icon material="assistant_direction" />
+                </IconWrapper>
+                {strings.clusterPage.pages.overview.summary.clusterObjects.proxies(
+                  getClusterLabelsCount(clusterEntity.metadata.labels['proxy'])
+                )}
+                :
+              </EntityWrapper>
+              <span>{clusterEntity.metadata.labels['proxy'] || '--'}</span>
+            </div>
           ) : (
             <>
               <IconWrapper>
