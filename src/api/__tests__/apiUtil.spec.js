@@ -104,11 +104,16 @@ describe('/api/apiUtil', () => {
     });
 
     describe('errors', () => {
+      const logSpy = jest.spyOn(console, 'error');
+
       it('triggers an error', async () => {
         isTokensRefreshed = await apiUtil.cloudRefresh(
           fakeCloudWithInvalidRefreshToken
         );
         expect(isTokensRefreshed).toBe(false);
+        expect(logSpy.mock.calls[0][0]).toMatch(
+          /(Unable to refresh expired token)/i
+        );
       });
     });
 
