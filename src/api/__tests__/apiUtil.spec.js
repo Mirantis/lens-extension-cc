@@ -78,7 +78,7 @@ describe('/api/apiUtil', () => {
       refreshToken: REFRESH_TOKENS.VALID,
     });
 
-    mockConsole(['log', 'info', 'warn', 'error']); // automatically restored after each test
+    mockConsole(['log', 'info', 'warn']); // automatically restored after each test
   });
 
   describe('extractJwtPayload()', () => {
