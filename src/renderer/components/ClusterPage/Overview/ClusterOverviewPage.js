@@ -10,7 +10,7 @@ import * as consts from '../../../../constants';
 import { layout, mixinPageStyles } from '../../styles';
 import { logger } from '../../../../util/logger';
 import { clusterEntityModelTs } from '../../../../catalog/catalogEntities';
-import { ClusterConditionsPanel } from './ClusterConditionsPanel';
+import { ConditionsPanel } from './ConditionsPanel';
 import { SummaryPanel } from './SummaryPanel';
 
 const {
@@ -75,7 +75,7 @@ export const ClusterOverviewPage = function () {
         </DrawerTitle>
       </DrawerTitleWrapper>
 
-      <ClusterConditionsPanel
+      <ConditionsPanel
         conditions={clusterEntity.spec.conditions || []}
       />
     </PageContainer>

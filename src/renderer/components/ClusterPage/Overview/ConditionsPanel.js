@@ -71,7 +71,7 @@ const sortByAsc = (a, b) => {
   return a.type.localeCompare(b.type);
 };
 
-export const ClusterConditionsPanel = ({ conditions }) => {
+export const ConditionsPanel = ({ conditions }) => {
   return (
     <Container>
       {conditions.length > 0 ? (
@@ -100,7 +100,7 @@ export const ClusterConditionsPanel = ({ conditions }) => {
   );
 };
 
-ClusterConditionsPanel.propTypes = {
+ConditionsPanel.propTypes = {
   conditions: propTypes.arrayOf(
     propTypes.shape({
       message: propTypes.string.isRequired,
