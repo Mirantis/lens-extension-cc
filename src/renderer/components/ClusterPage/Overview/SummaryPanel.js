@@ -1,6 +1,12 @@
 import propTypes from 'prop-types';
 import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
+import {
+  lightThemeClassName,
+  lightTheme,
+  darkTheme,
+  themeModes,
+} from '../../theme';
 import { layout } from '../../styles';
 import * as strings from '../../../../strings';
 import * as consts from '../../../../constants';
@@ -74,6 +80,13 @@ const ServerStatus = styled.p`
   color: var(--colorSuccess);
   color: ${({ isReady }) =>
     isReady ? 'var(--colorSuccess)' : 'var(--textColorPrimary)'};
+`;
+
+const PanelTitle = styled(DrawerTitle)`
+  background-color: ${({ isLightMode }) =>
+    isLightMode
+      ? 'var(--layoutTabsLineColor)'
+      : 'var(--drawerSubtitleBackground)'};
 `;
 
 /**
@@ -150,14 +163,18 @@ export const SummaryPanel = ({ clusterEntity }) => {
   // RENDER
   //
 
+  const theme = document.body.classList.contains(lightThemeClassName)
+    ? lightTheme
+    : darkTheme;
+
   const browserUrl = `${clusterEntity.metadata.cloudUrl}/projects/${clusterEntity.metadata.namespace}/clusters/${clusterEntity.metadata.name}`;
 
   return (
     <>
       <DrawerTitleWrapper>
-        <DrawerTitle>
+        <PanelTitle isLightMode={theme.mode === themeModes.LIGHT}>
           {strings.clusterPage.pages.overview.summary.title()}
-        </DrawerTitle>
+        </PanelTitle>
       </DrawerTitleWrapper>
 
       <DrawerItemsWrapper>
