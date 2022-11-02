@@ -2,7 +2,7 @@ import React from 'react';
 import { Renderer } from '@k8slens/extensions';
 import { GlobalPage } from './components/GlobalPage/GlobalPage';
 import { ContainerCloudIcon as ClusterPageIcon } from './components/ContainerCloudIcon';
-import { ClusterOverviewPage } from './components/ClusterPage/ClusterOverviewPage';
+import { ClusterOverviewPage } from './components/ClusterPage/Overview/ClusterOverviewPage';
 import * as strings from '../strings';
 import * as consts from '../constants';
 import {

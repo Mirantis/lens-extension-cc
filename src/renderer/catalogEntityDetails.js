@@ -2,8 +2,6 @@
 
 import { useCallback } from 'react';
 import { Renderer } from '@k8slens/extensions';
-import dayjs from 'dayjs';
-import dayjsRelativeTimePlugin from 'dayjs/plugin/relativeTime';
 import { SshKeyEntity } from '../catalog/SshKeyEntity';
 import { CredentialEntity } from '../catalog/CredentialEntity';
 import { ProxyEntity } from '../catalog/ProxyEntity';
@@ -11,8 +9,7 @@ import { LicenseEntity } from '../catalog/LicenseEntity';
 import * as strings from '../strings';
 import * as consts from '../constants';
 import { openBrowser } from '../util/netUtil';
-
-dayjs.extend(dayjsRelativeTimePlugin);
+import { formatDate } from './rendererUtil';
 
 const {
   catalog: {
@@ -23,15 +20,6 @@ const {
     },
   },
 } = strings;
-
-const getDateValue = (date) => {
-  const dateObj = new Date(date);
-  return dateObj.getTime() === 0
-    ? unknownValue()
-    : `${dayjs(date).fromNow(true)} ago (${dayjs(date).format(
-        'YYYY-MM-DD, HH:mm:ss'
-      )})`;
-};
 
 const {
   Component: { DrawerTitle, DrawerItem },
@@ -109,7 +97,7 @@ export const catalogEntityDetails = [
             <DrawerItem
               name={strings.catalog.entities.common.details.props.dateCreated()}
             >
-              {getDateValue(props.entity.spec.createdAt)}
+              {formatDate(props.entity.spec.createdAt) || unknownValue()}
             </DrawerItem>
             <DrawerItem
               name={strings.catalog.entities.cluster.details.props.managementCluster()}
@@ -241,7 +229,7 @@ export const catalogEntityDetails = [
             <DrawerItem
               name={strings.catalog.entities.common.details.props.lastSync()}
             >
-              {getDateValue(props.entity.metadata.syncedAt)}
+              {formatDate(props.entity.metadata.syncedAt)}
             </DrawerItem>
           </>
         );
@@ -265,7 +253,7 @@ export const catalogEntityDetails = [
           <DrawerItem
             name={strings.catalog.entities.common.details.props.dateCreated()}
           >
-            {getDateValue(props.entity.spec.createdAt)}
+            {formatDate(props.entity.spec.createdAt) || unknownValue()}
           </DrawerItem>
           <DrawerItem
             name={strings.catalog.entities.sshKey.details.props.publicKey()}
@@ -278,7 +266,7 @@ export const catalogEntityDetails = [
           <DrawerItem
             name={strings.catalog.entities.common.details.props.lastSync()}
           >
-            {getDateValue(props.entity.metadata.syncedAt)}
+            {formatDate(props.entity.metadata.syncedAt)}
           </DrawerItem>
         </>
       ),
@@ -301,7 +289,7 @@ export const catalogEntityDetails = [
           <DrawerItem
             name={strings.catalog.entities.common.details.props.dateCreated()}
           >
-            {getDateValue(props.entity.spec.createdAt)}
+            {formatDate(props.entity.spec.createdAt) || unknownValue()}
           </DrawerItem>
           <DrawerItem
             name={strings.catalog.entities.credential.details.props.provider()}
@@ -326,7 +314,7 @@ export const catalogEntityDetails = [
           <DrawerItem
             name={strings.catalog.entities.common.details.props.lastSync()}
           >
-            {getDateValue(props.entity.metadata.syncedAt)}
+            {formatDate(props.entity.metadata.syncedAt)}
           </DrawerItem>
         </>
       ),
@@ -349,7 +337,7 @@ export const catalogEntityDetails = [
           <DrawerItem
             name={strings.catalog.entities.common.details.props.dateCreated()}
           >
-            {getDateValue(props.entity.spec.createdAt)}
+            {formatDate(props.entity.spec.createdAt) || unknownValue()}
           </DrawerItem>
           <DrawerItem
             name={strings.catalog.entities.proxy.details.props.region()}
@@ -372,7 +360,7 @@ export const catalogEntityDetails = [
           <DrawerItem
             name={strings.catalog.entities.common.details.props.lastSync()}
           >
-            {getDateValue(props.entity.metadata.syncedAt)}
+            {formatDate(props.entity.metadata.syncedAt)}
           </DrawerItem>
         </>
       ),
@@ -395,7 +383,7 @@ export const catalogEntityDetails = [
           <DrawerItem
             name={strings.catalog.entities.common.details.props.dateCreated()}
           >
-            {getDateValue(props.entity.spec.createdAt)}
+            {formatDate(props.entity.spec.createdAt) || unknownValue()}
           </DrawerItem>
           <DrawerTitle>
             {strings.catalog.entities.common.details.props.lensExtension()}
@@ -403,7 +391,7 @@ export const catalogEntityDetails = [
           <DrawerItem
             name={strings.catalog.entities.common.details.props.lastSync()}
           >
-            {getDateValue(props.entity.metadata.syncedAt)}
+            {formatDate(props.entity.metadata.syncedAt)}
           </DrawerItem>
         </>
       ),

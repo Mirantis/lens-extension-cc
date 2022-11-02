@@ -194,22 +194,6 @@ export const renderer: Dict = {
   },
 };
 
-export const clusterPage: Dict = {
-  menuItems: {
-    group: () => mccShortName,
-    overview: () => 'Overview',
-    performance: () => 'Performance',
-    events: () => 'Events',
-    details: () => 'Details',
-  },
-  pages: {
-    overview: {
-      title: () => `${mccFullName} Cluster`,
-      viewInBrowser: () => 'View in browser',
-    },
-  },
-};
-
 export const catalog: Dict = {
   entities: {
     // for all entity types
@@ -225,6 +209,7 @@ export const catalog: Dict = {
       details: {
         title: () => mccFullName,
         unknownValue: () => '<Unknown>', // when a value is null/undefined/empty
+        emptyValue: () => '--',
         props: {
           dateCreated: () => 'Date created',
           lastSync: () => 'Last sync',
@@ -349,6 +334,45 @@ export const catalog: Dict = {
       catalogMenu: {
         create: {
           title: () => `New ${mccCodeName} RHEL License...`,
+        },
+      },
+    },
+  },
+};
+
+export const clusterPage: Dict = {
+  menuItems: {
+    group: () => mccShortName,
+    overview: () => 'Overview',
+    performance: () => 'Performance',
+    events: () => 'Events',
+    details: () => 'Details',
+  },
+  common: {
+    emptyValue: catalog.entities.common.details.emptyValue,
+  },
+  pages: {
+    overview: {
+      summary: {
+        title: () => 'Summary',
+        clusterName: () => 'Cluster name',
+        serverStatus: catalog.entities.common.details.props.serverStatus,
+        lastSync: catalog.entities.common.details.props.lastSync,
+        provider: catalog.entities.cluster.details.props.provider,
+        managementCluster:
+          catalog.entities.cluster.details.props.managementCluster,
+        isManagementCluster:
+          catalog.entities.cluster.details.props.isManagementCluster,
+        releaseVersion: catalog.entities.cluster.details.props.release,
+        namespace: () => 'Namespace',
+        clusterUrl: () => 'Cluster URL',
+        clusterObjects: {
+          title: () => 'Cluster objects',
+          credentials: (count) => (count === 1 ? 'Credential' : 'Credentials'),
+          sshKeys: (count) => (count === 1 ? 'SSH key' : 'SSH keys'),
+          rhelLicenses: (count) =>
+            count === 1 ? 'RHEL license' : 'RHEL licenses',
+          proxies: (count) => (count === 1 ? 'Proxy' : 'Proxies'),
         },
       },
     },
