@@ -11,6 +11,7 @@ import { layout, mixinPageStyles } from '../../styles';
 import { logger } from '../../../../util/logger';
 import { clusterEntityModelTs } from '../../../../catalog/catalogEntities';
 import { ClusterConditionsPanel } from './ClusterConditionsPanel';
+import { SummaryPanel } from './SummaryPanel';
 
 const {
   Component: { DrawerTitle },
@@ -66,6 +67,8 @@ export const ClusterOverviewPage = function () {
 
   return (
     <PageContainer>
+      <SummaryPanel clusterEntity={clusterEntity} />
+
       <DrawerTitleWrapper>
         <DrawerTitle>
           {strings.clusterPage.pages.overview.clusterConditions.title()}
