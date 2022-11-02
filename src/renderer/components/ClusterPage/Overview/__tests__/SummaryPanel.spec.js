@@ -41,9 +41,7 @@ describe('/renderer/components/ClusterPage/Overview/SummaryPanel', () => {
     invalidProvider,
   ].forEach((provider) => {
     it(`renders an summary panel with |${provider}| provider, isMgmtCluster=|true|`, () => {
-      render(
-        <SummaryPanel clusterEntity={createTestEntity(provider)} />
-      );
+      render(<SummaryPanel clusterEntity={createTestEntity(provider)} />);
 
       if (provider === invalidProvider) {
         expect(
