@@ -1,6 +1,12 @@
 import propTypes from 'prop-types';
 import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
+import {
+  lightThemeClassName,
+  lightTheme,
+  darkTheme,
+  themeModes,
+} from '../../theme';
 import { layout } from '../../styles';
 import * as strings from '../../../../strings';
 import * as consts from '../../../../constants';
@@ -53,27 +59,34 @@ const ClusterLink = styled.a(() => ({
   color: 'var(--primary)',
 }));
 
-const IconWrapper = styled.span(() => ({
+const IconWrapper = styled.div(() => ({
   display: 'inline-block',
   marginRight: layout.grid * 3,
 }));
 
-const EntityWrapper = styled.span(() => ({
+const EntityWrapper = styled.div(() => ({
   display: 'inline-flex',
   alignItems: 'center',
   marginRight: layout.grid * 3.5,
   minWidth: layout.grid * 32.5,
 }));
 
-const ProviderWrapper = styled.span(() => ({
+const ProviderWrapper = styled.div(() => ({
   display: 'flex',
   alignItems: 'center',
 }));
 
-const MccStatus = styled.p`
+const ServerStatus = styled.p`
   color: var(--colorSuccess);
   color: ${({ isReady }) =>
     isReady ? 'var(--colorSuccess)' : 'var(--textColorPrimary)'};
+`;
+
+const PanelTitle = styled(DrawerTitle)`
+  background-color: ${({ isLightMode }) =>
+    isLightMode
+      ? 'var(--layoutTabsLineColor)'
+      : 'var(--drawerSubtitleBackground)'};
 `;
 
 /**
@@ -150,14 +163,18 @@ export const SummaryPanel = ({ clusterEntity }) => {
   // RENDER
   //
 
+  const theme = document.body.classList.contains(lightThemeClassName)
+    ? lightTheme
+    : darkTheme;
+
   const browserUrl = `${clusterEntity.metadata.cloudUrl}/projects/${clusterEntity.metadata.namespace}/clusters/${clusterEntity.metadata.name}`;
 
   return (
     <>
       <DrawerTitleWrapper>
-        <DrawerTitle>
+        <PanelTitle isLightMode={theme.mode === themeModes.LIGHT}>
           {strings.clusterPage.pages.overview.summary.title()}
-        </DrawerTitle>
+        </PanelTitle>
       </DrawerTitleWrapper>
 
       <DrawerItemsWrapper>
@@ -167,27 +184,25 @@ export const SummaryPanel = ({ clusterEntity }) => {
           {clusterEntity.metadata.name || unknownValue()}
         </DrawerItem>
         <DrawerItem
-          name={strings.clusterPage.pages.overview.summary.mccStatus()}
+          name={strings.clusterPage.pages.overview.summary.serverStatus()}
         >
           {clusterEntity.spec.apiStatus ? (
-            <MccStatus isReady={clusterEntity.spec.apiStatus === 'Ready'}>
+            <ServerStatus isReady={clusterEntity.spec.apiStatus === 'Ready'}>
               {clusterEntity.spec.apiStatus}
-            </MccStatus>
+            </ServerStatus>
           ) : (
             unknownValue()
           )}
         </DrawerItem>
         <DrawerItem
-          name={strings.clusterPage.pages.overview.summary.syncTime()}
+          name={strings.clusterPage.pages.overview.summary.lastSync()}
         >
           {formatDate(clusterEntity.metadata.syncedAt)}
         </DrawerItem>
         <DrawerItem
           name={strings.clusterPage.pages.overview.summary.provider()}
         >
-          {clusterEntity.spec.provider
-            ? getProvider(clusterEntity.spec.provider)
-            : unknownValue()}
+          {getProvider(clusterEntity.spec.provider)}
         </DrawerItem>
         <DrawerItem
           name={strings.clusterPage.pages.overview.summary.managementCluster()}
@@ -233,7 +248,10 @@ export const SummaryPanel = ({ clusterEntity }) => {
                 )}
                 :
               </EntityWrapper>
-              <span>{clusterEntity.metadata.labels['credential'] || '--'}</span>
+              <span>
+                {clusterEntity.metadata.labels['credential'] ||
+                  strings.clusterPage.common.emptyValue()}
+              </span>
             </div>
           ) : (
             <>
@@ -265,7 +283,10 @@ export const SummaryPanel = ({ clusterEntity }) => {
                 )}
                 :
               </EntityWrapper>
-              <span>{clusterEntity.metadata.labels['ssh-key'] || '--'}</span>
+              <span>
+                {clusterEntity.metadata.labels['ssh-key'] ||
+                  strings.clusterPage.common.emptyValue()}
+              </span>
             </div>
           ) : (
             <>
@@ -293,7 +314,10 @@ export const SummaryPanel = ({ clusterEntity }) => {
                 )}
                 :
               </EntityWrapper>
-              <span>{clusterEntity.metadata.labels['license'] || '--'}</span>
+              <span>
+                {clusterEntity.metadata.labels['license'] ||
+                  strings.clusterPage.common.emptyValue()}
+              </span>
             </div>
           ) : (
             <>
@@ -319,7 +343,10 @@ export const SummaryPanel = ({ clusterEntity }) => {
                 )}
                 :
               </EntityWrapper>
-              <span>{clusterEntity.metadata.labels['proxy'] || '--'}</span>
+              <span>
+                {clusterEntity.metadata.labels['proxy'] ||
+                  strings.clusterPage.common.emptyValue()}
+              </span>
             </div>
           ) : (
             <>

@@ -24,10 +24,14 @@ export const getLensClusters = function () {
 
 /**
  * Convert ISO 8601 to formatted date.
- * @param {string} date Date in ISO 8601 format
- * @returns {string} Formatted date.
+ * @param {Date|string} date Date to format.
+ * @returns {string|undefined} If a date is given, then formatted. If falsy, or the date is the epoch, undefined.
  */
 export const formatDate = (date) => {
+  if (!date) {
+    return undefined;
+  }
+
   const dateObj = new Date(date);
   return dateObj.getTime() === 0
     ? undefined
