@@ -27,6 +27,7 @@ const PageContainer = styled.div(() => ({
 
 export const ClusterOverviewPage = function () {
   const { activeEntity: clusterEntity } = Renderer.Catalog.catalogEntities;
+
   if (
     !clusterEntity ||
     clusterEntity.metadata.source !== consts.catalog.source
