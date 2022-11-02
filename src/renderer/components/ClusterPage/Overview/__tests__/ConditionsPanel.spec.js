@@ -1,8 +1,8 @@
 import { render, screen } from 'testingUtility';
-import { ClusterConditionsPanel } from '../ClusterConditionsPanel';
+import { ConditionsPanel } from '../ConditionsPanel';
 import * as strings from '../../../../../strings';
 
-describe('/renderer/components/ClusterPage/Overview/ClusterConditionsPanel', () => {
+describe('/renderer/components/ClusterPage/Overview/ConditionsPanel', () => {
   describe('with conditions', () => {
     const testMessageForReadyCondition = 'Message for ready condition';
     const testMessageForNotReadyCondition = 'Message for not ready condition';
@@ -40,7 +40,7 @@ describe('/renderer/components/ClusterPage/Overview/ClusterConditionsPanel', () 
     ];
 
     it('renders list of conditions', () => {
-      render(<ClusterConditionsPanel conditions={testConditions} />);
+      render(<ConditionsPanel conditions={testConditions} />);
 
       testConditions.forEach((condition) => {
         expect(screen.getByText(condition.type)).toBeInTheDocument();
@@ -48,7 +48,7 @@ describe('/renderer/components/ClusterPage/Overview/ClusterConditionsPanel', () 
     });
 
     it('renders condition circle with correct color', () => {
-      render(<ClusterConditionsPanel conditions={testConditions} />);
+      render(<ConditionsPanel conditions={testConditions} />);
 
       const readyConditionCircle = screen
         .getByText(testMessageForReadyCondition)
@@ -68,7 +68,7 @@ describe('/renderer/components/ClusterPage/Overview/ClusterConditionsPanel', () 
 
   describe('without conditions', () => {
     it('renders an error message', () => {
-      render(<ClusterConditionsPanel conditions={[]} />);
+      render(<ConditionsPanel conditions={[]} />);
 
       expect(
         screen.getByText(

@@ -75,9 +75,7 @@ export const ClusterOverviewPage = function () {
         </DrawerTitle>
       </DrawerTitleWrapper>
 
-      <ConditionsPanel
-        conditions={clusterEntity.spec.conditions || []}
-      />
+      <ConditionsPanel conditions={clusterEntity.spec.conditions || []} />
     </PageContainer>
   );
 };
