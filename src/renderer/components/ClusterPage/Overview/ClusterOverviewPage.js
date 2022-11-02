@@ -76,7 +76,7 @@ export const ClusterOverviewPage = function () {
       </DrawerTitleWrapper>
 
       <ClusterConditionsPanel
-        conditions={clusterEntity.status.providerStatus?.conditions || []}
+        conditions={clusterEntity.spec.conditions || []}
       />
     </PageContainer>
   );
