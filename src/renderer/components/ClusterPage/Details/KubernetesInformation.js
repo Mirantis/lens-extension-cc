@@ -3,9 +3,10 @@ import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
 import * as strings from '../../../../strings';
 import { layout } from '../../styles';
+import { PanelTitle } from '../PanelTitle';
 
 const {
-  Component: { DrawerTitle, DrawerItem },
+  Component: { DrawerItem },
 } = Renderer;
 
 const {
@@ -53,9 +54,9 @@ export const KubernetesInformation = ({ distribution, kubeletVersion }) => {
   return (
     <>
       <DrawerTitleWrapper>
-        <DrawerTitle>
-          {strings.clusterPage.pages.details.kubernetesInformation.title()}
-        </DrawerTitle>
+        <PanelTitle
+          title={strings.clusterPage.pages.details.kubernetesInformation.title()}
+        />
       </DrawerTitleWrapper>
       <DrawerItemsWrapper>
         <DrawerItem

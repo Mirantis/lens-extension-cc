@@ -3,9 +3,10 @@ import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
 import * as strings from '../../../../strings';
 import { layout } from '../../styles';
+import { PanelTitle } from '../PanelTitle';
 
 const {
-  Component: { DrawerTitle, DrawerItem },
+  Component: { DrawerItem },
 } = Renderer;
 
 //
@@ -39,7 +40,7 @@ const Link = styled.a(() => ({
 // MAIN COMPONENT
 //
 
-export const MirantisStacklightInformation = ({ lma }) => {
+export const LmaInformation = ({ lma }) => {
   //
   // RENDER
   //
@@ -47,9 +48,9 @@ export const MirantisStacklightInformation = ({ lma }) => {
   return (
     <>
       <DrawerTitleWrapper>
-        <DrawerTitle>
-          {strings.clusterPage.pages.details.mirantisStacklight.title()}
-        </DrawerTitle>
+        <PanelTitle
+          title={strings.clusterPage.pages.details.mirantisStacklight.title()}
+        />
       </DrawerTitleWrapper>
       <DrawerItemsWrapper>
         <DrawerItem
@@ -112,6 +113,6 @@ export const MirantisStacklightInformation = ({ lma }) => {
   );
 };
 
-MirantisStacklightInformation.propTypes = {
+LmaInformation.propTypes = {
   lma: propTypes.object.isRequired,
 };

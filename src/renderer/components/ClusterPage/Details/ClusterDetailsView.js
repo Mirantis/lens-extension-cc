@@ -11,8 +11,8 @@ import { logger } from '../../../../util/logger';
 import { clusterEntityModelTs } from '../../../../catalog/catalogEntities';
 import { GeneralInformation } from './GeneralInformation';
 import { KubernetesInformation } from './KubernetesInformation';
-import { MccInformation } from './MccInformation';
-import { MirantisStacklightInformation } from './MirantisStacklightInformation';
+import { ServerInformation } from './ServerInformation';
+import { LmaInformation } from './LmaInformation';
 
 //
 // INTERNAL STYLED COMPONENTS
@@ -28,7 +28,7 @@ const PageContainer = styled.div(() => ({
 // MAIN COMPONENT
 //
 
-export const ClusterDetailsPage = function () {
+export const ClusterDetailsView = function () {
   const { activeEntity: clusterEntity } = Renderer.Catalog.catalogEntities;
   if (
     !clusterEntity ||
@@ -39,7 +39,7 @@ export const ClusterDetailsPage = function () {
     //  cluster (thanks to code in renderer.tsx) HOWEVER, Lens 5.2 has a lot of bugs
     //  around entity activation, so this is covering us just in case
     logger.error(
-      'ClusterDetailsPage.render()',
+      'ClusterDetailsView.render()',
       `Unable to render: Active Catalog entity ${
         clusterEntity
           ? `is not from source "${consts.catalog.source}"`
@@ -64,9 +64,9 @@ export const ClusterDetailsPage = function () {
         kubeletVersion={clusterEntity.metadata.kubeVersion}
       />
 
-      <MccInformation clusterEntity={clusterEntity} />
+      <ServerInformation clusterEntity={clusterEntity} />
 
-      <MirantisStacklightInformation lma={clusterEntity.spec.lma} />
+      <LmaInformation lma={clusterEntity.spec.lma} />
     </PageContainer>
   );
 };

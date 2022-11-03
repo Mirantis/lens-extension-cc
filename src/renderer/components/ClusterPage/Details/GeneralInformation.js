@@ -4,9 +4,10 @@ import { Renderer } from '@k8slens/extensions';
 import * as strings from '../../../../strings';
 import { layout } from '../../styles';
 import { formatDate } from '../../../rendererUtil';
+import { PanelTitle } from '../PanelTitle';
 
 const {
-  Component: { DrawerTitle, DrawerItem },
+  Component: { DrawerItem },
 } = Renderer;
 
 const {
@@ -65,7 +66,7 @@ const LabelsWrapper = styled.div(() => ({
   },
 }));
 
-const MccStatus = styled.p`
+const ServerStatus = styled.p`
   color: var(--colorSuccess);
   color: ${({ isReady }) =>
     isReady ? 'var(--colorSuccess)' : 'var(--textColorPrimary)'};
@@ -83,9 +84,9 @@ export const GeneralInformation = ({ clusterEntity }) => {
   return (
     <>
       <DrawerTitleWrapper>
-        <DrawerTitle>
-          {strings.clusterPage.pages.details.generalInformation.title()}
-        </DrawerTitle>
+        <PanelTitle
+          title={strings.clusterPage.pages.details.generalInformation.title()}
+        />
       </DrawerTitleWrapper>
       <Container>
         <div>
@@ -109,9 +110,9 @@ export const GeneralInformation = ({ clusterEntity }) => {
           <DrawerItem
             name={strings.clusterPage.pages.details.generalInformation.status()}
           >
-            <MccStatus isReady={clusterEntity.spec.apiStatus === 'Ready'}>
+            <ServerStatus isReady={clusterEntity.spec.apiStatus === 'Ready'}>
               {clusterEntity.spec.apiStatus || unknownValue()}
-            </MccStatus>
+            </ServerStatus>
           </DrawerItem>
           <DrawerItem
             name={strings.clusterPage.pages.details.generalInformation.lastSync()}

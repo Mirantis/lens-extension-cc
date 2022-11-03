@@ -5,9 +5,10 @@ import * as strings from '../../../../strings';
 import { layout } from '../../styles';
 import { formatDate } from '../../../rendererUtil';
 import { getProvider } from '../helpers';
+import { PanelTitle } from '../PanelTitle';
 
 const {
-  Component: { DrawerTitle, DrawerItem },
+  Component: { DrawerItem },
 } = Renderer;
 
 const {
@@ -51,7 +52,7 @@ const Link = styled.a(() => ({
 // MAIN COMPONENT
 //
 
-export const MccInformation = ({ clusterEntity }) => {
+export const ServerInformation = ({ clusterEntity }) => {
   //
   // RENDER
   //
@@ -61,9 +62,9 @@ export const MccInformation = ({ clusterEntity }) => {
   return (
     <>
       <DrawerTitleWrapper>
-        <DrawerTitle>
-          {strings.clusterPage.pages.details.mirantisContainerCloud.title()}
-        </DrawerTitle>
+        <PanelTitle
+          title={strings.clusterPage.pages.details.mirantisContainerCloud.title()}
+        />
       </DrawerTitleWrapper>
       <DrawerItemsWrapper>
         <DrawerItem
@@ -139,6 +140,6 @@ export const MccInformation = ({ clusterEntity }) => {
   );
 };
 
-MccInformation.propTypes = {
+ServerInformation.propTypes = {
   clusterEntity: propTypes.object.isRequired,
 };
