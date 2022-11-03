@@ -2,7 +2,8 @@ import React from 'react';
 import { Renderer } from '@k8slens/extensions';
 import { GlobalPage } from './components/GlobalPage/GlobalPage';
 import { ContainerCloudIcon as ClusterPageIcon } from './components/ContainerCloudIcon';
-import { ClusterOverviewPage } from './components/ClusterPage/Overview/ClusterOverviewPage';
+import { ClusterPage } from './components/ClusterPage/ClusterPage';
+import { ClusterOverviewView } from './components/ClusterPage/Overview/ClusterOverviewView';
 import * as strings from '../strings';
 import * as consts from '../constants';
 import {
@@ -60,7 +61,11 @@ export default class ExtensionRenderer extends LensExtension {
     {
       id: ROUTE_CLUSTER_OVERVIEW,
       components: {
-        Page: () => <ClusterOverviewPage />,
+        Page: () => (
+          <ClusterPage>
+            <ClusterOverviewView />
+          </ClusterPage>
+        ),
       },
     },
     {

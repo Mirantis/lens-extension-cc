@@ -12,10 +12,7 @@ import { logger } from '../../../../util/logger';
 import { clusterEntityModelTs } from '../../../../catalog/catalogEntities';
 import { ConditionsPanel } from './ConditionsPanel';
 import { SummaryPanel } from './SummaryPanel';
-
-const {
-  Component: { DrawerTitle },
-} = Renderer;
+import { PanelTitle } from '../PanelTitle';
 
 //
 // INTERNAL STYLED COMPONENTS
@@ -38,8 +35,9 @@ const DrawerTitleWrapper = styled.div(() => ({
 // MAIN COMPONENT
 //
 
-export const ClusterOverviewPage = function () {
+export const ClusterOverviewView = function () {
   const { activeEntity: clusterEntity } = Renderer.Catalog.catalogEntities;
+
   if (
     !clusterEntity ||
     clusterEntity.metadata.source !== consts.catalog.source
@@ -49,7 +47,7 @@ export const ClusterOverviewPage = function () {
     //  cluster (thanks to code in renderer.tsx) HOWEVER, Lens 5.2 has a lot of bugs
     //  around entity activation, so this is covering us just in case
     logger.error(
-      'ClusterOverviewPage.render()',
+      'ClusterOverviewView.render()',
       `Unable to render: Active Catalog entity ${
         clusterEntity
           ? `is not from source "${consts.catalog.source}"`
@@ -70,9 +68,9 @@ export const ClusterOverviewPage = function () {
       <SummaryPanel clusterEntity={clusterEntity} />
 
       <DrawerTitleWrapper>
-        <DrawerTitle>
-          {strings.clusterPage.pages.overview.clusterConditions.title()}
-        </DrawerTitle>
+        <PanelTitle
+          title={strings.clusterPage.pages.overview.clusterConditions.title()}
+        />
       </DrawerTitleWrapper>
 
       <ConditionsPanel conditions={clusterEntity.spec.conditions || []} />

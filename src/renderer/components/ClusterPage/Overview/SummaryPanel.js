@@ -11,9 +11,10 @@ import { ByoIcon } from '../icons/ByoIcon';
 import { EquinixIcon } from '../icons/EquinixIcon';
 import { OpenstackIcon } from '../icons/OpenstackIcon';
 import { VsphereIcon } from '../icons/VsphereIcon';
+import { PanelTitle } from '../PanelTitle';
 
 const {
-  Component: { DrawerTitle, DrawerItem, Icon },
+  Component: { DrawerItem, Icon },
 } = Renderer;
 
 const {
@@ -155,9 +156,9 @@ export const SummaryPanel = ({ clusterEntity }) => {
   return (
     <>
       <DrawerTitleWrapper>
-        <DrawerTitle>
-          {strings.clusterPage.pages.overview.summary.title()}
-        </DrawerTitle>
+        <PanelTitle
+          title={strings.clusterPage.pages.overview.summary.title()}
+        />
       </DrawerTitleWrapper>
 
       <DrawerItemsWrapper>
