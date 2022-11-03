@@ -5,7 +5,7 @@ import { lightThemeClassName, lightTheme, darkTheme } from './theme';
  * Meant for use in conjunction with Emotion's ThemeProvider
  * in order to match the theme used to the theme Lens is using.
  * Note: this is not a replacement for Emotion's useTheme() hook.
- * @returns {object} Object with theme mode.
+ * @returns {{ theme: Object }} Object with a theme property that is the theme object to be used by the ThemeProvider.
  */
 export const useThemeSwitching = () => {
   //

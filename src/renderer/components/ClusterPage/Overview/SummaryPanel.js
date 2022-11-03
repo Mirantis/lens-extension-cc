@@ -1,7 +1,6 @@
 import propTypes from 'prop-types';
 import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
-import { themeModes } from '../../theme';
 import { layout } from '../../styles';
 import * as strings from '../../../../strings';
 import * as consts from '../../../../constants';
@@ -12,9 +11,10 @@ import { ByoIcon } from '../icons/ByoIcon';
 import { EquinixIcon } from '../icons/EquinixIcon';
 import { OpenstackIcon } from '../icons/OpenstackIcon';
 import { VsphereIcon } from '../icons/VsphereIcon';
+import { PanelTitle } from '../PanelTitle';
 
 const {
-  Component: { DrawerTitle, DrawerItem, Icon },
+  Component: { DrawerItem, Icon },
 } = Renderer;
 
 const {
@@ -76,13 +76,6 @@ const ServerStatus = styled.p`
   color: ${({ isReady }) =>
     isReady ? 'var(--colorSuccess)' : 'var(--textColorPrimary)'};
 `;
-
-const PanelTitle = styled(DrawerTitle)(({ theme }) => ({
-  backgroundColor:
-    theme.mode === themeModes.LIGHT
-      ? 'var(--layoutTabsLineColor)'
-      : 'var(--drawerSubtitleBackground)',
-}));
 
 /**
  * Returns provider icon depends on it name.
@@ -163,9 +156,9 @@ export const SummaryPanel = ({ clusterEntity }) => {
   return (
     <>
       <DrawerTitleWrapper>
-        <PanelTitle>
-          {strings.clusterPage.pages.overview.summary.title()}
-        </PanelTitle>
+        <PanelTitle
+          title={strings.clusterPage.pages.overview.summary.title()}
+        />
       </DrawerTitleWrapper>
 
       <DrawerItemsWrapper>

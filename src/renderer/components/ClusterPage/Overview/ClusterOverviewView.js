@@ -12,11 +12,7 @@ import { logger } from '../../../../util/logger';
 import { clusterEntityModelTs } from '../../../../catalog/catalogEntities';
 import { ConditionsPanel } from './ConditionsPanel';
 import { SummaryPanel } from './SummaryPanel';
-import { themeModes } from '../../theme';
-
-const {
-  Component: { DrawerTitle },
-} = Renderer;
+import { PanelTitle } from '../PanelTitle';
 
 //
 // INTERNAL STYLED COMPONENTS
@@ -33,13 +29,6 @@ const DrawerTitleWrapper = styled.div(() => ({
   paddingRight: layout.pad * 3,
   marginTop: -layout.pad * 3,
   marginBottom: -layout.pad * 3,
-}));
-
-const PanelTitle = styled(DrawerTitle)(({ theme }) => ({
-  backgroundColor:
-    theme.mode === themeModes.LIGHT
-      ? 'var(--layoutTabsLineColor)'
-      : 'var(--drawerSubtitleBackground)',
 }));
 
 //
@@ -79,9 +68,9 @@ export const ClusterOverviewView = function () {
       <SummaryPanel clusterEntity={clusterEntity} />
 
       <DrawerTitleWrapper>
-        <PanelTitle>
-          {strings.clusterPage.pages.overview.clusterConditions.title()}
-        </PanelTitle>
+        <PanelTitle
+          title={strings.clusterPage.pages.overview.clusterConditions.title()}
+        />
       </DrawerTitleWrapper>
 
       <ConditionsPanel conditions={clusterEntity.spec.conditions || []} />
