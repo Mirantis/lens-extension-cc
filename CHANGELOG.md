@@ -1,5 +1,9 @@
 # ChangeLog
 
+## UNRELEASED
+
+- Show `--` instead of the URL if StackLight is disabled and URLs aren’t available in Cluster details view.
+
 ## v5.2.0
 
 - Changed timestamp format in `Created at` and `Synced at` fields in all the "View details" entity panels.
