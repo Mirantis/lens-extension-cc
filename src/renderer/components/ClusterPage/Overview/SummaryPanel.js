@@ -12,7 +12,6 @@ import { ByoIcon } from '../icons/ByoIcon';
 import { EquinixIcon } from '../icons/EquinixIcon';
 import { OpenstackIcon } from '../icons/OpenstackIcon';
 import { VsphereIcon } from '../icons/VsphereIcon';
-import { useThemeSwitching } from '../../useThemeSwitching';
 
 const {
   Component: { DrawerTitle, DrawerItem, Icon },
@@ -78,12 +77,12 @@ const ServerStatus = styled.p`
     isReady ? 'var(--colorSuccess)' : 'var(--textColorPrimary)'};
 `;
 
-const PanelTitle = styled(DrawerTitle)`
-  background-color: ${({ isLightMode }) =>
-    isLightMode
+const PanelTitle = styled(DrawerTitle)(({ theme }) => ({
+  backgroundColor:
+    theme.mode === themeModes.LIGHT
       ? 'var(--layoutTabsLineColor)'
-      : 'var(--drawerSubtitleBackground)'};
-`;
+      : 'var(--drawerSubtitleBackground)',
+}));
 
 /**
  * Returns provider icon depends on it name.
@@ -155,8 +154,6 @@ const getClusterLabelsCount = (clusterLabels) => {
 };
 
 export const SummaryPanel = ({ clusterEntity }) => {
-  const { theme } = useThemeSwitching();
-
   //
   // RENDER
   //
@@ -166,7 +163,7 @@ export const SummaryPanel = ({ clusterEntity }) => {
   return (
     <>
       <DrawerTitleWrapper>
-        <PanelTitle isLightMode={theme.mode === themeModes.LIGHT}>
+        <PanelTitle>
           {strings.clusterPage.pages.overview.summary.title()}
         </PanelTitle>
       </DrawerTitleWrapper>
