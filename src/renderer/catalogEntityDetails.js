@@ -15,7 +15,7 @@ const {
   catalog: {
     entities: {
       common: {
-        details: { unknownValue },
+        details: { unknownValue, emptyValue },
       },
     },
   },
@@ -156,73 +156,81 @@ export const catalogEntityDetails = [
                 unknownValue()
               )}
             </DrawerItem>
-            {Object.keys(props.entity.spec.lma || {}).length > 0 ? (
-              <>
-                <DrawerTitle>
-                  {strings.catalog.entities.cluster.details.props.lma()}
-                </DrawerTitle>
+            <DrawerTitle>
+              {strings.catalog.entities.cluster.details.props.lma()}
+            </DrawerTitle>
 
-                {props.entity.spec.lma.alertaUrl ? (
-                  <DrawerItem
-                    name={strings.catalog.entities.cluster.details.props.alertaUrl()}
-                  >
-                    <a href="#" onClick={handleOpenAlerta}>
-                      {props.entity.spec.lma.alertaUrl}
-                    </a>
-                  </DrawerItem>
-                ) : null}
+            <DrawerItem
+              name={strings.catalog.entities.cluster.details.props.alertaUrl()}
+            >
+              {props.entity.spec.lma.alertaUrl ? (
+                <a href="#" onClick={handleOpenAlerta}>
+                  {props.entity.spec.lma.alertaUrl}
+                </a>
+              ) : (
+                emptyValue()
+              )}
+            </DrawerItem>
 
-                {props.entity.spec.lma.alertManagerUrl ? (
-                  <DrawerItem
-                    name={strings.catalog.entities.cluster.details.props.alertManagerUrl()}
-                  >
-                    <a href="#" onClick={handleOpenAlertManager}>
-                      {props.entity.spec.lma.alertManagerUrl}
-                    </a>
-                  </DrawerItem>
-                ) : null}
+            <DrawerItem
+              name={strings.catalog.entities.cluster.details.props.alertManagerUrl()}
+            >
+              {props.entity.spec.lma.alertManagerUrl ? (
+                <a href="#" onClick={handleOpenAlertManager}>
+                  {props.entity.spec.lma.alertManagerUrl}
+                </a>
+              ) : (
+                emptyValue()
+              )}
+            </DrawerItem>
 
-                {props.entity.spec.lma.grafanaUrl ? (
-                  <DrawerItem
-                    name={strings.catalog.entities.cluster.details.props.grafanaUrl()}
-                  >
-                    <a href="#" onClick={handleOpenGrafana}>
-                      {props.entity.spec.lma.grafanaUrl}
-                    </a>
-                  </DrawerItem>
-                ) : null}
+            <DrawerItem
+              name={strings.catalog.entities.cluster.details.props.grafanaUrl()}
+            >
+              {props.entity.spec.lma.grafanaUrl ? (
+                <a href="#" onClick={handleOpenGrafana}>
+                  {props.entity.spec.lma.grafanaUrl}
+                </a>
+              ) : (
+                emptyValue()
+              )}
+            </DrawerItem>
 
-                {props.entity.spec.lma.kibanaUrl ? (
-                  <DrawerItem
-                    name={strings.catalog.entities.cluster.details.props.kibanaUrl()}
-                  >
-                    <a href="#" onClick={handleOpenKibana}>
-                      {props.entity.spec.lma.kibanaUrl}
-                    </a>
-                  </DrawerItem>
-                ) : null}
+            <DrawerItem
+              name={strings.catalog.entities.cluster.details.props.kibanaUrl()}
+            >
+              {props.entity.spec.lma.kibanaUrl ? (
+                <a href="#" onClick={handleOpenKibana}>
+                  {props.entity.spec.lma.kibanaUrl}
+                </a>
+              ) : (
+                emptyValue()
+              )}
+            </DrawerItem>
 
-                {props.entity.spec.lma.prometheusUrl ? (
-                  <DrawerItem
-                    name={strings.catalog.entities.cluster.details.props.prometheusUrl()}
-                  >
-                    <a href="#" onClick={handleOpenPrometheus}>
-                      {props.entity.spec.lma.prometheusUrl}
-                    </a>
-                  </DrawerItem>
-                ) : null}
+            <DrawerItem
+              name={strings.catalog.entities.cluster.details.props.prometheusUrl()}
+            >
+              {props.entity.spec.lma.prometheusUrl ? (
+                <a href="#" onClick={handleOpenPrometheus}>
+                  {props.entity.spec.lma.prometheusUrl}
+                </a>
+              ) : (
+                emptyValue()
+              )}
+            </DrawerItem>
 
-                {props.entity.spec.lma.telemeterServerUrl ? (
-                  <DrawerItem
-                    name={strings.catalog.entities.cluster.details.props.telemeterServerUrl()}
-                  >
-                    <a href="#" onClick={handleOpenTelemeterServer}>
-                      {props.entity.spec.lma.telemeterServerUrl}
-                    </a>
-                  </DrawerItem>
-                ) : null}
-              </>
-            ) : null}
+            <DrawerItem
+              name={strings.catalog.entities.cluster.details.props.telemeterServerUrl()}
+            >
+              {props.entity.spec.lma.telemeterServerUrl ? (
+                <a href="#" onClick={handleOpenTelemeterServer}>
+                  {props.entity.spec.lma.telemeterServerUrl}
+                </a>
+              ) : (
+                emptyValue()
+              )}
+            </DrawerItem>
             <DrawerTitle>
               {strings.catalog.entities.common.details.props.lensExtension()}
             </DrawerTitle>
