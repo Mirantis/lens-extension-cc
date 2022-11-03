@@ -5,11 +5,17 @@
 import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
 import * as rtv from 'rtvjs';
+import * as strings from '../../../../strings';
 import * as consts from '../../../../constants';
-import { mixinPageStyles } from '../../styles';
+import { layout, mixinPageStyles } from '../../styles';
 import { logger } from '../../../../util/logger';
 import { clusterEntityModelTs } from '../../../../catalog/catalogEntities';
+import { ConditionsPanel } from './ConditionsPanel';
 import { SummaryPanel } from './SummaryPanel';
+
+const {
+  Component: { DrawerTitle },
+} = Renderer;
 
 //
 // INTERNAL STYLED COMPONENTS
@@ -19,6 +25,13 @@ const PageContainer = styled.div(() => ({
   ...mixinPageStyles(),
   display: 'flex',
   flexDirection: 'column',
+}));
+
+const DrawerTitleWrapper = styled.div(() => ({
+  paddingLeft: layout.pad * 3,
+  paddingRight: layout.pad * 3,
+  marginTop: -layout.pad * 3,
+  marginBottom: -layout.pad * 3,
 }));
 
 //
@@ -55,6 +68,14 @@ export const ClusterOverviewPage = function () {
   return (
     <PageContainer>
       <SummaryPanel clusterEntity={clusterEntity} />
+
+      <DrawerTitleWrapper>
+        <DrawerTitle>
+          {strings.clusterPage.pages.overview.clusterConditions.title()}
+        </DrawerTitle>
+      </DrawerTitleWrapper>
+
+      <ConditionsPanel conditions={clusterEntity.spec.conditions || []} />
     </PageContainer>
   );
 };

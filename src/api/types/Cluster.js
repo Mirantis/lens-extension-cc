@@ -8,6 +8,7 @@ import {
   clusterEntityPhases,
 } from '../../catalog/catalogEntities';
 import { apiKinds, apiLabels } from '../apiConstants';
+import { nodeConditionTs } from '../apiTypesets';
 import { logger, logValue } from '../../util/logger';
 import { mkKubeConfig } from '../../util/templates';
 
@@ -96,15 +97,7 @@ export const clusterTs = mergeRtvShapes({}, nodeTs, {
         },
 
         // readiness conditions
-        conditions: [
-          [
-            {
-              message: rtv.STRING, // ready message if `ready=true` or error message if `ready=false`
-              ready: rtv.BOOLEAN, // true if component is ready (NOTE: false if maintenance mode is active)
-              type: rtv.STRING, // component name, e.g. 'Kubelet', 'Swarm, 'Maintenance', etc.
-            },
-          ],
-        ],
+        conditions: [[nodeConditionTs]],
 
         // helm chart status
         helm: {
@@ -588,6 +581,7 @@ export class Cluster extends Node {
         currentVersion: this.currentVersion,
         dashboardUrl: this.dashboardUrl,
         lma: this.lma,
+        conditions: this.conditions,
       },
       status: {
         // always starts off disconnected as far as Lens is concerned (because it
@@ -611,6 +605,10 @@ export class Cluster extends Node {
   toString() {
     const propStr = `${super.toString()}, ready: ${this.ready}, configReady: ${
       this.configReady
+    }, conditions: ${this.conditions.length}/${
+      this.conditions.length < 1 || this.conditions.every((c) => c.ready)
+        ? 'ready'
+        : 'pending'
     }, sshKeys: ${logValue(
       this.sshKeys.map((key) => key.name)
     )}, credential: ${logValue(

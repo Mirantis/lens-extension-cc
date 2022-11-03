@@ -9,6 +9,7 @@ import * as consts from '../constants';
 import { logger, logValue } from '../util/logger';
 import { mergeRtvShapes } from '../util/mergeRtvShapes';
 import { apiKinds, apiCredentialKinds } from '../api/apiConstants';
+import { nodeConditionTs } from '../api/apiTypesets';
 
 const {
   Catalog: { CatalogEntity },
@@ -217,6 +218,7 @@ export const clusterEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
         telemeterServerUrl: [rtv.OPTIONAL, rtv.STRING],
       },
     ],
+    conditions: [rtv.OPTIONAL, [nodeConditionTs]], // optional for backward compatibility
   },
 
   // based on Lens `KubernetesClusterStatus` type
