@@ -9,7 +9,7 @@ import * as strings from '../../strings';
 export const nodeTs = mergeRtvShapes({}, namedResourceTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
   //  related to what we expect to find in order to create a `Credential` class instance
-  // nothing specific for now
+  // nothing specific for now that can be provided at this level for inheriting classes
 });
 
 /**
@@ -51,6 +51,17 @@ export class Node extends NamedResource {
     });
 
     /**
+     * @readonly
+     * @member {Array<{ message: string, ready: boolean, type: string }>} conditions
+     */
+    Object.defineProperty(this, 'conditions', {
+      enumerable: true,
+      get() {
+        return data.status?.providerStatus?.conditions || [];
+      },
+    });
+
+    /**
      * Node status message. This is a combination of all NON-ready conditions,
      *  or if all ready, then a "Ready" message.
      * @readonly
@@ -73,7 +84,7 @@ export class Node extends NamedResource {
 
         // NOTE: only clusters have a helm status
         if (
-          !providerStatus.conditions &&
+          this.conditions.length < 1 &&
           (this.kind !== apiKinds.CLUSTER || !providerStatus.helm)
         ) {
           // not enough info to determine status issues, but we do have some status
@@ -82,7 +93,7 @@ export class Node extends NamedResource {
         }
 
         const notices = [];
-        providerStatus.conditions.forEach((c) => {
+        this.conditions.forEach((c) => {
           if (!c.ready) {
             notices.push(c.message);
           }

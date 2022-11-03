@@ -1,6 +1,7 @@
 import * as rtv from 'rtvjs';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
 import { apiKinds, apiLabels } from '../apiConstants';
+import { nodeConditionTs } from '../apiTypesets';
 import { Node, nodeTs } from './Node';
 import { logger, logValue } from '../../util/logger';
 
@@ -34,15 +35,7 @@ export const machineTs = mergeRtvShapes({}, nodeTs, {
   status: {
     providerStatus: {
       // readiness conditions
-      conditions: [
-        [
-          {
-            message: rtv.STRING, // ready message if `ready=true` or error message if `ready=false`
-            ready: rtv.BOOLEAN, // true if component is ready (NOTE: false if maintenance mode is active)
-            type: rtv.STRING, // component name, e.g. 'Kubelet', 'Swarm, 'Maintenance', etc.
-          },
-        ],
-      ],
+      conditions: [[nodeConditionTs]],
 
       // overall readiness: true if all `conditions[*].ready` are true
       ready: rtv.BOOLEAN,
@@ -133,9 +126,15 @@ export class Machine extends Node {
 
   /** @returns {string} A string representation of this instance for logging/debugging. */
   toString() {
-    const propStr = `${super.toString()}, namespace: ${logValue(
-      this.namespace.name
-    )}, license: ${logValue(this.license && this.license.name)}`;
+    const propStr = `${super.toString()}, conditions: ${
+      this.conditions.length
+    }/${
+      this.conditions.length < 1 || this.conditions.every((c) => c.ready)
+        ? 'ready'
+        : 'pending'
+    }, namespace: ${logValue(this.namespace.name)}, license: ${logValue(
+      this.license && this.license.name
+    )}`;
 
     if (Object.getPrototypeOf(this).constructor === Machine) {
       return `{Machine ${propStr}}`;
