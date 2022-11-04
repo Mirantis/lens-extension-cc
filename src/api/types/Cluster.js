@@ -391,7 +391,7 @@ export class Cluster extends Node {
         ) {
           const { stacklight: stackLight = {} } =
             data.status.providerStatus.helm.releases;
-          return {
+          const lma = {
             alertaUrl: stackLight.alerta?.url || undefined,
             alertManagerUrl: stackLight.alertmanager?.url || undefined, // yes, different casing...
             grafanaUrl: stackLight.grafana?.url || undefined,
@@ -399,6 +399,15 @@ export class Cluster extends Node {
             prometheusUrl: stackLight.prometheus?.url || undefined,
             telemeterServerUrl: stackLight.telemeterServer?.url || undefined,
           };
+
+          // when StackLight is disabled, we may still have the `stacklight` object, but we
+          //  won't have any of the URLs (a property for each StackLight service, like
+          //  'prometheus', will be fined, but mapped to an empty object instead of
+          //  an object with a 'url' property; e.g. `prometheus: {}` instead of
+          //  `prometheus: { url: 'https://...' }`
+          // if we have at least one URL, assume LMA is enabled and return an object with
+          //  any URLs we might have; otherwise, LMA is disabled, so return `null`
+          return Object.entries(lma).find(([, value]) => !!value) ? lma : null;
         }
 
         return null;

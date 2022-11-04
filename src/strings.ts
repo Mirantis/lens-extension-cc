@@ -250,12 +250,13 @@ export const catalog: Dict = {
           url: () => 'URL',
           region: () => 'Region',
           provider: () => 'Provider',
-          mccStatus: () => `${mccCodeName} Status`,
           release: () => 'Release',
           managers: () => 'Managers',
           workers: () => 'Workers',
           dashboardUrl: () => `${mkeCodeName} dashboard`,
           lma: () => `${companyName} StackLight`,
+          lmaEnabled: () => 'StackLight enabled',
+          isLmaEnabled: (enabled) => (enabled ? 'Yes' : 'No'),
           alertaUrl: () => 'Alerta',
           alertManagerUrl: () => 'Alert Manager',
           grafanaUrl: () => 'Grafana',
@@ -299,7 +300,6 @@ export const catalog: Dict = {
         props: {
           provider: () => 'Provider',
           region: () => 'Region',
-          mccStatus: () => `${mccCodeName} Status`,
         },
         info: {
           status: (valid) => (valid ? 'Valid' : 'Invalid'),
