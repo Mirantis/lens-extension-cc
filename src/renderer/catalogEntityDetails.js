@@ -126,7 +126,7 @@ export const catalogEntityDetails = [
               {props.entity.spec.provider || unknownValue()}
             </DrawerItem>
             <DrawerItem
-              name={strings.catalog.entities.cluster.details.props.mccStatus()}
+              name={strings.catalog.entities.common.details.props.serverStatus()}
             >
               {props.entity.spec.apiStatus || unknownValue()}
             </DrawerItem>
@@ -159,13 +159,20 @@ export const catalogEntityDetails = [
             <DrawerTitle>
               {strings.catalog.entities.cluster.details.props.lma()}
             </DrawerTitle>
+            <DrawerItem
+              name={strings.catalog.entities.cluster.details.props.lmaEnabled()}
+            >
+              {strings.catalog.entities.cluster.details.props.isLmaEnabled(
+                !!props.entity.spec.lma
+              )}
+            </DrawerItem>
 
             <DrawerItem
               name={strings.catalog.entities.cluster.details.props.alertaUrl()}
             >
-              {props.entity.spec.lma.alertaUrl ? (
+              {props.entity.spec.lma?.alertaUrl ? (
                 <a href="#" onClick={handleOpenAlerta}>
-                  {props.entity.spec.lma.alertaUrl}
+                  {props.entity.spec.lma?.alertaUrl}
                 </a>
               ) : (
                 emptyValue()
@@ -175,9 +182,9 @@ export const catalogEntityDetails = [
             <DrawerItem
               name={strings.catalog.entities.cluster.details.props.alertManagerUrl()}
             >
-              {props.entity.spec.lma.alertManagerUrl ? (
+              {props.entity.spec.lma?.alertManagerUrl ? (
                 <a href="#" onClick={handleOpenAlertManager}>
-                  {props.entity.spec.lma.alertManagerUrl}
+                  {props.entity.spec.lma?.alertManagerUrl}
                 </a>
               ) : (
                 emptyValue()
@@ -187,9 +194,9 @@ export const catalogEntityDetails = [
             <DrawerItem
               name={strings.catalog.entities.cluster.details.props.grafanaUrl()}
             >
-              {props.entity.spec.lma.grafanaUrl ? (
+              {props.entity.spec.lma?.grafanaUrl ? (
                 <a href="#" onClick={handleOpenGrafana}>
-                  {props.entity.spec.lma.grafanaUrl}
+                  {props.entity.spec.lma?.grafanaUrl}
                 </a>
               ) : (
                 emptyValue()
@@ -199,9 +206,9 @@ export const catalogEntityDetails = [
             <DrawerItem
               name={strings.catalog.entities.cluster.details.props.kibanaUrl()}
             >
-              {props.entity.spec.lma.kibanaUrl ? (
+              {props.entity.spec.lma?.kibanaUrl ? (
                 <a href="#" onClick={handleOpenKibana}>
-                  {props.entity.spec.lma.kibanaUrl}
+                  {props.entity.spec.lma?.kibanaUrl}
                 </a>
               ) : (
                 emptyValue()
@@ -211,9 +218,9 @@ export const catalogEntityDetails = [
             <DrawerItem
               name={strings.catalog.entities.cluster.details.props.prometheusUrl()}
             >
-              {props.entity.spec.lma.prometheusUrl ? (
+              {props.entity.spec.lma?.prometheusUrl ? (
                 <a href="#" onClick={handleOpenPrometheus}>
-                  {props.entity.spec.lma.prometheusUrl}
+                  {props.entity.spec.lma?.prometheusUrl}
                 </a>
               ) : (
                 emptyValue()
@@ -223,9 +230,9 @@ export const catalogEntityDetails = [
             <DrawerItem
               name={strings.catalog.entities.cluster.details.props.telemeterServerUrl()}
             >
-              {props.entity.spec.lma.telemeterServerUrl ? (
+              {props.entity.spec.lma?.telemeterServerUrl ? (
                 <a href="#" onClick={handleOpenTelemeterServer}>
-                  {props.entity.spec.lma.telemeterServerUrl}
+                  {props.entity.spec.lma?.telemeterServerUrl}
                 </a>
               ) : (
                 emptyValue()
@@ -310,7 +317,7 @@ export const catalogEntityDetails = [
             {props.entity.spec.region || unknownValue()}
           </DrawerItem>
           <DrawerItem
-            name={strings.catalog.entities.credential.details.props.mccStatus()}
+            name={strings.catalog.entities.common.details.props.serverStatus()}
           >
             {strings.catalog.entities.credential.details.info.status(
               props.entity.spec.valid
