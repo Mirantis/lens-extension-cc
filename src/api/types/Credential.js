@@ -1,5 +1,5 @@
 import * as rtv from 'rtvjs';
-import { merge, pick } from 'lodash';
+import { merge } from 'lodash';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
 import { apiCredentialKinds, apiLabels } from '../apiConstants';
 import { NamedResource, namedResourceTs } from './NamedResource';
@@ -27,11 +27,12 @@ export const credentialTs = mergeRtvShapes({}, namedResourceTs, {
     ],
   },
   // NOTE: BYOCredential resources don't have `status` objects for some reason
-  //  so it's effectively made optional by temporarily removing it from the Typeset
-  //  in the Credential class constructor only when the kind is BYO_CREDENTIAL
-  status: {
-    valid: rtv.BOOLEAN,
-  },
+  status: [
+    rtv.OPTIONAL,
+    {
+      valid: rtv.BOOLEAN,
+    },
+  ],
 });
 
 /**
@@ -51,11 +52,7 @@ export class Credential extends NamedResource {
       data,
       namespace,
       cloud,
-      // NOTE: BYOCredential objects do not have a `status` for some reason
-      typeset:
-        data.kind === apiCredentialKinds.BYO_CREDENTIAL
-          ? pick(credentialTs, ['metadata', 'spec'])
-          : credentialTs,
+      typeset: credentialTs,
     });
 
     /** @member {string} region */
