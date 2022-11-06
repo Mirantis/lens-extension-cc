@@ -54,6 +54,13 @@ export const LmaInformation = ({ clusterEntity }) => {
       </DrawerTitleWrapper>
       <DrawerItemsWrapper>
         <DrawerItem
+          name={strings.clusterPage.pages.details.lmaInformation.lmaEnabled()}
+        >
+          {strings.clusterPage.pages.details.lmaInformation.isLmaEnabled(
+            !!clusterEntity.spec.lma
+          )}
+        </DrawerItem>
+        <DrawerItem
           name={strings.clusterPage.pages.details.lmaInformation.alerta()}
         >
           {clusterEntity.spec.lma.alertaUrl ? (

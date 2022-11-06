@@ -411,6 +411,8 @@ export const clusterPage: Dict = {
         dashboardUrl: catalog.entities.cluster.details.props.dashboardUrl,
       },
       lmaInformation: {
+        lmaEnabled: catalog.entities.cluster.details.props.lmaEnabled,
+        isLmaEnabled: catalog.entities.cluster.details.props.isLmaEnabled,
         title: catalog.entities.cluster.details.props.lma,
         alerta: catalog.entities.cluster.details.props.alertaUrl,
         alertManager: catalog.entities.cluster.details.props.alertManagerUrl,
