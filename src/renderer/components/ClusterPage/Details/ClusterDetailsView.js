@@ -2,13 +2,9 @@
 // Details panel for the ClusterPage within the 'Lens > Catalog > Cluster' UI
 //
 
+import propTypes from 'prop-types';
 import styled from '@emotion/styled';
-import { Renderer } from '@k8slens/extensions';
-import * as rtv from 'rtvjs';
-import * as consts from '../../../../constants';
 import { mixinPageStyles } from '../../styles';
-import { logger } from '../../../../util/logger';
-import { clusterEntityModelTs } from '../../../../catalog/catalogEntities';
 import { GeneralInformation } from './GeneralInformation';
 import { KubernetesInformation } from './KubernetesInformation';
 import { ServerInformation } from './ServerInformation';
@@ -28,29 +24,7 @@ const PageContainer = styled.div(() => ({
 // MAIN COMPONENT
 //
 
-export const ClusterDetailsView = function () {
-  const { activeEntity: clusterEntity } = Renderer.Catalog.catalogEntities;
-  if (
-    !clusterEntity ||
-    clusterEntity.metadata.source !== consts.catalog.source
-  ) {
-    // this shouldn't happen, because this cluster page shouldn't be accessible
-    //  as a menu item unless the Catalog has an active entity, and it's an MCC
-    //  cluster (thanks to code in renderer.tsx) HOWEVER, Lens 5.2 has a lot of bugs
-    //  around entity activation, so this is covering us just in case
-    logger.error(
-      'ClusterDetailsView.render()',
-      `Unable to render: Active Catalog entity ${
-        clusterEntity
-          ? `is not from source "${consts.catalog.source}"`
-          : 'unknown'
-      }`
-    );
-    return null;
-  }
-
-  DEV_ENV && rtv.verify(clusterEntity, clusterEntityModelTs);
-
+export const ClusterDetailsView = function ({ clusterEntity }) {
   //
   // RENDER
   //
@@ -59,14 +33,15 @@ export const ClusterDetailsView = function () {
     <PageContainer>
       <GeneralInformation clusterEntity={clusterEntity} />
 
-      <KubernetesInformation
-        distribution={clusterEntity.metadata.distro}
-        kubeletVersion={clusterEntity.metadata.kubeVersion}
-      />
+      <KubernetesInformation clusterEntity={clusterEntity} />
 
       <ServerInformation clusterEntity={clusterEntity} />
 
-      <LmaInformation lma={clusterEntity.spec.lma} />
+      <LmaInformation clusterEntity={clusterEntity} />
     </PageContainer>
   );
+};
+
+ClusterDetailsView.propTypes = {
+  clusterEntity: propTypes.object.isRequired,
 };

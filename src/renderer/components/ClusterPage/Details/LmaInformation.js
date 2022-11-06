@@ -40,7 +40,7 @@ const Link = styled.a(() => ({
 // MAIN COMPONENT
 //
 
-export const LmaInformation = ({ lma }) => {
+export const LmaInformation = ({ clusterEntity }) => {
   //
   // RENDER
   //
@@ -49,60 +49,80 @@ export const LmaInformation = ({ lma }) => {
     <>
       <DrawerTitleWrapper>
         <PanelTitle
-          title={strings.clusterPage.pages.details.mirantisStacklight.title()}
+          title={strings.clusterPage.pages.details.lmaInformation.title()}
         />
       </DrawerTitleWrapper>
       <DrawerItemsWrapper>
         <DrawerItem
-          name={strings.clusterPage.pages.details.mirantisStacklight.alerta()}
+          name={strings.clusterPage.pages.details.lmaInformation.alerta()}
         >
-          {lma.alertaUrl ? (
-            <Link href={lma.alertaUrl} target="_blank" rel="noreferrer">
-              {lma.alertaUrl}
+          {clusterEntity.spec.lma.alertaUrl ? (
+            <Link
+              href={clusterEntity.spec.lma.alertaUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {clusterEntity.spec.lma.alertaUrl}
             </Link>
           ) : (
             strings.clusterPage.common.emptyValue()
           )}
         </DrawerItem>
         <DrawerItem
-          name={strings.clusterPage.pages.details.mirantisStacklight.alertManager()}
+          name={strings.clusterPage.pages.details.lmaInformation.alertManager()}
         >
-          {lma.alertManagerUrl ? (
-            <Link href={lma.alertManagerUrl} target="_blank" rel="noreferrer">
-              {lma.alertManagerUrl}
+          {clusterEntity.spec.lma.alertManagerUrl ? (
+            <Link
+              href={clusterEntity.spec.lma.alertManagerUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {clusterEntity.spec.lma.alertManagerUrl}
             </Link>
           ) : (
             strings.clusterPage.common.emptyValue()
           )}
         </DrawerItem>
         <DrawerItem
-          name={strings.clusterPage.pages.details.mirantisStacklight.grafana()}
+          name={strings.clusterPage.pages.details.lmaInformation.grafana()}
         >
-          {lma.grafanaUrl ? (
-            <Link href={lma.grafanaUrl} target="_blank" rel="noreferrer">
-              {lma.grafanaUrl}
+          {clusterEntity.spec.lma.grafanaUrl ? (
+            <Link
+              href={clusterEntity.spec.lma.grafanaUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {clusterEntity.spec.lma.grafanaUrl}
             </Link>
           ) : (
             strings.clusterPage.common.emptyValue()
           )}
         </DrawerItem>
         <DrawerItem
-          name={strings.clusterPage.pages.details.mirantisStacklight.kibana()}
+          name={strings.clusterPage.pages.details.lmaInformation.kibana()}
         >
-          {lma.kibanaUrl ? (
-            <Link href={lma.kibanaUrl} target="_blank" rel="noreferrer">
-              {lma.kibanaUrl}
+          {clusterEntity.spec.lma.kibanaUrl ? (
+            <Link
+              href={clusterEntity.spec.lma.kibanaUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {clusterEntity.spec.lma.kibanaUrl}
             </Link>
           ) : (
             strings.clusterPage.common.emptyValue()
           )}
         </DrawerItem>
         <DrawerItem
-          name={strings.clusterPage.pages.details.mirantisStacklight.prometheus()}
+          name={strings.clusterPage.pages.details.lmaInformation.prometheus()}
         >
-          {lma.prometheusUrl ? (
-            <Link href={lma.prometheusUrl} target="_blank" rel="noreferrer">
-              {lma.prometheusUrl}
+          {clusterEntity.spec.lma.prometheusUrl ? (
+            <Link
+              href={clusterEntity.spec.lma.prometheusUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {clusterEntity.spec.lma.prometheusUrl}
             </Link>
           ) : (
             strings.clusterPage.common.emptyValue()
@@ -114,5 +134,5 @@ export const LmaInformation = ({ lma }) => {
 };
 
 LmaInformation.propTypes = {
-  lma: propTypes.object.isRequired,
+  clusterEntity: propTypes.object.isRequired,
 };

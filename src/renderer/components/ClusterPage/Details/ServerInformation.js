@@ -4,7 +4,8 @@ import { Renderer } from '@k8slens/extensions';
 import * as strings from '../../../../strings';
 import { layout } from '../../styles';
 import { formatDate } from '../../../rendererUtil';
-import { getProvider } from '../helpers';
+import { getProvider } from '../clusterPageUtil';
+import { generateEntityUrl } from '../../../../catalog/catalogEntities';
 import { PanelTitle } from '../PanelTitle';
 
 const {
@@ -57,71 +58,67 @@ export const ServerInformation = ({ clusterEntity }) => {
   // RENDER
   //
 
-  const browserUrl = `${clusterEntity.metadata.cloudUrl}/projects/${clusterEntity.metadata.namespace}/clusters/${clusterEntity.metadata.name}`;
-
   return (
     <>
       <DrawerTitleWrapper>
         <PanelTitle
-          title={strings.clusterPage.pages.details.mirantisContainerCloud.title()}
+          title={strings.clusterPage.pages.details.serverInformation.title()}
         />
       </DrawerTitleWrapper>
       <DrawerItemsWrapper>
         <DrawerItem
-          name={strings.clusterPage.pages.details.mirantisContainerCloud.uid()}
+          name={strings.clusterPage.pages.details.serverInformation.uid()}
         >
           {clusterEntity.metadata.uid || unknownValue()}
         </DrawerItem>
         <DrawerItem
-          name={strings.clusterPage.pages.details.mirantisContainerCloud.dateCreated()}
+          name={strings.clusterPage.pages.details.serverInformation.dateCreated()}
         >
           {formatDate(clusterEntity.spec.createdAt)}
         </DrawerItem>
         <DrawerItem
-          name={strings.clusterPage.pages.details.mirantisContainerCloud.managementCluster()}
+          name={strings.clusterPage.pages.details.serverInformation.managementCluster()}
         >
-          {strings.clusterPage.pages.details.mirantisContainerCloud.isManagementCluster(
+          {strings.clusterPage.pages.details.serverInformation.isManagementCluster(
             clusterEntity.spec.isMgmtCluster
           ) || unknownValue()}
         </DrawerItem>
-        <DrawerItem
-          name={strings.clusterPage.pages.details.mirantisContainerCloud.clusterUrl()}
-        >
-          {strings ? (
-            <Link href={browserUrl} target="_blank" rel="noreferrer">
-              {browserUrl}
-            </Link>
-          ) : (
-            unknownValue()
-          )}
+        <DrawerItem name={strings.clusterPage.common.clusterUrl()}>
+          <Link
+            href={generateEntityUrl(clusterEntity)}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {generateEntityUrl(clusterEntity)}
+          </Link>
         </DrawerItem>
         <DrawerItem
-          name={strings.clusterPage.pages.details.mirantisContainerCloud.region()}
+          name={strings.clusterPage.pages.details.serverInformation.region()}
         >
           {clusterEntity.spec.region || unknownValue()}
         </DrawerItem>
         <DrawerItem
-          name={strings.clusterPage.pages.details.mirantisContainerCloud.provider()}
+          name={strings.clusterPage.pages.details.serverInformation.provider()}
         >
           {getProvider(clusterEntity.spec.provider)}
         </DrawerItem>
         <DrawerItem
-          name={strings.clusterPage.pages.details.mirantisContainerCloud.release()}
+          name={strings.clusterPage.pages.details.serverInformation.release()}
         >
           {clusterEntity.spec.currentVersion || unknownValue()}
         </DrawerItem>
         <DrawerItem
-          name={strings.clusterPage.pages.details.mirantisContainerCloud.managers()}
+          name={strings.clusterPage.pages.details.serverInformation.managers()}
         >
           {clusterEntity.spec.controllerCount ?? unknownValue()}
         </DrawerItem>
         <DrawerItem
-          name={strings.clusterPage.pages.details.mirantisContainerCloud.workers()}
+          name={strings.clusterPage.pages.details.serverInformation.workers()}
         >
           {clusterEntity.spec.workerCount ?? unknownValue()}
         </DrawerItem>
         <DrawerItem
-          name={strings.clusterPage.pages.details.mirantisContainerCloud.mkeDashboard()}
+          name={strings.clusterPage.pages.details.serverInformation.dashboardUrl()}
         >
           {clusterEntity.spec.dashboardUrl ? (
             <Link

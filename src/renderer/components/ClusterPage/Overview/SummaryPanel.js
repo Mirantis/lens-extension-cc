@@ -5,7 +5,8 @@ import { layout } from '../../styles';
 import * as strings from '../../../../strings';
 import { formatDate } from '../../../rendererUtil';
 import { PanelTitle } from '../PanelTitle';
-import { getProvider } from '../helpers';
+import { getProvider } from '../clusterPageUtil';
+import { generateEntityUrl } from '../../../../catalog/catalogEntities';
 
 const {
   Component: { DrawerItem, Icon },
@@ -80,8 +81,6 @@ export const SummaryPanel = ({ clusterEntity }) => {
   // RENDER
   //
 
-  const browserUrl = `${clusterEntity.metadata.cloudUrl}/projects/${clusterEntity.metadata.namespace}/clusters/${clusterEntity.metadata.name}`;
-
   return (
     <>
       <DrawerTitleWrapper>
@@ -134,16 +133,14 @@ export const SummaryPanel = ({ clusterEntity }) => {
         >
           {clusterEntity.metadata.namespace || unknownValue()}
         </DrawerItem>
-        <DrawerItem
-          name={strings.clusterPage.pages.overview.summary.clusterUrl()}
-        >
-          {browserUrl ? (
-            <ClusterLink href={browserUrl} target="_blank" rel="noreferrer">
-              {browserUrl}
-            </ClusterLink>
-          ) : (
-            unknownValue()
-          )}
+        <DrawerItem name={strings.clusterPage.common.clusterUrl()}>
+          <ClusterLink
+            href={generateEntityUrl(clusterEntity)}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {generateEntityUrl(clusterEntity)}
+          </ClusterLink>
         </DrawerItem>
         <DrawerItem
           name={strings.clusterPage.pages.overview.summary.clusterObjects.title()}

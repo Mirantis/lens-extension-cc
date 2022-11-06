@@ -46,7 +46,7 @@ const DrawerItemsWrapper = styled.div(() => ({
 // MAIN COMPONENT
 //
 
-export const KubernetesInformation = ({ distribution, kubeletVersion }) => {
+export const KubernetesInformation = ({ clusterEntity }) => {
   //
   // RENDER
   //
@@ -62,12 +62,12 @@ export const KubernetesInformation = ({ distribution, kubeletVersion }) => {
         <DrawerItem
           name={strings.clusterPage.pages.details.kubernetesInformation.distribution()}
         >
-          {distribution || unknownValue()}
+          {clusterEntity.metadata.distro || unknownValue()}
         </DrawerItem>
         <DrawerItem
           name={strings.clusterPage.pages.details.kubernetesInformation.kubeletVersion()}
         >
-          {kubeletVersion || unknownValue()}
+          {clusterEntity.metadata.kubeVersion || unknownValue()}
         </DrawerItem>
       </DrawerItemsWrapper>
     </>
@@ -75,6 +75,5 @@ export const KubernetesInformation = ({ distribution, kubeletVersion }) => {
 };
 
 KubernetesInformation.propTypes = {
-  distribution: propTypes.string.isRequired,
-  kubeletVersion: propTypes.string.isRequired,
+  clusterEntity: propTypes.object.isRequired,
 };

@@ -32,7 +32,7 @@ const IconWrapper = styled.div(() => ({
 /**
  * Returns provider icon depends on it name.
  * @param {string} provider Provider name.
- * @returns {HTMLElement} Provider icon.
+ * @returns {ReactElement} Provider icon.
  */
 export const getProvider = (provider) => {
   switch (provider) {
