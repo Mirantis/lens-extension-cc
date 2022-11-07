@@ -105,7 +105,7 @@ export function buildQueryString(params) {
  * @param {string} [options.errorMessage] Error message to use if the request is
  *  deemed to have failed (per other options); otherwise, a generated message
  *  is used, based on response status.
- * @returns {Object} If successful, the object has this shape:
+ * @returns {Promise<Object>} If successful, the object has this shape:
  *  `{response: Response, expectedStatuses, body: any, url: string}`:
  *  - response: The Fetch Response object.
  *  - expectedStatuses: The list provided when the request was initiated.
@@ -118,6 +118,11 @@ export function buildQueryString(params) {
  *  - response: The Fetch Response object. Undefined if the failure occurred prior
  *    to fetching data.
  *  - expectedStatuses: The list provided when the request was initiated.
+ *  - body: If the response was not 200 but it was still possible to extract the
+ *    payload using the `extractBodyMethod`, the extracted body. Sometimes APIs
+ *    return error messages this way. `undefined` otherwise.
+ *
+ *  The key distinguishing factor is that `error` will be non-empty in the error case.
  */
 export async function request(
   url,
@@ -147,7 +152,12 @@ export async function request(
   }
 
   if (response.status === 401) {
-    return { url, response, expectedStatuses, error: 'Unauthorized' };
+    return {
+      url,
+      response,
+      expectedStatuses,
+      error: strings.netUtil.error.unauthorized(),
+    };
   }
 
   if (
@@ -160,7 +170,9 @@ export async function request(
       const { body = {} } = await tryExtractBody(response, extractBodyMethod);
 
       let message =
-        get(body, 'message', '') || get(body, 'error_description', '');
+        get(body, 'message', '') ||
+        get(body, 'error_description', '') ||
+        get(body, 'error', '');
 
       if (message) {
         message = message.includes(': ')
@@ -174,6 +186,7 @@ export async function request(
         return {
           url,
           response,
+          body,
           expectedStatuses,
           error:
             `${errorMessage || strings.netUtil.error.requestFailed(url)} ` +
@@ -198,16 +211,16 @@ export async function request(
 
   let body = null;
   if (extractBodyMethod) {
-    const extracted = await tryExtractBody(response, extractBodyMethod);
-    if (extracted.error) {
+    const payload = await tryExtractBody(response, extractBodyMethod);
+    if (payload.error) {
       return {
         url,
         response,
         expectedStatuses,
-        error: strings.netUtil.error.invalidResponseData(url, extracted.error),
+        error: strings.netUtil.error.invalidResponseData(url, payload.error),
       };
     }
-    body = extracted.body;
+    body = payload.body;
   }
 
   return { url, response, expectedStatuses, body };

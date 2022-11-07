@@ -9,6 +9,33 @@ import { KubernetesClient } from './clients/KubernetesClient';
 import { ResourceClient } from './clients/ResourceClient';
 import { logger, logValue } from '../util/logger';
 import { apiResourceTypes } from './apiConstants';
+import { Cloud } from '../common/Cloud';
+
+/**
+ * @typedef {Object} ApiSuccessResponse
+ * @property {boolean} tokensRefreshed True if `cloud` tokens were refreshed as part of the request;
+ *  false if not.
+ * @property {number} status Status code.
+ * @property {Cloud} cloud Cloud used for the request.
+ * @property {Object|string} body Deserialized body according to the specified extraction method.
+ * @property {string} url Full URL used for the request.
+ * @property {string} path Subpath from `cloud` host. Does not begin with a slash.
+ */
+
+/**
+ * @typedef {Object} ApiErrorResponse
+ * @property {string} error Error message. Will always be non-empty.
+ * @property {boolean} tokensRefreshed True if `cloud` tokens were refreshed as part of the request;
+ *  false if not.
+ * @property {number} status Status code.
+ * @property {Cloud} cloud Cloud used for the request.
+ * @property {Object|string} [body] Deserialized body according to the specified extraction method,
+ *  if error had a body.
+ * @property {string} [url] Full URL used for the request, if the request was actually sent for
+ *  it failed.
+ * @property {string} [path] Subpath from `cloud` host. Does not begin with a slash. Only if
+ *  the request was actually sent before it failed.
+ */
 
 const typeToClient = {
   [apiResourceTypes.CLUSTER]: ResourceClient,
@@ -81,6 +108,10 @@ export function extractJwtPayload(token) {
  *  and `false` is returned.
  */
 export async function cloudRefresh(cloud) {
+  if (!cloud || !(cloud instanceof Cloud)) {
+    throw new Error('cloud parameter must be a Cloud instance');
+  }
+
   const apiClient = new ApiClient({
     baseUrl: cloud.cloudUrl,
     config: cloud.config,
@@ -120,6 +151,10 @@ export async function cloudRefresh(cloud) {
  * @returns {string|undefined} `undefined` if successful; error message otherwise.
  */
 export async function cloudLogout(cloud) {
+  if (!cloud || !(cloud instanceof Cloud)) {
+    throw new Error('cloud parameter must be a Cloud instance');
+  }
+
   const apiClient = new ApiClient({
     baseUrl: cloud.cloudUrl,
     config: cloud.config,
@@ -142,19 +177,20 @@ export async function cloudLogout(cloud) {
  * @param {string} options.resourceType One of the keys (i.e. API resource types) from
  *  the `typeToClient` map. This is the API resource type on which to call the `method`.
  * @param {Object} [options.args] Optional arguments for the `method` on the `resourceType`.
- * @returns {Object} If successful, `{body: Object, tokensRefreshed: boolean, cloud: Cloud, url: string, path: string}`;
- *  otherwise, `{error: string, status: number, tokensRefreshed: boolean, cloud: Cloud}`.
- *  `tokensRefreshed` is true if the cloud's access token had expired and was successfully
- *  refreshed during the process of making the request (which may still have failed afterward,
- *  using the updated token). In either case, `cloud` is a reference to the original `cloud`
- *  given to make the request. `url` is the full URL used for the request. `path` is the
- *  full path used for the request, without leading '/', less the protocol, host, and port.
+ * @returns {Promise<ApiSuccessResponse|ApiErrorResponse>}
  */
 export async function cloudRequest({ cloud, method, resourceType, args }) {
+  if (!cloud || !(cloud instanceof Cloud)) {
+    throw new Error('cloud parameter must be a Cloud instance');
+  }
+
+  let tokensRefreshed = false;
+
   // NOTE: it's useless to fetch if we don't have a token, or we can't refresh it
   if (!cloud.connected) {
     return {
       cloud,
+      tokensRefreshed,
       error: strings.apiUtil.error.noTokens(),
       status: 400,
     };
@@ -164,12 +200,11 @@ export async function cloudRequest({ cloud, method, resourceType, args }) {
   if (!Client) {
     return {
       cloud,
+      tokensRefreshed,
       error: strings.apiUtil.error.invalidResourceType(resourceType),
       status: 400,
     };
   }
-
-  let tokensRefreshed = false;
 
   // the first attempt to fetch
   let k8sClient = new Client(cloud.cloudUrl, cloud.token, resourceType);
@@ -177,6 +212,7 @@ export async function cloudRequest({ cloud, method, resourceType, args }) {
     resourceType,
     args
   );
+  let path = url?.replace(`${cloud.cloudUrl}/`, '');
 
   if (response?.status === 401) {
     // assume token is expired, try to refresh
@@ -188,7 +224,7 @@ export async function cloudRequest({ cloud, method, resourceType, args }) {
     );
     tokensRefreshed = await cloudRefresh(cloud);
     if (!tokensRefreshed) {
-      return { cloud, error, status: 401 };
+      return { cloud, tokensRefreshed, error, url, path, status: 401 };
     }
 
     // try to fetch again with updated token
@@ -197,6 +233,7 @@ export async function cloudRequest({ cloud, method, resourceType, args }) {
       resourceType,
       args
     ));
+    path = url?.replace(`${cloud.cloudUrl}/`, '');
   }
 
   return {
@@ -204,8 +241,8 @@ export async function cloudRequest({ cloud, method, resourceType, args }) {
     body,
     tokensRefreshed, // may have been refreshed and _then_ error occurred, so always include
     error,
-    status: error ? response?.status ?? 0 : undefined,
+    status: response?.status ?? 0,
     url,
-    path: url?.replace(`${cloud.cloudUrl}/`, ''),
+    path,
   };
 }
