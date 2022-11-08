@@ -5,7 +5,11 @@ import { formatDate } from '../../../rendererUtil';
 import { getProvider } from '../clusterPageUtil';
 import { generateEntityUrl } from '../../../../catalog/catalogEntities';
 import { PanelTitle } from '../PanelTitle';
-import { DrawerTitleWrapper, DrawerItemsWrapper, Link } from '../ClusterPage';
+import {
+  DrawerTitleWrapper,
+  DrawerItemsWrapper,
+  Link,
+} from '../clusterPageComponents';
 
 const {
   Component: { DrawerItem },

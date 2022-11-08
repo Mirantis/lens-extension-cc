@@ -5,7 +5,7 @@ import * as strings from '../../../../strings';
 import { layout } from '../../styles';
 import { formatDate } from '../../../rendererUtil';
 import { PanelTitle } from '../PanelTitle';
-import { DrawerTitleWrapper } from '../ClusterPage';
+import { DrawerTitleWrapper } from '../clusterPageComponents';
 
 const {
   Component: { DrawerItem },

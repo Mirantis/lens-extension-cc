@@ -7,7 +7,11 @@ import { formatDate } from '../../../rendererUtil';
 import { PanelTitle } from '../PanelTitle';
 import { getProvider } from '../clusterPageUtil';
 import { generateEntityUrl } from '../../../../catalog/catalogEntities';
-import { DrawerTitleWrapper, DrawerItemsWrapper, Link } from '../ClusterPage';
+import {
+  DrawerTitleWrapper,
+  DrawerItemsWrapper,
+  Link,
+} from '../clusterPageComponents';
 
 const {
   Component: { DrawerItem, Icon },

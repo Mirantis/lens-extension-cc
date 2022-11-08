@@ -2,7 +2,10 @@ import propTypes from 'prop-types';
 import { Renderer } from '@k8slens/extensions';
 import * as strings from '../../../../strings';
 import { PanelTitle } from '../PanelTitle';
-import { DrawerTitleWrapper, DrawerItemsWrapper } from '../ClusterPage';
+import {
+  DrawerTitleWrapper,
+  DrawerItemsWrapper,
+} from '../clusterPageComponents';
 
 const {
   Component: { DrawerItem },

@@ -9,7 +9,7 @@ import { mixinPageStyles } from '../../styles';
 import { ConditionsPanel } from './ConditionsPanel';
 import { SummaryPanel } from './SummaryPanel';
 import { PanelTitle } from '../PanelTitle';
-import { DrawerTitleWrapper } from '../ClusterPage';
+import { DrawerTitleWrapper } from '../clusterPageComponents';
 
 //
 // INTERNAL STYLED COMPONENTS
