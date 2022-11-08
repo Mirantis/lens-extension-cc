@@ -5,6 +5,7 @@ import * as strings from '../../../../strings';
 import { layout } from '../../styles';
 import { formatDate } from '../../../rendererUtil';
 import { PanelTitle } from '../PanelTitle';
+import { DrawerTitleWrapper } from '../ClusterPage';
 
 const {
   Component: { DrawerItem },
@@ -23,13 +24,6 @@ const {
 //
 // INTERNAL STYLED COMPONENTS
 //
-
-const DrawerTitleWrapper = styled.div(() => ({
-  paddingLeft: layout.pad * 3,
-  paddingRight: layout.pad * 3,
-  marginTop: -layout.pad * 3,
-  marginBottom: -layout.pad * 3,
-}));
 
 const Container = styled.td(() => ({
   display: 'flex',

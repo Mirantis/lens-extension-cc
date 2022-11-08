@@ -72,11 +72,13 @@ const sortByAsc = (a, b) => {
 };
 
 export const ConditionsPanel = ({ clusterEntity }) => {
+  const conditions = clusterEntity.spec.conditions || [];
+
   return (
     <Container>
-      {(clusterEntity.spec.conditions || []).length > 0 ? (
+      {conditions.length > 0 ? (
         <ConditionsList>
-          {clusterEntity.spec.conditions
+          {conditions
             .concat()
             .sort(sortByAsc)
             .map((condition) => (

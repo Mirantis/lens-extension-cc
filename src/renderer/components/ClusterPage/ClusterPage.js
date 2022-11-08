@@ -1,4 +1,5 @@
 import React from 'react';
+import styled from '@emotion/styled';
 import propTypes from 'prop-types';
 import { ThemeProvider } from '@emotion/react';
 import { Renderer } from '@k8slens/extensions';
@@ -7,6 +8,38 @@ import * as consts from '../../../constants';
 import { logger } from '../../../util/logger';
 import { clusterEntityModelTs } from '../../../catalog/catalogEntities';
 import { useThemeSwitching } from '../useThemeSwitching';
+import { layout } from '../styles';
+
+//
+// STYLED COMPONENTS
+//
+
+export const DrawerTitleWrapper = styled.div(() => ({
+  paddingLeft: layout.pad * 3,
+  paddingRight: layout.pad * 3,
+  marginTop: -layout.pad * 3,
+  marginBottom: -layout.pad * 3,
+}));
+
+export const DrawerItemsWrapper = styled.div(() => ({
+  paddingLeft: layout.pad * 3,
+  paddingRight: layout.pad * 3,
+  paddingBottom: layout.pad * 2.25,
+  backgroundColor: 'var(--contentColor)',
+
+  '& > div': {
+    paddingTop: layout.pad * 1.5,
+    paddingBottom: layout.pad * 1.5,
+  },
+}));
+
+export const Link = styled.a(() => ({
+  color: 'var(--primary)',
+}));
+
+//
+// MAIN COMPONENT
+//
 
 export const ClusterPage = ({ children }) => {
   const { theme } = useThemeSwitching();

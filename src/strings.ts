@@ -396,7 +396,7 @@ export const clusterPage: Dict = {
         kubeletVersion: () => 'Kubelet Version',
       },
       serverInformation: {
-        title: () => 'Mirantis Container Cloud',
+        title: () => mccFullName,
         uid: catalog.entities.common.details.props.uid,
         dateCreated: catalog.entities.common.details.props.dateCreated,
         isManagementCluster:

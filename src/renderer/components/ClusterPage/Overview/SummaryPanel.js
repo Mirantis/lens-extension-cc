@@ -7,6 +7,7 @@ import { formatDate } from '../../../rendererUtil';
 import { PanelTitle } from '../PanelTitle';
 import { getProvider } from '../clusterPageUtil';
 import { generateEntityUrl } from '../../../../catalog/catalogEntities';
+import { DrawerTitleWrapper, DrawerItemsWrapper, Link } from '../ClusterPage';
 
 const {
   Component: { DrawerItem, Icon },
@@ -25,29 +26,6 @@ const {
 //
 // INTERNAL STYLED COMPONENTS
 //
-
-const DrawerTitleWrapper = styled.div(() => ({
-  paddingLeft: layout.pad * 3,
-  paddingRight: layout.pad * 3,
-  marginTop: -layout.pad * 3,
-  marginBottom: -layout.pad * 3,
-}));
-
-const DrawerItemsWrapper = styled.div(() => ({
-  paddingLeft: layout.pad * 3,
-  paddingRight: layout.pad * 3,
-  paddingBottom: layout.pad * 2.25,
-  backgroundColor: 'var(--contentColor)',
-
-  '& > div': {
-    paddingTop: layout.pad * 1.5,
-    paddingBottom: layout.pad * 1.5,
-  },
-}));
-
-const ClusterLink = styled.a(() => ({
-  color: 'var(--primary)',
-}));
 
 const IconWrapper = styled.div(() => ({
   display: 'inline-block',
@@ -134,13 +112,13 @@ export const SummaryPanel = ({ clusterEntity }) => {
           {clusterEntity.metadata.namespace || unknownValue()}
         </DrawerItem>
         <DrawerItem name={strings.clusterPage.common.clusterUrl()}>
-          <ClusterLink
+          <Link
             href={generateEntityUrl(clusterEntity)}
             target="_blank"
             rel="noreferrer"
           >
             {generateEntityUrl(clusterEntity)}
-          </ClusterLink>
+          </Link>
         </DrawerItem>
         <DrawerItem
           name={strings.clusterPage.pages.overview.summary.clusterObjects.title()}
