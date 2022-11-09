@@ -10,7 +10,7 @@ const {
 const Title = styled(DrawerTitle)(({ theme }) => ({
   backgroundColor:
     theme.mode === themeModes.LIGHT
-      ? 'var(--layoutTabsLineColor)'
+      ? 'var(--sidebarBackground)'
       : 'var(--drawerSubtitleBackground)',
 }));
 
