@@ -9,10 +9,10 @@ First, quit Lens if it's currently running.
 Then, clone the repository wherever you prefer to have your code, and then link to it:
 
 ```bash
-$ git clone https://github.com/Mirantis/lens-extension-cc.git /your/src/path
+$ git clone https://github.com/Mirantis/lens-extension-cc.git /cloned/repo/path
 $ mkdir -p ~/.k8slens/extensions
-$ ln -s /your/src/path ~/.k8slens/extensions/lens-extension-cc
-$ cd /your/src/path
+$ ln -s /cloned/repo/path ~/.k8slens/extensions/lens-extension-cc
+$ cd /cloned/repo/path
 $ yarn       # install dependencies
 $ yarn start # start dev build in watch mode
 ```
