@@ -350,6 +350,7 @@ export const clusterPage: Dict = {
   },
   common: {
     emptyValue: catalog.entities.common.details.emptyValue,
+    clusterUrl: () => 'Cluster URL',
   },
   pages: {
     overview: {
@@ -365,7 +366,6 @@ export const clusterPage: Dict = {
           catalog.entities.cluster.details.props.isManagementCluster,
         releaseVersion: catalog.entities.cluster.details.props.release,
         namespace: () => 'Namespace',
-        clusterUrl: () => 'Cluster URL',
         clusterObjects: {
           title: () => 'Cluster objects',
           credentials: (count) => (count === 1 ? 'Credential' : 'Credentials'),
@@ -378,6 +378,47 @@ export const clusterPage: Dict = {
       clusterConditions: {
         title: () => 'Cluster Conditions',
         noStatus: () => 'No status information available',
+      },
+    },
+    details: {
+      generalInformation: {
+        title: () => 'General information',
+        name: () => 'Name',
+        kind: () => 'Kind',
+        source: () => 'Source',
+        status: catalog.entities.common.details.props.serverStatus,
+        lastSync: catalog.entities.common.details.props.lastSync,
+        labels: () => 'Labels',
+      },
+      kubernetesInformation: {
+        title: () => 'Kubernetes information',
+        distribution: () => 'Distribution',
+        kubeletVersion: () => 'Kubelet Version',
+      },
+      serverInformation: {
+        title: () => mccFullName,
+        uid: catalog.entities.common.details.props.uid,
+        dateCreated: catalog.entities.common.details.props.dateCreated,
+        isManagementCluster:
+          catalog.entities.cluster.details.props.isManagementCluster,
+        managementCluster:
+          catalog.entities.cluster.details.props.managementCluster,
+        region: catalog.entities.cluster.details.props.region,
+        provider: catalog.entities.cluster.details.props.provider,
+        release: catalog.entities.cluster.details.props.release,
+        managers: catalog.entities.cluster.details.props.managers,
+        workers: catalog.entities.cluster.details.props.workers,
+        dashboardUrl: catalog.entities.cluster.details.props.dashboardUrl,
+      },
+      lmaInformation: {
+        lmaEnabled: catalog.entities.cluster.details.props.lmaEnabled,
+        isLmaEnabled: catalog.entities.cluster.details.props.isLmaEnabled,
+        title: catalog.entities.cluster.details.props.lma,
+        alerta: catalog.entities.cluster.details.props.alertaUrl,
+        alertManager: catalog.entities.cluster.details.props.alertManagerUrl,
+        grafana: catalog.entities.cluster.details.props.grafanaUrl,
+        kibana: catalog.entities.cluster.details.props.kibanaUrl,
+        prometheus: catalog.entities.cluster.details.props.prometheusUrl,
       },
     },
   },

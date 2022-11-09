@@ -4,6 +4,7 @@ import { GlobalPage } from './components/GlobalPage/GlobalPage';
 import { ContainerCloudIcon as ClusterPageIcon } from './components/ContainerCloudIcon';
 import { ClusterPage } from './components/ClusterPage/ClusterPage';
 import { ClusterOverviewView } from './components/ClusterPage/Overview/ClusterOverviewView';
+import { ClusterDetailsView } from './components/ClusterPage/Details/ClusterDetailsView';
 import * as strings from '../strings';
 import * as consts from '../constants';
 import {
@@ -83,7 +84,11 @@ export default class ExtensionRenderer extends LensExtension {
     {
       id: ROUTE_CLUSTER_DETAILS,
       components: {
-        Page: () => <p>DETAILS</p>,
+        Page: () => (
+          <ClusterPage>
+            <ClusterDetailsView />
+          </ClusterPage>
+        ),
       },
     },
   ];
