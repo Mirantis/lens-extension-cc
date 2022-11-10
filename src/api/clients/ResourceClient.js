@@ -129,9 +129,6 @@ export class ResourceClient {
       errorMessage: strings.apiClient.error.failedToGetList(resourceType),
       extractBodyMethod: resourceVersion ? 'text' : 'json', // watches respond with multiple JSON documents
       options: {
-        // TODO[PRODX-22469]: A timeout helps, but still, we never get content from the body.
-        //  We just get a timeout error waiting for body content.
-        // timeout: resourceVersion ? 30000 : 0, // milliseconds (0 -> Infinity)
         ...requestOptions,
       },
     });

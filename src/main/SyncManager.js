@@ -8,11 +8,7 @@ import { DATA_CLOUD_EVENTS, DataCloud } from '../common/DataCloud';
 import { CONNECTION_STATUSES } from '../common/Cloud';
 import { cloudStore } from '../store/CloudStore';
 import { syncStore } from '../store/SyncStore';
-import {
-  apiChangeTypes,
-  apiCredentialKinds,
-  apiKinds,
-} from '../api/apiConstants';
+import { apiCredentialKinds, apiKinds } from '../api/apiConstants';
 import { logValue } from '../util/logger';
 import * as consts from '../constants';
 import {
@@ -67,12 +63,6 @@ const kindToSyncStoreProp = {
   [apiKinds.RHEL_LICENSE]: 'licenses',
   [apiKinds.PROXY]: 'proxies',
 };
-
-/**
- * API kind to Namespace property for kinds that are supported.
- * @type {{ [index: string]: string }}
- */
-const kindToNamespaceProp = kindToSyncStoreProp; // same property names for now
 
 /**
  * Synchronizes MCC namespaces with the Lens Catalog.
@@ -966,10 +956,6 @@ export class SyncManager extends Singleton {
           DATA_CLOUD_EVENTS.DATA_UPDATED,
           this.onDataUpdated
         );
-        dataCloud.addEventListener(
-          DATA_CLOUD_EVENTS.RESOURCE_UPDATED,
-          this.onResourceUpdated
-        );
 
         this.dataClouds[cloudUrl] = dataCloud;
       }
@@ -998,10 +984,6 @@ export class SyncManager extends Singleton {
       dataCloud.removeEventListener(
         DATA_CLOUD_EVENTS.DATA_UPDATED,
         this.onDataUpdated
-      );
-      dataCloud.removeEventListener(
-        DATA_CLOUD_EVENTS.RESOURCE_UPDATED,
-        this.onResourceUpdated
       );
 
       this.removeCloudFromCatalog(dataCloud);
@@ -1182,93 +1164,6 @@ export class SyncManager extends Singleton {
         `Unknown Cloud; cloudUrl=${logValue(cloudUrl)}`
       );
     }
-  };
-
-  // TODO[PRODX-22469]: Remove if we drop watches. Currently untested code because of body
-  //  extraction issue (see other related comments).
-  /**
-   * Called whenever a DataCloud's resources have changed.
-   * @param {Object} event
-   * @param {DataCloud} event.dataCloud The updated DataCloud.
-   * @param {Object} info
-   * @param {Array<{ type: "ADDED"|"MODIFIED"|"DELETE", resource: Resource }>} info.updates
-   */
-  onResourceUpdated = async ({ target: dataCloud }, { updates }) => {
-    this.ipcMain.capture(
-      'info',
-      'SyncManager.onResourceUpdated()',
-      `Updating Catalog and SyncStore after resource updates in dataCloud=${dataCloud}`
-    );
-
-    // get a 'disconnected' version of the SyncStore that won't react to every single
-    //  change so that we can effectively batch changes to as few as possible, and
-    //  avoid them taking place while we're still churning through Cloud updates
-    // NOTE: we can update the `catalogSource` directly because we don't watch it;
-    //  it's a one-way change here and reflected in Lens
-    const jsonStore = syncStore.toPureJSON();
-
-    // map of Namespace property name to list of added or modified resources
-    const updatedResources = {};
-    updates.forEach(({ type: updateType, resource }) => {
-      if (resource.kind === apiKinds.NAMESPACE) {
-        // not expecting to get updates to namespaces here; namespace updates should result in
-        //  a full data fetch and wholesale catalog/store update via `onDataUpdated()` handler
-        this.ipcMain.capture(
-          'warn',
-          'SyncManager.onResourceUpdated()',
-          `Ignoring unexpected ${logValue(
-            updateType
-          )} update to namespace resource; resource=${resource}`
-        );
-        return;
-      }
-
-      if (updateType === apiChangeTypes.DELETED) {
-        const catIdx = this.catalogSource.findIndex(
-          (entity) =>
-            entity.metadata.kind === resource.kind &&
-            entity.metadata.name === resource.name &&
-            entity.metadata.cloudUrl === resource.cloud.cloudUrl
-        );
-        if (catIdx >= 0) {
-          this.removeEntityFromCatalog(catIdx);
-        }
-
-        const storeList = jsonStore[kindToSyncStoreProp[resource.kind]];
-        const listIdx = storeList.findIndex(
-          (model) =>
-            model.metadata.name === resource.name &&
-            model.metadata.cloudUrl === resource.cloud.cloudUrl
-        );
-        if (listIdx >= 0) {
-          this.removeModelFromStore(storeList, listIdx);
-        }
-      } else {
-        // assuming ADDED or MODIFIED resource
-        const prop = kindToNamespaceProp[resource.kind];
-        updatedResources[prop] ||= [];
-        updatedResources[prop].push(resource);
-      }
-    });
-
-    // skip deleting entities because we've done that here, and `addModResources`
-    //  is not representative of ALL synced resources since we're only processing
-    //  individual resource updates as opposed to an update after a full data fetch
-    await this.updateCatalogEntities(
-      dataCloud,
-      updatedResources,
-      jsonStore,
-      true
-    );
-
-    // save the models in the store
-    Object.keys(jsonStore).forEach((key) => (syncStore[key] = jsonStore[key]));
-
-    this.ipcMain.capture(
-      'info',
-      'SyncManager.onResourceUpdated()',
-      `Done: Updated Catalog and SyncStore after resource updates in dataCloud=${dataCloud}`
-    );
   };
 
   /**
