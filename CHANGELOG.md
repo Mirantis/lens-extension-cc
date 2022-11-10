@@ -1,6 +1,6 @@
 # ChangeLog
 
-## UNRELEASED
+## v5.2.1
 
 - Show `--` instead of the URL if StackLight is disabled and URLs aren’t available in Cluster details view.
 - Fixed bug where BYO Credentials were not listed in the Catalog.
