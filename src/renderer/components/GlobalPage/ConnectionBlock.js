@@ -57,6 +57,14 @@ const mkNameValidator = (clouds) => ({
     !Object.values(clouds).find(({ name }) => name === value),
 });
 
+const getOriginUrl = (url) => {
+  try {
+    return new URL(url).origin;
+  } catch (e) {
+    return url;
+  }
+};
+
 export const ConnectionBlock = ({ loading, handleClusterConnect }) => {
   const { clouds } = useClouds();
   const [clusterName, setClusterName] = useState('');
@@ -72,7 +80,11 @@ export const ConnectionBlock = ({ loading, handleClusterConnect }) => {
 
   const handleConnectClick = () => {
     setShowInfoBox(false);
-    handleClusterConnect(clusterUrl, clusterName);
+
+    const originUrl = getOriginUrl(clusterUrl);
+
+    setClusterUrl(originUrl);
+    handleClusterConnect(originUrl, clusterName);
   };
 
   return (
