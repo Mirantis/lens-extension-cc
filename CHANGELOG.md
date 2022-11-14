@@ -1,5 +1,9 @@
 # ChangeLog
 
+## UNRELEASED
+
+- Added logic to update Management Cluster URL after `Connect` button clicking in `Add a Mirantis Container Cloud Management Cluster` view.
+
 ## v5.2.1
 
 - Show `--` instead of the URL if StackLight is disabled and URLs aren’t available in Cluster details view.
