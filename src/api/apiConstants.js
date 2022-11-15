@@ -6,7 +6,7 @@ import { pick } from 'lodash';
 
 /**
  * Map of API resource type to name/endpoint used in Kube API calls.
- * @type {{ [index: string], string }}
+ * @type {Record<string, string>}
  */
 export const apiResourceTypes = Object.freeze({
   CLUSTER: 'clusters',
@@ -34,7 +34,7 @@ export const apiResourceTypes = Object.freeze({
 
 /**
  * Map of credential entity type to name/endpoint used in Kube API calls.
- * @type {{ [index: string], string }}
+ * @type {Record<string, string>}
  */
 export const apiCredentialTypes = Object.freeze(
   pick(apiResourceTypes, [
@@ -50,7 +50,7 @@ export const apiCredentialTypes = Object.freeze(
 
 /**
  * Map of API kind to kube spec `kind` property value in API data objects.
- * @type {{ [index: string], string }}
+ * @type {Record<string, string>}
  */
 export const apiKinds = Object.freeze({
   NAMESPACE: 'Namespace',
@@ -65,11 +65,12 @@ export const apiKinds = Object.freeze({
   VSPHERE_CREDENTIAL: 'VsphereCredential',
   RHEL_LICENSE: 'RHELLicense',
   PROXY: 'Proxy',
+  EVENT: 'Event', // cluster events
 });
 
 /**
  * Map of credential API kind to kube spec `kind` property value in API data objects.
- * @type {{ [index: string], string }}
+ * @type {Record<string, string>}
  */
 export const apiCredentialKinds = Object.freeze(
   pick(apiKinds, [
@@ -86,7 +87,7 @@ export const apiCredentialKinds = Object.freeze(
 /**
  * Map of credential API kind to provider (set as its 'kaas.mirantis.com/provider' label's value)
  *  as used in the API.
- * @type {{ [index: string], string }}
+ * @type {Record<string, string>}
  */
 export const apiCredentialProviders = Object.freeze({
   AWS_CREDENTIAL: 'aws',
@@ -99,7 +100,7 @@ export const apiCredentialProviders = Object.freeze({
 
 /**
  * Map of API label to value.
- * @type {{ [index: string], string }}
+ * @type {Record<string, string>}
  */
 export const apiLabels = Object.freeze({
   KAAS_REGION: 'kaas.mirantis.com/region',
@@ -110,9 +111,18 @@ export const apiLabels = Object.freeze({
 
 /**
  * Map of API namespace (status) phases to value.
- * @type {{ [index: string], string }}
+ * @type {Record<string, string>}
  */
 export const apiNamespacePhases = Object.freeze({
   ACTIVE: 'Active',
   TERMINATING: 'Terminating',
+});
+
+/**
+ * Map of API resource event types.
+ * @type {Record<string, string>}
+ */
+export const apiEventTypes = Object.freeze({
+  NORMAL: 'Normal',
+  WARNING: 'Warning',
 });

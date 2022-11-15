@@ -8,11 +8,14 @@ import { Common } from '@k8slens/extensions';
 import * as consts from '../constants';
 import { logger, logValue } from '../util/logger';
 import { mergeRtvShapes } from '../util/mergeRtvShapes';
-import { apiKinds, apiCredentialKinds } from '../api/apiConstants';
-import { nodeConditionTs } from '../api/apiTypesets';
+import {
+  apiKinds,
+  apiCredentialKinds,
+  apiEventTypes,
+} from '../api/apiConstants';
 
 const {
-  Catalog: { CatalogEntity },
+  Catalog: { CatalogEntity, KubernetesCluster },
 } = Common;
 
 /**
@@ -41,6 +44,15 @@ export const entityLabels = Object.freeze({
 });
 
 /**
+ * RTV Typeset for a string that is an ISO8601 timestamp with optional milliseconds since
+ *  we don't always have those.
+ */
+const iso8601DateTs = [
+  rtv.STRING,
+  { exp: '^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z$' },
+];
+
+/**
  * Typeset representing the required labels for all entity types.
  */
 export const requiredLabelsTs = {
@@ -49,13 +61,19 @@ export const requiredLabelsTs = {
 };
 
 /**
- * Typeset for a required value from the apiKinds enumeration.
+ * Typeset for a required value from the apiKinds enumeration. Optional since not
+ *  all entities have a kind (e.g. cluster events, coming from ResourceEvent instances,
+ *  don't have a kind).
  */
-export const apiKindTs = [rtv.STRING, { oneOf: Object.values(apiKinds) }];
+export const apiKindTs = [
+  rtv.OPTIONAL,
+  rtv.STRING,
+  { oneOf: Object.values(apiKinds) },
+];
 
 /**
  * Typeset for a basic object used to create a new instance of an entity that will
- *  be added to the Lens Catalog.
+ *  be added to the Lens Catalog and persisted by the SyncStore.
  */
 export const catalogEntityModelTs = {
   // based on Lens Common.Types.CatalogEntityMetadata
@@ -78,6 +96,10 @@ export const catalogEntityModelTs = {
     kind: apiKindTs,
     resourceVersion: rtv.STRING,
 
+    // this is a string that essentially identifies the version of the extension which
+    //  created the entity; it should be treated as an opaque value at the entity level
+    cacheVersion: [rtv.OPTIONAL, rtv.STRING], // optional for backward compatibility
+
     // enough info to relate this entity to a namespace in a Cloud in `CloudStore.clouds`
     //  if necessary
     namespace: rtv.STRING,
@@ -91,17 +113,18 @@ export const catalogEntityModelTs = {
   spec: {
     // ISO-8601 timestamp (e.g. 2022-03-04T21:33:27.716Z), milliseconds are optional
     //  (MCC API doesn't return milliseconds, so we don't always expect them)
-    createdAt: [
-      rtv.STRING,
-      { exp: '^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z$' },
-    ],
+    createdAt: iso8601DateTs,
   },
 
-  // all entities must have a status with a phase
-  // based on Common.Types.CatalogEntityStatus
+  // all entities must have a status with a phase based on Common.Types.CatalogEntityStatus
+  // NOTE: this is __LENS__ status, not MCC status
   status: {
-    // NOTE: this is __LENS__ status, not MCC status
-    phase: rtv.STRING, // values are specific to the entity
+    // `phase` values are specific to the entity and determined by Resource that generated
+    //  its model, and represent phases of __LENS__ entity status, particularly for clusters
+    //  where they're 'disconnected' at first, and when opened in Lens, become 'connected';
+    //  see `clusterEntityPhases` below for values (not all entity types have the same values)
+    phase: rtv.STRING,
+
     reason: [rtv.OPTIONAL, rtv.STRING],
     enabled: [rtv.OPTIONAL, rtv.BOOLEAN], // true, by default
     message: [rtv.OPTIONAL, rtv.STRING],
@@ -218,7 +241,38 @@ export const clusterEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
         telemeterServerUrl: [rtv.OPTIONAL, rtv.STRING],
       },
     ],
-    conditions: [rtv.OPTIONAL, [nodeConditionTs]], // optional for backward compatibility
+    conditions: [
+      rtv.OPTIONAL, // optional for backward compatibility
+      [
+        // NOTE: this should NOT be a reference to `apiTypesets.nodeConditionTs` because
+        //  here, we're defining the typeset for a cluster ENTITY whereas `nodeConditionTs`
+        //  defines the typeset for a condition object in an API RESOURCE -- two entirely
+        //  different things
+        {
+          message: rtv.STRING,
+          ready: rtv.BOOLEAN,
+          type: rtv.STRING,
+        },
+      ],
+    ],
+    events: [
+      rtv.OPTIONAL, // optional for backward compatibility
+      [
+        mergeRtvShapes({}, catalogEntityModelTs, {
+          spec: {
+            type: [rtv.STRING, { oneOf: Object.values(apiEventTypes) }],
+            lastTimeAt: iso8601DateTs,
+            count: rtv.SAFE_INT,
+            sourceComponent: rtv.STRING,
+            targetKind: [rtv.STRING, { oneOf: apiKinds.CLUSTER }],
+            targetUid: rtv.STRING, // always expected for a ClusterEvent
+            targetName: rtv.STRING,
+            reason: rtv.STRING,
+            message: rtv.STRING,
+          },
+        }),
+      ],
+    ],
   },
 
   // based on Lens `KubernetesClusterStatus` type
@@ -327,4 +381,80 @@ export const findEntity = function (list, model) {
   //  in multiple synced namespaces; they'll all have their own UIDs; users can
   //  use the Catalog's search feature to filter on namespace
   return list.find((entity) => model.metadata.uid === entity.metadata.uid);
+};
+
+/**
+ * Compares a Catalog Entity to either an API Resource object or a Catalog Entity Model
+ *  (which has presumably been just fetched) and determines if the entity has changed and
+ *  needs updating.
+ * @param {CatalogEntity} entity
+ * @param {Resource|Object} resourceOrModel
+ * @returns {boolean} True if the entity has changed and needs updating; false if not.
+ */
+export const entityHasChanged = function (entity, resourceOrModel) {
+  if (!(entity instanceof CatalogEntity)) {
+    throw new Error('entity must be an instance of CatalogEntity');
+  }
+
+  // helpers to get the property values we needed from `resourceOrModel` (or nested inside it)
+  // NOTE: when it's Resource-based, it's flat, so it means we have `resourceOrModel.resourceVersion`
+  //  (all Resources or Models have a `resourceVersion`), and when it's Model-based, its properties
+  //  are split among top-level `metadata`, `spec`, and `status` properties, so we have
+  //  `resourceOrModel.metadata.resourceVersion`
+  const getResOrModUid = (resOrMod) =>
+    resOrMod.resourceVersion ? resOrMod.uid : resOrMod.metadata.uid;
+  const getResOrModVersion = (resOrMod) =>
+    resOrMod.resourceVersion || resOrMod.metadata.resourceVersion;
+  const getResOrModCache = (resOrMod) =>
+    resOrMod.resourceVersion
+      ? resOrMod.cacheVersion
+      : resOrMod.metadata.cacheVersion;
+  const getResOrModEvents = (resOrMod) =>
+    resOrMod.resourceVersion ? resOrMod.events : resOrMod.spec.events;
+
+  let changed =
+    entity.metadata.resourceVersion !== getResOrModVersion(resourceOrModel) ||
+    entity.metadata.cacheVersion !== getResOrModCache(resourceOrModel);
+
+  if (!changed) {
+    // check to see if it's a cluster with updated events
+    if (entity instanceof KubernetesCluster) {
+      // if event list lengths are difference, there was a change
+      changed =
+        entity.spec.events.length !== getResOrModEvents(resourceOrModel).length;
+
+      // otherwise, see if at least one event from the entity differs from an event in the
+      //  resource/model
+      changed =
+        changed ||
+        entity.spec.events.some((entityEvent) => {
+          const resOrModEvent = getResOrModEvents(resourceOrModel).find(
+            (e) => getResOrModUid(e) === entityEvent.metadata.uid
+          );
+          return (
+            !resOrModEvent ||
+            getResOrModVersion(resOrModEvent) !==
+              entityEvent.metadata.resourceVersion
+          );
+        });
+
+      // and in case the lists are the same length but objects have changed internally, we have
+      //  to also see if at least one event from the resource/model differs from an event in
+      //  the entity
+      changed =
+        changed ||
+        getResOrModEvents(resourceOrModel).some((resOrModEvent) => {
+          const entityEvent = entity.spec.events.find(
+            (e) => e.metadata.uid === getResOrModUid(resOrModEvent)
+          );
+          return (
+            !entityEvent ||
+            entityEvent.metadata.resourceVersion !==
+              getResOrModVersion(resOrModEvent)
+          );
+        });
+    }
+  }
+
+  return changed;
 };

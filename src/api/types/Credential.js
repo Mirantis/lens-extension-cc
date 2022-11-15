@@ -92,7 +92,6 @@ export class Credential extends NamedResource {
 
     return merge({}, model, {
       metadata: {
-        namespace: this.namespace.name,
         labels: {
           [entityLabels.CLOUD]: this.cloud.name,
           [entityLabels.NAMESPACE]: this.namespace.name,
