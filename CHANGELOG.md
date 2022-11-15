@@ -1,5 +1,10 @@
 # ChangeLog
 
+## UNRELEASED
+
+- When setting the Management Cluster URL in the "Add Management Cluster" view, only the necessary portion of the URL will be used in order to establish the sync.
+  - For example, if the user provides a URL to a child cluster, like `https://mcc.com/projects/my-project/clusters/my-cluster`, instead of the management cluster, only the origin, `https://mcc.com` in this case, will be used in order to help them be more successful when using the extension since the marketing term is somewhat confusing.
+
 ## v5.2.1
 
 - Show `--` instead of the URL if StackLight is disabled and URLs aren’t available in Cluster details view.
