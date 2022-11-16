@@ -214,8 +214,8 @@ export class Cluster extends Node {
     });
 
     /**
-     * @member {Array<ClusterDeployment|ClusterUpgrade|MachineUpgrade>} updates Updates related
-     *  to this cluster or its machines. Empty list if none.
+     * @member {Array<ClusterDeployment|ClusterUpgrade|MachineDeployment|MachineUpgrade>} updates
+     *  Updates related to this cluster or its machines. Empty list if none.
      */
     Object.defineProperty(this, 'updates', {
       enumerable: true,
@@ -545,8 +545,8 @@ export class Cluster extends Node {
     ];
     _updates = this.namespace.updates.filter((update) =>
       // NOTE: since UIDs are universal, we can be confident that if we have a match,
-      //  the related object will also be a ClusterDeployment, ClusterUpgrade, or
-      //  MachineUpgrade instance
+      //  the related object will also be a ClusterDeployment, ClusterUpgrade, MachineDeployment,
+      //  or MachineUpgrade instance
       uidList.includes(update.targetUid)
     );
   }

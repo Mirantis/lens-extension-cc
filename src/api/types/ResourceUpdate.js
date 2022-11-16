@@ -22,6 +22,7 @@ export const resourceUpdateTs = mergeRtvShapes({}, namedResourceTs, {
       oneOf: [
         apiKinds.CLUSTER_DEPLOYMENT_STATUS,
         apiKinds.CLUSTER_UPGRADE_STATUS,
+        apiKinds.MACHINE_DEPLOYMENT_STATUS,
         apiKinds.MACHINE_UPGRADE_STATUS,
       ],
     },
@@ -33,7 +34,7 @@ export const resourceUpdateTs = mergeRtvShapes({}, namedResourceTs, {
       {
         min: 1,
         $: {
-          kind: [rtv.STRING, { oneOf: Object.values(apiKinds) }], // e.g. 'Cluster'
+          kind: [rtv.STRING, { oneOf: [apiKinds.CLUSTER, apiKinds.MACHINE] }], // e.g. 'Cluster'
           name: rtv.STRING,
           uid: rtv.STRING,
         },

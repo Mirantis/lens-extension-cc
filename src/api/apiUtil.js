@@ -16,6 +16,7 @@ const typeToClient = {
   [apiResourceTypes.CLUSTER_DEPLOYMENT_STATUS]: ResourceClient,
   [apiResourceTypes.CLUSTER_UPGRADE_STATUS]: ResourceClient,
   [apiResourceTypes.MACHINE]: ResourceClient,
+  [apiResourceTypes.MACHINE_DEPLOYMENT_STATUS]: ResourceClient,
   [apiResourceTypes.MACHINE_UPGRADE_STATUS]: ResourceClient,
   [apiResourceTypes.PUBLIC_KEY]: ResourceClient, // SSH keys
   [apiResourceTypes.NAMESPACE]: KubernetesClient,

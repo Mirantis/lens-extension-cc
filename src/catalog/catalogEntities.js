@@ -283,8 +283,11 @@ export const clusterEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
                 },
               ],
             ],
-            targetKind: [rtv.STRING, { oneOf: Object.values(apiUpdateKinds) }],
-            targetUid: rtv.STRING, // always expected for a ClusterEvent
+            targetKind: [
+              rtv.STRING,
+              { oneOf: [apiKinds.CLUSTER, apiKinds.MACHINE] },
+            ],
+            targetUid: rtv.STRING,
             targetName: rtv.STRING,
           },
         }),

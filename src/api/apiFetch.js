@@ -20,6 +20,10 @@ import {
   clusterDeploymentTs,
 } from './types/ClusterDeployment';
 import { ClusterUpgrade, clusterUpgradeTs } from './types/ClusterUpgrade';
+import {
+  MachineDeployment,
+  machineDeploymentTs,
+} from './types/MachineDeployment';
 import { MachineUpgrade, machineUpgradeTs } from './types/MachineUpgrade';
 import { logger, logValue } from '../util/logger';
 import {
@@ -378,6 +382,7 @@ export const fetchClusterUpdates = async function (cloud, namespaces) {
     [
       apiResourceTypes.CLUSTER_DEPLOYMENT_STATUS,
       apiResourceTypes.CLUSTER_UPGRADE_STATUS,
+      apiResourceTypes.MACHINE_DEPLOYMENT_STATUS,
       apiResourceTypes.MACHINE_UPGRADE_STATUS,
     ].map((resourceType) =>
       _fetchCollection({
@@ -398,6 +403,12 @@ export const fetchClusterUpdates = async function (cloud, namespaces) {
             // now check if it's a valid cluster upgrade
             const mvvData = rtv.verify(data, clusterUpgradeTs).mvv;
             return new ClusterUpgrade({ data: mvvData, namespace, cloud });
+          }
+
+          if (resourceType === apiResourceTypes.MACHINE_DEPLOYMENT_STATUS) {
+            // now check if it's a valid machine deployment
+            const mvvData = rtv.verify(data, machineDeploymentTs).mvv;
+            return new MachineDeployment({ data: mvvData, namespace, cloud });
           }
 
           // must be a valid machine upgrade

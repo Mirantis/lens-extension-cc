@@ -14,7 +14,7 @@ export const apiResourceTypes = Object.freeze({
   CLUSTER_DEPLOYMENT_STATUS: 'clusterdeploymentstatuses',
   CLUSTER_UPGRADE_STATUS: 'clusterupgradestatuses',
   MACHINE: 'machines',
-  // NOTE: for some reason, machines don't seem to have deployment info
+  MACHINE_DEPLOYMENT_STATUS: 'machinedeploymentstatuses',
   MACHINE_UPGRADE_STATUS: 'machineupgradestatuses',
   PUBLIC_KEY: 'publickeys', // "SSH keys"
   NAMESPACE: 'namespaces',
@@ -59,6 +59,7 @@ export const apiUpdateTypes = Object.freeze(
   pick(apiResourceTypes, [
     'CLUSTER_DEPLOYMENT_STATUS',
     'CLUSTER_UPGRADE_STATUS',
+    'MACHINE_DEPLOYMENT_STATUS',
     'MACHINE_UPGRADE_STATUS',
   ])
 );
@@ -73,7 +74,7 @@ export const apiKinds = Object.freeze({
   CLUSTER_DEPLOYMENT_STATUS: 'ClusterDeploymentStatus',
   CLUSTER_UPGRADE_STATUS: 'ClusterUpgradeStatus',
   MACHINE: 'Machine',
-  // NOTE: for some reason, machines don't seem to have deployment info
+  MACHINE_DEPLOYMENT_STATUS: 'MachineDeploymentStatus',
   MACHINE_UPGRADE_STATUS: 'MachineUpgradeStatus',
   PUBLIC_KEY: 'PublicKey',
   AWS_CREDENTIAL: 'AWSCredential',
@@ -110,6 +111,7 @@ export const apiUpdateKinds = Object.freeze(
   pick(apiKinds, [
     'CLUSTER_DEPLOYMENT_STATUS',
     'CLUSTER_UPGRADE_STATUS',
+    'MACHINE_DEPLOYMENT_STATUS',
     'MACHINE_UPGRADE_STATUS',
   ])
 );
