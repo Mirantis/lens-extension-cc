@@ -90,9 +90,9 @@ export const GeneralInformation = ({ clusterEntity }) => {
             {clusterEntity.metadata.name || unknownValue()}
           </DrawerItem>
           <DrawerItem
-            name={strings.clusterPage.pages.details.generalInformation.kind()}
+            name={strings.clusterPage.pages.details.generalInformation.namespace()}
           >
-            {clusterEntity.kind}
+            {clusterEntity.metadata.namespace || unknownValue()}
           </DrawerItem>
           <DrawerItem
             name={strings.clusterPage.pages.details.generalInformation.source()}

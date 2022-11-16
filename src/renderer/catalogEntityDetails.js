@@ -90,6 +90,11 @@ export const catalogEntityDetails = [
               {strings.catalog.entities.common.details.title()}
             </DrawerTitle>
             <DrawerItem
+              name={strings.catalog.entities.common.details.props.namespace()}
+            >
+              {props.entity.metadata.namespace || unknownValue()}
+            </DrawerItem>
+            <DrawerItem
               name={strings.catalog.entities.common.details.props.uid()}
             >
               {props.entity.metadata.uid || unknownValue()}
@@ -261,6 +266,11 @@ export const catalogEntityDetails = [
             {strings.catalog.entities.common.details.title()}
           </DrawerTitle>
           <DrawerItem
+            name={strings.catalog.entities.common.details.props.namespace()}
+          >
+            {props.entity.metadata.namespace || unknownValue()}
+          </DrawerItem>
+          <DrawerItem
             name={strings.catalog.entities.common.details.props.uid()}
           >
             {props.entity.metadata.uid || unknownValue()}
@@ -296,6 +306,11 @@ export const catalogEntityDetails = [
           <DrawerTitle>
             {strings.catalog.entities.common.details.title()}
           </DrawerTitle>
+          <DrawerItem
+            name={strings.catalog.entities.common.details.props.namespace()}
+          >
+            {props.entity.metadata.namespace || unknownValue()}
+          </DrawerItem>
           <DrawerItem
             name={strings.catalog.entities.common.details.props.uid()}
           >
@@ -345,6 +360,11 @@ export const catalogEntityDetails = [
             {strings.catalog.entities.common.details.title()}
           </DrawerTitle>
           <DrawerItem
+            name={strings.catalog.entities.common.details.props.namespace()}
+          >
+            {props.entity.metadata.namespace || unknownValue()}
+          </DrawerItem>
+          <DrawerItem
             name={strings.catalog.entities.common.details.props.uid()}
           >
             {props.entity.metadata.uid || unknownValue()}
@@ -390,6 +410,11 @@ export const catalogEntityDetails = [
           <DrawerTitle>
             {strings.catalog.entities.common.details.title()}
           </DrawerTitle>
+          <DrawerItem
+            name={strings.catalog.entities.common.details.props.namespace()}
+          >
+            {props.entity.metadata.namespace || unknownValue()}
+          </DrawerItem>
           <DrawerItem
             name={strings.catalog.entities.common.details.props.uid()}
           >
