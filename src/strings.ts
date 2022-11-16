@@ -213,6 +213,7 @@ export const catalog: Dict = {
         props: {
           dateCreated: () => 'Date created',
           lastSync: () => 'Last sync',
+          namespace: () => 'Project',
           uid: () => 'UID',
           serverStatus: () => `${mccCodeName} status`,
           lensExtension: () => 'Lens Extension',
@@ -356,7 +357,7 @@ export const clusterPage: Dict = {
     overview: {
       summary: {
         title: () => 'Summary',
-        clusterName: () => 'Cluster name',
+        clusterName: () => 'Name',
         serverStatus: catalog.entities.common.details.props.serverStatus,
         lastSync: catalog.entities.common.details.props.lastSync,
         provider: catalog.entities.cluster.details.props.provider,
@@ -365,7 +366,7 @@ export const clusterPage: Dict = {
         isManagementCluster:
           catalog.entities.cluster.details.props.isManagementCluster,
         releaseVersion: catalog.entities.cluster.details.props.release,
-        namespace: () => 'Namespace',
+        namespace: catalog.entities.common.details.props.namespace,
         clusterObjects: {
           title: () => 'Cluster objects',
           credentials: (count) => (count === 1 ? 'Credential' : 'Credentials'),
@@ -384,7 +385,7 @@ export const clusterPage: Dict = {
       generalInformation: {
         title: () => 'General information',
         name: () => 'Name',
-        kind: () => 'Kind',
+        namespace: catalog.entities.common.details.props.namespace,
         source: () => 'Source',
         status: catalog.entities.common.details.props.serverStatus,
         lastSync: catalog.entities.common.details.props.lastSync,
