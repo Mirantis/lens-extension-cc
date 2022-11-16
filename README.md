@@ -200,7 +200,7 @@ __macOS__
 From a Terminal:
 
 ```bash
-$ LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS=1 /Applications/Lens.app/Contents/MacOS/Lens
+LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS=1 /Applications/Lens.app/Contents/MacOS/Lens
 ```
 
 __Linux__
