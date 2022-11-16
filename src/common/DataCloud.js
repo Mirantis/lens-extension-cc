@@ -9,6 +9,8 @@ import {
   fetchLicenses,
   fetchMachines,
   fetchClusters,
+  fetchClusterEvents,
+  fetchClusterUpdates,
 } from '../api/apiFetch';
 import { logger, logValue } from '../util/logger';
 import { EventDispatcher } from './EventDispatcher';
@@ -555,27 +557,57 @@ export class DataCloud extends EventDispatcher {
 
     let errorsOccurred = false;
     if (!this.preview) {
+      // only fetch these if cluster page is enabled
+      let clusterEventResults = {
+        clusterEvents: {},
+        tokensRefreshed: false,
+        errorsOccurred: false,
+      };
+      if (FEAT_CLUSTER_PAGE_ENABLED) {
+        clusterEventResults = await fetchClusterEvents(
+          this.cloud,
+          fetchedNamespaces
+        );
+      }
+
+      // NOTE: for now, we only get updates if Webpack enabled the special flag
+      //  since they require MCC v2.22 which adds the expected `status` field
+      //  to stage objects
+      let clusterUpdateResults = {
+        clusterUpdates: {},
+        tokensRefreshed: false,
+        errorsOccurred: false,
+      };
+      if (FEAT_CLUSTER_PAGE_ENABLED && FEAT_CLUSTER_PAGE_UPDATES_ENABLED) {
+        clusterUpdateResults = await fetchClusterUpdates(
+          this.cloud,
+          fetchedNamespaces
+        );
+      }
+
       const credResults = await fetchCredentials(this.cloud, fetchedNamespaces);
       const keyResults = await fetchSshKeys(this.cloud, fetchedNamespaces);
-      // map all the resources fetched so far into their respective Namespaces
-      fetchedNamespaces.forEach((namespace) => {
-        namespace.sshKeys = keyResults.sshKeys[namespace.name] || [];
-        namespace.credentials = credResults.credentials[namespace.name] || [];
-      });
-      errorsOccurred =
-        errorsOccurred ||
-        credResults.errorsOccurred ||
-        keyResults.errorsOccurred;
-
       const proxyResults = await fetchProxies(this.cloud, fetchedNamespaces);
       const licenseResults = await fetchLicenses(this.cloud, fetchedNamespaces);
-      // map fetched proxies and licenses into their respective Namespaces
+
+      // map all the resources fetched so far into their respective Namespaces
       fetchedNamespaces.forEach((namespace) => {
+        namespace.events =
+          clusterEventResults.clusterEvents[namespace.name] || [];
+        namespace.updates =
+          clusterUpdateResults.clusterUpdates[namespace.name] || [];
+        namespace.sshKeys = keyResults.sshKeys[namespace.name] || [];
+        namespace.credentials = credResults.credentials[namespace.name] || [];
         namespace.proxies = proxyResults.proxies[namespace.name] || [];
         namespace.licenses = licenseResults.licenses[namespace.name] || [];
       });
+
       errorsOccurred =
         errorsOccurred ||
+        clusterEventResults.errorsOccurred ||
+        clusterUpdateResults.errorsOccurred ||
+        credResults.errorsOccurred ||
+        keyResults.errorsOccurred ||
         proxyResults.errorsOccurred ||
         licenseResults.errorsOccurred;
 

@@ -17,6 +17,7 @@ import {
   entityToString,
   findEntity,
   modelToString,
+  entityHasChanged,
 } from '../catalog/catalogEntities';
 import { SshKeyEntity } from '../catalog/SshKeyEntity';
 import { LicenseEntity } from '../catalog/LicenseEntity';
@@ -636,20 +637,20 @@ export class SyncManager extends Singleton {
       const catEntity = findEntity(this.catalogSource, model);
       if (catEntity) {
         // entity exists already in the Catalog: either same (no changes) or updated
-        if (catEntity.metadata.resourceVersion === cluster.resourceVersion) {
-          return Promise.resolve({
-            cluster,
-            model,
-            catEntity,
-            action: null, // no changes
-          });
-        } else {
+        if (entityHasChanged(catEntity, cluster)) {
           // something about that resource has changed since the last time we fetched it
           return Promise.resolve({
             cluster,
             model,
             catEntity,
             action: ACTION_UPDATED,
+          });
+        } else {
+          return Promise.resolve({
+            cluster,
+            model,
+            catEntity,
+            action: null, // no changes
           });
         }
       } else {
@@ -721,7 +722,13 @@ export class SyncManager extends Singleton {
               'SyncManager.updateClusterEntities()',
               `Updating ${cluster} in Catalog and Store: resourceVersion ${logValue(
                 catEntity.metadata.resourceVersion
-              )} -> ${logValue(cluster.resourceVersion)}`
+              )} -> ${logValue(
+                cluster.resourceVersion
+              )} (cacheVersion ${logValue(
+                catEntity.metadata.cacheVersion
+              )} -> ${logValue(
+                cluster.cacheVersion
+              )}) (cluster events/updates may also have changed)`
             );
 
             if (this.updateEntity(catEntity, model)) {
@@ -838,20 +845,18 @@ export class SyncManager extends Singleton {
 
         if (catEntity) {
           // entity exists already in the Catalog: either same (no changes) or updated
-          if (catEntity.metadata.resourceVersion === resource.resourceVersion) {
-            this.ipcMain.capture(
-              'log',
-              'SyncManager.updateCatalogEntities()',
-              `Skipping ${resource} update: No changes detected`
-            );
-          } else {
+          if (entityHasChanged(catEntity, resource)) {
             // something about that resource has changed since the last time we fetched it
             this.ipcMain.capture(
               'log',
               'SyncManager.updateCatalogEntities()',
               `Updating ${resource} in Catalog and SyncStore: resourceVersion ${logValue(
                 catEntity.metadata.resourceVersion
-              )} -> ${logValue(resource.resourceVersion)}`
+              )} -> ${logValue(
+                resource.resourceVersion
+              )} (cacheVersion ${logValue(
+                catEntity.metadata.cacheVersion
+              )} -> ${logValue(resource.cacheVersion)})`
             );
 
             if (this.updateEntity(catEntity, model)) {
@@ -861,6 +866,12 @@ export class SyncManager extends Singleton {
             if (this.updateStoreModel(jsonStore, model)) {
               storeUpdateCount++;
             }
+          } else {
+            this.ipcMain.capture(
+              'log',
+              'SyncManager.updateCatalogEntities()',
+              `Skipping ${resource} update: No changes detected`
+            );
           }
         } else {
           // new entity we have discovered: add to Catalog and Store
@@ -1032,15 +1043,7 @@ export class SyncManager extends Singleton {
 
         const entity = findEntity(this.catalogSource, model);
         if (entity) {
-          if (
-            entity.metadata.resourceVersion === model.metadata.resourceVersion
-          ) {
-            this.ipcMain.capture(
-              'log',
-              'SyncManager.onSyncStoreChange()',
-              `Skipping ${modelToString(model)} update: No changes detected`
-            );
-          } else {
+          if (entityHasChanged(entity, model)) {
             // something about that resource has changed since the last time we fetched it
             this.ipcMain.capture(
               'log',
@@ -1049,11 +1052,25 @@ export class SyncManager extends Singleton {
                 model
               )} in Catalog: resourceVersion ${logValue(
                 entity.metadata.resourceVersion
-              )} -> ${logValue(model.metadata.resourceVersion)}`
+              )} -> ${logValue(
+                model.metadata.resourceVersion
+              )} (cacheVersion ${logValue(
+                entity.metadata.cacheVersion
+              )} -> ${logValue(model.metadata.cacheVersion)})${
+                model.metadata.kind === apiKinds.CLUSTER
+                  ? ' (cluster events/updates may also have changed)'
+                  : ''
+              }`
             );
             if (this.updateEntity(entity, model)) {
               updateCount++;
             }
+          } else {
+            this.ipcMain.capture(
+              'log',
+              'SyncManager.onSyncStoreChange()',
+              `Skipping ${modelToString(model)} update: No changes detected`
+            );
           }
         } else {
           // new entity we have discovered: add to Catalog

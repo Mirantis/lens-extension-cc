@@ -1,3 +1,4 @@
+import { merge } from 'lodash';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
 import { apiKinds, apiLabels } from '../apiConstants';
 import { NamedResource, namedResourceTs } from './NamedResource';
@@ -8,8 +9,9 @@ import * as strings from '../../strings';
  */
 export const nodeTs = mergeRtvShapes({}, namedResourceTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
-  //  related to what we expect to find in order to create a `Credential` class instance
-  // nothing specific for now that can be provided at this level for inheriting classes
+  //  related to what we expect to find in order to create a `Node` class instance
+  // nothing specific for now that can be provided __at this level__ for inheriting classes
+  //  given the fact that `mergeRtvShapes()` does NOT merge deep into array typesets
 });
 
 /**
@@ -127,9 +129,34 @@ export class Node extends NamedResource {
     });
   }
 
+  /**
+   * Converts this API Object into a Catalog Entity Model.
+   * @returns {{ metadata: Object, spec: Object, status: Object }} Catalog Entity Model
+   *  (use to create new Catalog Entity).
+   */
+  toModel() {
+    const model = super.toModel();
+
+    return merge({}, model, {
+      spec: {
+        region: this.region,
+        provider: this.provider,
+        conditions: this.conditions,
+        apiStatus: this.status,
+        ready: this.ready,
+      },
+    });
+  }
+
   /** @returns {string} A string representation of this instance for logging/debugging. */
   toString() {
-    const propStr = `${super.toString()}`;
+    const propStr = `${super.toString()}, conditions: ${
+      this.conditions.length
+    }/${
+      this.conditions.length < 1 || this.conditions.every((c) => c.ready)
+        ? 'ready'
+        : 'pending'
+    }`;
 
     if (Object.getPrototypeOf(this).constructor === Node) {
       return `{Node ${propStr}}`;

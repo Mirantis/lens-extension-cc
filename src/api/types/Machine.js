@@ -10,7 +10,7 @@ import { logger, logValue } from '../../util/logger';
  */
 export const machineTs = mergeRtvShapes({}, nodeTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
-  //  related to what we expect to find in order to create a `Credential` class instance
+  //  related to what we expect to find in order to create a `Machine` class instance
 
   kind: [rtv.STRING, { oneOf: apiKinds.MACHINE }],
   metadata: {
@@ -121,20 +121,19 @@ export class Machine extends Node {
     }
   }
 
-  // NOTE: we don't have toModel() and toEntity() because we don't show Machines in
-  //  the Catalog at the moment (so we don't have a MachineEntity class for them)
+  // NOTE: we don't have toEntity() because we don't show Machines in the Catalog
+  //  at the moment (so we don't have a MachineEntity class for them)
+
+  // NOTE: we don't have toModel() because we don't have a need to include machine
+  //  metadata in a Catalog Entity Model at the moment (e.g. if we wanted to have
+  //  machine metadata for each cluster, then we'd need toModel() here so we could
+  //  generate machine models for use in cluster models)
 
   /** @returns {string} A string representation of this instance for logging/debugging. */
   toString() {
-    const propStr = `${super.toString()}, conditions: ${
-      this.conditions.length
-    }/${
-      this.conditions.length < 1 || this.conditions.every((c) => c.ready)
-        ? 'ready'
-        : 'pending'
-    }, namespace: ${logValue(this.namespace.name)}, license: ${logValue(
-      this.license && this.license.name
-    )}`;
+    const propStr = `${super.toString()}, namespace: ${logValue(
+      this.namespace.name
+    )}, license: ${logValue(this.license && this.license.name)}`;
 
     if (Object.getPrototypeOf(this).constructor === Machine) {
       return `{Machine ${propStr}}`;

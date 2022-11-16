@@ -12,11 +12,26 @@ import { Cluster, clusterTs } from '../api/types/Cluster';
 import { Machine, machineTs } from '../api/types/Machine';
 import { Proxy, proxyTs } from '../api/types/Proxy';
 import { License, licenseTs } from '../api/types/License';
+import { resourceEventTs } from '../api/types/ResourceEvent';
+import { ClusterEvent, clusterEventTs } from '../api/types/ClusterEvent';
+import { resourceUpdateTs } from './types/ResourceUpdate';
+import {
+  ClusterDeployment,
+  clusterDeploymentTs,
+} from './types/ClusterDeployment';
+import { ClusterUpgrade, clusterUpgradeTs } from './types/ClusterUpgrade';
+import {
+  MachineDeployment,
+  machineDeploymentTs,
+} from './types/MachineDeployment';
+import { MachineUpgrade, machineUpgradeTs } from './types/MachineUpgrade';
 import { logger, logValue } from '../util/logger';
 import {
   apiResourceTypes,
   apiCredentialTypes,
   apiNamespacePhases,
+  apiKinds,
+  apiUpdateTypes,
 } from '../api/apiConstants';
 
 /**
@@ -25,11 +40,14 @@ import {
  * @param {Object} body Data response from `/list/{resourceType}` API.
  * @param {Namespace} [namespace] The related Namespace; `undefined` if fetching
  *  namespaces themselves (i.e. `resourceType === apiResourceTypes.NAMESPACE`).
- * @param {(params: { data: Object, namespace?: Namespace }) => Resource} params.create Function
- *  called to create new instance of an `Resource`-based class that represents the API resourceType.
- *  - `data` is the raw object returned from the API for the resourceType
+ * @param {(params: { data: Object, namespace?: Namespace }) => Resource|undefined} params.create
+ *  Function called to create new instance of an `Resource`-based class that represents the API
+ *  resourceType. If a falsy value is returned, it will be silently filtered out of the resulting
+ *  list of resources.
+ *  - `data` is the raw object returned from the API for the resourceType.
  *  - `namespace` is the related Namespace (`undefined` when fetching namespaces themselves
- *      with `resourceType === apiResourceTypes.NAMESPACE`)
+ *      with `resourceType === apiResourceTypes.NAMESPACE`).
+ *  - Returns: The resource, or a falsy value to filter it out (skip).
  * @returns {Array<Resource>} Array of API objects. Empty list if none. Any
  *  item that can't be deserialized is ignored and not returned in the list.
  */
@@ -41,7 +59,7 @@ const _deserializeCollection = function (
 ) {
   if (!body || !Array.isArray(body.items)) {
     logger.error(
-      'DataCloud._deserializeCollection()',
+      'apiFetch._deserializeCollection()',
       `Failed to parse "${resourceType}" collection payload: Unexpected data format`
     );
     return [];
@@ -53,7 +71,7 @@ const _deserializeCollection = function (
         return create({ data, namespace });
       } catch (err) {
         logger.warn(
-          'DataCloud._deserializeCollection()',
+          'apiFetch._deserializeCollection()',
           `Ignoring ${logValue(
             resourceType
           )} resource index=${idx}: Could not be deserialized; name=${logValue(
@@ -78,11 +96,14 @@ const _deserializeCollection = function (
  * @param {Array<Namespace>} [params.namespaces] List of namespaces in which to get the resources.
  *  __REQUIRED__ unless `resourceType === apiResourceTypes.NAMESPACE`, in which case this parameter is
  *  ignored because we're fetching the namespaces themselves.
- * @param {(params: { data: Object, namespace?: Namespace }) => Resource} params.create Function
- *  called to create new instance of an `Resource`-based class that represents the API resourceType.
- *  - `data` is the raw object returned from the API for the resourceType
+ * @param {(params: { data: Object, namespace?: Namespace }) => Resource} params.create
+ *  Function called to create new instance of an `Resource`-based class that represents the API
+ *  resourceType. If a falsy value is returned, it will be silently filtered out of the resulting
+ *  list of resources.
+ *  - `data` is the raw object returned from the API for the resourceType.
  *  - `namespace` is the related Namespace (`undefined` when fetching namespaces themselves
- *      with `resourceType === apiResourceTypes.NAMESPACE`)
+ *      with `resourceType === apiResourceTypes.NAMESPACE`).
+ *  - Returns: The resource, or a falsy value to filter it out (skip).
  * @param {Object} [params.args] Custom arguments to provide to the `args` param of `cloudRequest()`.
  *
  *  NOTE: `namespaceName` arg, if specified, will be overwritten by the namespace whose resources
@@ -124,7 +145,7 @@ const _fetchCollection = async function ({
 
   if (!cloud.config.isResourceAvailable(resourceType)) {
     logger.log(
-      'DataCloud._fetchCollection',
+      'apiFetch._fetchCollection',
       `Cannot fetch resources of type ${logValue(
         resourceType
       )}: Not available; cloud=${logValue(cloud.cloudUrl)}`
@@ -144,20 +165,39 @@ const _fetchCollection = async function ({
 
     let items = [];
     if (error) {
-      // if it's a 403 "access denied" issue, just log it but don't flag it
-      //  as an error since there are various mechanisms that could prevent
-      //  a user from accessing certain resources in the API (disabled components,
-      //  permissions, etc.)
-      logger[status === 403 ? 'log' : 'error'](
-        'DataCloud._fetchCollection',
-        `${
-          status === 403 ? '(IGNORED: Access denied) ' : ''
-        }Failed to get "${resourceType}" resources, namespace=${
-          logValue(namespace?.name || namespace) // undefined if `resourceType === apiResourceTypes.NAMESPACE`
-        }, status=${status}, error=${logValue(error)}`
-      );
-      if (status === 403) {
+      if (
+        Object.values(apiUpdateTypes).includes(resourceType) &&
+        status === 404
+      ) {
+        // cluster/machine deployment/upgrade status object endpoint will return 404 unless
+        //  at least one of these types of procedures has taken place; e.g. if clusters in
+        //  a namespace have never been upgraded, we'll get a 404 trying to get
+        //  `CLUSTER_UPGRADE_STATUS` objects in that namespace
+        logger.log(
+          'apiFetch._fetchCollection',
+          `(IGNORED: No history) Failed to get ${logValue(
+            resourceType
+          )} resources, namespace=${
+            logValue(namespace?.name || namespace) // undefined if `resourceType === apiResourceTypes.NAMESPACE`
+          }, status=${status}, error=${logValue(error)}`
+        );
         error = undefined; // ignore
+      } else {
+        // if it's a 403 "access denied" issue, just log it but don't flag it
+        //  as an error since there are various mechanisms that could prevent
+        //  a user from accessing certain resources in the API (disabled components,
+        //  permissions, etc.)
+        logger[status === 403 ? 'log' : 'error'](
+          'apiFetch._fetchCollection',
+          `${
+            status === 403 ? '(IGNORED: Access denied) ' : ''
+          }Failed to get ${logValue(resourceType)} resources, namespace=${
+            logValue(namespace?.name || namespace) // undefined if `resourceType === apiResourceTypes.NAMESPACE`
+          }, status=${status}, error=${logValue(error)}`
+        );
+        if (status === 403) {
+          error = undefined; // ignore
+        }
       }
     } else {
       items = _deserializeCollection(resourceType, body, namespace, create);
@@ -209,7 +249,7 @@ const _fetchCollection = async function ({
       errors[apiResourceTypes.NAMESPACE] = results[0].error;
     }
   } else {
-    results.forEach((result, idx) => {
+    results.forEach((result) => {
       const {
         namespace: { name: nsName },
         items,
@@ -230,19 +270,173 @@ const _fetchCollection = async function ({
 };
 
 /**
+ * Processes a list of results from multiple calls to `_fetchCollection()` which each
+ *  returned objects the same shape and combines them into a single map of namespace
+ *  name to resource list.
+ * @param {Array<{ resources: Record<string, Resource>, tokensRefreshed: boolean, errors: Record<string, Error> }>}
+ *  List of result objects to combine. `resources` and `errors` are maps of namespace name to values.
+ * @param {string} [resourcesName] Name of the `resources` property in the returned object,
+ *  for convenience.
+ * @returns {{ resources: Record<string, Resource>, tokensRefreshed: boolean, errorsOccurred: boolean }}
+ *  All resources combined into a single map of namespace name to resource object, and flags indicating
+ *  whether Cloud tokens had to be refreshed and if errors occurred.
+ */
+const _zipFetchResults = function (results, resourcesName = 'resources') {
+  // NOTE: `results` will be an array of `{ resources, tokensRefreshed, errors }` because
+  //  of each resource type that was retrieved for each namespace
+  // NOTE: _fetchCollection() ensures there are no error results (though errors may be
+  //  reported in results); all items in `results` have the same shape
+
+  let tokensRefreshed = false;
+  let errorsOccurred = false;
+  const resources = results.reduce((acc, result) => {
+    const {
+      resources: fetchedResources,
+      tokensRefreshed: refreshed,
+      errors,
+    } = result;
+
+    tokensRefreshed = tokensRefreshed || refreshed;
+    errorsOccurred = errorsOccurred || !!errors;
+
+    Object.keys(fetchedResources).forEach((nsName) => {
+      const resourceList = fetchedResources[nsName];
+      if (acc[nsName]) {
+        acc[nsName] = [...acc[nsName], ...resourceList];
+      } else {
+        acc[nsName] = [...resourceList];
+      }
+    });
+
+    return acc;
+  }, {});
+
+  return { [resourcesName]: resources, tokensRefreshed, errorsOccurred };
+};
+
+/**
+ * [ASYNC] Best-try to get all existing Cluster events from the management cluster, for each
+ *  namespace specified.
+ * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared if necessary.
+ * @param {Array<Namespace>} namespaces List of namespaces.
+ * @returns {Promise<{
+ *   clusterEvents: { [index: string]: Array<ClusterEvent> },
+ *   tokensRefreshed: boolean,
+ *   errorsOccurred: boolean,
+ * }>} Always resolves, never fails.
+ *
+ *  - `clusterEvents` are mapped per namespace name. If an error occurs trying
+ *      to get any object, it will be ignored/skipped.
+ *  - `tokensRefreshed` is true if the cloud's tokens had to be refreshed during the process.
+ *  - `errorsOccurred` is true if at least one error ocurred (that couldn't be safely ignored)
+ *      while fetching resources.
+ */
+export const fetchClusterEvents = async function (cloud, namespaces) {
+  const {
+    resources: clusterEvents,
+    tokensRefreshed,
+    errors,
+  } = await _fetchCollection({
+    resourceType: apiResourceTypes.EVENT,
+    cloud,
+    namespaces,
+    create: ({ data, namespace }) => {
+      // first check if it's at least a valid generic resource event
+      rtv.verify(data, resourceEventTs);
+
+      if (data.involvedObject.kind === apiKinds.CLUSTER) {
+        // now check if it's a valid cluster event
+        const mvvData = rtv.verify(data, clusterEventTs).mvv;
+        return new ClusterEvent({ data: mvvData, namespace, cloud });
+      }
+
+      // since it wasn't a cluster event, and those are the only ones we care
+      //  about, ignore it
+      return undefined;
+    },
+  });
+
+  return { clusterEvents, tokensRefreshed, errorsOccurred: !!errors };
+};
+
+/**
+ * [ASYNC] Best-try to get all existing Cluster update history objects from the management
+ *  cluster, for each namespace specified.
+ * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared if necessary.
+ * @param {Array<Namespace>} namespaces List of namespaces.
+ * @returns {Promise<{
+ *   clusterUpdates: { [index: string]: Array<ResourceUpdate> },
+ *   tokensRefreshed: boolean,
+ *   errorsOccurred: boolean,
+ * }>} Always resolves, never fails.
+ *
+ *  - `clusterUpdates` are mapped per namespace name. If an error occurs trying
+ *      to get any object, it will be ignored/skipped. Note this includes __ALL updates__
+ *      related to a cluster and its machines.
+ *  - `tokensRefreshed` is true if the cloud's tokens had to be refreshed during the process.
+ *  - `errorsOccurred` is true if at least one error ocurred (that couldn't be safely ignored)
+ *      while fetching resources.
+ */
+export const fetchClusterUpdates = async function (cloud, namespaces) {
+  const results = await Promise.all(
+    [
+      apiResourceTypes.CLUSTER_DEPLOYMENT_STATUS,
+      apiResourceTypes.CLUSTER_UPGRADE_STATUS,
+      apiResourceTypes.MACHINE_DEPLOYMENT_STATUS,
+      apiResourceTypes.MACHINE_UPGRADE_STATUS,
+    ].map((resourceType) =>
+      _fetchCollection({
+        resourceType,
+        cloud,
+        namespaces,
+        create: ({ data, namespace }) => {
+          // first check if it's at least a valid generic resource update
+          rtv.verify(data, resourceUpdateTs);
+
+          if (resourceType === apiResourceTypes.CLUSTER_DEPLOYMENT_STATUS) {
+            // now check if it's a valid cluster deployment
+            const mvvData = rtv.verify(data, clusterDeploymentTs).mvv;
+            return new ClusterDeployment({ data: mvvData, namespace, cloud });
+          }
+
+          if (resourceType === apiResourceTypes.CLUSTER_UPGRADE_STATUS) {
+            // now check if it's a valid cluster upgrade
+            const mvvData = rtv.verify(data, clusterUpgradeTs).mvv;
+            return new ClusterUpgrade({ data: mvvData, namespace, cloud });
+          }
+
+          if (resourceType === apiResourceTypes.MACHINE_DEPLOYMENT_STATUS) {
+            // now check if it's a valid machine deployment
+            const mvvData = rtv.verify(data, machineDeploymentTs).mvv;
+            return new MachineDeployment({ data: mvvData, namespace, cloud });
+          }
+
+          // must be a valid machine upgrade
+          const mvvData = rtv.verify(data, machineUpgradeTs).mvv;
+          return new MachineUpgrade({ data: mvvData, namespace, cloud });
+        },
+      })
+    )
+  );
+
+  return _zipFetchResults(results, 'clusterUpdates');
+};
+
+/**
  * [ASYNC] Best-try to get all existing Credentials from the management cluster, for each
  *  namespace specified.
  * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
  *  if necessary.
  * @param {Array<Namespace>} namespaces List of namespaces.
  * @returns {Promise<{
- *   credentials: { [index: string]: Array<Credential|Object> },
+ *   credentials: { [index: string]: Array<Credential> },
  *   tokensRefreshed: boolean,
  *   errorsOccurred: number,
  * }>} Always resolves, never fails.
  *
  *  - `credentials` is a map of namespace name to credential (regardless of type).
  *      If there's an error trying to get any credential, it will be skipped/ignored.
+ *  - `tokensRefreshed` is true if the cloud's tokens had to be refreshed during the process.
  *  - `errorsOccurred` is true if at least one error ocurred (that couldn't be safely ignored)
  *      while fetching resources.
  */
@@ -261,32 +455,7 @@ export const fetchCredentials = async function (cloud, namespaces) {
     )
   );
 
-  // NOTE: `results` will be an array of `{ resources, tokensRefreshed, errors }` because
-  //  of each credential type that was retrieved for each namespace
-  // NOTE: _fetchCollection() ensures there are no error results (though errors may be
-  //  reported in results); all items in `results` have the same shape
-
-  let tokensRefreshed = false;
-  let errorsOccurred = false;
-  const credentials = results.reduce((acc, result) => {
-    const { resources, tokensRefreshed: refreshed, errors } = result;
-
-    tokensRefreshed = tokensRefreshed || refreshed;
-    errorsOccurred = errorsOccurred || !!errors;
-
-    Object.keys(resources).forEach((nsName) => {
-      const creds = resources[nsName];
-      if (acc[nsName]) {
-        acc[nsName] = [...acc[nsName], ...creds];
-      } else {
-        acc[nsName] = [...creds];
-      }
-    });
-
-    return acc;
-  }, {});
-
-  return { credentials, tokensRefreshed, errorsOccurred };
+  return _zipFetchResults(results, 'credentials');
 };
 
 /**
@@ -303,6 +472,7 @@ export const fetchCredentials = async function (cloud, namespaces) {
  *
  *  - `licenses` are mapped per namespace name. If an error occurs trying to get
  *      any license, it will be ignored/skipped.
+ *  - `tokensRefreshed` is true if the cloud's tokens had to be refreshed during the process.
  *  - `errorsOccurred` is true if at least one error ocurred (that couldn't be safely ignored)
  *      while fetching resources.
  */
@@ -338,6 +508,7 @@ export const fetchLicenses = async function (cloud, namespaces) {
  *
  *  - `proxies` are mapped per namespace name. If an error occurs trying to get
  *      any proxy, it will be ignored/skipped.
+ *  - `tokensRefreshed` is true if the cloud's tokens had to be refreshed during the process.
  *  - `errorsOccurred` is true if at least one error ocurred (that couldn't be safely ignored)
  *      while fetching resources.
  */
@@ -366,13 +537,14 @@ export const fetchProxies = async function (cloud, namespaces) {
  *  if necessary.
  * @param {Array<Namespace>} namespaces List of namespaces.
  * @returns {Promise<{
- *   sshKeys: { [index: string]: Array<SshKey|Object> },
+ *   sshKeys: { [index: string]: Array<SshKey> },
  *   tokensRefreshed: boolean,
  *   errorsOccurred: boolean,
  * }>} Always resolves, never fails.
  *
  *  - `sshKeys` are mapped per namespace name. If an error occurs trying
  *      to get any SSH key, it will be ignored/skipped.
+ *  - `tokensRefreshed` is true if the cloud's tokens had to be refreshed during the process.
  *  - `errorsOccurred` is true if at least one error ocurred (that couldn't be safely ignored)
  *      while fetching resources.
  */
@@ -408,6 +580,7 @@ export const fetchSshKeys = async function (cloud, namespaces) {
  *
  *  - `machines` are mapped per namespace name. If an error occurs trying to get
  *      any Machine, it will be ignored/skipped.
+ *  - `tokensRefreshed` is true if the cloud's tokens had to be refreshed during the process.
  *  - `errorsOccurred` is true if at least one error ocurred (that couldn't be safely ignored)
  *      while fetching resources.
  */
@@ -440,13 +613,14 @@ export const fetchMachines = async function (cloud, namespaces) {
  *   SSH Keys, Proxies, Machines, and Licenses that this Cluster might reference.
  *
  * @returns {Promise<{
- *   clusters: { [index: string]: Array<Cluster|Object> },
+ *   clusters: { [index: string]: Array<Cluster> },
  *   tokensRefreshed: boolean,
  *   errorsOccurred: boolean,
  * }>} Always resolves, never fails.
  *
  *  - `clusters` are mapped per namespace name. If an error occurs trying to get
  *      any cluster, it will be ignored/skipped.
+ *  - `tokensRefreshed` is true if the cloud's tokens had to be refreshed during the process.
  *  - `errorsOccurred` is true if at least one error ocurred (that couldn't be safely ignored)
  *      while fetching resources.
  */

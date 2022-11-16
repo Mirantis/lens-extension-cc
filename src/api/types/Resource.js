@@ -1,6 +1,7 @@
 import * as rtv from 'rtvjs';
 import * as consts from '../../constants';
 import { Cloud } from '../../common/Cloud';
+import { timestampTs } from '../apiTypesets';
 import { logValue } from '../../util/logger';
 
 /**
@@ -8,17 +9,17 @@ import { logValue } from '../../util/logger';
  */
 export const resourceTs = {
   // NOTE: this is not intended to be fully-representative; we only list the properties
-  //  related to what we expect to find in order to create a `Credential` class instance
+  //  related to what we expect to find in order to create a `Resource` class instance
 
-  // NOTE: not all API objects have a `kind` property (e.g. namespaces do not)
+  // NOTE: not all API objects have a `kind` property (e.g. namespaces and events do not)
   kind: [rtv.OPTIONAL, rtv.STRING],
 
   metadata: {
     uid: rtv.STRING,
     name: rtv.STRING,
     resourceVersion: rtv.STRING,
-    creationTimestamp: rtv.STRING, // ISO8601 timestamp
-    deletionTimestamp: [rtv.OPTIONAL, rtv.STRING], // ISO8601 timestamp; only exists if being deleted
+    creationTimestamp: timestampTs, // ISO8601 timestamp
+    deletionTimestamp: [rtv.OPTIONAL, ...timestampTs], // ISO8601 timestamp; only exists if being deleted
   },
 };
 
@@ -66,11 +67,14 @@ export class Resource {
       },
     });
 
-    /** @member {string} kind One of the known API kinds in the `apiConstants.apiKinds` enum. */
+    /**
+     * @member {string|null} kind One of the known API kinds in the `apiConstants.apiKinds` enum.
+     *  `null` if the Resource doesn't have a kind (e.g. in the case of a Namespace or ResourceEvent).
+     */
     Object.defineProperty(this, 'kind', {
       enumerable: true,
       get() {
-        return data.kind;
+        return data.kind || null;
       },
     });
 
@@ -93,6 +97,13 @@ export class Resource {
       enumerable: true,
       get() {
         return data.metadata.resourceVersion;
+      },
+    });
+
+    Object.defineProperty(this, 'cacheVersion', {
+      enumerable: true,
+      get() {
+        return ENTITY_CACHE_VERSION; // injected by Webpack
       },
     });
 
@@ -134,8 +145,9 @@ export class Resource {
         description: null,
         labels: {},
         cloudUrl: this.cloud.cloudUrl,
-        kind: this.kind,
+        kind: this.kind, // NOTE: could be `null` if unknown
         resourceVersion: this.resourceVersion,
+        cacheVersion: this.cacheVersion,
         syncedAt: this.syncedDate.toISOString(),
       },
       spec: {

@@ -2,6 +2,8 @@ import * as rtv from 'rtvjs';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
 import { Resource, resourceTs } from './Resource';
 import { Cluster } from './Cluster';
+import { ResourceEvent } from './ResourceEvent';
+import { ResourceUpdate } from './ResourceUpdate';
 import { Machine } from './Machine';
 import { Credential } from './Credential';
 import { SshKey } from './SshKey';
@@ -14,7 +16,7 @@ import { logger, logValue } from '../../util/logger';
  */
 export const namespaceTs = mergeRtvShapes({}, resourceTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
-  //  related to what we expect to find in order to create a `Credential` class instance
+  //  related to what we expect to find in order to create a `Namespace` class instance
 
   status: {
     phase: rtv.STRING,
@@ -39,6 +41,8 @@ export class Namespace extends Resource {
     super({ data, cloud, typeset: namespaceTs });
 
     let _clusters = [];
+    let _events = [];
+    let _updates = [];
     let _machines = [];
     let _sshKeys = [];
     let _credentials = [];
@@ -48,6 +52,7 @@ export class Namespace extends Resource {
     // initially `undefined` to defer to length of associated array when NOT preview;
     //  when IS preview, initially `0` so we do NOT defer to length of associated
     //  array since we shouldn't be accessing the array in preview mode
+    // NOTE: we don't need `_eventCount` in preview mode, so we just need the array
     let _clusterCount = preview ? 0 : undefined;
     let _machineCount = preview ? 0 : undefined;
     let _sshKeyCount = preview ? 0 : undefined;
@@ -111,6 +116,130 @@ export class Namespace extends Resource {
 
         if (newValue !== _clusters) {
           _clusters = newValue || [];
+        }
+      },
+    });
+
+    /**
+     * @member {Array<ResourceEvent>} events Resource events in this namespace. Empty if none.
+     */
+    Object.defineProperty(this, 'events', {
+      enumerable: true,
+      get() {
+        if (this.preview) {
+          logger.warn(
+            'Namespace.events:get',
+            `Getting always-empty events property on PREVIEW namespace=${logValue(
+              this.name
+            )}`
+          );
+        }
+
+        return _events;
+      },
+      set(newValue) {
+        if (this.preview) {
+          throw new Error(
+            `Cannot set events property on PREVIEW namespace=${logValue(
+              this.name
+            )}`
+          );
+        }
+
+        DEV_ENV &&
+          rtv.verify(
+            { events: newValue },
+            {
+              events: [
+                rtv.EXPECTED,
+                rtv.ARRAY,
+                {
+                  $: [
+                    // NOTE: For some mysterious reason, using the simpler
+                    //  `rtv.CLASS_OBJECT, { ctor: ResourceEvent }` typeset, like we use
+                    //  for all other Namespace properties here, does not work with an
+                    //  array of ClusterEvent instances. Somehow, RTV even rejects
+                    //  `rtv.OBJECT` (which is used internally in the `rtv.CLASS_OBJECT`
+                    //  validation, hence the failure) so this custom validator does
+                    //  what we want without blowing up for no good reason that I can
+                    //  see so far
+                    (v) => {
+                      if (!(v instanceof ResourceEvent)) {
+                        throw new Error(
+                          'Namespace events must be ResourceEvent instances'
+                        );
+                      }
+                    },
+                  ],
+                },
+              ],
+            }
+          );
+
+        if (newValue !== _events) {
+          _events = newValue || [];
+        }
+      },
+    });
+
+    /**
+     * @member {Array<ResourceUpdate>} updates Resource updates in this namespace. Empty if none.
+     */
+    Object.defineProperty(this, 'updates', {
+      enumerable: true,
+      get() {
+        if (this.preview) {
+          logger.warn(
+            'Namespace.updates:get',
+            `Getting always-empty updates property on PREVIEW namespace=${logValue(
+              this.name
+            )}`
+          );
+        }
+
+        return _updates;
+      },
+      set(newValue) {
+        if (this.preview) {
+          throw new Error(
+            `Cannot set updates property on PREVIEW namespace=${logValue(
+              this.name
+            )}`
+          );
+        }
+
+        DEV_ENV &&
+          rtv.verify(
+            { updates: newValue },
+            {
+              updates: [
+                rtv.EXPECTED,
+                rtv.ARRAY,
+                {
+                  $: [
+                    // NOTE: For some mysterious reason, using the simpler
+                    //  `rtv.CLASS_OBJECT, { ctor: ResourceUpdate }` typeset, like we use
+                    //  for all other Namespace properties here, does not work with an
+                    //  array of ClusterEvent instances. Somehow, RTV even rejects
+                    //  `rtv.OBJECT` (which is used internally in the `rtv.CLASS_OBJECT`
+                    //  validation, hence the failure) so this custom validator does
+                    //  what we want without blowing up for no good reason that I can
+                    //  see so far
+                    (v) => {
+                      if (!(v instanceof ResourceUpdate)) {
+                        throw new Error(
+                          'Namespace updates must be ResourceUpdate instances'
+                        );
+                      }
+                    },
+                  ],
+                },
+              ],
+            }
+          );
+
+        if (newValue !== _updates) {
+          _updates = newValue || [];
         }
       },
     });
@@ -521,6 +650,8 @@ export class Namespace extends Resource {
     // NOTE: AVOID using list properties unless you test for `this.preview === true`
     const propStr = `${super.toString()}, preview: ${this.preview}, clusters: ${
       this.clusterCount
+    }, events: ${this.events.length}, updates: ${
+      this.updates.length
     }, credentials: ${this.credentialCount}, sshKeys: ${
       this.sshKeyCount
     }, machines: ${this.machineCount}, proxies: ${this.proxyCount}, licenses: ${

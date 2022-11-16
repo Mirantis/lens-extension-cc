@@ -5,6 +5,8 @@
 - When setting the Management Cluster URL in the "Add Management Cluster" view, only the necessary portion of the URL will be used in order to establish the sync.
   - For example, if the user provides a URL to a child cluster, like `https://mcc.com/projects/my-project/clusters/my-cluster`, instead of the management cluster, only the origin, `https://mcc.com` in this case, will be used in order to help them be more successful when using the extension since the marketing term is somewhat confusing.
 - Added "Namespace" to each entity details view in the Catalog.
+- Fixed a bug where Catalog Entities wouldn't get updated with new data needed for new features until (if ever) the related API resource would get updated in MCC.
+    - From now on, whenever a new extension version is released, fresh data for all synced entities will be fetched the first time the extension runs in Lens.
 
 ## v5.2.1
 
