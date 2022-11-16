@@ -1,4 +1,5 @@
 import * as rtv from 'rtvjs';
+import { merge } from 'lodash';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
 import { Resource, resourceTs } from './Resource';
 import { Namespace } from './Namespace';
@@ -9,7 +10,7 @@ import { logValue } from '../../util/logger';
  */
 export const namedResourceTs = mergeRtvShapes({}, resourceTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
-  //  related to what we expect to find in order to create a `Credential` class instance
+  //  related to what we expect to find in order to create a `NamedResource` class instance
   // nothing specific for now
 });
 
@@ -43,6 +44,21 @@ export class NamedResource extends Resource {
       enumerable: true,
       get() {
         return namespace;
+      },
+    });
+  }
+
+  /**
+   * Converts this API Object into a Catalog Entity Model.
+   * @returns {{ metadata: Object, spec: Object, status: Object }} Catalog Entity Model
+   *  (use to create new Catalog Entity).
+   */
+  toModel() {
+    const model = super.toModel();
+
+    return merge({}, model, {
+      metadata: {
+        namespace: this.namespace.name,
       },
     });
   }

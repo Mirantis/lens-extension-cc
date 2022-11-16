@@ -31,7 +31,7 @@ const getServerUrl = function (data) {
  */
 export const clusterTs = mergeRtvShapes({}, nodeTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
-  //  related to what we expect to find in order to create a `Credential` class instance
+  //  related to what we expect to find in order to create a `Cluster` class instance
 
   kind: [rtv.STRING, { oneOf: apiKinds.CLUSTER }],
   metadata: {
@@ -165,6 +165,7 @@ export class Cluster extends Node {
     let _controllers = [];
     let _workers = [];
     let _sshKeys = [];
+    let _events = [];
     let _credential = null;
     let _proxy = null;
     let _license = null;
@@ -198,6 +199,16 @@ export class Cluster extends Node {
       enumerable: true,
       get() {
         return _sshKeys;
+      },
+    });
+
+    /**
+     * @member {Array<ClusterEvent>} events Events related to this cluster. Empty list if none.
+     */
+    Object.defineProperty(this, 'events', {
+      enumerable: true,
+      get() {
+        return _events;
       },
     });
 
@@ -505,6 +516,13 @@ export class Cluster extends Node {
         [...this.controllers, ...this.workers].find((m) => !!m.license)
           ?.license || null;
     }
+
+    _events = this.namespace.events.filter(
+      (event) =>
+        // NOTE: since the UID is universal, we can be confident that if we have a match,
+        //  the related object will also be a ClusterEvent instance
+        event.targetUid === this.uid
+    );
   }
 
   /**
@@ -574,23 +592,18 @@ export class Cluster extends Node {
 
     return merge({}, model, {
       metadata: {
-        namespace: this.namespace.name,
         labels,
       },
       spec: {
         kubeconfigPath,
         kubeconfigContext: this.contextName, // must be same context name used in file
         isMgmtCluster: this.isMgmtCluster,
-        ready: this.ready,
-        apiStatus: this.status,
         controllerCount: this.controllers.length,
         workerCount: this.workers.length,
-        region: this.region,
-        provider: this.provider,
         currentVersion: this.currentVersion,
         dashboardUrl: this.dashboardUrl,
         lma: this.lma,
-        conditions: this.conditions,
+        events: this.events.map((e) => e.toModel()),
       },
       status: {
         // always starts off disconnected as far as Lens is concerned (because it
@@ -614,13 +627,9 @@ export class Cluster extends Node {
   toString() {
     const propStr = `${super.toString()}, ready: ${this.ready}, configReady: ${
       this.configReady
-    }, conditions: ${this.conditions.length}/${
-      this.conditions.length < 1 || this.conditions.every((c) => c.ready)
-        ? 'ready'
-        : 'pending'
     }, sshKeys: ${logValue(
       this.sshKeys.map((key) => key.name)
-    )}, credential: ${logValue(
+    )}, events: ${logValue(this.events.length)}, credential: ${logValue(
       this.credential && this.credential.name
     )}, proxy: ${logValue(this.proxy && this.proxy.name)}, license: ${logValue(
       this.license && this.license.name

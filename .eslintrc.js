@@ -76,6 +76,7 @@ const env = {
 
 const globals = {
   DEV_ENV: 'readonly',
+  ENTITY_CACHE_VERSION: 'readonly',
   DEV_UNSAFE_NO_CERT: 'readonly',
   FEAT_CLUSTER_PAGE_ENABLED: 'readonly', // TODO[clusterpage]: remove flag
   fetchMock: 'readonly', // from 'jest-fetch-mock' package

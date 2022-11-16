@@ -12,7 +12,7 @@ import { logValue } from '../../util/logger';
  */
 export const proxyTs = mergeRtvShapes({}, namedResourceTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
-  //  related to what we expect to find in order to create a `Credential` class instance
+  //  related to what we expect to find in order to create a `Proxy` class instance
 
   kind: [rtv.STRING, { oneOf: apiKinds.PROXY }],
   metadata: {
@@ -80,7 +80,6 @@ export class Proxy extends NamedResource {
 
     return merge({}, model, {
       metadata: {
-        namespace: this.namespace.name,
         labels: {
           [entityLabels.CLOUD]: this.cloud.name,
           [entityLabels.NAMESPACE]: this.namespace.name,
