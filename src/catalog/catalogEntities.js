@@ -12,7 +12,6 @@ import {
   apiKinds,
   apiCredentialKinds,
   apiEventTypes,
-  apiUpdateKinds,
 } from '../api/apiConstants';
 import { timestampTs } from '../api/apiTypesets';
 
