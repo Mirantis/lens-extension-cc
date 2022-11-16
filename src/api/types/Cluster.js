@@ -166,6 +166,7 @@ export class Cluster extends Node {
     let _workers = [];
     let _sshKeys = [];
     let _events = [];
+    let _updates = [];
     let _credential = null;
     let _proxy = null;
     let _license = null;
@@ -209,6 +210,17 @@ export class Cluster extends Node {
       enumerable: true,
       get() {
         return _events;
+      },
+    });
+
+    /**
+     * @member {Array<ClusterDeployment|ClusterUpgrade|MachineDeployment|MachineUpgrade>} updates
+     *  Updates related to this cluster or its machines. Empty list if none.
+     */
+    Object.defineProperty(this, 'updates', {
+      enumerable: true,
+      get() {
+        return _updates;
       },
     });
 
@@ -523,6 +535,20 @@ export class Cluster extends Node {
         //  the related object will also be a ClusterEvent instance
         event.targetUid === this.uid
     );
+
+    // NOTE: must be done AFTER finding machines so we can find the machine upgrades
+    //  for this cluster (if any)
+    const uidList = [
+      this.uid,
+      ...this.controllers.map((m) => m.uid),
+      ...this.workers.map((m) => m.uid),
+    ];
+    _updates = this.namespace.updates.filter((update) =>
+      // NOTE: since UIDs are universal, we can be confident that if we have a match,
+      //  the related object will also be a ClusterDeployment, ClusterUpgrade, MachineDeployment,
+      //  or MachineUpgrade instance
+      uidList.includes(update.targetUid)
+    );
   }
 
   /**
@@ -604,6 +630,7 @@ export class Cluster extends Node {
         dashboardUrl: this.dashboardUrl,
         lma: this.lma,
         events: this.events.map((e) => e.toModel()),
+        updates: this.updates.map((u) => u.toModel()),
       },
       status: {
         // always starts off disconnected as far as Lens is concerned (because it
@@ -629,7 +656,9 @@ export class Cluster extends Node {
       this.configReady
     }, sshKeys: ${logValue(
       this.sshKeys.map((key) => key.name)
-    )}, events: ${logValue(this.events.length)}, credential: ${logValue(
+    )}, events: ${logValue(this.events.length)}, updates: ${logValue(
+      this.updates.length
+    )}, credential: ${logValue(
       this.credential && this.credential.name
     )}, proxy: ${logValue(this.proxy && this.proxy.name)}, license: ${logValue(
       this.license && this.license.name

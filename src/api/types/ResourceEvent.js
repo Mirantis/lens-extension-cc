@@ -45,7 +45,7 @@ export class ResourceEvent extends NamedResource {
    * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
    * @param {rtv.Typeset} params.typeset Typeset for verifying the data.
    */
-  constructor({ data, namespace, cloud, typeset }) {
+  constructor({ data, namespace, cloud, typeset = resourceEventTs }) {
     super({ data, cloud, namespace, typeset });
 
     /**

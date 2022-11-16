@@ -13,6 +13,7 @@ import {
   apiCredentialKinds,
   apiEventTypes,
 } from '../api/apiConstants';
+import { timestampTs } from '../api/apiTypesets';
 
 const {
   Catalog: { CatalogEntity, KubernetesCluster },
@@ -42,15 +43,6 @@ export const entityLabels = Object.freeze({
   /** Associated License name, if any. */
   LICENSE: 'license',
 });
-
-/**
- * RTV Typeset for a string that is an ISO8601 timestamp with optional milliseconds since
- *  we don't always have those.
- */
-const iso8601DateTs = [
-  rtv.STRING,
-  { exp: '^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z$' },
-];
 
 /**
  * Typeset representing the required labels for all entity types.
@@ -113,7 +105,7 @@ export const catalogEntityModelTs = {
   spec: {
     // ISO-8601 timestamp (e.g. 2022-03-04T21:33:27.716Z), milliseconds are optional
     //  (MCC API doesn't return milliseconds, so we don't always expect them)
-    createdAt: iso8601DateTs,
+    createdAt: timestampTs,
   },
 
   // all entities must have a status with a phase based on Common.Types.CatalogEntityStatus
@@ -261,7 +253,7 @@ export const clusterEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
         mergeRtvShapes({}, catalogEntityModelTs, {
           spec: {
             type: [rtv.STRING, { oneOf: Object.values(apiEventTypes) }],
-            lastTimeAt: iso8601DateTs,
+            lastTimeAt: timestampTs,
             count: rtv.SAFE_INT,
             sourceComponent: rtv.STRING,
             targetKind: [rtv.STRING, { oneOf: apiKinds.CLUSTER }],
@@ -269,6 +261,33 @@ export const clusterEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
             targetName: rtv.STRING,
             reason: rtv.STRING,
             message: rtv.STRING,
+          },
+        }),
+      ],
+    ],
+    updates: [
+      rtv.OPTIONAL, // optional for backward compatibility
+      [
+        mergeRtvShapes({}, catalogEntityModelTs, {
+          spec: {
+            fromRelease: [rtv.OPTIONAL, rtv.STRING], // only if upgrade status
+            toRelease: [rtv.OPTIONAL, rtv.STRING], // only if upgrade status
+            stages: [
+              [
+                {
+                  name: rtv.STRING,
+                  message: [rtv.EXPECTED, rtv.STRING],
+                  status: rtv.STRING,
+                  timeAt: [rtv.EXPECTED, ...timestampTs],
+                },
+              ],
+            ],
+            targetKind: [
+              rtv.STRING,
+              { oneOf: [apiKinds.CLUSTER, apiKinds.MACHINE] },
+            ],
+            targetUid: rtv.STRING,
+            targetName: rtv.STRING,
           },
         }),
       ],
@@ -409,51 +428,55 @@ export const entityHasChanged = function (entity, resourceOrModel) {
     resOrMod.resourceVersion
       ? resOrMod.cacheVersion
       : resOrMod.metadata.cacheVersion;
-  const getResOrModEvents = (resOrMod) =>
-    resOrMod.resourceVersion ? resOrMod.events : resOrMod.spec.events;
+  const getResOrModObjects = (resOrMod, listName) =>
+    resOrMod.resourceVersion ? resOrMod[listName] : resOrMod.spec[listName];
 
   let changed =
     entity.metadata.resourceVersion !== getResOrModVersion(resourceOrModel) ||
     entity.metadata.cacheVersion !== getResOrModCache(resourceOrModel);
 
-  if (!changed) {
-    // check to see if it's a cluster with updated events
-    if (entity instanceof KubernetesCluster) {
-      // if event list lengths are difference, there was a change
-      changed =
-        entity.spec.events.length !== getResOrModEvents(resourceOrModel).length;
+  // check to see if it's a cluster with updated events or updates
+  if (!changed && entity instanceof KubernetesCluster) {
+    changed = ['events', 'updates'].some((listName) => {
+      // if list lengths are difference, there was a change
+      let modified =
+        entity.spec[listName].length !==
+        getResOrModObjects(resourceOrModel, listName).length;
 
-      // otherwise, see if at least one event from the entity differs from an event in the
+      // otherwise, see if at least one object from the entity differs from an object in the
       //  resource/model
-      changed =
-        changed ||
-        entity.spec.events.some((entityEvent) => {
-          const resOrModEvent = getResOrModEvents(resourceOrModel).find(
-            (e) => getResOrModUid(e) === entityEvent.metadata.uid
-          );
+      modified =
+        modified ||
+        entity.spec[listName].some((entityObj) => {
+          const resOrModObj = getResOrModObjects(
+            resourceOrModel,
+            listName
+          ).find((e) => getResOrModUid(e) === entityObj.metadata.uid);
           return (
-            !resOrModEvent ||
-            getResOrModVersion(resOrModEvent) !==
-              entityEvent.metadata.resourceVersion
+            !resOrModObj ||
+            getResOrModVersion(resOrModObj) !==
+              entityObj.metadata.resourceVersion
           );
         });
 
       // and in case the lists are the same length but objects have changed internally, we have
-      //  to also see if at least one event from the resource/model differs from an event in
+      //  to also see if at least one object from the resource/model differs from an object in
       //  the entity
-      changed =
-        changed ||
-        getResOrModEvents(resourceOrModel).some((resOrModEvent) => {
-          const entityEvent = entity.spec.events.find(
-            (e) => e.metadata.uid === getResOrModUid(resOrModEvent)
+      modified =
+        modified ||
+        getResOrModObjects(resourceOrModel, listName).some((resOrModObj) => {
+          const entityObj = entity.spec[listName].find(
+            (e) => e.metadata.uid === getResOrModUid(resOrModObj)
           );
           return (
-            !entityEvent ||
-            entityEvent.metadata.resourceVersion !==
-              getResOrModVersion(resOrModEvent)
+            !entityObj ||
+            entityObj.metadata.resourceVersion !==
+              getResOrModVersion(resOrModObj)
           );
         });
-    }
+
+      return modified;
+    });
   }
 
   return changed;

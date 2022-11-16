@@ -10,7 +10,12 @@ import { pick } from 'lodash';
  */
 export const apiResourceTypes = Object.freeze({
   CLUSTER: 'clusters',
+  CLUSTER_RELEASE: 'clusterreleases',
+  CLUSTER_DEPLOYMENT_STATUS: 'clusterdeploymentstatuses',
+  CLUSTER_UPGRADE_STATUS: 'clusterupgradestatuses',
   MACHINE: 'machines',
+  MACHINE_DEPLOYMENT_STATUS: 'machinedeploymentstatuses',
+  MACHINE_UPGRADE_STATUS: 'machineupgradestatuses',
   PUBLIC_KEY: 'publickeys', // "SSH keys"
   NAMESPACE: 'namespaces',
   OPENSTACK_CREDENTIAL: 'openstackcredentials',
@@ -21,7 +26,6 @@ export const apiResourceTypes = Object.freeze({
   BYO_CREDENTIAL: 'byocredentials',
   SECRET: 'secrets',
   EVENT: 'events',
-  CLUSTER_RELEASE: 'clusterreleases',
   KAAS_RELEASE: 'kaasreleases',
   OPENSTACK_RESOURCE: 'openstackresources',
   AWS_RESOURCE: 'awsresources',
@@ -33,12 +37,11 @@ export const apiResourceTypes = Object.freeze({
 });
 
 /**
- * Map of credential entity type to name/endpoint used in Kube API calls.
+ * Map of API credential type to name/endpoint used in Kube API calls.
  * @type {Record<string, string>}
  */
 export const apiCredentialTypes = Object.freeze(
   pick(apiResourceTypes, [
-    // NOTE: these are KEYS from the apiResourceTypes map
     'OPENSTACK_CREDENTIAL',
     'AWS_CREDENTIAL',
     'EQUINIX_CREDENTIAL',
@@ -49,13 +52,30 @@ export const apiCredentialTypes = Object.freeze(
 );
 
 /**
+ * Map of API update type to name/endpoint used in Kube API calls.
+ * @type {Record<string, string>}
+ */
+export const apiUpdateTypes = Object.freeze(
+  pick(apiResourceTypes, [
+    'CLUSTER_DEPLOYMENT_STATUS',
+    'CLUSTER_UPGRADE_STATUS',
+    'MACHINE_DEPLOYMENT_STATUS',
+    'MACHINE_UPGRADE_STATUS',
+  ])
+);
+
+/**
  * Map of API kind to kube spec `kind` property value in API data objects.
  * @type {Record<string, string>}
  */
 export const apiKinds = Object.freeze({
   NAMESPACE: 'Namespace',
   CLUSTER: 'Cluster',
+  CLUSTER_DEPLOYMENT_STATUS: 'ClusterDeploymentStatus',
+  CLUSTER_UPGRADE_STATUS: 'ClusterUpgradeStatus',
   MACHINE: 'Machine',
+  MACHINE_DEPLOYMENT_STATUS: 'MachineDeploymentStatus',
+  MACHINE_UPGRADE_STATUS: 'MachineUpgradeStatus',
   PUBLIC_KEY: 'PublicKey',
   AWS_CREDENTIAL: 'AWSCredential',
   AZURE_CREDENTIAL: 'AzureCredential',
@@ -74,13 +94,25 @@ export const apiKinds = Object.freeze({
  */
 export const apiCredentialKinds = Object.freeze(
   pick(apiKinds, [
-    // NOTE: these are KEYS from the apiResourceTypes map
     'AWS_CREDENTIAL',
     'AZURE_CREDENTIAL',
     'BYO_CREDENTIAL',
     'EQUINIX_CREDENTIAL',
     'OPENSTACK_CREDENTIAL',
     'VSPHERE_CREDENTIAL',
+  ])
+);
+
+/**
+ * Map of update API kind to kube spec `kind` property value in API data objects.
+ * @type {Record<string, string>}
+ */
+export const apiUpdateKinds = Object.freeze(
+  pick(apiKinds, [
+    'CLUSTER_DEPLOYMENT_STATUS',
+    'CLUSTER_UPGRADE_STATUS',
+    'MACHINE_DEPLOYMENT_STATUS',
+    'MACHINE_UPGRADE_STATUS',
   ])
 );
 
@@ -125,4 +157,14 @@ export const apiNamespacePhases = Object.freeze({
 export const apiEventTypes = Object.freeze({
   NORMAL: 'Normal',
   WARNING: 'Warning',
+});
+
+/**
+ * Map of (currently known, but could be more) API resource update statuses.
+ * @type {Record<string, string>}
+ */
+export const apiUpdateStatuses = Object.freeze({
+  SUCCESS: 'Success',
+  IN_PROGRESS: 'InProgress',
+  NOT_STARTED: 'NotStarted',
 });

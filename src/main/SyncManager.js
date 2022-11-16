@@ -728,7 +728,7 @@ export class SyncManager extends Singleton {
                 catEntity.metadata.cacheVersion
               )} -> ${logValue(
                 cluster.cacheVersion
-              )}) (cluster events may also have changed)`
+              )}) (cluster events/updates may also have changed)`
             );
 
             if (this.updateEntity(catEntity, model)) {
@@ -1058,7 +1058,7 @@ export class SyncManager extends Singleton {
                 entity.metadata.cacheVersion
               )} -> ${logValue(model.metadata.cacheVersion)})${
                 model.metadata.kind === apiKinds.CLUSTER
-                  ? ' (cluster events may also have changed)'
+                  ? ' (cluster events/updates may also have changed)'
                   : ''
               }`
             );
