@@ -213,7 +213,7 @@ export const catalog: Dict = {
         props: {
           dateCreated: () => 'Date created',
           lastSync: () => 'Last sync',
-          namespace: () => 'Namespace',
+          namespace: () => 'Project',
           uid: () => 'UID',
           serverStatus: () => `${mccCodeName} status`,
           lensExtension: () => 'Lens Extension',
@@ -357,7 +357,7 @@ export const clusterPage: Dict = {
     overview: {
       summary: {
         title: () => 'Summary',
-        clusterName: () => 'Cluster name',
+        clusterName: () => 'Name',
         serverStatus: catalog.entities.common.details.props.serverStatus,
         lastSync: catalog.entities.common.details.props.lastSync,
         provider: catalog.entities.cluster.details.props.provider,

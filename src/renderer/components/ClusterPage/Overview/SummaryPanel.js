@@ -78,6 +78,11 @@ export const SummaryPanel = ({ clusterEntity }) => {
           {clusterEntity.metadata.name || unknownValue()}
         </DrawerItem>
         <DrawerItem
+          name={strings.clusterPage.pages.overview.summary.namespace()}
+        >
+          {clusterEntity.metadata.namespace || unknownValue()}
+        </DrawerItem>
+        <DrawerItem
           name={strings.clusterPage.pages.overview.summary.serverStatus()}
         >
           {clusterEntity.spec.apiStatus ? (
@@ -109,11 +114,6 @@ export const SummaryPanel = ({ clusterEntity }) => {
           name={strings.clusterPage.pages.overview.summary.releaseVersion()}
         >
           {clusterEntity.spec.currentVersion || unknownValue()}
-        </DrawerItem>
-        <DrawerItem
-          name={strings.clusterPage.pages.overview.summary.namespace()}
-        >
-          {clusterEntity.metadata.namespace || unknownValue()}
         </DrawerItem>
         <DrawerItem name={strings.clusterPage.common.clusterUrl()}>
           <Link
