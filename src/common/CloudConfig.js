@@ -92,7 +92,10 @@ export class CloudConfig {
 
     switch (resourceType) {
       case apiResourceTypes.CLUSTER: // fall-through
+      case apiResourceTypes.CLUSTER_DEPLOYMENT_STATUS: // fall-through
+      case apiResourceTypes.CLUSTER_UPGRADE_STATUS: // fall-through
       case apiResourceTypes.MACHINE: // fall-through
+      case apiResourceTypes.MACHINE_UPGRADE_STATUS: // fall-through
       case apiResourceTypes.PUBLIC_KEY: // fall-through
       case apiResourceTypes.NAMESPACE: // fall-through
       case apiResourceTypes.SECRET: // fall-through

@@ -10,7 +10,7 @@ import * as consts from '../constants';
 import {
   ROUTE_SYNC_VIEW,
   ROUTE_CLUSTER_OVERVIEW,
-  ROUTE_CLUSTER_PERFORMANCE,
+  ROUTE_CLUSTER_UPDATES,
   ROUTE_CLUSTER_EVENTS,
   ROUTE_CLUSTER_DETAILS,
 } from '../routes';
@@ -40,7 +40,8 @@ const {
 const logger: any = loggerUtil; // get around TS compiler's complaining
 const CLUSTER_PAGE_ID = 'mcc-cluster-page';
 
-declare const FEAT_CLUSTER_PAGE_ENABLED: any; // TODO[clusterpage]: remove
+declare const FEAT_CLUSTER_PAGE_ENABLED: any;
+declare const FEAT_CLUSTER_PAGE_UPDATES_ENABLED: any;
 
 export default class ExtensionRenderer extends LensExtension {
   //
@@ -70,17 +71,21 @@ export default class ExtensionRenderer extends LensExtension {
       },
     },
     {
-      id: ROUTE_CLUSTER_PERFORMANCE,
-      components: {
-        Page: () => <p>PERFORMANCE</p>,
-      },
-    },
-    {
       id: ROUTE_CLUSTER_EVENTS,
       components: {
         Page: () => <p>EVENTS</p>,
       },
     },
+    ...(FEAT_CLUSTER_PAGE_UPDATES_ENABLED
+      ? [
+          {
+            id: ROUTE_CLUSTER_UPDATES,
+            components: {
+              Page: () => <p>UPDATES</p>,
+            },
+          },
+        ]
+      : []),
     {
       id: ROUTE_CLUSTER_DETAILS,
       components: {
@@ -323,7 +328,6 @@ export default class ExtensionRenderer extends LensExtension {
     //  (which should now be deprecated, I think). See
     //  https://github.com/lensapp/lens/issues/4591#issuecomment-1275204032
     //
-    // TODO[clusterpage]: remove flag
     if (FEAT_CLUSTER_PAGE_ENABLED) {
       this.clusterPageMenus = [
         {
@@ -351,20 +355,24 @@ export default class ExtensionRenderer extends LensExtension {
         },
         {
           parentId: CLUSTER_PAGE_ID,
-          target: { pageId: ROUTE_CLUSTER_PERFORMANCE },
-          title: strings.clusterPage.menuItems.performance(),
-          components: {
-            Icon: null,
-          },
-        },
-        {
-          parentId: CLUSTER_PAGE_ID,
           target: { pageId: ROUTE_CLUSTER_EVENTS },
           title: strings.clusterPage.menuItems.events(),
           components: {
             Icon: null,
           },
         },
+        ...(FEAT_CLUSTER_PAGE_UPDATES_ENABLED
+          ? [
+              {
+                parentId: CLUSTER_PAGE_ID,
+                target: { pageId: ROUTE_CLUSTER_UPDATES },
+                title: strings.clusterPage.menuItems.updates(),
+                components: {
+                  Icon: null,
+                },
+              },
+            ]
+          : []),
         {
           parentId: CLUSTER_PAGE_ID,
           target: { pageId: ROUTE_CLUSTER_DETAILS },

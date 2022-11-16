@@ -1,6 +1,7 @@
 import * as rtv from 'rtvjs';
 import * as consts from '../../constants';
 import { Cloud } from '../../common/Cloud';
+import { timestampTs } from '../apiTypesets';
 import { logValue } from '../../util/logger';
 
 /**
@@ -17,8 +18,8 @@ export const resourceTs = {
     uid: rtv.STRING,
     name: rtv.STRING,
     resourceVersion: rtv.STRING,
-    creationTimestamp: rtv.STRING, // ISO8601 timestamp
-    deletionTimestamp: [rtv.OPTIONAL, rtv.STRING], // ISO8601 timestamp; only exists if being deleted
+    creationTimestamp: timestampTs, // ISO8601 timestamp
+    deletionTimestamp: [rtv.OPTIONAL, ...timestampTs], // ISO8601 timestamp; only exists if being deleted
   },
 };
 

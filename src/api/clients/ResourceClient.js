@@ -20,7 +20,10 @@ export class ResourceClient {
   // resource type to '/apis/GROUP/VERSION' prefix
   static typeToApiPrefix = {
     [apiResourceTypes.CLUSTER]: clusterEndpoint,
+    [apiResourceTypes.CLUSTER_DEPLOYMENT_STATUS]: kaasEndpoint,
+    [apiResourceTypes.CLUSTER_UPGRADE_STATUS]: kaasEndpoint,
     [apiResourceTypes.MACHINE]: clusterEndpoint,
+    [apiResourceTypes.MACHINE_UPGRADE_STATUS]: kaasEndpoint,
     [apiResourceTypes.PUBLIC_KEY]: kaasEndpoint, // SSH keys
     [apiResourceTypes.OPENSTACK_CREDENTIAL]: kaasEndpoint,
     [apiResourceTypes.AWS_CREDENTIAL]: kaasEndpoint,

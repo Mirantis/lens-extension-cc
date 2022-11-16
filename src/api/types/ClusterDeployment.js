@@ -1,26 +1,23 @@
 import * as rtv from 'rtvjs';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
 import { apiKinds } from '../apiConstants';
-import { ResourceEvent, resourceEventTs } from './ResourceEvent';
+import { ResourceUpdate, resourceUpdateTs } from './ResourceUpdate';
 
 /**
- * Typeset for an MCC API cluster event resource.
+ * Typeset for an MCC API cluster deployment (i.e. installation) resource.
  */
-export const clusterEventTs = mergeRtvShapes({}, resourceEventTs, {
+export const clusterDeploymentTs = mergeRtvShapes({}, resourceUpdateTs, {
   // NOTE: this is not intended to be fully-representative; we only list the properties
-  //  related to what we expect to find in order to create a `ClusterEvent` class instance
+  //  related to what we expect to find in order to create a `ClusterDeployment` class instance
 
-  involvedObject: {
-    kind: [rtv.STRING, { oneOf: apiKinds.CLUSTER }],
-    uid: rtv.STRING, // cluster event objects always have a UID
-  },
+  kind: [rtv.STRING, { oneOf: apiKinds.CLUSTER_DEPLOYMENT_STATUS }],
 });
 
 /**
- * MCC API cluster event.
- * @class ClusterEvent
+ * MCC API cluster deployment.
+ * @class ClusterDeployment
  */
-export class ClusterEvent extends ResourceEvent {
+export class ClusterDeployment extends ResourceUpdate {
   /**
    * @constructor
    * @param {Object} params
@@ -29,11 +26,11 @@ export class ClusterEvent extends ResourceEvent {
    * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
    */
   constructor({ data, namespace, cloud }) {
-    super({ data, cloud, namespace, typeset: clusterEventTs });
+    super({ data, cloud, namespace, typeset: clusterDeploymentTs });
   }
 
-  // NOTE: we don't have toEntity() because we don't show ClusterEvents in the Catalog at
-  //  the moment (so we don't have a ClusterEventEntity class for them either)
+  // NOTE: we don't have toEntity() because we don't show ClusterDeployments in the Catalog at
+  //  the moment (so we don't have a ClusterDeploymentEntity class for them either)
 
   /**
    * Converts this API Object into a Catalog Entity Model.
@@ -49,8 +46,8 @@ export class ClusterEvent extends ResourceEvent {
   toString() {
     const propStr = `${super.toString()}`;
 
-    if (Object.getPrototypeOf(this).constructor === ClusterEvent) {
-      return `{ClusterEvent ${propStr}}`;
+    if (Object.getPrototypeOf(this).constructor === ClusterDeployment) {
+      return `{ClusterDeployment ${propStr}}`;
     }
 
     // this is actually an extended class instance, so return only the properties
