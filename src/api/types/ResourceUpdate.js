@@ -48,7 +48,7 @@ export const resourceUpdateTs = mergeRtvShapes({}, namedResourceTs, {
         name: rtv.STRING, // short message/phrase/summary, more like a title
         message: [rtv.OPTIONAL, rtv.STRING], // detailed message, if any
 
-        // TODO[cluster-updates]: add this when release
+        // TODO[cluster-updates]: add this when release (MCC v2.22+)
         // NOTE: we don't validate this against `apiUpdateStatuses` in case additional statuses
         //  are added in the future without our knowledge; we just expect a non-empty string
         // status: rtv.STRING, // status code like 'Success', 'InProgress', 'NotStarted', 'Fail'
