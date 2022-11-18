@@ -167,4 +167,5 @@ export const apiUpdateStatuses = Object.freeze({
   SUCCESS: 'Success',
   IN_PROGRESS: 'InProgress',
   NOT_STARTED: 'NotStarted',
+  FAILURE: 'Fail',
 });

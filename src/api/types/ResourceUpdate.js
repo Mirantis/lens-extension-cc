@@ -49,7 +49,9 @@ export const resourceUpdateTs = mergeRtvShapes({}, namedResourceTs, {
         message: [rtv.OPTIONAL, rtv.STRING], // detailed message, if any
 
         // TODO[cluster-updates]: add this when release
-        // status: rtv.STRING, // status code like 'Success', 'InProgress', 'NotStarted'
+        // NOTE: we don't validate this against `apiUpdateStatuses` in case additional statuses
+        //  are added in the future without our knowledge; we just expect a non-empty string
+        // status: rtv.STRING, // status code like 'Success', 'InProgress', 'NotStarted', 'Fail'
 
         // ISO8601, not provided unless stage is done (successfully or has been attempted
         //  at least once)
