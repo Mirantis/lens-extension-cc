@@ -10,7 +10,7 @@ import * as consts from '../constants';
 import {
   ROUTE_SYNC_VIEW,
   ROUTE_CLUSTER_OVERVIEW,
-  ROUTE_CLUSTER_UPDATES,
+  ROUTE_CLUSTER_HISTORY,
   ROUTE_CLUSTER_EVENTS,
   ROUTE_CLUSTER_DETAILS,
 } from '../routes';
@@ -79,9 +79,9 @@ export default class ExtensionRenderer extends LensExtension {
     ...(FEAT_CLUSTER_PAGE_UPDATES_ENABLED
       ? [
           {
-            id: ROUTE_CLUSTER_UPDATES,
+            id: ROUTE_CLUSTER_HISTORY,
             components: {
-              Page: () => <p>UPDATES</p>,
+              Page: () => <p>HISTORY</p>,
             },
           },
         ]
@@ -365,8 +365,8 @@ export default class ExtensionRenderer extends LensExtension {
           ? [
               {
                 parentId: CLUSTER_PAGE_ID,
-                target: { pageId: ROUTE_CLUSTER_UPDATES },
-                title: strings.clusterPage.menuItems.updates(),
+                target: { pageId: ROUTE_CLUSTER_HISTORY },
+                title: strings.clusterPage.menuItems.history(),
                 components: {
                   Icon: null,
                 },

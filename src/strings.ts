@@ -346,7 +346,7 @@ export const clusterPage: Dict = {
     group: () => mccShortName,
     overview: () => 'Overview',
     events: () => 'Events',
-    updates: () => 'Updates',
+    history: () => 'History',
     details: () => 'Details',
   },
   common: {
