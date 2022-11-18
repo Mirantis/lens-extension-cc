@@ -56,7 +56,7 @@ export const logValue = function (value) {
   }
 
   if (value instanceof Date) {
-    return value.toISOString();
+    return `Date|${value.toISOString()}`;
   }
 
   if (value instanceof Error) {

@@ -49,7 +49,8 @@ export class Resource {
         }
       );
 
-    const _syncedDate = new Date();
+    const _syncedDate = new Date(); // any time a Resource is created, it's because we're syncing it
+    const _createdDate = new Date(data.metadata.creationTimestamp);
 
     /** @member {Cloud} cloud */
     Object.defineProperty(this, 'cloud', {
@@ -111,7 +112,7 @@ export class Resource {
     Object.defineProperty(this, 'createdDate', {
       enumerable: true,
       get() {
-        return new Date(data.metadata.creationTimestamp);
+        return _createdDate;
       },
     });
 
@@ -159,11 +160,11 @@ export class Resource {
 
   /** @returns {string} A string representation of this instance for logging/debugging. */
   toString() {
-    const propStr = `name: ${logValue(this.name)}, uid: ${logValue(
-      this.uid
-    )}, kind: ${logValue(this.kind)}, cloudUrl: ${logValue(
-      this.cloud.cloudUrl
-    )}`;
+    const propStr = `name: ${logValue(this.name)}, kind: ${logValue(
+      this.kind
+    )}, uid: ${logValue(this.uid)}, revision: ${
+      this.resourceVersion
+    }, cloudUrl: ${logValue(this.cloud.cloudUrl)}`;
 
     if (Object.getPrototypeOf(this).constructor === Resource) {
       return `{Resource ${propStr}}`;
