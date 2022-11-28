@@ -11,10 +11,17 @@ const colorHover = 'var(--textColorSecondary)';
 
 const TopBarExtension = styled.div`
   display: flex;
+  justify-content: center;
   align-items: center;
   background-color: var(--layoutTabsBackground);
+  margin: 0;
   padding: ${layout.pad * 0.25}px ${layout.pad * 0.5}px;
   border-radius: 4px;
+  width: 130px;
+
+  > svg {
+    flex: none; // don't let icon resize to fit; keep it size we want
+  }
 `;
 
 const TopBarExtensionTitle = styled.p`
