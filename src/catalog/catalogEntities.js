@@ -256,8 +256,11 @@ export const clusterEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
             lastTimeAt: timestampTs,
             count: rtv.SAFE_INT,
             sourceComponent: rtv.STRING,
-            targetKind: [rtv.STRING, { oneOf: apiKinds.CLUSTER }],
-            targetUid: rtv.STRING, // always expected for a ClusterEvent
+            targetKind: [
+              rtv.STRING,
+              { oneOf: [apiKinds.CLUSTER, apiKinds.MACHINE] },
+            ],
+            targetUid: rtv.STRING, // always expected for a ClusterEvent or MachineEvent
             targetName: rtv.STRING,
             reason: rtv.STRING,
             message: rtv.STRING,
