@@ -3,22 +3,11 @@
 //
 
 import propTypes from 'prop-types';
-import styled from '@emotion/styled';
-import { mixinPageStyles } from '../../styles';
+import { PageContainer } from '../clusterPageComponents';
 import { GeneralInformation } from './GeneralInformation';
 import { KubernetesInformation } from './KubernetesInformation';
 import { ServerInformation } from './ServerInformation';
 import { LmaInformation } from './LmaInformation';
-
-//
-// INTERNAL STYLED COMPONENTS
-//
-
-const PageContainer = styled.div(() => ({
-  ...mixinPageStyles(),
-  display: 'flex',
-  flexDirection: 'column',
-}));
 
 //
 // MAIN COMPONENT

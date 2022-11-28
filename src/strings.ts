@@ -422,6 +422,22 @@ export const clusterPage: Dict = {
         prometheus: catalog.entities.cluster.details.props.prometheusUrl,
       },
     },
+    events: {
+      title: () => 'Events',
+      itemsAmount: (count) => `${count} ${count === 1 ? 'item' : 'items'}`,
+      defaultSourceOption: () => 'All sources',
+      searchPlaceholder: () => 'Search Events...',
+      table: {
+        headers: {
+          type: () => 'Type',
+          date: () => 'Date',
+          message: () => 'Message',
+          source: () => 'Source',
+          machine: () => 'Machine',
+          count: () => 'Count',
+        },
+      },
+    },
   },
 };
 

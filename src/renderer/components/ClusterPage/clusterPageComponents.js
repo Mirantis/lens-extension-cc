@@ -1,5 +1,12 @@
 import styled from '@emotion/styled';
-import { layout } from '../styles';
+import { layout, mixinPageStyles } from '../styles';
+
+export const PageContainer = styled.div(() => ({
+  ...mixinPageStyles(),
+  padding: '0',
+  display: 'flex',
+  flexDirection: 'column',
+}));
 
 export const DrawerTitleWrapper = styled.div(() => ({
   paddingLeft: layout.pad * 3,
