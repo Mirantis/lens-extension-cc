@@ -14,6 +14,7 @@ import { Proxy, proxyTs } from '../api/types/Proxy';
 import { License, licenseTs } from '../api/types/License';
 import { resourceEventTs } from '../api/types/ResourceEvent';
 import { ClusterEvent, clusterEventTs } from '../api/types/ClusterEvent';
+import { MachineEvent, machineEventTs } from './types/MachineEvent';
 import { resourceUpdateTs } from './types/ResourceUpdate';
 import {
   ClusterDeployment,
@@ -315,25 +316,25 @@ const _zipFetchResults = function (results, resourcesName = 'resources') {
 };
 
 /**
- * [ASYNC] Best-try to get all existing Cluster events from the management cluster, for each
+ * [ASYNC] Best-try to get all existing resource events from the management cluster, for each
  *  namespace specified.
  * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared if necessary.
  * @param {Array<Namespace>} namespaces List of namespaces.
  * @returns {Promise<{
- *   clusterEvents: { [index: string]: Array<ClusterEvent> },
+ *   resourceEvents: { [index: string]: Array<ResourceEvent> },
  *   tokensRefreshed: boolean,
  *   errorsOccurred: boolean,
  * }>} Always resolves, never fails.
  *
- *  - `clusterEvents` are mapped per namespace name. If an error occurs trying
+ *  - `resourceEvents` are mapped per namespace name. If an error occurs trying
  *      to get any object, it will be ignored/skipped.
  *  - `tokensRefreshed` is true if the cloud's tokens had to be refreshed during the process.
  *  - `errorsOccurred` is true if at least one error ocurred (that couldn't be safely ignored)
  *      while fetching resources.
  */
-export const fetchClusterEvents = async function (cloud, namespaces) {
+export const fetchResourceEvents = async function (cloud, namespaces) {
   const {
-    resources: clusterEvents,
+    resources: resourceEvents,
     tokensRefreshed,
     errors,
   } = await _fetchCollection({
@@ -350,34 +351,40 @@ export const fetchClusterEvents = async function (cloud, namespaces) {
         return new ClusterEvent({ data: mvvData, namespace, cloud });
       }
 
+      if (data.involvedObject.kind === apiKinds.MACHINE) {
+        // now check if it's a valid machine event
+        const mvvData = rtv.verify(data, machineEventTs).mvv;
+        return new MachineEvent({ data: mvvData, namespace, cloud });
+      }
+
       // since it wasn't a cluster event, and those are the only ones we care
       //  about, ignore it
       return undefined;
     },
   });
 
-  return { clusterEvents, tokensRefreshed, errorsOccurred: !!errors };
+  return { resourceEvents, tokensRefreshed, errorsOccurred: !!errors };
 };
 
 /**
- * [ASYNC] Best-try to get all existing Cluster update history objects from the management
+ * [ASYNC] Best-try to get all existing update history objects from the management
  *  cluster, for each namespace specified.
  * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared if necessary.
  * @param {Array<Namespace>} namespaces List of namespaces.
  * @returns {Promise<{
- *   clusterUpdates: { [index: string]: Array<ResourceUpdate> },
+ *   resourceUpdates: { [index: string]: Array<ResourceUpdate> },
  *   tokensRefreshed: boolean,
  *   errorsOccurred: boolean,
  * }>} Always resolves, never fails.
  *
- *  - `clusterUpdates` are mapped per namespace name. If an error occurs trying
+ *  - `resourceUpdates` are mapped per namespace name. If an error occurs trying
  *      to get any object, it will be ignored/skipped. Note this includes __ALL updates__
  *      related to a cluster and its machines.
  *  - `tokensRefreshed` is true if the cloud's tokens had to be refreshed during the process.
  *  - `errorsOccurred` is true if at least one error ocurred (that couldn't be safely ignored)
  *      while fetching resources.
  */
-export const fetchClusterUpdates = async function (cloud, namespaces) {
+export const fetchResourceUpdates = async function (cloud, namespaces) {
   const results = await Promise.all(
     [
       apiResourceTypes.CLUSTER_DEPLOYMENT_STATUS,
@@ -419,7 +426,7 @@ export const fetchClusterUpdates = async function (cloud, namespaces) {
     )
   );
 
-  return _zipFetchResults(results, 'clusterUpdates');
+  return _zipFetchResults(results, 'resourceUpdates');
 };
 
 /**

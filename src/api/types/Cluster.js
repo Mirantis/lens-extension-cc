@@ -501,8 +501,11 @@ export class Cluster extends Node {
       }
     }
 
+    const allUids = [this.uid];
+
     this.namespace.machines.forEach((m) => {
       if (m.clusterName === this.name) {
+        allUids.push(m.uid);
         if (m.isController) {
           _controllers.push(m);
         } else {
@@ -529,25 +532,21 @@ export class Cluster extends Node {
           ?.license || null;
     }
 
-    _events = this.namespace.events.filter(
-      (event) =>
-        // NOTE: since the UID is universal, we can be confident that if we have a match,
-        //  the related object will also be a ClusterEvent instance
-        event.targetUid === this.uid
+    // NOTE: must be done AFTER finding machines so we can also find the machine events
+    //  for this cluster (if any)
+    _events = this.namespace.events.filter((event) =>
+      // NOTE: since UIDs are universal, we can be confident that if we have a match,
+      //  the related object will also be a ClusterEvent or MachineEvent instance
+      allUids.includes(event.targetUid)
     );
 
-    // NOTE: must be done AFTER finding machines so we can find the machine upgrades
+    // NOTE: must be done AFTER finding machines so we can also find the machine updates
     //  for this cluster (if any)
-    const uidList = [
-      this.uid,
-      ...this.controllers.map((m) => m.uid),
-      ...this.workers.map((m) => m.uid),
-    ];
     _updates = this.namespace.updates.filter((update) =>
       // NOTE: since UIDs are universal, we can be confident that if we have a match,
       //  the related object will also be a ClusterDeployment, ClusterUpgrade, MachineDeployment,
       //  or MachineUpgrade instance
-      uidList.includes(update.targetUid)
+      allUids.includes(update.targetUid)
     );
   }
 
