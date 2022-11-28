@@ -473,14 +473,19 @@ export class Cloud extends EventDispatcher {
         }
 
         // we're not truly connected to the Cloud unless there's no error, we have
-        //  a config (can't make API calls without it), we have an API token, and'
+        //  a config (can't make API calls without it), we have an API token, and
         //  we have the ability to refresh it when it expires
         if (!this.connectError && this.token && this.refreshTokenValid) {
           // if we're on MAIN and all we're missing is the config, claim we're "connecting"
           //  because we most likely just restored this Cloud from disk after opening Lens,
           //  and we just haven't attempted to fetch the config yet as part of a data fetch
           // if we're on RENDERER (where we never connect other than for preview purposes),
-          //  then we simply can't consider this
+          //  then we will never have a config so we can't consider this implied 'connecting'
+          //  state
+          // NOTE: a Cloud's status on RENDERER is simply driven by IPC events from MAIN
+          //  (sent by the sibling Cloud instance there) via the CloudProvider purely for
+          //  cosmetic purposes so that the user can see if the Cloud is connected, refreshing,
+          //  etc.
           if (ipcMain && !this.config) {
             return CONNECTION_STATUSES.CONNECTING;
           }

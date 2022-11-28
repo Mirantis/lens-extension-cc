@@ -107,7 +107,7 @@ const _handleCloudStatusChange = function (event, cloudUrl, status) {
         cloudUrl
       )}`
     );
-    Object.entries(([key, value]) => {
+    Object.entries(status).forEach(([key, value]) => {
       pr.store.clouds[cloudUrl][key] = value;
     });
   } else {
