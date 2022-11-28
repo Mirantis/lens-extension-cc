@@ -6,6 +6,7 @@ import * as rtv from 'rtvjs';
 import * as consts from '../../../constants';
 import { logger } from '../../../util/logger';
 import { clusterEntityModelTs } from '../../../catalog/catalogEntities';
+import { CloudProvider } from '../../store/CloudProvider';
 import { useThemeSwitching } from '../useThemeSwitching';
 
 //
@@ -44,7 +45,7 @@ export const ClusterPage = ({ children }) => {
     return child;
   });
 
-  return <ThemeProvider theme={theme}>{childrenWithProps}</ThemeProvider>;
+  return <ThemeProvider theme={theme}><CloudProvider>{childrenWithProps}</CloudProvider></ThemeProvider>;
 };
 
 ClusterPage.propTypes = {

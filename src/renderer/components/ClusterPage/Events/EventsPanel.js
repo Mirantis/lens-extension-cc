@@ -7,6 +7,7 @@ import { layout } from '../../styles';
 import * as strings from '../../../../strings';
 import * as consts from '../../../../constants';
 import { IpcRenderer } from '../../../IpcRenderer';
+import { useClouds } from '../../../store/CloudProvider';
 import { useTableSearch } from './useTableSearch';
 
 const {
@@ -98,6 +99,10 @@ export const EventsPanel = ({ clusterEntity }) => {
     searchValue,
     data: events,
   });
+
+  const { clouds, actions: cloudActions } = useClouds();
+
+  console.log({clouds, cloudActions});
 
   const handleSelectChange = (newSelection) => {
     const newValue = newSelection?.value || null;
