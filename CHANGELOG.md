@@ -8,6 +8,7 @@
 - Fixed a bug where Catalog Entities wouldn't get updated with new data needed for new features until (if ever) the related API resource would get updated in MCC.
     - From now on, whenever a new extension version is released, fresh data for all synced entities will be fetched the first time the extension runs in Lens.
 - Fixed a bug in mgmt cluster connection status reporting where status feedback was not as immediate as it should have been.
+- Fixed top bar item layout that [broke](https://github.com/lensapp/lens/issues/6658) in Lens version `2022.11.251411-latest`
 
 ## v5.2.1
 
