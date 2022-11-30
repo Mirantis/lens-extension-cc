@@ -45,7 +45,11 @@ export const ClusterPage = ({ children }) => {
     return child;
   });
 
-  return <ThemeProvider theme={theme}><CloudProvider>{childrenWithProps}</CloudProvider></ThemeProvider>;
+  return (
+    <ThemeProvider theme={theme}>
+      <CloudProvider>{childrenWithProps}</CloudProvider>
+    </ThemeProvider>
+  );
 };
 
 ClusterPage.propTypes = {
