@@ -13,7 +13,7 @@ export const clusterDeploymentTs = mergeRtvShapes({}, resourceUpdateTs, {
   //  related to what we expect to find in order to create a `ClusterDeployment` class instance
 
   kind: [rtv.STRING, { oneOf: apiKinds.CLUSTER_DEPLOYMENT_STATUS }],
-  // TODO[cluster-updates]: add this when release (MCC v2.22+)
+  // TODO[cluster-history]: add this when release (MCC v2.22+)
   // release: rtv.STRING, // release version deployed
 });
 
@@ -32,17 +32,15 @@ export class ClusterDeployment extends ResourceUpdate {
   constructor({ data, namespace, cloud }) {
     super({ data, cloud, namespace, typeset: clusterDeploymentTs });
 
-    // NOTE: using 'toRelease' instead of 'release' as property name in order to remove
-    //  some differences between Deployment and Upgrade objects
     /**
      * @readonly
-     * @member {string} toRelease The version of the cluster. Should match the cluster's
+     * @member {string} release The version of the cluster. Should match the cluster's
      *  `currentVersion`.
      */
-    Object.defineProperty(this, 'toRelease', {
+    Object.defineProperty(this, 'release', {
       enumerable: true,
       get() {
-        return data.release || '-1.0.0'; // TODO[cluster-updates]: remove '-1.0.0' fallback
+        return data.release || '-1.0.0'; // TODO[cluster-history]: remove '-1.0.0' fallback
       },
     });
   }
@@ -60,14 +58,14 @@ export class ClusterDeployment extends ResourceUpdate {
 
     return merge({}, model, {
       spec: {
-        toRelease: this.toRelease,
+        release: this.release,
       },
     });
   }
 
   /** @returns {string} A string representation of this instance for logging/debugging. */
   toString() {
-    const propStr = `${super.toString()}, to: ${logValue(this.toRelease)}`;
+    const propStr = `${super.toString()}, to: ${logValue(this.release)}`;
 
     if (Object.getPrototypeOf(this).constructor === ClusterDeployment) {
       return `{ClusterDeployment ${propStr}}`;

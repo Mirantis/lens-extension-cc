@@ -578,7 +578,7 @@ export class DataCloud extends EventDispatcher {
         tokensRefreshed: false,
         errorsOccurred: false,
       };
-      if (FEAT_CLUSTER_PAGE_ENABLED && FEAT_CLUSTER_PAGE_UPDATES_ENABLED) {
+      if (FEAT_CLUSTER_PAGE_ENABLED && FEAT_CLUSTER_PAGE_HISTORY_ENABLED) {
         resUpdateResults = await fetchResourceUpdates(
           this.cloud,
           fetchedNamespaces

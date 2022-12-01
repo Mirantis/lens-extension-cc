@@ -6,7 +6,7 @@
 // - DEV_UNSAFE_NO_CERT: Set to 'thisisunsafe' to disable TLS certificate verification
 //     on MCC instances.
 // - FEAT_CLUSTER_PAGE_ENABLED: Set to 1 to enable the Cluster Page feature. Disabled by default.
-// - FEAT_CLUSTER_PAGE_UPDATES_ENABLED: Set to 1 to enable the "Cluster Page > Update History" tab.
+// - FEAT_CLUSTER_PAGE_HISTORY_ENABLED: Set to 1 to enable the "Cluster Page > Update History" tab.
 //     Disabled by default.
 // - ENTITY_CACHE_VERSION: Version to use when caching entities via the SyncManager to disk with the
 //     SyncStore. Changing this version will result in a forced update of all synced resources
@@ -55,8 +55,8 @@ const plugins = [
     FEAT_CLUSTER_PAGE_ENABLED: JSON.stringify(
       !!Number(process.env.FEAT_CLUSTER_PAGE_ENABLED)
     ),
-    FEAT_CLUSTER_PAGE_UPDATES_ENABLED: JSON.stringify(
-      !!Number(process.env.FEAT_CLUSTER_PAGE_UPDATES_ENABLED)
+    FEAT_CLUSTER_PAGE_HISTORY_ENABLED: JSON.stringify(
+      !!Number(process.env.FEAT_CLUSTER_PAGE_HISTORY_ENABLED)
     ),
     'process.env.TARGET': JSON.stringify(buildTarget),
   }),

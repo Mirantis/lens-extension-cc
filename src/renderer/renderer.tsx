@@ -41,7 +41,7 @@ const logger: any = loggerUtil; // get around TS compiler's complaining
 const CLUSTER_PAGE_ID = 'mcc-cluster-page';
 
 declare const FEAT_CLUSTER_PAGE_ENABLED: any;
-declare const FEAT_CLUSTER_PAGE_UPDATES_ENABLED: any;
+declare const FEAT_CLUSTER_PAGE_HISTORY_ENABLED: any;
 
 export default class ExtensionRenderer extends LensExtension {
   //
@@ -76,7 +76,7 @@ export default class ExtensionRenderer extends LensExtension {
         Page: () => <p>EVENTS</p>,
       },
     },
-    ...(FEAT_CLUSTER_PAGE_UPDATES_ENABLED
+    ...(FEAT_CLUSTER_PAGE_HISTORY_ENABLED
       ? [
           {
             id: ROUTE_CLUSTER_HISTORY,
@@ -361,7 +361,7 @@ export default class ExtensionRenderer extends LensExtension {
             Icon: null,
           },
         },
-        ...(FEAT_CLUSTER_PAGE_UPDATES_ENABLED
+        ...(FEAT_CLUSTER_PAGE_HISTORY_ENABLED
           ? [
               {
                 parentId: CLUSTER_PAGE_ID,

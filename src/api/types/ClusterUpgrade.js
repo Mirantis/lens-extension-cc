@@ -14,7 +14,7 @@ export const clusterUpgradeTs = mergeRtvShapes({}, resourceUpdateTs, {
 
   kind: [rtv.STRING, { oneOf: apiKinds.CLUSTER_UPGRADE_STATUS }],
   fromRelease: rtv.STRING,
-  toRelease: rtv.STRING,
+  toRelease: rtv.STRING, // TODO[cluster-history] change to 'release' per PRODX-28727
 });
 
 /**
@@ -45,12 +45,12 @@ export class ClusterUpgrade extends ResourceUpdate {
 
     /**
      * @readonly
-     * @member {string} toRelease The new version of the cluster.
+     * @member {string} release The new version of the cluster.
      */
-    Object.defineProperty(this, 'toRelease', {
+    Object.defineProperty(this, 'release', {
       enumerable: true,
       get() {
-        return data.toRelease;
+        return data.release;
       },
     });
   }
@@ -69,7 +69,7 @@ export class ClusterUpgrade extends ResourceUpdate {
     return merge({}, model, {
       spec: {
         fromRelease: this.fromRelease,
-        toRelease: this.toRelease,
+        release: this.release,
       },
     });
   }
@@ -78,7 +78,7 @@ export class ClusterUpgrade extends ResourceUpdate {
   toString() {
     const propStr = `${super.toString()}, from: ${logValue(
       this.fromRelease
-    )}, to: ${logValue(this.toRelease)}`;
+    )}, to: ${logValue(this.release)}`;
 
     if (Object.getPrototypeOf(this).constructor === ClusterUpgrade) {
       return `{ClusterUpgrade ${propStr}}`;

@@ -273,8 +273,8 @@ export const clusterEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
       [
         mergeRtvShapes({}, catalogEntityModelTs, {
           spec: {
-            fromRelease: [rtv.OPTIONAL, rtv.STRING], // only if upgrade status
-            toRelease: rtv.STRING,
+            fromRelease: [rtv.OPTIONAL, rtv.STRING], // upgrades only
+            release: rtv.STRING, // deployments and upgrades
             stages: [
               [
                 {
