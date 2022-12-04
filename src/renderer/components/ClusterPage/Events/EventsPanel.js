@@ -1,52 +1,34 @@
 import propTypes from 'prop-types';
 import { useState, useEffect } from 'react';
-import dayjs from 'dayjs';
 import styled from '@emotion/styled';
 import { keyframes } from '@emotion/css';
 import { Renderer } from '@k8slens/extensions';
 import { layout } from '../../styles';
 import * as strings from '../../../../strings';
 import * as consts from '../../../../constants';
-import { apiKinds } from '../../../../api/apiConstants';
 import { CLOUD_EVENTS, CONNECTION_STATUSES } from '../../../../common/Cloud';
 import { IpcRenderer } from '../../../IpcRenderer';
 import { useClouds } from '../../../store/CloudProvider';
 import { useTableSearch } from './useTableSearch';
+import { EventsTable } from './EventsTable';
 
-const {
-  Component: {
-    Icon,
-    SearchInput,
-    Select,
-    Table,
-    TableHead,
-    TableRow,
-    TableCell,
-  },
-} = Renderer;
-
-const {
-  catalog: {
-    entities: {
-      common: {
-        details: { unknownValue },
-      },
-    },
-  },
-} = strings;
-
-const ALL_SOURCES_VALUE = 'all-sources';
-const defaultSourceOption = {
-  value: ALL_SOURCES_VALUE,
-  label: strings.clusterPage.pages.events.defaultSourceOption(),
-};
-const TABLE_HEADER_IDS = {
+export const TABLE_HEADER_IDS = {
   TYPE: 'type',
   DATE: 'date',
   MESSAGE: 'message',
   SOURCE: 'source',
   MACHINE: 'machine',
   COUNT: 'count',
+};
+
+const {
+  Component: { Icon, SearchInput, Select },
+} = Renderer;
+
+const ALL_SOURCES_VALUE = 'all-sources';
+const defaultSourceOption = {
+  value: ALL_SOURCES_VALUE,
+  label: strings.clusterPage.pages.events.defaultSourceOption(),
 };
 const tableHeaders = [
   {
@@ -74,17 +56,6 @@ const tableHeaders = [
     label: strings.clusterPage.pages.events.table.headers.count(),
   },
 ];
-
-const formatDate = (date) => {
-  if (!date) {
-    return undefined;
-  }
-
-  const dateObj = new Date(date);
-  return dateObj.getTime() === 0
-    ? undefined
-    : dayjs(date).format('YYYY-MM-DD, HH:mm:ss');
-};
 
 //
 // INTERNAL STYLED COMPONENTS
@@ -127,50 +98,64 @@ const Search = styled(SearchInput)(() => ({
   marginLeft: layout.pad * 1.25,
 }));
 
-const FirstCellUiReformer = styled.div(() => ({
-  width: layout.grid * 2,
-  display: 'inline-block',
-}));
-
-const TableMessageCell = styled.div`
-  display: flex;
-  align-items: center;
-  flex: 3 0;
-  padding: ${layout.pad}px;
-  word-break: break-all;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1;
-  color: ${({ isWarning, isHeader }) =>
-    isWarning
-      ? 'var(--colorError)'
-      : isHeader
-      ? 'var(--tableHeaderColor)'
-      : 'var(--textColorPrimary)'};
-`;
-
 //
 // MAIN COMPONENT
 //
 
 export const EventsPanel = ({ clusterEntity }) => {
-  const { clouds } = useClouds();
   const cloudUrl = clusterEntity.metadata.cloudUrl;
-  const events = clusterEntity.spec.events;
+  const { clouds } = useClouds();
 
-  const [searchValue, setSearchValue] = useState(null);
-  const [sourceOptions, setSourceOptions] = useState(ALL_SOURCES_VALUE);
-  const [sorting, setSorting] = useState({
-    key: TABLE_HEADER_IDS.DATE,
-    ascending: true,
-  });
   const [isFetching, setIsFetching] = useState(false);
   const [status, setStatus] = useState(clouds[cloudUrl].status);
+  const [events, setEvents] = useState([]);
+  const [modifiedEvents, setModifiedEvents] = useState([]);
+  const [modifiers, setModifiers] = useState({
+    searchQuery: '',
+    filterBy: ALL_SOURCES_VALUE,
+    sort: {
+      sortBy: TABLE_HEADER_IDS.DATE,
+      isAsc: true,
+    },
+  });
 
   const { searchedData } = useTableSearch({
-    searchValue,
+    searchValue: modifiers.searchQuery,
     data: events,
   });
+
+  useEffect(() => {
+    setEvents(clusterEntity.spec.events);
+    setModifiedEvents(clusterEntity.spec.events);
+  }, [clusterEntity]);
+
+  useEffect(() => {
+    const filteredEvents =
+      modifiers.filterBy === ALL_SOURCES_VALUE
+        ? searchedData
+        : searchedData.filter(
+            (event) => event.metadata.source === modifiers.filterBy
+          );
+
+    const sortedEvents = [...filteredEvents].sort((a, b) => {
+      if (modifiers.sort.sortBy === TABLE_HEADER_IDS.TYPE) {
+        return a.spec.type.localeCompare(b.spec.type);
+      }
+      if (modifiers.sort.sortBy === TABLE_HEADER_IDS.DATE) {
+        return a.spec.createdAt.localeCompare(b.spec.createdAt);
+      }
+      if (modifiers.sort.sortBy === TABLE_HEADER_IDS.MACHINE) {
+        return a.spec.targetName.localeCompare(b.spec.targetName);
+      }
+      if (modifiers.sort.sortBy === TABLE_HEADER_IDS.COUNT) {
+        return a.spec.count - b.spec.count;
+      }
+    });
+
+    setModifiedEvents(
+      modifiers.sort.isAsc ? sortedEvents : sortedEvents.reverse()
+    );
+  }, [modifiers, searchedData]);
 
   useEffect(() => {
     const onCloudFetchingChange = () => {
@@ -205,11 +190,6 @@ export const EventsPanel = ({ clusterEntity }) => {
     };
   }, [clouds, cloudUrl]);
 
-  const handleSelectChange = (newSelection) => {
-    const newValue = newSelection?.value || null;
-    setSourceOptions(newValue);
-  };
-
   const handleSync = () => {
     IpcRenderer.getInstance().invoke(
       consts.ipcEvents.invoke.SYNC_NOW,
@@ -231,19 +211,23 @@ export const EventsPanel = ({ clusterEntity }) => {
     ];
   };
 
-  const getFilteredData = () => {
-    if (sourceOptions === ALL_SOURCES_VALUE) {
-      return searchedData;
-    } else {
-      const filteredData = searchedData.filter(
-        (event) => event.metadata.source === sourceOptions
-      );
-      return filteredData;
-    }
+  const handleSelectChange = (newSelection) => {
+    const newValue = newSelection?.value || null;
+    setModifiers({ ...modifiers, filterBy: newValue });
   };
 
-  const applySorting = (key, ascending) => {
-    setSorting({ key: key, ascending: key === sorting.key ? ascending : true });
+  const handleSearchChange = (e) => {
+    setModifiers({ ...modifiers, searchQuery: e.target.value });
+  };
+
+  const handleSortChange = (sortBy, isAsc) => {
+    setModifiers({
+      ...modifiers,
+      sort: {
+        sortBy,
+        isAsc: sortBy === modifiers.sort.sortBy ? isAsc : true,
+      },
+    });
   };
 
   return (
@@ -261,68 +245,22 @@ export const EventsPanel = ({ clusterEntity }) => {
           </SyncButton>
           <Select
             options={getSourceOptions()}
-            value={sourceOptions}
+            value={modifiers.filterBy}
             onChange={handleSelectChange}
           />
           <Search
             placeholder={strings.clusterPage.pages.events.searchPlaceholder()}
-            value={searchValue}
-            onChange={setSearchValue}
+            value={modifiers.searchQuery}
+            onInput={handleSearchChange}
           />
         </Settings>
       </TopItems>
-      <Table>
-        <TableHead showTopLine>
-          {tableHeaders.map((header, index) => {
-            if (header.id === TABLE_HEADER_IDS.MESSAGE) {
-              return (
-                <TableMessageCell key={header.id} isHeader>
-                  {index === 0 && <FirstCellUiReformer></FirstCellUiReformer>}
-                  {header.label}
-                </TableMessageCell>
-              );
-            } else if (header.id === TABLE_HEADER_IDS.SOURCE) {
-              return (
-                <TableCell key={header.id}>
-                  {index === 0 && <FirstCellUiReformer></FirstCellUiReformer>}
-                  {header.label}
-                </TableCell>
-              );
-            } else {
-              return (
-                <TableCell key={header.id}>
-                  {index === 0 && <FirstCellUiReformer></FirstCellUiReformer>}
-                  {header.label}
-                  <button
-                    onClick={() => applySorting(header.id, !sorting.ascending)}
-                  >
-                    <Icon material="arrow_drop_down" />
-                  </button>
-                </TableCell>
-              );
-            }
-          })}
-        </TableHead>
-        {getFilteredData().map((event) => (
-          <TableRow key={event.metadata.name}>
-            <TableCell>
-              <FirstCellUiReformer></FirstCellUiReformer>
-              {event.spec.type || unknownValue()}
-            </TableCell>
-            <TableCell>{formatDate(clusterEntity.spec.createdAt)}</TableCell>
-            <TableMessageCell isWarning={event.spec.type === 'Warning'}>
-              {event.spec.message || unknownValue()}
-            </TableMessageCell>
-            <TableCell>{event.metadata.source || unknownValue()}</TableCell>
-            <TableCell>
-              {event.spec.targetKind === apiKinds.MACHINE
-                ? event.spec.targetName || unknownValue()
-                : strings.clusterPage.common.emptyValue()}
-            </TableCell>
-            <TableCell>{event.spec.count || unknownValue()}</TableCell>
-          </TableRow>
-        ))}
-      </Table>
+      <EventsTable
+        tableHeaders={tableHeaders}
+        events={modifiedEvents}
+        handleSortChange={handleSortChange}
+        isSortedByAsc={modifiers.sort.isAsc}
+      />
     </PanelWrapper>
   );
 };

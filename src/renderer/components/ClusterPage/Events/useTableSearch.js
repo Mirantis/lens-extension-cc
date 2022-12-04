@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react';
 
-export const useTableSearch = ({ searchValue, data }) => {
+/**
+ * Returns data, filtered by search query.
+ * @param {string} searchQuery Search query.
+ * @param {Array} data Origin data to filter.
+ * @returns {Array} Filtered data.
+ */
+export const useTableSearch = ({ searchQuery, data }) => {
   const [searchedData, setSearchedData] = useState([]);
   const [origData, setOrigData] = useState([]);
   const [searchIndex, setSearchIndex] = useState([]);
@@ -37,12 +43,12 @@ export const useTableSearch = ({ searchValue, data }) => {
   }, [data]);
 
   useEffect(() => {
-    if (searchValue) {
+    if (searchQuery) {
       const reqData = searchIndex.map((singleItem, index) => {
         if (
           singleItem.allValues
             .toLowerCase()
-            .indexOf(searchValue.toLowerCase()) >= 0
+            .indexOf(searchQuery.toLowerCase()) >= 0
         ) {
           return origData[index];
         }
@@ -60,7 +66,7 @@ export const useTableSearch = ({ searchValue, data }) => {
     } else {
       setSearchedData(origData);
     }
-  }, [searchValue, origData, searchIndex]);
+  }, [searchQuery, origData, searchIndex]);
 
   return { searchedData };
 };
