@@ -249,7 +249,9 @@ export const EventsPanel = ({ clusterEntity }) => {
     <PanelWrapper>
       <TopItems>
         <p>{strings.clusterPage.pages.events.title()}</p>
-        <p>{strings.clusterPage.pages.events.itemsAmount(modifiedEvents.length)}</p>
+        <p>
+          {strings.clusterPage.pages.events.itemsAmount(modifiedEvents.length)}
+        </p>
         <Settings>
           <SyncButton
             isDisabled={isFetching || status !== CONNECTION_STATUSES.CONNECTED}
