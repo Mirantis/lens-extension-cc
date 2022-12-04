@@ -6,6 +6,7 @@ export const PageContainer = styled.div(() => ({
   padding: '0',
   display: 'flex',
   flexDirection: 'column',
+  height: '100%',
 }));
 
 export const DrawerTitleWrapper = styled.div(() => ({

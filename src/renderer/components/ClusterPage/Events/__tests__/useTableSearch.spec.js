@@ -23,7 +23,7 @@ const mockedData = [
 
 const TestComponent = ({ searchQuery }) => {
   const { searchedData } = useTableSearch({
-    searchValue: searchQuery,
+    searchQuery,
     data: mockedData,
   });
 

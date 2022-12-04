@@ -30,6 +30,14 @@ const defaultSourceOption = {
   value: ALL_SOURCES_VALUE,
   label: strings.clusterPage.pages.events.defaultSourceOption(),
 };
+const defaultFilters = {
+  searchQuery: '',
+  filterBy: ALL_SOURCES_VALUE,
+  sort: {
+    sortBy: TABLE_HEADER_IDS.DATE,
+    isAsc: true,
+  },
+};
 const tableHeaders = [
   {
     id: TABLE_HEADER_IDS.TYPE,
@@ -72,6 +80,7 @@ const rotate = keyframes`
 
 const PanelWrapper = styled.div(() => ({
   background: 'var(--contentColor)',
+  height: '100%',
 }));
 
 const TopItems = styled.div(() => ({
@@ -106,56 +115,58 @@ export const EventsPanel = ({ clusterEntity }) => {
   const cloudUrl = clusterEntity.metadata.cloudUrl;
   const { clouds } = useClouds();
 
+  const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const [status, setStatus] = useState(clouds[cloudUrl].status);
   const [events, setEvents] = useState([]);
   const [modifiedEvents, setModifiedEvents] = useState([]);
-  const [modifiers, setModifiers] = useState({
-    searchQuery: '',
-    filterBy: ALL_SOURCES_VALUE,
-    sort: {
-      sortBy: TABLE_HEADER_IDS.DATE,
-      isAsc: true,
-    },
-  });
+  const [filters, setFilters] = useState(defaultFilters);
+  const [isFiltered, setIsFiltered] = useState(false);
 
   const { searchedData } = useTableSearch({
-    searchValue: modifiers.searchQuery,
+    searchQuery: filters.searchQuery,
     data: events,
   });
 
   useEffect(() => {
     setEvents(clusterEntity.spec.events);
     setModifiedEvents(clusterEntity.spec.events);
+    setIsLoading(false);
   }, [clusterEntity]);
 
   useEffect(() => {
     const filteredEvents =
-      modifiers.filterBy === ALL_SOURCES_VALUE
+      filters.filterBy === ALL_SOURCES_VALUE
         ? searchedData
         : searchedData.filter(
-            (event) => event.metadata.source === modifiers.filterBy
+            (event) => event.metadata.source === filters.filterBy
           );
 
     const sortedEvents = [...filteredEvents].sort((a, b) => {
-      if (modifiers.sort.sortBy === TABLE_HEADER_IDS.TYPE) {
+      if (filters.sort.sortBy === TABLE_HEADER_IDS.TYPE) {
         return a.spec.type.localeCompare(b.spec.type);
       }
-      if (modifiers.sort.sortBy === TABLE_HEADER_IDS.DATE) {
+      if (filters.sort.sortBy === TABLE_HEADER_IDS.DATE) {
         return a.spec.createdAt.localeCompare(b.spec.createdAt);
       }
-      if (modifiers.sort.sortBy === TABLE_HEADER_IDS.MACHINE) {
+      if (filters.sort.sortBy === TABLE_HEADER_IDS.MACHINE) {
         return a.spec.targetName.localeCompare(b.spec.targetName);
       }
-      if (modifiers.sort.sortBy === TABLE_HEADER_IDS.COUNT) {
+      if (filters.sort.sortBy === TABLE_HEADER_IDS.COUNT) {
         return a.spec.count - b.spec.count;
       }
     });
 
     setModifiedEvents(
-      modifiers.sort.isAsc ? sortedEvents : sortedEvents.reverse()
+      filters.sort.isAsc ? sortedEvents : sortedEvents.reverse()
     );
-  }, [modifiers, searchedData]);
+
+    if (filters.searchQuery) {
+      setIsFiltered(true);
+    } else {
+      setIsFiltered(false);
+    }
+  }, [filters, searchedData]);
 
   useEffect(() => {
     const onCloudFetchingChange = () => {
@@ -213,21 +224,25 @@ export const EventsPanel = ({ clusterEntity }) => {
 
   const handleSelectChange = (newSelection) => {
     const newValue = newSelection?.value || null;
-    setModifiers({ ...modifiers, filterBy: newValue });
+    setFilters({ ...filters, filterBy: newValue });
   };
 
   const handleSearchChange = (e) => {
-    setModifiers({ ...modifiers, searchQuery: e.target.value });
+    setFilters({ ...filters, searchQuery: e.target.value });
   };
 
   const handleSortChange = (sortBy, isAsc) => {
-    setModifiers({
-      ...modifiers,
+    setFilters({
+      ...filters,
       sort: {
         sortBy,
-        isAsc: sortBy === modifiers.sort.sortBy ? isAsc : true,
+        isAsc: sortBy === filters.sort.sortBy ? isAsc : true,
       },
     });
+  };
+
+  const handleResetFilters = () => {
+    setFilters(defaultFilters);
   };
 
   return (
@@ -245,12 +260,12 @@ export const EventsPanel = ({ clusterEntity }) => {
           </SyncButton>
           <Select
             options={getSourceOptions()}
-            value={modifiers.filterBy}
+            value={filters.filterBy}
             onChange={handleSelectChange}
           />
           <Search
             placeholder={strings.clusterPage.pages.events.searchPlaceholder()}
-            value={modifiers.searchQuery}
+            value={filters.searchQuery}
             onInput={handleSearchChange}
           />
         </Settings>
@@ -259,7 +274,10 @@ export const EventsPanel = ({ clusterEntity }) => {
         tableHeaders={tableHeaders}
         events={modifiedEvents}
         handleSortChange={handleSortChange}
-        isSortedByAsc={modifiers.sort.isAsc}
+        handleResetFilters={handleResetFilters}
+        isSortedByAsc={filters.sort.isAsc}
+        isFiltered={isFiltered}
+        isLoading={isLoading}
       />
     </PanelWrapper>
   );

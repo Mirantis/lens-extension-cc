@@ -8,7 +8,7 @@ import { apiKinds } from '../../../../api/apiConstants';
 import * as strings from '../../../../strings';
 
 const {
-  Component: { Icon, Table, TableHead, TableRow, TableCell },
+  Component: { Icon, Spinner, Table, TableHead, TableRow, TableCell },
 } = Renderer;
 
 const {
@@ -36,16 +36,37 @@ const formatDate = (date) => {
 // INTERNAL STYLED COMPONENTS
 //
 
+const FullHeightTable = styled(Table)(() => ({
+  height: 'calc(100% - 62px)', // `62px` - height of filter bar items
+}));
+
 const FirstCellUiReformer = styled.div(() => ({
   width: layout.grid * 2,
   display: 'inline-block',
+}));
+
+const NoItemsMessageWrapper = styled.div(() => ({
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  textAlign: 'center',
+}));
+
+const ResetFiltersButton = styled.button(() => ({
+  color: 'var(--textColorAccent)',
+  borderBottom: '1px dotted',
+}));
+
+const TableCellWithPadding = styled(TableCell)(() => ({
+  paddingTop: layout.grid * 2.5,
+  paddingBottom: layout.grid * 2.5,
 }));
 
 const TableMessageCell = styled.div`
   display: flex;
   align-items: center;
   flex: 3 0;
-  padding: ${layout.pad}px;
+  padding: ${layout.grid * 2.5}px ${layout.pad}px;
   word-break: break-all;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -66,11 +87,15 @@ export const EventsTable = ({
   tableHeaders,
   events,
   handleSortChange,
+  handleResetFilters,
   isSortedByAsc,
+  isFiltered,
+  isLoading,
 }) => {
   return (
-    <Table>
-      <TableHead showTopLine>
+    <FullHeightTable>
+      <Spinner />
+      <TableHead sticky showTopLine>
         {tableHeaders.map((header, index) => {
           if (header.id === TABLE_HEADER_IDS.MESSAGE) {
             return (
@@ -101,26 +126,63 @@ export const EventsTable = ({
           }
         })}
       </TableHead>
-      {events.map((event) => (
-        <TableRow key={event.metadata.name}>
-          <TableCell>
-            <FirstCellUiReformer></FirstCellUiReformer>
-            {event.spec.type || unknownValue()}
-          </TableCell>
-          <TableCell>{formatDate(event.spec.createdAt)}</TableCell>
-          <TableMessageCell isWarning={event.spec.type === 'Warning'}>
-            {event.spec.message || unknownValue()}
-          </TableMessageCell>
-          <TableCell>{event.metadata.source || unknownValue()}</TableCell>
-          <TableCell>
-            {event.spec.targetKind === apiKinds.MACHINE
-              ? event.spec.targetName || unknownValue()
-              : strings.clusterPage.common.emptyValue()}
-          </TableCell>
-          <TableCell>{event.spec.count || unknownValue()}</TableCell>
+      {isLoading ? (
+        <TableRow
+          style={{
+            height: 'calc(100% - 62px)', // `62px` - height of filter bar items
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <Spinner />
         </TableRow>
-      ))}
-    </Table>
+      ) : events.length > 0 ? (
+        events.map((event) => (
+          <TableRow key={event.metadata.name}>
+            <TableCellWithPadding>
+              <FirstCellUiReformer></FirstCellUiReformer>
+              {event.spec.type || unknownValue()}
+            </TableCellWithPadding>
+            <TableCellWithPadding>
+              {formatDate(event.spec.createdAt)}
+            </TableCellWithPadding>
+            <TableMessageCell isWarning={event.spec.type === 'Warning'}>
+              {event.spec.message || unknownValue()}
+            </TableMessageCell>
+            <TableCellWithPadding>
+              {event.metadata.source || unknownValue()}
+            </TableCellWithPadding>
+            <TableCellWithPadding>
+              {event.spec.targetKind === apiKinds.MACHINE
+                ? event.spec.targetName || unknownValue()
+                : strings.clusterPage.common.emptyValue()}
+            </TableCellWithPadding>
+            <TableCellWithPadding>
+              {event.spec.count || unknownValue()}
+            </TableCellWithPadding>
+          </TableRow>
+        ))
+      ) : (
+        <TableRow
+          style={{
+            height: 'calc(100% - 62px)', // `62px` - height of filter bar items
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          {isFiltered ? (
+            <NoItemsMessageWrapper>
+              <p>{strings.clusterPage.pages.events.table.noItemsFound()}</p>
+              <ResetFiltersButton onClick={() => handleResetFilters()}>
+                {strings.clusterPage.pages.events.table.resetFilters()}
+              </ResetFiltersButton>
+            </NoItemsMessageWrapper>
+          ) : (
+            <p>{strings.clusterPage.pages.events.table.emptyList()}</p>
+          )}
+        </TableRow>
+      )}
+    </FullHeightTable>
   );
 };
 
@@ -128,5 +190,8 @@ EventsTable.propTypes = {
   tableHeaders: propTypes.array.isRequired,
   events: propTypes.array.isRequired,
   handleSortChange: propTypes.func.isRequired,
+  handleResetFilters: propTypes.func.isRequired,
   isSortedByAsc: propTypes.bool.isRequired,
+  isFiltered: propTypes.bool.isRequired,
+  isLoading: propTypes.bool.isRequired,
 };
