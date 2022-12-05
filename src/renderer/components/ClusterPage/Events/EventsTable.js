@@ -79,6 +79,17 @@ const TableMessageCell = styled.div`
       : 'var(--textColorPrimary)'};
 `;
 
+const SortButton = styled.button`
+  display: flex;
+  align-items: center;
+
+  i {
+    opacity: ${({ isActive }) => (isActive ? '1' : '0.5')};
+    transform: ${({ isAsc, isActive }) =>
+      isAsc && isActive ? 'rotate(180deg)' : 'rotate(0deg)'};
+  }
+`;
+
 //
 // MAIN COMPONENT
 //
@@ -88,7 +99,7 @@ export const EventsTable = ({
   events,
   handleSortChange,
   handleResetFilters,
-  isSortedByAsc,
+  sort,
   isFiltered,
   isLoading,
 }) => {
@@ -114,13 +125,17 @@ export const EventsTable = ({
           } else {
             return (
               <TableCell key={header.id}>
-                {index === 0 && <FirstCellUiReformer></FirstCellUiReformer>}
-                {header.label}
-                <button
-                  onClick={() => handleSortChange(header.id, !isSortedByAsc)}
+                <SortButton
+                  isActive={sort.sortBy === header.id}
+                  isAsc={sort.isAsc}
+                  onClick={() => handleSortChange(header.id, !sort.isAsc)}
                 >
-                  <Icon material="arrow_drop_down" />
-                </button>
+                  {index === 0 && <FirstCellUiReformer></FirstCellUiReformer>}
+                  {header.label}
+                  <span>
+                    <Icon material="arrow_drop_down" />
+                  </span>
+                </SortButton>
               </TableCell>
             );
           }
@@ -187,11 +202,19 @@ export const EventsTable = ({
 };
 
 EventsTable.propTypes = {
-  tableHeaders: propTypes.array.isRequired,
+  tableHeaders: propTypes.arrayOf(
+    propTypes.shape({
+      id: propTypes.string,
+      label: propTypes.string,
+    })
+  ).isRequired,
   events: propTypes.array.isRequired,
   handleSortChange: propTypes.func.isRequired,
   handleResetFilters: propTypes.func.isRequired,
-  isSortedByAsc: propTypes.bool.isRequired,
+  sort: propTypes.shape({
+    sortBy: propTypes.string,
+    isAsc: propTypes.bool,
+  }).isRequired,
   isFiltered: propTypes.bool.isRequired,
   isLoading: propTypes.bool.isRequired,
 };

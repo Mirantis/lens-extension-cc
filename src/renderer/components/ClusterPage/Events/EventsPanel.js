@@ -277,7 +277,7 @@ export const EventsPanel = ({ clusterEntity }) => {
         events={modifiedEvents}
         handleSortChange={handleSortChange}
         handleResetFilters={handleResetFilters}
-        isSortedByAsc={filters.sort.isAsc}
+        sort={filters.sort}
         isFiltered={isFiltered}
         isLoading={isLoading}
       />
