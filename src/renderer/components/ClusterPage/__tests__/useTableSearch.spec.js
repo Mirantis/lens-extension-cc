@@ -22,14 +22,14 @@ const mockedData = [
 ];
 
 const TestComponent = ({ searchQuery }) => {
-  const { searchedData } = useTableSearch({
-    searchQuery,
-    data: mockedData,
+  const { searchResults } = useTableSearch({
+    searchText: searchQuery,
+    searchItems: mockedData,
   });
 
   return (
     <div>
-      {searchedData.map((item, index) => (
+      {searchResults.map((item, index) => (
         <p key={index}>{item.user.name + ' ' + item.user.surname}</p>
       ))}
     </div>

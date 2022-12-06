@@ -426,7 +426,7 @@ export const clusterPage: Dict = {
       title: () => 'Events',
       itemsAmount: (count) => `${count} ${count === 1 ? 'item' : 'items'}`,
       defaultSourceOption: () => 'All sources',
-      searchPlaceholder: () => 'Search Events...',
+      searchPlaceholder: () => 'Search events...',
       table: {
         headers: {
           type: () => 'Type',
@@ -436,9 +436,9 @@ export const clusterPage: Dict = {
           machine: () => 'Machine',
           count: () => 'Count',
         },
-        emptyList: () => 'Item list is empty',
-        noItemsFound: () => 'No items found.',
-        resetFilters: () => 'Reset filters?',
+        emptyList: () => 'No events available',
+        noEventsFound: () => 'No events found',
+        resetSearch: () => 'Reset search',
       },
     },
   },

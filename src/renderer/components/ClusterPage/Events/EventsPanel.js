@@ -1,5 +1,12 @@
 import propTypes from 'prop-types';
-import { useState, useEffect } from 'react';
+import {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from 'react';
 import styled from '@emotion/styled';
 import { keyframes } from '@emotion/css';
 import { Renderer } from '@k8slens/extensions';
@@ -9,7 +16,7 @@ import * as consts from '../../../../constants';
 import { CLOUD_EVENTS, CONNECTION_STATUSES } from '../../../../common/Cloud';
 import { IpcRenderer } from '../../../IpcRenderer';
 import { useClouds } from '../../../store/CloudProvider';
-import { useTableSearch } from './useTableSearch';
+import { useTableSearch } from '../useTableSearch';
 import { EventsTable } from './EventsTable';
 
 export const TABLE_HEADER_IDS = {
@@ -31,7 +38,7 @@ const defaultSourceOption = {
   label: strings.clusterPage.pages.events.defaultSourceOption(),
 };
 const defaultFilters = {
-  searchQuery: '',
+  searchText: '',
   filterBy: ALL_SOURCES_VALUE,
   sort: {
     sortBy: TABLE_HEADER_IDS.DATE,
@@ -64,6 +71,10 @@ const tableHeaders = [
     label: strings.clusterPage.pages.events.table.headers.count(),
   },
 ];
+
+const handleSync = (cloudUrl) => {
+  IpcRenderer.getInstance().invoke(consts.ipcEvents.invoke.SYNC_NOW, cloudUrl);
+};
 
 //
 // INTERNAL STYLED COMPONENTS
@@ -99,8 +110,8 @@ const SyncButton = styled.button`
   margin-right: ${layout.pad * 2}px;
   pointer-events: ${({ isDisabled }) => (isDisabled ? 'none' : 'auto')};
   opacity: ${({ isDisabled }) => (isDisabled ? '0.5' : '1')};
-  animation: ${({ isFetching }) =>
-    isFetching ? `${rotate} 2s linear infinite` : 'none'};
+  animation: ${({ isCloudFetching }) =>
+    isCloudFetching ? `${rotate} 2s linear infinite` : 'none'};
 `;
 
 const Search = styled(SearchInput)(() => ({
@@ -114,40 +125,48 @@ const Search = styled(SearchInput)(() => ({
 export const EventsPanel = ({ clusterEntity }) => {
   const cloudUrl = clusterEntity.metadata.cloudUrl;
   const { clouds } = useClouds();
+  const targetRef = useRef();
 
   const [isLoading, setIsLoading] = useState(false);
-  const [isFetching, setIsFetching] = useState(false);
-  const [status, setStatus] = useState(clouds[cloudUrl].status);
-  const [events, setEvents] = useState([]);
-  const [modifiedEvents, setModifiedEvents] = useState([]);
+  const [isCloudFetching, setIsCloudFetching] = useState(false);
+  const [cloudStatus, setCloudStatus] = useState(clouds[cloudUrl].status);
+  const [filteredEvents, setFilteredEvents] = useState([]);
   const [filters, setFilters] = useState(defaultFilters);
   const [isFiltered, setIsFiltered] = useState(false);
+  const [topBarHeight, setTopBarHeight] = useState(0);
 
-  const { searchedData } = useTableSearch({
-    searchQuery: filters.searchQuery,
-    data: events,
+  const { searchResults } = useTableSearch({
+    searchText: filters.searchText,
+    searchItems: clusterEntity.spec.events,
   });
 
+  useLayoutEffect(() => {
+    if (targetRef.current) {
+      setTopBarHeight(targetRef.current.offsetHeight);
+    }
+  }, []);
+
   useEffect(() => {
-    setEvents(clusterEntity.spec.events);
-    setModifiedEvents(clusterEntity.spec.events);
+    setFilteredEvents(clusterEntity.spec.events);
     setIsLoading(false);
   }, [clusterEntity]);
 
   useEffect(() => {
-    const filteredEvents =
-      filters.filterBy === ALL_SOURCES_VALUE
-        ? searchedData
-        : searchedData.filter(
+    const sortedEvents = [
+      ...(filters.filterBy === ALL_SOURCES_VALUE
+        ? searchResults
+        : searchResults.filter(
             (event) => event.metadata.source === filters.filterBy
-          );
-
-    const sortedEvents = [...filteredEvents].sort((a, b) => {
+          )),
+    ].sort((a, b) => {
       if (filters.sort.sortBy === TABLE_HEADER_IDS.TYPE) {
         return a.spec.type.localeCompare(b.spec.type);
       }
       if (filters.sort.sortBy === TABLE_HEADER_IDS.DATE) {
         return a.spec.createdAt.localeCompare(b.spec.createdAt);
+      }
+      if (filters.sort.sortBy === TABLE_HEADER_IDS.SOURCE) {
+        return a.metadata.source.localeCompare(b.metadata.source);
       }
       if (filters.sort.sortBy === TABLE_HEADER_IDS.MACHINE) {
         return a.spec.targetName.localeCompare(b.spec.targetName);
@@ -157,26 +176,26 @@ export const EventsPanel = ({ clusterEntity }) => {
       }
     });
 
-    setModifiedEvents(
+    setFilteredEvents(
       filters.sort.isAsc ? sortedEvents : sortedEvents.reverse()
     );
 
-    if (filters.searchQuery) {
+    if (filters.searchText) {
       setIsFiltered(true);
     } else {
       setIsFiltered(false);
     }
-  }, [filters, searchedData]);
+  }, [filters, searchResults]);
 
   useEffect(() => {
     const onCloudFetchingChange = () => {
-      setIsFetching(clouds[cloudUrl].fetching);
-      setStatus(clouds[cloudUrl].status);
+      setIsCloudFetching(clouds[cloudUrl].fetching);
+      setCloudStatus(clouds[cloudUrl].status);
     };
 
     const onCloudStatusChange = () => {
-      setIsFetching(clouds[cloudUrl].fetching);
-      setStatus(clouds[cloudUrl].status);
+      setIsCloudFetching(clouds[cloudUrl].fetching);
+      setCloudStatus(clouds[cloudUrl].status);
     };
 
     // Listen fetching status
@@ -201,14 +220,7 @@ export const EventsPanel = ({ clusterEntity }) => {
     };
   }, [clouds, cloudUrl]);
 
-  const handleSync = () => {
-    IpcRenderer.getInstance().invoke(
-      consts.ipcEvents.invoke.SYNC_NOW,
-      clusterEntity.metadata.cloudUrl
-    );
-  };
-
-  const getSourceOptions = () => {
+  const getSourceOptions = (events) => {
     const uniqueSources = [
       ...new Set(events.map(({ metadata: { source } }) => source)),
     ];
@@ -222,64 +234,81 @@ export const EventsPanel = ({ clusterEntity }) => {
     ];
   };
 
-  const handleSelectChange = (newSelection) => {
-    const newValue = newSelection?.value || null;
-    setFilters({ ...filters, filterBy: newValue });
-  };
+  const sourceOptions = useMemo(
+    () => getSourceOptions(clusterEntity.spec.events),
+    [clusterEntity.spec.events]
+  );
 
-  const handleSearchChange = (e) => {
-    setFilters({ ...filters, searchQuery: e.target.value });
-  };
+  const handleSelectChange = useCallback(
+    (newSelection) => {
+      const newValue = newSelection?.value || null;
+      setFilters({ ...filters, filterBy: newValue });
+    },
+    [filters]
+  );
 
-  const handleSortChange = (sortBy, isAsc) => {
-    setFilters({
-      ...filters,
-      sort: {
-        sortBy,
-        isAsc: sortBy === filters.sort.sortBy ? isAsc : true,
-      },
-    });
-  };
+  const handleSearchChange = useCallback(
+    (e) => {
+      setFilters({ ...filters, searchText: e.target.value });
+    },
+    [filters]
+  );
 
-  const handleResetFilters = () => {
-    setFilters(defaultFilters);
-  };
+  const handleSortChange = useCallback(
+    (sortBy, isAsc) => {
+      setFilters({
+        ...filters,
+        sort: {
+          sortBy,
+          isAsc: sortBy === filters.sort.sortBy ? isAsc : true,
+        },
+      });
+    },
+    [filters]
+  );
+
+  const handleResetSearch = useCallback(() => {
+    setFilters({ ...filters, searchText: '' });
+  }, [filters]);
 
   return (
     <PanelWrapper>
-      <TopItems>
+      <TopItems ref={targetRef}>
         <p>{strings.clusterPage.pages.events.title()}</p>
         <p>
-          {strings.clusterPage.pages.events.itemsAmount(modifiedEvents.length)}
+          {strings.clusterPage.pages.events.itemsAmount(filteredEvents.length)}
         </p>
         <Settings>
           <SyncButton
-            isDisabled={isFetching || status !== CONNECTION_STATUSES.CONNECTED}
-            isFetching={isFetching}
-            onClick={() => handleSync()}
+            isDisabled={
+              isCloudFetching || cloudStatus !== CONNECTION_STATUSES.CONNECTED
+            }
+            isCloudFetching={isCloudFetching}
+            onClick={() => handleSync(clusterEntity.metadata.cloudUrl)}
           >
             <Icon material="refresh" />
           </SyncButton>
           <Select
-            options={getSourceOptions()}
+            options={sourceOptions}
             value={filters.filterBy}
             onChange={handleSelectChange}
           />
           <Search
             placeholder={strings.clusterPage.pages.events.searchPlaceholder()}
-            value={filters.searchQuery}
+            value={filters.searchText}
             onInput={handleSearchChange}
           />
         </Settings>
       </TopItems>
       <EventsTable
         tableHeaders={tableHeaders}
-        events={modifiedEvents}
-        handleSortChange={handleSortChange}
-        handleResetFilters={handleResetFilters}
+        events={filteredEvents}
+        onSortChange={handleSortChange}
+        onResetSearch={handleResetSearch}
         sort={filters.sort}
         isFiltered={isFiltered}
         isLoading={isLoading}
+        topBarHeight={topBarHeight}
       />
     </PanelWrapper>
   );
