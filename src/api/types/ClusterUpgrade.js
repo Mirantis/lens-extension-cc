@@ -50,7 +50,7 @@ export class ClusterUpgrade extends ResourceUpdate {
     Object.defineProperty(this, 'release', {
       enumerable: true,
       get() {
-        return data.release;
+        return data.toRelease; // TODO[cluster-history] change to 'release' per PRODX-28727
       },
     });
   }
