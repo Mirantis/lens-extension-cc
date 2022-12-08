@@ -3,7 +3,7 @@ import { formatDate } from '../../rendererUtil';
 
 /**
  * Check if a string is in ISO format
- * @param {string} str Unfiltered list of items to search.
+ * @param {string} str Text to check for a date.
  * @returns {boolean} `true` if string is in ISO format, `false` if no.
  */
 const isIsoDate = (str) => {
@@ -24,33 +24,38 @@ export const useTableSearch = ({ searchText, searchItems }) => {
   const [searchResults, setSearchResults] = useState([]); // {Array} filtered list of original `searchItems`
   const [searchIndex, setSearchIndex] = useState([]); // {Array<{ allValues: Array<string> }>} each item represents an object from `searchItems` with all its properties converted to strings
 
+  // builds indexes with arrays of strings from incoming object for future searching
   useEffect(() => {
-    const getDataForSearch = (singleItem, allValues) => {
-      if (!allValues) {
-        allValues = [];
-      }
-      for (let key in singleItem) {
-        if (typeof singleItem[key] === 'object' && singleItem[key]) {
-          getDataForSearch(singleItem[key], allValues);
-        } else {
-          allValues.push(
-            `${
-              isIsoDate(singleItem[key])
-                ? formatDate(singleItem[key], false)
-                : singleItem[key]
-            }`
+    const searchData = (singleItem) => {
+      let values;
+
+      if (singleItem) {
+        if (Array.isArray(singleItem)) {
+          values = singleItem.flatMap((child) => searchData(child));
+        } else if (typeof singleItem === 'object') {
+          values = Object.keys(singleItem).flatMap((key) =>
+            searchData(singleItem[key])
           );
         }
       }
 
-      return allValues;
+      if (!values) {
+        // cast to string since we can't iterate it
+        values = [
+          `${
+            isIsoDate(singleItem) ? formatDate(singleItem, false) : singleItem
+          }`, // Formatting in the same we assume dates are displayed so as to search text as the user see's it in the table.
+        ];
+      }
+
+      return values;
     };
 
     const fetchData = () => {
       setSearchResults(searchItems);
 
       const searchInd = searchItems.map((singleItem) => {
-        const allValues = getDataForSearch(singleItem);
+        const allValues = searchData(singleItem);
         return { allValues };
       });
 
@@ -60,6 +65,7 @@ export const useTableSearch = ({ searchText, searchItems }) => {
     fetchData();
   }, [searchItems]);
 
+  // searches for a match of the search text and adds an object with the corresponding index to the search results
   useEffect(() => {
     if (searchText) {
       setSearchResults(

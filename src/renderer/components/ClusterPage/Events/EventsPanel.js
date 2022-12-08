@@ -186,10 +186,6 @@ export const EventsPanel = ({ clusterEntity }) => {
       }
     });
 
-    // setFilteredEvents(
-    //   filters.sort.isAsc ? sortedEvents : sortedEvents.reverse()
-    // );
-
     setFilteredEvents(sortedEvents);
 
     if (filters.searchText) {

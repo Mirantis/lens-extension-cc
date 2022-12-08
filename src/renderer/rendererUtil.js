@@ -25,6 +25,7 @@ export const getLensClusters = function () {
 /**
  * Convert ISO 8601 to formatted date.
  * @param {Date|string} date Date to format.
+ * @param {boolean} includeRelative Adds the relative part of the date to the result if true.
  * @returns {string|undefined} If a date is given, then formatted. If falsy, or the date is the epoch, undefined.
  */
 export const formatDate = (date, includeRelative = true) => {
