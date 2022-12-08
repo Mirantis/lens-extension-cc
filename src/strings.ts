@@ -427,6 +427,25 @@ export const clusterPage: Dict = {
         prometheus: catalog.entities.cluster.details.props.prometheusUrl,
       },
     },
+    events: {
+      title: () => 'Events',
+      itemsAmount: (count) => `${count} ${count === 1 ? 'item' : 'items'}`,
+      defaultSourceOption: () => 'All sources',
+      searchPlaceholder: () => 'Search events...',
+      table: {
+        headers: {
+          type: () => 'Type',
+          date: () => 'Date',
+          message: () => 'Message',
+          source: () => 'Source',
+          machine: () => 'Machine',
+          count: () => 'Count',
+        },
+        emptyList: () => 'No events available',
+        noEventsFound: () => 'No events found',
+        resetSearch: () => 'Reset search',
+      },
+    },
   },
 };
 

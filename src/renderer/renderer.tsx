@@ -5,6 +5,7 @@ import { ContainerCloudIcon as ClusterPageIcon } from './components/ContainerClo
 import { ClusterPage } from './components/ClusterPage/ClusterPage';
 import { ClusterOverviewView } from './components/ClusterPage/Overview/ClusterOverviewView';
 import { ClusterDetailsView } from './components/ClusterPage/Details/ClusterDetailsView';
+import { ClusterEventsView } from './components/ClusterPage/Events/ClusterEventsView';
 import * as strings from '../strings';
 import * as consts from '../constants';
 import {
@@ -73,7 +74,11 @@ export default class ExtensionRenderer extends LensExtension {
     {
       id: ROUTE_CLUSTER_EVENTS,
       components: {
-        Page: () => <p>EVENTS</p>,
+        Page: () => (
+          <ClusterPage>
+            <ClusterEventsView />
+          </ClusterPage>
+        ),
       },
     },
     ...(FEAT_CLUSTER_PAGE_HISTORY_ENABLED

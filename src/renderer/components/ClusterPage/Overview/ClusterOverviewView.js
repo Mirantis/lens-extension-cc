@@ -3,23 +3,11 @@
 //
 
 import propTypes from 'prop-types';
-import styled from '@emotion/styled';
 import * as strings from '../../../../strings';
-import { mixinPageStyles } from '../../styles';
 import { ConditionsPanel } from './ConditionsPanel';
 import { SummaryPanel } from './SummaryPanel';
 import { PanelTitle } from '../PanelTitle';
-import { DrawerTitleWrapper } from '../clusterPageComponents';
-
-//
-// INTERNAL STYLED COMPONENTS
-//
-
-const PageContainer = styled.div(() => ({
-  ...mixinPageStyles(),
-  display: 'flex',
-  flexDirection: 'column',
-}));
+import { DrawerTitleWrapper, PageContainer } from '../clusterPageComponents';
 
 //
 // MAIN COMPONENT
