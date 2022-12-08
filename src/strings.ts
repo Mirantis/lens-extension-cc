@@ -137,6 +137,13 @@ export const apiUtil: Dict = {
   },
 };
 
+export const metricApi: Dict = {
+  error: {
+    noTokens: apiUtil.error.noTokens,
+    instantQueryFailure: () => 'Failed to execute instant query',
+  },
+};
+
 export const netUtil: Dict = {
   error: {
     requestFailed: (url = 'unknown', error) =>
@@ -150,6 +157,7 @@ export const netUtil: Dict = {
     responseCode: (status = -1) => `Server response code: ${status}`,
     invalidBrowserUrl: (url) =>
       `Cannot open URL in browser (must be http/s): "${url}"`,
+    unauthorized: () => 'Unauthorized',
   },
 };
 
@@ -236,9 +244,6 @@ export const catalog: Dict = {
       contextMenu: {
         settings: {
           title: () => 'Settings',
-        },
-        browserOpen: {
-          title: () => 'Open in browser',
         },
       },
 
