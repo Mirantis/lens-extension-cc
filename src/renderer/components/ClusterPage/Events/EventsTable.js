@@ -55,9 +55,6 @@ const TableMessageCell = styled.div`
   display: flex;
   flex: 3 0;
   padding: ${layout.grid * 2.5}px ${layout.pad}px;
-  word-break: break-all;
-  overflow: hidden;
-  text-overflow: ellipsis;
   line-height: 1;
   color: ${({ isWarning, isHeader }) =>
     isWarning
@@ -141,7 +138,7 @@ export const EventsTable = ({
               {event.spec.type || unknownValue()}
             </TableCellWithPadding>
             <TableCellWithPadding>
-              {formatDate(event.spec.createdAt)}
+              {formatDate(event.spec.createdAt, false)}
             </TableCellWithPadding>
             <TableMessageCell isWarning={event.spec.type === 'Warning'}>
               {event.spec.message || unknownValue()}
@@ -190,7 +187,7 @@ EventsTable.propTypes = {
       label: propTypes.string,
     })
   ).isRequired,
-  events: propTypes.array.isRequired,
+  events: propTypes.arrayOf(propTypes.object),
   onSortChange: propTypes.func.isRequired,
   onResetSearch: propTypes.func.isRequired,
   sort: propTypes.shape({

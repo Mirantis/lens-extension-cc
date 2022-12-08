@@ -160,25 +160,37 @@ export const EventsPanel = ({ clusterEntity }) => {
           )),
     ].sort((a, b) => {
       if (filters.sort.sortBy === TABLE_HEADER_IDS.TYPE) {
-        return a.spec.type.localeCompare(b.spec.type);
+        return filters.sort.isAsc
+          ? a.spec.type.localeCompare(b.spec.type)
+          : b.spec.type.localeCompare(a.spec.type);
       }
       if (filters.sort.sortBy === TABLE_HEADER_IDS.DATE) {
-        return a.spec.createdAt.localeCompare(b.spec.createdAt);
+        return filters.sort.isAsc
+          ? a.spec.createdAt.localeCompare(b.spec.createdAt)
+          : b.spec.createdAt.localeCompare(a.spec.createdAt);
       }
       if (filters.sort.sortBy === TABLE_HEADER_IDS.SOURCE) {
-        return a.metadata.source.localeCompare(b.metadata.source);
+        return filters.sort.isAsc
+          ? a.metadata.source.localeCompare(b.metadata.source)
+          : b.metadata.source.localeCompare(a.metadata.source);
       }
       if (filters.sort.sortBy === TABLE_HEADER_IDS.MACHINE) {
-        return a.spec.targetName.localeCompare(b.spec.targetName);
+        return filters.sort.isAsc
+          ? a.spec.targetName.localeCompare(b.spec.targetName)
+          : b.spec.targetName.localeCompare(a.spec.targetName);
       }
       if (filters.sort.sortBy === TABLE_HEADER_IDS.COUNT) {
-        return a.spec.count - b.spec.count;
+        return filters.sort.isAsc
+          ? a.spec.count - b.spec.count
+          : b.spec.count - a.spec.count;
       }
     });
 
-    setFilteredEvents(
-      filters.sort.isAsc ? sortedEvents : sortedEvents.reverse()
-    );
+    // setFilteredEvents(
+    //   filters.sort.isAsc ? sortedEvents : sortedEvents.reverse()
+    // );
+
+    setFilteredEvents(sortedEvents);
 
     if (filters.searchText) {
       setIsFiltered(true);
@@ -239,6 +251,11 @@ export const EventsPanel = ({ clusterEntity }) => {
     [clusterEntity.spec.events]
   );
 
+  const syncCloud = useCallback(
+    () => handleSync(clusterEntity.metadata.cloudUrl),
+    [clusterEntity.metadata.cloudUrl]
+  );
+
   const handleSelectChange = useCallback(
     (newSelection) => {
       const newValue = newSelection?.value || null;
@@ -284,7 +301,7 @@ export const EventsPanel = ({ clusterEntity }) => {
               isCloudFetching || cloudStatus !== CONNECTION_STATUSES.CONNECTED
             }
             isCloudFetching={isCloudFetching}
-            onClick={() => handleSync(clusterEntity.metadata.cloudUrl)}
+            onClick={syncCloud}
           >
             <Icon material="refresh" />
           </SyncButton>

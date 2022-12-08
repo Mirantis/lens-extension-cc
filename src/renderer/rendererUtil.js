@@ -27,7 +27,7 @@ export const getLensClusters = function () {
  * @param {Date|string} date Date to format.
  * @returns {string|undefined} If a date is given, then formatted. If falsy, or the date is the epoch, undefined.
  */
-export const formatDate = (date) => {
+export const formatDate = (date, includeRelative = true) => {
   if (!date) {
     return undefined;
   }
@@ -35,7 +35,9 @@ export const formatDate = (date) => {
   const dateObj = new Date(date);
   return dateObj.getTime() === 0
     ? undefined
-    : `${dayjs(date).fromNow(true)} ago (${dayjs(date).format(
+    : includeRelative
+    ? `${dayjs(date).fromNow(true)} ago (${dayjs(date).format(
         'YYYY-MM-DD, HH:mm:ss'
-      )})`;
+      )})`
+    : dayjs(date).format('YYYY-MM-DD, HH:mm:ss');
 };
