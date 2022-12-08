@@ -38,18 +38,20 @@ export class ApiClient {
   }
 
   /**
-   * Makes a network request with specified options.
-   * @param {string} endpoint API endpoint. Does NOT begin or end with a slash.
-   * @param {Object} params
-   * @param {Object} [params.options] Request configuration options.
-   * @param {Array<number>} [params.expectedStatuses] List of expected success
-   *  statuses.
-   * @param {string} [params.errorMessage] Error message to use if the request is
+   * Makes a request to the API using the netUtil.js `request()` function.
+   * @param {string} endpoint Subpath from the `apiPrefix`, not starting with a slash.
+   * @param {Object} [options]
+   * @param {Object} [options.options] Additional netUtil.js `request()` options.
+   * @param {Array<number>} [options.expectedStatuses] If specified, success is based
+   *  on the inclusion of the status code in this list; otherwise, it's based on
+   *  the 2xx range.
+   * @param {string} [options.extractBodyMethod] Name of the method to call on the
+   *  Fetch Response object in order to extract/parse the response's data/body.
+   *  @see https://developer.mozilla.org/en-US/docs/Web/API/Body for possible values.
+   *  If falsy (other than `undefined`), data is not extracted. Defaults to 'json'.
+   * @param {string} [options.errorMessage] Error message to use if the request is
    *  deemed to have failed (per other options); otherwise, a generated message
    *  is used, based on response status.
-   * @param {string} [params.extractBodyMethod] Name of a method on a fetch
-   *  response object to call to deserialize/extract/parse data from the response.
-   *  Defaults to "json".
    * @returns {Promise<Object>} See netUtil.request() for response shape.
    */
   request(
@@ -65,7 +67,7 @@ export class ApiClient {
       {
         credentials: 'same-origin',
         ...options,
-        headers: { ...headers, ...((options && options.headers) || {}) },
+        headers: { ...headers, ...(options?.headers || {}) },
       },
       { expectedStatuses, errorMessage, extractBodyMethod }
     );

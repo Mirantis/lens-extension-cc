@@ -209,7 +209,7 @@ export default class ExtensionRenderer extends LensExtension {
 
     // OPEN IN BROWSER
     ctx.menuItems.push({
-      title: strings.catalog.entities.cluster.contextMenu.browserOpen.title(),
+      title: strings.catalog.entities.common.contextMenu.browserOpen.title(),
       icon: 'launch',
       onClick: async () => {
         openBrowser(generateEntityUrl(entity));

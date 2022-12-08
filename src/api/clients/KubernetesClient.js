@@ -26,18 +26,35 @@ export class KubernetesClient {
     };
   }
 
+  /**
+   * Makes a request to the API using the netUtil.js `request()` function.
+   * @param {string} endpoint Subpath from the `apiPrefix`, not starting with a slash.
+   * @param {Object} [options]
+   * @param {Object} [options.options] Additional netUtil.js `request()` options.
+   * @param {Array<number>} [options.expectedStatuses] If specified, success is based
+   *  on the inclusion of the status code in this list; otherwise, it's based on
+   *  the 2xx range.
+   * @param {string} [options.extractBodyMethod] Name of the method to call on the
+   *  Fetch Response object in order to extract/parse the response's data/body.
+   *  @see https://developer.mozilla.org/en-US/docs/Web/API/Body for possible values.
+   *  If falsy (other than `undefined`), data is not extracted. Defaults to 'json'.
+   * @param {string} [options.errorMessage] Error message to use if the request is
+   *  deemed to have failed (per other options); otherwise, a generated message
+   *  is used, based on response status.
+   * @returns {Promise<Object>} See netUtil.request() for response shape.
+   */
   request(
-    url,
+    endpoint,
     { options = {}, expectedStatuses = [200], errorMessage, extractBodyMethod }
   ) {
     return request(
-      `${this.baseUrl}/${KubernetesClient.apiPrefix}/${url}`,
+      `${this.baseUrl}/${KubernetesClient.apiPrefix}/${endpoint}`,
       {
         credentials: 'same-origin',
         ...options,
         headers: {
           ...this.headers,
-          ...((options && options.headers) || {}),
+          ...(options?.headers || {}),
         },
       },
       { expectedStatuses, errorMessage, extractBodyMethod }
