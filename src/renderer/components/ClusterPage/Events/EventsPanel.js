@@ -12,14 +12,15 @@ import { keyframes } from '@emotion/css';
 import { Renderer } from '@k8slens/extensions';
 import { layout } from '../../styles';
 import * as strings from '../../../../strings';
-import * as consts from '../../../../constants';
-import { CLOUD_EVENTS, CONNECTION_STATUSES } from '../../../../common/Cloud';
-import { IpcRenderer } from '../../../IpcRenderer';
-import { useClouds } from '../../../store/CloudProvider';
+import { CONNECTION_STATUSES } from '../../../../common/Cloud';
+import { formatDate } from '../../../rendererUtil';
+import { apiKinds } from '../../../../api/apiConstants';
 import { useTableSearch } from '../useTableSearch';
-import { EventsTable } from './EventsTable';
+import { useCloudSync } from '../useCloudSync';
+import { handleCloudSync } from '../clusterPageUtil';
+import { ItemsTable } from '../ItemsTable';
 
-export const TABLE_HEADER_IDS = {
+const TABLE_HEADER_IDS = {
   TYPE: 'type',
   DATE: 'date',
   MESSAGE: 'message',
@@ -31,6 +32,16 @@ export const TABLE_HEADER_IDS = {
 const {
   Component: { Icon, SearchInput, Select },
 } = Renderer;
+
+const {
+  catalog: {
+    entities: {
+      common: {
+        details: { unknownValue },
+      },
+    },
+  },
+} = strings;
 
 const ALL_SOURCES_VALUE = 'all-sources';
 const defaultSourceOption = {
@@ -72,8 +83,37 @@ const tableHeaders = [
   },
 ];
 
-const handleSync = (cloudUrl) => {
-  IpcRenderer.getInstance().invoke(consts.ipcEvents.invoke.SYNC_NOW, cloudUrl);
+const generateItems = (events) => {
+  return events.map((event) => {
+    return [
+      {
+        text: event.spec.type || unknownValue(),
+      },
+      {
+        text: formatDate(event.spec.createdAt, false),
+      },
+      {
+        text: event.spec.message || unknownValue(),
+        isBiggerCell: true,
+        color:
+          event.spec.type === 'Warning'
+            ? 'var(--colorError)'
+            : 'var(--textColorPrimary)',
+      },
+      {
+        text: event.metadata.source || unknownValue(),
+      },
+      {
+        text:
+          event.spec.targetKind === apiKinds.MACHINE
+            ? event.spec.targetName || unknownValue()
+            : strings.clusterPage.common.emptyValue(),
+      },
+      {
+        text: event.spec.count || unknownValue(),
+      },
+    ];
+  });
 };
 
 //
@@ -123,13 +163,9 @@ const Search = styled(SearchInput)(() => ({
 //
 
 export const EventsPanel = ({ clusterEntity }) => {
-  const cloudUrl = clusterEntity.metadata.cloudUrl;
-  const { clouds } = useClouds();
   const targetRef = useRef();
 
   const [isLoading, setIsLoading] = useState(false);
-  const [isCloudFetching, setIsCloudFetching] = useState(false);
-  const [cloudStatus, setCloudStatus] = useState(clouds[cloudUrl].status);
   const [filteredEvents, setFilteredEvents] = useState([]);
   const [filters, setFilters] = useState(defaultFilters);
   const [isFiltered, setIsFiltered] = useState(false);
@@ -139,6 +175,10 @@ export const EventsPanel = ({ clusterEntity }) => {
     searchText: filters.searchText,
     searchItems: clusterEntity.spec.events,
   });
+
+  const { isCloudFetching, cloudStatus } = useCloudSync(
+    clusterEntity.metadata.cloudUrl
+  );
 
   useLayoutEffect(() => {
     if (targetRef.current) {
@@ -195,39 +235,6 @@ export const EventsPanel = ({ clusterEntity }) => {
     }
   }, [filters, searchResults]);
 
-  useEffect(() => {
-    const onCloudFetchingChange = () => {
-      setIsCloudFetching(clouds[cloudUrl].fetching);
-      setCloudStatus(clouds[cloudUrl].status);
-    };
-
-    const onCloudStatusChange = () => {
-      setIsCloudFetching(clouds[cloudUrl].fetching);
-      setCloudStatus(clouds[cloudUrl].status);
-    };
-
-    // Listen fetching status
-    clouds[cloudUrl].addEventListener(
-      CLOUD_EVENTS.FETCHING_CHANGE,
-      onCloudFetchingChange
-    );
-    clouds[cloudUrl].addEventListener(
-      CLOUD_EVENTS.STATUS_CHANGE,
-      onCloudStatusChange
-    );
-
-    return () => {
-      clouds[cloudUrl].removeEventListener(
-        CLOUD_EVENTS.FETCHING_CHANGE,
-        onCloudFetchingChange
-      );
-      clouds[cloudUrl].removeEventListener(
-        CLOUD_EVENTS.STATUS_CHANGE,
-        onCloudStatusChange
-      );
-    };
-  }, [clouds, cloudUrl]);
-
   const getSourceOptions = (events) => {
     const uniqueSources = [
       ...new Set(events.map(({ metadata: { source } }) => source)),
@@ -248,7 +255,7 @@ export const EventsPanel = ({ clusterEntity }) => {
   );
 
   const syncCloud = useCallback(
-    () => handleSync(clusterEntity.metadata.cloudUrl),
+    () => handleCloudSync(clusterEntity.metadata.cloudUrl),
     [clusterEntity.metadata.cloudUrl]
   );
 
@@ -313,15 +320,17 @@ export const EventsPanel = ({ clusterEntity }) => {
           />
         </Settings>
       </TopItems>
-      <EventsTable
+      <ItemsTable
         tableHeaders={tableHeaders}
-        events={filteredEvents}
+        items={generateItems(filteredEvents)}
         onSortChange={handleSortChange}
         onResetSearch={handleResetSearch}
         sort={filters.sort}
         isFiltered={isFiltered}
         isLoading={isLoading}
         topBarHeight={topBarHeight}
+        noItemsFoundMessage={strings.clusterPage.pages.events.table.noEventsFound()}
+        emptyListMessage={strings.clusterPage.pages.events.table.emptyList()}
       />
     </PanelWrapper>
   );

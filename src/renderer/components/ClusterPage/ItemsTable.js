@@ -1,32 +1,21 @@
 import propTypes from 'prop-types';
 import { Renderer } from '@k8slens/extensions';
 import styled from '@emotion/styled';
-import { TABLE_HEADER_IDS } from './EventsPanel';
-import { layout } from '../../styles';
-import { formatDate } from '../../../rendererUtil';
-import { apiKinds } from '../../../../api/apiConstants';
-import * as strings from '../../../../strings';
+import { layout } from '../styles';
+import * as strings from '../../../strings';
 
 const {
   Component: { Icon, Spinner, Table, TableHead, TableRow, TableCell },
 } = Renderer;
 
-const {
-  catalog: {
-    entities: {
-      common: {
-        details: { unknownValue },
-      },
-    },
-  },
-} = strings;
+const MESSAGE_CELL_ID = 'message';
 
 //
 // INTERNAL STYLED COMPONENTS
 //
 
 const FullHeightTable = styled(Table)((props) => ({
-  height: `calc(100% - ${props.heightForReduce}px)`, // `62px` - height of filter bar items
+  height: `calc(100% - ${props.heightForReduce}px)`,
 }));
 
 const FirstCellUiReformer = styled.div(() => ({
@@ -46,27 +35,30 @@ const ResetFiltersButton = styled.button(() => ({
   borderBottom: '1px dotted',
 }));
 
-const TableCellWithPadding = styled(TableCell)(() => ({
+const TableCellWithPadding = styled(TableCell)((props) => ({
   paddingTop: layout.grid * 2.5,
   paddingBottom: layout.grid * 2.5,
+  wordBreak: 'normal',
+
+  '&&&': {
+    flexGrow: props.isBiggerCell ? 3 : 1,
+  },
 }));
 
 const TableMessageCell = styled.div`
   display: flex;
+  align-items: center;
   flex: 3 0;
   padding: ${layout.grid * 2.5}px ${layout.pad}px;
   line-height: 1;
-  color: ${({ isWarning, isHeader }) =>
-    isWarning
-      ? 'var(--colorError)'
-      : isHeader
-      ? 'var(--tableHeaderColor)'
-      : 'var(--textColorPrimary)'};
+  color: ${({ isHeader }) =>
+    isHeader ? 'var(--tableHeaderColor)' : 'var(--textColorPrimary)'};
 `;
 
 const SortButton = styled.button`
   display: flex;
   align-items: center;
+  text-align: left;
 
   i {
     opacity: ${({ isActive }) => (isActive ? '1' : '0.5')};
@@ -79,22 +71,24 @@ const SortButton = styled.button`
 // MAIN COMPONENT
 //
 
-export const EventsTable = ({
+export const ItemsTable = ({
   tableHeaders,
-  events,
+  items,
   onSortChange,
   onResetSearch,
   sort,
   isFiltered,
   isLoading,
   topBarHeight,
+  noItemsFoundMessage,
+  emptyListMessage,
 }) => {
   return (
     <FullHeightTable heightForReduce={topBarHeight}>
       <Spinner />
       <TableHead sticky showTopLine>
         {tableHeaders.map((header, index) => {
-          if (header.id === TABLE_HEADER_IDS.MESSAGE) {
+          if (header.id === MESSAGE_CELL_ID) {
             return (
               <TableMessageCell key={header.id} isHeader>
                 {index === 0 && <FirstCellUiReformer></FirstCellUiReformer>}
@@ -130,30 +124,21 @@ export const EventsTable = ({
         >
           <Spinner />
         </TableRow>
-      ) : events.length > 0 ? (
-        events.map((event) => (
-          <TableRow key={event.metadata.name}>
-            <TableCellWithPadding>
-              <FirstCellUiReformer></FirstCellUiReformer>
-              {event.spec.type || unknownValue()}
-            </TableCellWithPadding>
-            <TableCellWithPadding>
-              {formatDate(event.spec.createdAt, false)}
-            </TableCellWithPadding>
-            <TableMessageCell isWarning={event.spec.type === 'Warning'}>
-              {event.spec.message || unknownValue()}
-            </TableMessageCell>
-            <TableCellWithPadding>
-              {event.metadata.source || unknownValue()}
-            </TableCellWithPadding>
-            <TableCellWithPadding>
-              {event.spec.targetKind === apiKinds.MACHINE
-                ? event.spec.targetName || unknownValue()
-                : strings.clusterPage.common.emptyValue()}
-            </TableCellWithPadding>
-            <TableCellWithPadding>
-              {event.spec.count || unknownValue()}
-            </TableCellWithPadding>
+      ) : items.length > 0 ? (
+        items.map((item, rowIndex) => (
+          <TableRow key={rowIndex}>
+            {item.map((singleItem, itemIndex) => (
+              <TableCellWithPadding
+                key={itemIndex}
+                isBiggerCell={singleItem.isBiggerCell}
+                style={{
+                  color: singleItem.color || 'var(--textColorPrimary)',
+                }}
+              >
+                {itemIndex === 0 && <FirstCellUiReformer></FirstCellUiReformer>}
+                {singleItem.text}
+              </TableCellWithPadding>
+            ))}
           </TableRow>
         ))
       ) : (
@@ -166,13 +151,13 @@ export const EventsTable = ({
         >
           {isFiltered ? (
             <NoItemsMessageWrapper>
-              <p>{strings.clusterPage.pages.events.table.noEventsFound()}</p>
+              <p>{noItemsFoundMessage}</p>
               <ResetFiltersButton onClick={() => onResetSearch()}>
-                {strings.clusterPage.pages.events.table.resetSearch()}
+                {strings.clusterPage.common.resetSearch()}
               </ResetFiltersButton>
             </NoItemsMessageWrapper>
           ) : (
-            <p>{strings.clusterPage.pages.events.table.emptyList()}</p>
+            <p>{emptyListMessage}</p>
           )}
         </TableRow>
       )}
@@ -180,14 +165,14 @@ export const EventsTable = ({
   );
 };
 
-EventsTable.propTypes = {
+ItemsTable.propTypes = {
   tableHeaders: propTypes.arrayOf(
     propTypes.shape({
       id: propTypes.string,
       label: propTypes.string,
     })
   ).isRequired,
-  events: propTypes.arrayOf(propTypes.object),
+  items: propTypes.arrayOf(propTypes.array),
   onSortChange: propTypes.func.isRequired,
   onResetSearch: propTypes.func.isRequired,
   sort: propTypes.shape({
@@ -197,4 +182,6 @@ EventsTable.propTypes = {
   isFiltered: propTypes.bool.isRequired,
   isLoading: propTypes.bool.isRequired,
   topBarHeight: propTypes.number.isRequired,
+  noItemsFoundMessage: propTypes.string.isRequired,
+  emptyListMessage: propTypes.string.isRequired,
 };
