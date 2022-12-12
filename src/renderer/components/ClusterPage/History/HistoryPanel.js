@@ -4,6 +4,7 @@ import {
   useEffect,
   useLayoutEffect,
   useRef,
+  useMemo,
   useCallback,
 } from 'react';
 import styled from '@emotion/styled';
@@ -209,8 +210,11 @@ const Search = styled(SearchInput)(() => ({
 //
 
 export const HistoryPanel = ({ clusterEntity }) => {
-  const history = getNestedValues(clusterEntity.spec.updates);
   const targetRef = useRef();
+  const history = useMemo(
+    () => getNestedValues(clusterEntity.spec.updates),
+    [clusterEntity.spec.updates]
+  );
 
   const [isLoading, setIsLoading] = useState(false);
   const [filteredHistory, setFilteredHistory] = useState([]);
