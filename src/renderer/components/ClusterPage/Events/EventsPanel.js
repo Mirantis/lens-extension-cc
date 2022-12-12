@@ -83,6 +83,11 @@ const tableHeaders = [
   },
 ];
 
+/**
+ * Creates array with arrays of events values objects for future render.
+ * @param {Array} events array with events update objects.
+ * @returns {{ Array }} array with arrays of objects.
+ */
 const generateItems = (events) => {
   return events.map((event) => {
     return [

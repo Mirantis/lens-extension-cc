@@ -100,37 +100,66 @@ const getStatusColor = (status) => {
   }
 };
 
+/**
+ * Creates array with arrays of history values objects for future render.
+ * @param {Array} history array with history update objects.
+ * @returns {{ Array }} array with arrays of objects.
+ */
 const generateItems = (history) => {
   return history.map((item) => {
     return [
       {
-        text: item.spec.stages.status || unknownValue(),
-        color: getStatusColor(item.spec.stages.status),
+        text: item.status || unknownValue(),
+        color: getStatusColor(item.status),
       },
       {
-        text: formatDate(item.spec.stages.timeAt, false),
+        text: formatDate(item.timeAt, false),
       },
       {
-        text: item.spec.stages.name || unknownValue(),
+        text: item.name || unknownValue(),
       },
       {
-        text: item.spec.stages.message || unknownValue(),
+        text: item.message || strings.clusterPage.common.emptyValue(),
         isBiggerCell: true,
       },
       {
         text:
-          item.spec.targetKind === apiKinds.MACHINE
-            ? item.spec.targetName || unknownValue()
+          item.targetKind === apiKinds.MACHINE
+            ? item.targetName || unknownValue()
             : strings.clusterPage.common.emptyValue(),
       },
       {
-        text: item.spec.fromRelease || strings.clusterPage.common.emptyValue(),
+        text: item.fromRelease || strings.clusterPage.common.emptyValue(),
       },
       {
-        text: item.spec.release || strings.clusterPage.common.emptyValue(),
+        text: item.release || strings.clusterPage.common.emptyValue(),
       },
     ];
   });
+};
+
+/**
+ * Creates array of objects with needed items from nested objects.
+ * @param {Array} history array with history update objects.
+ * @returns {{ arr: Array }} array with single-depth history objects.
+ */
+const getNestedValues = (history) => {
+  const arr = [];
+  history.map((item) => {
+    item.spec.stages.map((stage) => {
+      arr.push({
+        status: stage.status,
+        timeAt: stage.timeAt,
+        name: stage.name,
+        message: stage.message,
+        targetKind: item.spec.targetKind,
+        targetName: item.spec.targetName,
+        fromRelease: item.spec.fromRelease,
+        release: item.spec.release,
+      });
+    });
+  });
+  return arr;
 };
 
 //
@@ -179,83 +208,8 @@ const Search = styled(SearchInput)(() => ({
 // MAIN COMPONENT
 //
 
-const mockHistory = [
-  {
-    metadata: {
-      cloudUrl: 'https://container-cloud.int.mirantis.com',
-      name: 'name-1',
-    },
-    spec: {
-      fromRelease: '',
-      release: '',
-      stages: {
-        name: 'Machine deploy',
-        message: 'Manager machine is being deployed on cluster scameron-aws.',
-        status: 'In progress',
-        timeAt: '2022-12-06T21:50:25.000Z',
-      },
-      targetKind: 'Machine',
-      targetName: 'scameron-aws-node-xr45c_2',
-    },
-  },
-  {
-    metadata: {
-      cloudUrl: 'https://container-cloud.int.mirantis.com',
-      name: 'name-2',
-    },
-    spec: {
-      fromRelease: '',
-      release: '',
-      stages: {
-        name: 'Machine deploy',
-        message: 'Manager machine is being deployed on cluster scameron-aws. ',
-        status: 'Not started',
-        timeAt: '2022-11-06T21:50:25.000Z',
-      },
-      targetKind: 'Machine',
-      targetName: 'scameron-aws-node-xr45c_3',
-    },
-  },
-  {
-    metadata: {
-      cloudUrl: 'https://container-cloud.int.mirantis.com',
-      name: 'name-3',
-    },
-    spec: {
-      fromRelease: '8.10.0+2.1.0',
-      release: '11.4.0+3.5.4',
-      stages: {
-        name: 'Cluster upgrade',
-        message: 'Cluster scameron-aws was upgraded successfully. ',
-        status: 'Success',
-        timeAt: '2022-09-06T21:50:25.000Z',
-      },
-      targetKind: 'Cluster',
-      targetName: 'scameron-aws',
-    },
-  },
-  {
-    metadata: {
-      cloudUrl: 'https://container-cloud.int.mirantis.com',
-      name: 'name-4',
-    },
-    spec: {
-      fromRelease: '',
-      release: '8.10.0+2.1.0',
-      stages: {
-        name: 'CLuster install',
-        message: 'Failed to set cluster scameron-aws in maintenance mode.',
-        status: 'Failed',
-        timeAt: '2022-10-06T21:50:25.000Z',
-      },
-      targetKind: 'Cluster',
-      targetName: 'scameron-aws',
-    },
-  },
-];
-
 export const HistoryPanel = ({ clusterEntity }) => {
-  const history = mockHistory;
+  const history = getNestedValues(clusterEntity.spec.updates);
   const targetRef = useRef();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -288,33 +242,33 @@ export const HistoryPanel = ({ clusterEntity }) => {
     const sortedHistory = [...searchResults].sort((a, b) => {
       if (filters.sort.sortBy === TABLE_HEADER_IDS.STATUS) {
         return filters.sort.isAsc
-          ? a.spec.stages.status.localeCompare(b.spec.stages.status)
-          : b.spec.stages.status.localeCompare(a.spec.stages.status);
+          ? a.status.localeCompare(b.status)
+          : b.status.localeCompare(a.status);
       }
       if (filters.sort.sortBy === TABLE_HEADER_IDS.DATE) {
         return filters.sort.isAsc
-          ? a.spec.stages.timeAt.localeCompare(b.spec.stages.timeAt)
-          : b.spec.stages.timeAt.localeCompare(a.spec.stages.timeAt);
+          ? a.timeAt.localeCompare(b.timeAt)
+          : b.timeAt.localeCompare(a.timeAt);
       }
       if (filters.sort.sortBy === TABLE_HEADER_IDS.NAME) {
         return filters.sort.isAsc
-          ? a.spec.stages.name.localeCompare(b.spec.stages.name)
-          : b.spec.stages.name.localeCompare(a.spec.stages.name);
+          ? a.name.localeCompare(b.name)
+          : b.name.localeCompare(a.name);
       }
       if (filters.sort.sortBy === TABLE_HEADER_IDS.MACHINE) {
         return filters.sort.isAsc
-          ? a.spec.targetName.localeCompare(b.spec.targetName)
-          : b.spec.targetName.localeCompare(a.spec.targetName);
+          ? a.targetName.localeCompare(b.targetName)
+          : b.targetName.localeCompare(a.targetName);
       }
       if (filters.sort.sortBy === TABLE_HEADER_IDS.FROM_RELEASE) {
         return filters.sort.isAsc
-          ? a.spec.fromRelease.localeCompare(b.spec.fromRelease)
-          : b.spec.fromRelease.localeCompare(a.spec.fromRelease);
+          ? a.fromRelease.localeCompare(b.fromRelease)
+          : b.fromRelease.localeCompare(a.fromRelease);
       }
       if (filters.sort.sortBy === TABLE_HEADER_IDS.TO_RELEASE) {
         return filters.sort.isAsc
-          ? a.spec.release.localeCompare(b.spec.release)
-          : b.spec.release.localeCompare(a.spec.release);
+          ? a.release.localeCompare(b.release)
+          : b.release.localeCompare(a.release);
       }
     });
 
