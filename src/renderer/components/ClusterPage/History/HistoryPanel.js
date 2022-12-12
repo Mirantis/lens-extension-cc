@@ -7,10 +7,7 @@ import {
   useMemo,
   useCallback,
 } from 'react';
-import styled from '@emotion/styled';
-import { keyframes } from '@emotion/css';
 import { Renderer } from '@k8slens/extensions';
-import { layout } from '../../styles';
 import * as strings from '../../../../strings';
 import { CONNECTION_STATUSES } from '../../../../common/Cloud';
 import { formatDate } from '../../../rendererUtil';
@@ -19,6 +16,13 @@ import { useCloudSync } from '../useCloudSync';
 import { useTableSearch } from '../useTableSearch';
 import { handleCloudSync } from '../clusterPageUtil';
 import { ItemsTable } from '../ItemsTable';
+import {
+  TablePanelWrapper,
+  TableTopItems,
+  TableSettings,
+  TableSyncButton,
+  TableSearch,
+} from '../clusterPageComponents';
 
 const TABLE_HEADER_IDS = {
   STATUS: 'status',
@@ -37,7 +41,7 @@ const HISTORY_STATUSES = {
 };
 
 const {
-  Component: { Icon, SearchInput },
+  Component: { Icon },
 } = Renderer;
 
 const {
@@ -164,48 +168,6 @@ const getNestedValues = (history) => {
 };
 
 //
-// INTERNAL STYLED COMPONENTS
-//
-
-const rotate = keyframes`
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-`;
-
-const PanelWrapper = styled.div(() => ({
-  background: 'var(--contentColor)',
-  height: '100%',
-}));
-
-const TopItems = styled.div(() => ({
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  padding: layout.pad * 2,
-}));
-
-const Settings = styled.div(() => ({
-  display: 'flex',
-  alignItems: 'center',
-}));
-
-const SyncButton = styled.button`
-  margin-right: ${layout.pad * 2}px;
-  pointer-events: ${({ isDisabled }) => (isDisabled ? 'none' : 'auto')};
-  opacity: ${({ isDisabled }) => (isDisabled ? '0.5' : '1')};
-  animation: ${({ isCloudFetching }) =>
-    isCloudFetching ? `${rotate} 2s linear infinite` : 'none'};
-`;
-
-const Search = styled(SearchInput)(() => ({
-  marginLeft: layout.pad * 1.25,
-}));
-
-//
 // MAIN COMPONENT
 //
 
@@ -315,16 +277,16 @@ export const HistoryPanel = ({ clusterEntity }) => {
   }, [filters]);
 
   return (
-    <PanelWrapper>
-      <TopItems ref={targetRef}>
+    <TablePanelWrapper>
+      <TableTopItems ref={targetRef}>
         <p>{strings.clusterPage.pages.history.title()}</p>
         <p>
           {strings.clusterPage.pages.history.itemsAmount(
             filteredHistory.length
           )}
         </p>
-        <Settings>
-          <SyncButton
+        <TableSettings>
+          <TableSyncButton
             isDisabled={
               isCloudFetching || cloudStatus !== CONNECTION_STATUSES.CONNECTED
             }
@@ -332,14 +294,14 @@ export const HistoryPanel = ({ clusterEntity }) => {
             onClick={syncCloud}
           >
             <Icon material="refresh" />
-          </SyncButton>
-          <Search
+          </TableSyncButton>
+          <TableSearch
             placeholder={strings.clusterPage.pages.history.searchPlaceholder()}
             value={filters.searchText}
             onInput={handleSearchChange}
           />
-        </Settings>
-      </TopItems>
+        </TableSettings>
+      </TableTopItems>
       <ItemsTable
         tableHeaders={tableHeaders}
         items={generateItems(filteredHistory)}
@@ -352,7 +314,7 @@ export const HistoryPanel = ({ clusterEntity }) => {
         noItemsFoundMessage={strings.clusterPage.pages.history.table.noHistoryFound()}
         emptyListMessage={strings.clusterPage.pages.history.table.emptyList()}
       />
-    </PanelWrapper>
+    </TablePanelWrapper>
   );
 };
 

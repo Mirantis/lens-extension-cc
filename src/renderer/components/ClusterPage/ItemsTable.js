@@ -1,4 +1,5 @@
 import propTypes from 'prop-types';
+import { useMemo } from 'react';
 import { Renderer } from '@k8slens/extensions';
 import styled from '@emotion/styled';
 import { layout } from '../styles';
@@ -9,6 +10,13 @@ const {
 } = Renderer;
 
 const MESSAGE_CELL_ID = 'message';
+const getTableRowStyles = (topBarHeight) => {
+  return {
+    height: `calc(100% - ${topBarHeight}px)`,
+    justifyContent: 'center',
+    alignItems: 'center',
+  };
+};
 
 //
 // INTERNAL STYLED COMPONENTS
@@ -51,8 +59,7 @@ const TableMessageCell = styled.div`
   flex: 3 0;
   padding: ${layout.grid * 2.5}px ${layout.pad}px;
   line-height: 1;
-  color: ${({ isHeader }) =>
-    isHeader ? 'var(--tableHeaderColor)' : 'var(--textColorPrimary)'};
+  color: 'var(--tableHeaderColor)';
 `;
 
 const SortButton = styled.button`
@@ -83,6 +90,11 @@ export const ItemsTable = ({
   noItemsFoundMessage,
   emptyListMessage,
 }) => {
+  const tableRowStyles = useMemo(
+    () => getTableRowStyles(topBarHeight),
+    [topBarHeight]
+  );
+
   return (
     <FullHeightTable heightForReduce={topBarHeight}>
       <Spinner />
@@ -90,7 +102,7 @@ export const ItemsTable = ({
         {tableHeaders.map((header, index) => {
           if (header.id === MESSAGE_CELL_ID) {
             return (
-              <TableMessageCell key={header.id} isHeader>
+              <TableMessageCell key={header.id}>
                 {index === 0 && <FirstCellUiReformer></FirstCellUiReformer>}
                 {header.label}
               </TableMessageCell>
@@ -115,13 +127,7 @@ export const ItemsTable = ({
         })}
       </TableHead>
       {isLoading ? (
-        <TableRow
-          style={{
-            height: `calc(100% - ${topBarHeight}px)`,
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
+        <TableRow style={tableRowStyles}>
           <Spinner />
         </TableRow>
       ) : items.length > 0 ? (
@@ -142,13 +148,7 @@ export const ItemsTable = ({
           </TableRow>
         ))
       ) : (
-        <TableRow
-          style={{
-            height: `calc(100% - ${topBarHeight}px)`,
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
+        <TableRow style={tableRowStyles}>
           {isFiltered ? (
             <NoItemsMessageWrapper>
               <p>{noItemsFoundMessage}</p>

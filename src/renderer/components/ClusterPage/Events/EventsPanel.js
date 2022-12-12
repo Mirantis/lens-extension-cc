@@ -7,10 +7,7 @@ import {
   useCallback,
   useMemo,
 } from 'react';
-import styled from '@emotion/styled';
-import { keyframes } from '@emotion/css';
 import { Renderer } from '@k8slens/extensions';
-import { layout } from '../../styles';
 import * as strings from '../../../../strings';
 import { CONNECTION_STATUSES } from '../../../../common/Cloud';
 import { formatDate } from '../../../rendererUtil';
@@ -19,6 +16,13 @@ import { useTableSearch } from '../useTableSearch';
 import { useCloudSync } from '../useCloudSync';
 import { handleCloudSync } from '../clusterPageUtil';
 import { ItemsTable } from '../ItemsTable';
+import {
+  TablePanelWrapper,
+  TableTopItems,
+  TableSettings,
+  TableSyncButton,
+  TableSearch,
+} from '../clusterPageComponents';
 
 const TABLE_HEADER_IDS = {
   TYPE: 'type',
@@ -30,7 +34,7 @@ const TABLE_HEADER_IDS = {
 };
 
 const {
-  Component: { Icon, SearchInput, Select },
+  Component: { Icon, Select },
 } = Renderer;
 
 const {
@@ -120,48 +124,6 @@ const generateItems = (events) => {
     ];
   });
 };
-
-//
-// INTERNAL STYLED COMPONENTS
-//
-
-const rotate = keyframes`
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-`;
-
-const PanelWrapper = styled.div(() => ({
-  background: 'var(--contentColor)',
-  height: '100%',
-}));
-
-const TopItems = styled.div(() => ({
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  padding: layout.pad * 2,
-}));
-
-const Settings = styled.div(() => ({
-  display: 'flex',
-  alignItems: 'center',
-}));
-
-const SyncButton = styled.button`
-  margin-right: ${layout.pad * 2}px;
-  pointer-events: ${({ isDisabled }) => (isDisabled ? 'none' : 'auto')};
-  opacity: ${({ isDisabled }) => (isDisabled ? '0.5' : '1')};
-  animation: ${({ isCloudFetching }) =>
-    isCloudFetching ? `${rotate} 2s linear infinite` : 'none'};
-`;
-
-const Search = styled(SearchInput)(() => ({
-  marginLeft: layout.pad * 1.25,
-}));
 
 //
 // MAIN COMPONENT
@@ -297,14 +259,14 @@ export const EventsPanel = ({ clusterEntity }) => {
   }, [filters]);
 
   return (
-    <PanelWrapper>
-      <TopItems ref={targetRef}>
+    <TablePanelWrapper>
+      <TableTopItems ref={targetRef}>
         <p>{strings.clusterPage.pages.events.title()}</p>
         <p>
           {strings.clusterPage.pages.events.itemsAmount(filteredEvents.length)}
         </p>
-        <Settings>
-          <SyncButton
+        <TableSettings>
+          <TableSyncButton
             isDisabled={
               isCloudFetching || cloudStatus !== CONNECTION_STATUSES.CONNECTED
             }
@@ -312,19 +274,19 @@ export const EventsPanel = ({ clusterEntity }) => {
             onClick={syncCloud}
           >
             <Icon material="refresh" />
-          </SyncButton>
+          </TableSyncButton>
           <Select
             options={sourceOptions}
             value={filters.filterBy}
             onChange={handleSelectChange}
           />
-          <Search
+          <TableSearch
             placeholder={strings.clusterPage.pages.events.searchPlaceholder()}
             value={filters.searchText}
             onInput={handleSearchChange}
           />
-        </Settings>
-      </TopItems>
+        </TableSettings>
+      </TableTopItems>
       <ItemsTable
         tableHeaders={tableHeaders}
         items={generateItems(filteredEvents)}
@@ -337,7 +299,7 @@ export const EventsPanel = ({ clusterEntity }) => {
         noItemsFoundMessage={strings.clusterPage.pages.events.table.noEventsFound()}
         emptyListMessage={strings.clusterPage.pages.events.table.emptyList()}
       />
-    </PanelWrapper>
+    </TablePanelWrapper>
   );
 };
 
