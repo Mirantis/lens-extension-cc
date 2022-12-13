@@ -7,19 +7,23 @@ import {
   useCallback,
   useMemo,
 } from 'react';
-import styled from '@emotion/styled';
-import { keyframes } from '@emotion/css';
 import { Renderer } from '@k8slens/extensions';
-import { layout } from '../../styles';
 import * as strings from '../../../../strings';
-import * as consts from '../../../../constants';
-import { CLOUD_EVENTS, CONNECTION_STATUSES } from '../../../../common/Cloud';
-import { IpcRenderer } from '../../../IpcRenderer';
-import { useClouds } from '../../../store/CloudProvider';
+import { CONNECTION_STATUSES } from '../../../../common/Cloud';
+import { formatDate } from '../../../rendererUtil';
+import { apiKinds } from '../../../../api/apiConstants';
 import { useTableSearch } from '../useTableSearch';
-import { EventsTable } from './EventsTable';
+import { useCloudSync } from '../useCloudSync';
+import { ItemsTable } from '../ItemsTable';
+import {
+  TablePanelWrapper,
+  TableTopItems,
+  TableSettings,
+  TableSyncButton,
+  TableSearch,
+} from '../clusterPageComponents';
 
-export const TABLE_HEADER_IDS = {
+const TABLE_HEADER_IDS = {
   TYPE: 'type',
   DATE: 'date',
   MESSAGE: 'message',
@@ -29,8 +33,18 @@ export const TABLE_HEADER_IDS = {
 };
 
 const {
-  Component: { Icon, SearchInput, Select },
+  Component: { Icon, Select },
 } = Renderer;
+
+const {
+  catalog: {
+    entities: {
+      common: {
+        details: { unknownValue },
+      },
+    },
+  },
+} = strings;
 
 const ALL_SOURCES_VALUE = 'all-sources';
 const defaultSourceOption = {
@@ -57,6 +71,7 @@ const tableHeaders = [
   {
     id: TABLE_HEADER_IDS.MESSAGE,
     label: strings.clusterPage.pages.events.table.headers.message(),
+    isBiggerCell: true,
   },
   {
     id: TABLE_HEADER_IDS.SOURCE,
@@ -72,64 +87,52 @@ const tableHeaders = [
   },
 ];
 
-const handleSync = (cloudUrl) => {
-  IpcRenderer.getInstance().invoke(consts.ipcEvents.invoke.SYNC_NOW, cloudUrl);
+/**
+ * Creates array with arrays of events values objects for future render.
+ * @param {Array} events array with events update objects.
+ * @returns {Array<Array<{ text: string, color?: string, isBiggerCell?: boolean }>>} array with arrays of objects.
+ */
+const generateItems = (events) => {
+  return events.map((event) => {
+    return [
+      {
+        text: event.spec.type || unknownValue(),
+      },
+      {
+        text: formatDate(event.spec.createdAt, false),
+      },
+      {
+        text: event.spec.message || unknownValue(),
+        isBiggerCell: true,
+        color:
+          event.spec.type === 'Warning'
+            ? 'var(--colorError)'
+            : 'var(--textColorPrimary)',
+      },
+      {
+        text: event.metadata.source || unknownValue(),
+      },
+      {
+        text:
+          event.spec.targetKind === apiKinds.MACHINE
+            ? event.spec.targetName || unknownValue()
+            : strings.clusterPage.common.emptyValue(),
+      },
+      {
+        text: `${event.spec.count}` || unknownValue(),
+      },
+    ];
+  });
 };
-
-//
-// INTERNAL STYLED COMPONENTS
-//
-
-const rotate = keyframes`
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-`;
-
-const PanelWrapper = styled.div(() => ({
-  background: 'var(--contentColor)',
-  height: '100%',
-}));
-
-const TopItems = styled.div(() => ({
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  padding: layout.pad * 2,
-}));
-
-const Settings = styled.div(() => ({
-  display: 'flex',
-  alignItems: 'center',
-}));
-
-const SyncButton = styled.button`
-  margin-right: ${layout.pad * 2}px;
-  pointer-events: ${({ isDisabled }) => (isDisabled ? 'none' : 'auto')};
-  opacity: ${({ isDisabled }) => (isDisabled ? '0.5' : '1')};
-  animation: ${({ isCloudFetching }) =>
-    isCloudFetching ? `${rotate} 2s linear infinite` : 'none'};
-`;
-
-const Search = styled(SearchInput)(() => ({
-  marginLeft: layout.pad * 1.25,
-}));
 
 //
 // MAIN COMPONENT
 //
 
 export const EventsPanel = ({ clusterEntity }) => {
-  const cloudUrl = clusterEntity.metadata.cloudUrl;
-  const { clouds } = useClouds();
   const targetRef = useRef();
 
   const [isLoading, setIsLoading] = useState(false);
-  const [isCloudFetching, setIsCloudFetching] = useState(false);
-  const [cloudStatus, setCloudStatus] = useState(clouds[cloudUrl].status);
   const [filteredEvents, setFilteredEvents] = useState([]);
   const [filters, setFilters] = useState(defaultFilters);
   const [isFiltered, setIsFiltered] = useState(false);
@@ -139,6 +142,10 @@ export const EventsPanel = ({ clusterEntity }) => {
     searchText: filters.searchText,
     searchItems: clusterEntity.spec.events,
   });
+
+  const { isCloudFetching, cloudStatus, handleSyncCloud } = useCloudSync(
+    clusterEntity.metadata.cloudUrl
+  );
 
   useLayoutEffect(() => {
     if (targetRef.current) {
@@ -195,39 +202,6 @@ export const EventsPanel = ({ clusterEntity }) => {
     }
   }, [filters, searchResults]);
 
-  useEffect(() => {
-    const onCloudFetchingChange = () => {
-      setIsCloudFetching(clouds[cloudUrl].fetching);
-      setCloudStatus(clouds[cloudUrl].status);
-    };
-
-    const onCloudStatusChange = () => {
-      setIsCloudFetching(clouds[cloudUrl].fetching);
-      setCloudStatus(clouds[cloudUrl].status);
-    };
-
-    // Listen fetching status
-    clouds[cloudUrl].addEventListener(
-      CLOUD_EVENTS.FETCHING_CHANGE,
-      onCloudFetchingChange
-    );
-    clouds[cloudUrl].addEventListener(
-      CLOUD_EVENTS.STATUS_CHANGE,
-      onCloudStatusChange
-    );
-
-    return () => {
-      clouds[cloudUrl].removeEventListener(
-        CLOUD_EVENTS.FETCHING_CHANGE,
-        onCloudFetchingChange
-      );
-      clouds[cloudUrl].removeEventListener(
-        CLOUD_EVENTS.STATUS_CHANGE,
-        onCloudStatusChange
-      );
-    };
-  }, [clouds, cloudUrl]);
-
   const getSourceOptions = (events) => {
     const uniqueSources = [
       ...new Set(events.map(({ metadata: { source } }) => source)),
@@ -245,11 +219,6 @@ export const EventsPanel = ({ clusterEntity }) => {
   const sourceOptions = useMemo(
     () => getSourceOptions(clusterEntity.spec.events),
     [clusterEntity.spec.events]
-  );
-
-  const syncCloud = useCallback(
-    () => handleSync(clusterEntity.metadata.cloudUrl),
-    [clusterEntity.metadata.cloudUrl]
   );
 
   const handleSelectChange = useCallback(
@@ -285,45 +254,47 @@ export const EventsPanel = ({ clusterEntity }) => {
   }, [filters]);
 
   return (
-    <PanelWrapper>
-      <TopItems ref={targetRef}>
+    <TablePanelWrapper>
+      <TableTopItems ref={targetRef}>
         <p>{strings.clusterPage.pages.events.title()}</p>
         <p>
           {strings.clusterPage.pages.events.itemsAmount(filteredEvents.length)}
         </p>
-        <Settings>
-          <SyncButton
+        <TableSettings>
+          <TableSyncButton
             isDisabled={
               isCloudFetching || cloudStatus !== CONNECTION_STATUSES.CONNECTED
             }
             isCloudFetching={isCloudFetching}
-            onClick={syncCloud}
+            onClick={handleSyncCloud}
           >
             <Icon material="refresh" />
-          </SyncButton>
+          </TableSyncButton>
           <Select
             options={sourceOptions}
             value={filters.filterBy}
             onChange={handleSelectChange}
           />
-          <Search
+          <TableSearch
             placeholder={strings.clusterPage.pages.events.searchPlaceholder()}
             value={filters.searchText}
             onInput={handleSearchChange}
           />
-        </Settings>
-      </TopItems>
-      <EventsTable
+        </TableSettings>
+      </TableTopItems>
+      <ItemsTable
         tableHeaders={tableHeaders}
-        events={filteredEvents}
+        items={generateItems(filteredEvents)}
         onSortChange={handleSortChange}
         onResetSearch={handleResetSearch}
         sort={filters.sort}
         isFiltered={isFiltered}
         isLoading={isLoading}
         topBarHeight={topBarHeight}
+        noItemsFoundMessage={strings.clusterPage.pages.events.table.noEventsFound()}
+        emptyListMessage={strings.clusterPage.pages.events.table.emptyList()}
       />
-    </PanelWrapper>
+    </TablePanelWrapper>
   );
 };
 

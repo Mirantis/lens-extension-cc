@@ -357,6 +357,7 @@ export const clusterPage: Dict = {
   common: {
     emptyValue: catalog.entities.common.details.emptyValue,
     clusterUrl: () => 'Cluster URL',
+    resetSearch: () => 'Reset search',
   },
   pages: {
     overview: {
@@ -443,7 +444,24 @@ export const clusterPage: Dict = {
         },
         emptyList: () => 'No events available',
         noEventsFound: () => 'No events found',
-        resetSearch: () => 'Reset search',
+      },
+    },
+    history: {
+      title: () => 'History',
+      itemsAmount: (count) => `${count} ${count === 1 ? 'item' : 'items'}`,
+      searchPlaceholder: () => 'Search Upgrade History...',
+      table: {
+        headers: {
+          status: () => 'Status',
+          date: () => 'Date',
+          name: () => 'Name',
+          message: () => 'Message',
+          machine: () => 'Machine',
+          fromRelease: () => 'From Release',
+          toRelease: () => 'To Release',
+        },
+        emptyList: () => 'No upgrade history available',
+        noHistoryFound: () => 'No upgrade history found',
       },
     },
   },

@@ -165,7 +165,13 @@ export const apiEventTypes = Object.freeze({
  */
 export const apiUpdateStatuses = Object.freeze({
   SUCCESS: 'Success',
-  IN_PROGRESS: 'InProgress',
-  NOT_STARTED: 'NotStarted',
-  FAILURE: 'Fail',
+  IN_PROGRESS: 'In progress',
+  NOT_STARTED: 'Not started',
+  FAILED: 'Failed',
+
+  // TODO[cluster-history]: use MCC v2.22 values
+  // SUCCESS: 'Success',
+  // IN_PROGRESS: 'InProgress',
+  // NOT_STARTED: 'NotStarted',
+  // FAILURE: 'Fail',
 });

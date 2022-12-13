@@ -6,6 +6,7 @@ import { ClusterPage } from './components/ClusterPage/ClusterPage';
 import { ClusterOverviewView } from './components/ClusterPage/Overview/ClusterOverviewView';
 import { ClusterDetailsView } from './components/ClusterPage/Details/ClusterDetailsView';
 import { ClusterEventsView } from './components/ClusterPage/Events/ClusterEventsView';
+import { ClusterHistoryView } from './components/ClusterPage/History/ClusterHistoryView';
 import * as strings from '../strings';
 import * as consts from '../constants';
 import {
@@ -86,7 +87,11 @@ export default class ExtensionRenderer extends LensExtension {
           {
             id: ROUTE_CLUSTER_HISTORY,
             components: {
-              Page: () => <p>HISTORY</p>,
+              Page: () => (
+                <ClusterPage>
+                  <ClusterHistoryView />
+                </ClusterPage>
+              ),
             },
           },
         ]
