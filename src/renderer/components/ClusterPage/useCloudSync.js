@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useClouds } from '../../store/CloudProvider';
 import { CLOUD_EVENTS } from '../../../common/Cloud';
 import { IpcRenderer } from '../../IpcRenderer';
@@ -7,7 +7,7 @@ import * as consts from '../../../constants';
 /**
  * Listens for fetching and cloud statuses during synchronization.
  * @param {string} cloudUrl Cloud url which is used for syncing.
- * @returns {{ isCloudFetching: boolean, cloudStatus: string, syncCloud: Function }} fetching and cloud statuses, start sync method.
+ * @returns {{ isCloudFetching: boolean, cloudStatus: string, handleSyncCloud: Function }} fetching and cloud statuses, start sync method.
  */
 export const useCloudSync = (cloudUrl) => {
   const { clouds } = useClouds();
@@ -48,12 +48,13 @@ export const useCloudSync = (cloudUrl) => {
     };
   }, [clouds, cloudUrl]);
 
-  const syncCloud = () => {
-    IpcRenderer.getInstance().invoke(
-      consts.ipcEvents.invoke.SYNC_NOW,
-      cloudUrl
-    );
+  const syncCloud = (url) => {
+    IpcRenderer.getInstance().invoke(consts.ipcEvents.invoke.SYNC_NOW, url);
   };
 
-  return { isCloudFetching, cloudStatus, syncCloud };
+  const handleSyncCloud = useCallback(() => {
+    syncCloud(cloudUrl);
+  }, [cloudUrl]);
+
+  return { isCloudFetching, cloudStatus, handleSyncCloud };
 };

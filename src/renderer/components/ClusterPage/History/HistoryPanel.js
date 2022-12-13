@@ -86,12 +86,12 @@ const tableHeaders = [
 ];
 
 const getStatusColor = (status) => {
-  switch (status.toLowerCase()) {
-    case apiUpdateStatuses.IN_PROGRESS.toLowerCase():
+  switch (status) {
+    case apiUpdateStatuses.IN_PROGRESS:
       return 'var(--colorWarning)';
-    case apiUpdateStatuses.SUCCESS.toLowerCase():
+    case apiUpdateStatuses.SUCCESS:
       return 'var(--colorSuccess)';
-    case apiUpdateStatuses.FAILED.toLowerCase():
+    case apiUpdateStatuses.FAILED:
       return 'var(--colorError)';
     default:
       return 'var(--textColorPrimary)';
@@ -178,7 +178,7 @@ export const HistoryPanel = ({ clusterEntity }) => {
     searchItems: history,
   });
 
-  const { isCloudFetching, cloudStatus, syncCloud } = useCloudSync(
+  const { isCloudFetching, cloudStatus, handleSyncCloud } = useCloudSync(
     clusterEntity.metadata.cloudUrl
   );
 
@@ -275,7 +275,7 @@ export const HistoryPanel = ({ clusterEntity }) => {
               isCloudFetching || cloudStatus !== CONNECTION_STATUSES.CONNECTED
             }
             isCloudFetching={isCloudFetching}
-            onClick={() => syncCloud()}
+            onClick={handleSyncCloud}
           >
             <Icon material="refresh" />
           </TableSyncButton>

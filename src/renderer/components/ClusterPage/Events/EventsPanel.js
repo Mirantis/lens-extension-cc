@@ -142,7 +142,7 @@ export const EventsPanel = ({ clusterEntity }) => {
     searchItems: clusterEntity.spec.events,
   });
 
-  const { isCloudFetching, cloudStatus, syncCloud } = useCloudSync(
+  const { isCloudFetching, cloudStatus, handleSyncCloud } = useCloudSync(
     clusterEntity.metadata.cloudUrl
   );
 
@@ -265,7 +265,7 @@ export const EventsPanel = ({ clusterEntity }) => {
               isCloudFetching || cloudStatus !== CONNECTION_STATUSES.CONNECTED
             }
             isCloudFetching={isCloudFetching}
-            onClick={() => syncCloud()}
+            onClick={handleSyncCloud}
           >
             <Icon material="refresh" />
           </TableSyncButton>
