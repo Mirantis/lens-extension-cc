@@ -48,12 +48,11 @@ export const useCloudSync = (cloudUrl) => {
     };
   }, [clouds, cloudUrl]);
 
-  const syncCloud = (url) => {
-    IpcRenderer.getInstance().invoke(consts.ipcEvents.invoke.SYNC_NOW, url);
-  };
-
   const handleSyncCloud = useCallback(() => {
-    syncCloud(cloudUrl);
+    IpcRenderer.getInstance().invoke(
+      consts.ipcEvents.invoke.SYNC_NOW,
+      cloudUrl
+    );
   }, [cloudUrl]);
 
   return { isCloudFetching, cloudStatus, handleSyncCloud };
