@@ -39,13 +39,13 @@ export const LmaInformation = ({ clusterEntity }) => {
         <DrawerItem
           name={strings.clusterPage.pages.details.lmaInformation.alerta()}
         >
-          {clusterEntity.spec.lma.alertaUrl ? (
+          {clusterEntity.spec.lma?.alertaUrl ? (
             <Link
-              href={clusterEntity.spec.lma.alertaUrl}
+              href={clusterEntity.spec.lma?.alertaUrl}
               target="_blank"
               rel="noreferrer"
             >
-              {clusterEntity.spec.lma.alertaUrl}
+              {clusterEntity.spec.lma?.alertaUrl}
             </Link>
           ) : (
             strings.clusterPage.common.emptyValue()
@@ -54,13 +54,13 @@ export const LmaInformation = ({ clusterEntity }) => {
         <DrawerItem
           name={strings.clusterPage.pages.details.lmaInformation.alertManager()}
         >
-          {clusterEntity.spec.lma.alertManagerUrl ? (
+          {clusterEntity.spec.lma?.alertManagerUrl ? (
             <Link
-              href={clusterEntity.spec.lma.alertManagerUrl}
+              href={clusterEntity.spec.lma?.alertManagerUrl}
               target="_blank"
               rel="noreferrer"
             >
-              {clusterEntity.spec.lma.alertManagerUrl}
+              {clusterEntity.spec.lma?.alertManagerUrl}
             </Link>
           ) : (
             strings.clusterPage.common.emptyValue()
@@ -69,13 +69,13 @@ export const LmaInformation = ({ clusterEntity }) => {
         <DrawerItem
           name={strings.clusterPage.pages.details.lmaInformation.grafana()}
         >
-          {clusterEntity.spec.lma.grafanaUrl ? (
+          {clusterEntity.spec.lma?.grafanaUrl ? (
             <Link
-              href={clusterEntity.spec.lma.grafanaUrl}
+              href={clusterEntity.spec.lma?.grafanaUrl}
               target="_blank"
               rel="noreferrer"
             >
-              {clusterEntity.spec.lma.grafanaUrl}
+              {clusterEntity.spec.lma?.grafanaUrl}
             </Link>
           ) : (
             strings.clusterPage.common.emptyValue()
@@ -84,13 +84,13 @@ export const LmaInformation = ({ clusterEntity }) => {
         <DrawerItem
           name={strings.clusterPage.pages.details.lmaInformation.kibana()}
         >
-          {clusterEntity.spec.lma.kibanaUrl ? (
+          {clusterEntity.spec.lma?.kibanaUrl ? (
             <Link
-              href={clusterEntity.spec.lma.kibanaUrl}
+              href={clusterEntity.spec.lma?.kibanaUrl}
               target="_blank"
               rel="noreferrer"
             >
-              {clusterEntity.spec.lma.kibanaUrl}
+              {clusterEntity.spec.lma?.kibanaUrl}
             </Link>
           ) : (
             strings.clusterPage.common.emptyValue()
@@ -99,13 +99,13 @@ export const LmaInformation = ({ clusterEntity }) => {
         <DrawerItem
           name={strings.clusterPage.pages.details.lmaInformation.prometheus()}
         >
-          {clusterEntity.spec.lma.prometheusUrl ? (
+          {clusterEntity.spec.lma?.prometheusUrl ? (
             <Link
-              href={clusterEntity.spec.lma.prometheusUrl}
+              href={clusterEntity.spec.lma?.prometheusUrl}
               target="_blank"
               rel="noreferrer"
             >
-              {clusterEntity.spec.lma.prometheusUrl}
+              {clusterEntity.spec.lma?.prometheusUrl}
             </Link>
           ) : (
             strings.clusterPage.common.emptyValue()
