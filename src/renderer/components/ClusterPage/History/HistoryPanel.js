@@ -66,10 +66,12 @@ const tableHeaders = [
   {
     id: TABLE_HEADER_IDS.NAME,
     label: strings.clusterPage.pages.history.table.headers.name(),
+    isBiggerCell: true,
   },
   {
     id: TABLE_HEADER_IDS.MESSAGE,
     label: strings.clusterPage.pages.history.table.headers.message(),
+    isBiggerCell: true,
   },
   {
     id: TABLE_HEADER_IDS.MACHINE,
@@ -115,6 +117,7 @@ const generateItems = (history) => {
       },
       {
         text: item.name || unknownValue(),
+        isBiggerCell: true,
       },
       {
         text: item.message || strings.clusterPage.common.emptyValue(),

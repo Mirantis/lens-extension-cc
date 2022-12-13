@@ -71,6 +71,7 @@ const tableHeaders = [
   {
     id: TABLE_HEADER_IDS.MESSAGE,
     label: strings.clusterPage.pages.events.table.headers.message(),
+    isBiggerCell: true,
   },
   {
     id: TABLE_HEADER_IDS.SOURCE,

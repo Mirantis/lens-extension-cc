@@ -44,26 +44,19 @@ const ResetFiltersButton = styled.button(() => ({
 }));
 
 const TableCellWithPadding = styled(TableCell)(
-  ({ cellColor, isBiggerCell }) => ({
+  ({ cellColor, isBiggerCell, isHeader }) => ({
     paddingTop: layout.grid * 2.5,
     paddingBottom: layout.grid * 2.5,
     wordBreak: 'normal',
-    color: cellColor || 'var(--textColorPrimary)',
+    color: isHeader
+      ? 'var(--tableHeaderColor)'
+      : cellColor || 'var(--textColorPrimary)',
 
     '&&&': {
       flexGrow: isBiggerCell ? 3 : 1,
     },
   })
 );
-
-const TableMessageCell = styled.div`
-  display: flex;
-  align-items: center;
-  flex: 3 0;
-  padding: ${layout.grid * 2.5}px ${layout.pad}px;
-  line-height: 1;
-  color: 'var(--tableHeaderColor)';
-`;
 
 const SortButton = styled.button(({ isActive, isAsc }) => ({
   display: 'flex',
@@ -101,32 +94,32 @@ export const ItemsTable = ({
     <FullHeightTable heightForReduce={topBarHeight}>
       <Spinner />
       <TableHead sticky showTopLine>
-        {tableHeaders.map((header, index) => {
-          if (header.id === MESSAGE_CELL_ID) {
-            return (
-              <TableMessageCell key={header.id}>
+        {tableHeaders.map((header, index) => (
+          <TableCellWithPadding
+            key={header.id}
+            isBiggerCell={header.isBiggerCell}
+            isHeader
+          >
+            {header.id === MESSAGE_CELL_ID ? (
+              <>
                 {index === 0 && <FirstCellUiReformer></FirstCellUiReformer>}
                 {header.label}
-              </TableMessageCell>
-            );
-          } else {
-            return (
-              <TableCell key={header.id}>
-                <SortButton
-                  isActive={sort.sortBy === header.id}
-                  isAsc={sort.isAsc}
-                  onClick={() => onSortChange(header.id, !sort.isAsc)}
-                >
-                  {index === 0 && <FirstCellUiReformer></FirstCellUiReformer>}
-                  {header.label}
-                  <span>
-                    <Icon material="arrow_drop_down" />
-                  </span>
-                </SortButton>
-              </TableCell>
-            );
-          }
-        })}
+              </>
+            ) : (
+              <SortButton
+                isActive={sort.sortBy === header.id}
+                isAsc={sort.isAsc}
+                onClick={() => onSortChange(header.id, !sort.isAsc)}
+              >
+                {index === 0 && <FirstCellUiReformer></FirstCellUiReformer>}
+                {header.label}
+                <span>
+                  <Icon material="arrow_drop_down" />
+                </span>
+              </SortButton>
+            )}
+          </TableCellWithPadding>
+        ))}
       </TableHead>
       {isLoading ? (
         <TableRow style={tableRowStyles}>
