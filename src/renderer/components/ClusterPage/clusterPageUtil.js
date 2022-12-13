@@ -8,7 +8,6 @@ import { ByoIcon } from './icons/ByoIcon';
 import { EquinixIcon } from './icons/EquinixIcon';
 import { OpenstackIcon } from './icons/OpenstackIcon';
 import { VsphereIcon } from './icons/VsphereIcon';
-import { IpcRenderer } from '../../IpcRenderer';
 
 const {
   catalog: {
@@ -88,12 +87,4 @@ export const getProvider = (provider) => {
     default:
       return unknownValue();
   }
-};
-
-/**
- * Starts cloud sync.
- * @param {string} cloudUrl Cloud url to sync.
- */
-export const handleCloudSync = (cloudUrl) => {
-  IpcRenderer.getInstance().invoke(consts.ipcEvents.invoke.SYNC_NOW, cloudUrl);
 };

@@ -22,8 +22,8 @@ const getTableRowStyles = (topBarHeight) => {
 // INTERNAL STYLED COMPONENTS
 //
 
-const FullHeightTable = styled(Table)((props) => ({
-  height: `calc(100% - ${props.heightForReduce}px)`,
+const FullHeightTable = styled(Table)(({ heightForReduce }) => ({
+  height: `calc(100% - ${heightForReduce}px)`,
 }));
 
 const FirstCellUiReformer = styled.div(() => ({
@@ -43,15 +43,18 @@ const ResetFiltersButton = styled.button(() => ({
   borderBottom: '1px dotted',
 }));
 
-const TableCellWithPadding = styled(TableCell)((props) => ({
-  paddingTop: layout.grid * 2.5,
-  paddingBottom: layout.grid * 2.5,
-  wordBreak: 'normal',
+const TableCellWithPadding = styled(TableCell)(
+  ({ cellColor, isBiggerCell }) => ({
+    paddingTop: layout.grid * 2.5,
+    paddingBottom: layout.grid * 2.5,
+    wordBreak: 'normal',
+    color: cellColor || 'var(--textColorPrimary)',
 
-  '&&&': {
-    flexGrow: props.isBiggerCell ? 3 : 1,
-  },
-}));
+    '&&&': {
+      flexGrow: isBiggerCell ? 3 : 1,
+    },
+  })
+);
 
 const TableMessageCell = styled.div`
   display: flex;
@@ -62,17 +65,16 @@ const TableMessageCell = styled.div`
   color: 'var(--tableHeaderColor)';
 `;
 
-const SortButton = styled.button`
-  display: flex;
-  align-items: center;
-  text-align: left;
+const SortButton = styled.button(({ isActive, isAsc }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  textAlign: 'left',
 
-  i {
-    opacity: ${({ isActive }) => (isActive ? '1' : '0.5')};
-    transform: ${({ isAsc, isActive }) =>
-      isAsc && isActive ? 'rotate(180deg)' : 'rotate(0deg)'};
-  }
-`;
+  i: {
+    opacity: isActive ? '1' : '0.5',
+    transform: isAsc && isActive ? 'rotate(180deg)' : 'rotate(0deg)',
+  },
+}));
 
 //
 // MAIN COMPONENT
@@ -137,9 +139,7 @@ export const ItemsTable = ({
               <TableCellWithPadding
                 key={itemIndex}
                 isBiggerCell={singleItem.isBiggerCell}
-                style={{
-                  color: singleItem.color || 'var(--textColorPrimary)',
-                }}
+                cellColor={singleItem.color}
               >
                 {itemIndex === 0 && <FirstCellUiReformer></FirstCellUiReformer>}
                 {singleItem.text}
@@ -172,7 +172,15 @@ ItemsTable.propTypes = {
       label: propTypes.string,
     })
   ).isRequired,
-  items: propTypes.arrayOf(propTypes.array),
+  items: propTypes.arrayOf(
+    propTypes.arrayOf(
+      propTypes.shape({
+        text: propTypes.string,
+        color: propTypes.string,
+        isBiggerCell: propTypes.bool,
+      })
+    )
+  ).isRequired,
   onSortChange: propTypes.func.isRequired,
   onResetSearch: propTypes.func.isRequired,
   sort: propTypes.shape({

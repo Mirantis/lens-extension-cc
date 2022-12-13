@@ -14,7 +14,6 @@ import { formatDate } from '../../../rendererUtil';
 import { apiKinds } from '../../../../api/apiConstants';
 import { useTableSearch } from '../useTableSearch';
 import { useCloudSync } from '../useCloudSync';
-import { handleCloudSync } from '../clusterPageUtil';
 import { ItemsTable } from '../ItemsTable';
 import {
   TablePanelWrapper,
@@ -90,7 +89,7 @@ const tableHeaders = [
 /**
  * Creates array with arrays of events values objects for future render.
  * @param {Array} events array with events update objects.
- * @returns {{ Array }} array with arrays of objects.
+ * @returns {Array<Array<{ text: string, color?: string, isBiggerCell?: boolean }>>} array with arrays of objects.
  */
 const generateItems = (events) => {
   return events.map((event) => {
@@ -119,7 +118,7 @@ const generateItems = (events) => {
             : strings.clusterPage.common.emptyValue(),
       },
       {
-        text: event.spec.count || unknownValue(),
+        text: `${event.spec.count}` || unknownValue(),
       },
     ];
   });
@@ -143,7 +142,7 @@ export const EventsPanel = ({ clusterEntity }) => {
     searchItems: clusterEntity.spec.events,
   });
 
-  const { isCloudFetching, cloudStatus } = useCloudSync(
+  const { isCloudFetching, cloudStatus, syncCloud } = useCloudSync(
     clusterEntity.metadata.cloudUrl
   );
 
@@ -221,11 +220,6 @@ export const EventsPanel = ({ clusterEntity }) => {
     [clusterEntity.spec.events]
   );
 
-  const syncCloud = useCallback(
-    () => handleCloudSync(clusterEntity.metadata.cloudUrl),
-    [clusterEntity.metadata.cloudUrl]
-  );
-
   const handleSelectChange = useCallback(
     (newSelection) => {
       const newValue = newSelection?.value || null;
@@ -271,7 +265,7 @@ export const EventsPanel = ({ clusterEntity }) => {
               isCloudFetching || cloudStatus !== CONNECTION_STATUSES.CONNECTED
             }
             isCloudFetching={isCloudFetching}
-            onClick={syncCloud}
+            onClick={() => syncCloud()}
           >
             <Icon material="refresh" />
           </TableSyncButton>

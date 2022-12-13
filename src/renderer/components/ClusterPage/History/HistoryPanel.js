@@ -11,10 +11,9 @@ import { Renderer } from '@k8slens/extensions';
 import * as strings from '../../../../strings';
 import { CONNECTION_STATUSES } from '../../../../common/Cloud';
 import { formatDate } from '../../../rendererUtil';
-import { apiKinds } from '../../../../api/apiConstants';
+import { apiKinds, apiUpdateStatuses } from '../../../../api/apiConstants';
 import { useCloudSync } from '../useCloudSync';
 import { useTableSearch } from '../useTableSearch';
-import { handleCloudSync } from '../clusterPageUtil';
 import { ItemsTable } from '../ItemsTable';
 import {
   TablePanelWrapper,
@@ -32,12 +31,6 @@ const TABLE_HEADER_IDS = {
   MACHINE: 'machine',
   FROM_RELEASE: 'from-release',
   TO_RELEASE: 'to-release',
-};
-
-const HISTORY_STATUSES = {
-  IN_PROGRESS: 'in progress',
-  SUCCESS: 'success',
-  FAILED: 'failed',
 };
 
 const {
@@ -94,11 +87,11 @@ const tableHeaders = [
 
 const getStatusColor = (status) => {
   switch (status.toLowerCase()) {
-    case HISTORY_STATUSES.IN_PROGRESS:
+    case apiUpdateStatuses.IN_PROGRESS.toLowerCase():
       return 'var(--colorWarning)';
-    case HISTORY_STATUSES.SUCCESS:
+    case apiUpdateStatuses.SUCCESS.toLowerCase():
       return 'var(--colorSuccess)';
-    case HISTORY_STATUSES.FAILED:
+    case apiUpdateStatuses.FAILED.toLowerCase():
       return 'var(--colorError)';
     default:
       return 'var(--textColorPrimary)';
@@ -108,7 +101,7 @@ const getStatusColor = (status) => {
 /**
  * Creates array with arrays of history values objects for future render.
  * @param {Array} history array with history update objects.
- * @returns {{ Array }} array with arrays of objects.
+ * @returns {Array<Array<{ text: string, color?: string, isBiggerCell?: boolean }>>} array with arrays of objects.
  */
 const generateItems = (history) => {
   return history.map((item) => {
@@ -145,26 +138,22 @@ const generateItems = (history) => {
 
 /**
  * Creates array of objects with needed items from nested objects.
- * @param {Array} history array with history update objects.
- * @returns {{ arr: Array }} array with single-depth history objects.
+ * @param {Array<ResourceUpdate>} updates List of resource updates.
+ * @returns {Array<{ status: string, timeAt: string, name: string, message: string, targetKind: string, targetName: string, fromRelease: string|null, release: string }>} List of history objects.
  */
-const getNestedValues = (history) => {
-  const arr = [];
-  history.map((item) => {
-    item.spec.stages.map((stage) => {
-      arr.push({
-        status: stage.status,
-        timeAt: stage.timeAt,
-        name: stage.name,
-        message: stage.message,
-        targetKind: item.spec.targetKind,
-        targetName: item.spec.targetName,
-        fromRelease: item.spec.fromRelease,
-        release: item.spec.release,
-      });
-    });
-  });
-  return arr;
+const getHistory = (updates) => {
+  return updates.flatMap((update) =>
+    update.spec.stages.map((stage) => ({
+      status: stage.status,
+      timeAt: stage.timeAt,
+      name: stage.name,
+      message: stage.message,
+      targetKind: update.spec.targetKind,
+      targetName: update.spec.targetName,
+      fromRelease: update.spec.fromRelease,
+      release: update.spec.release,
+    }))
+  );
 };
 
 //
@@ -174,7 +163,7 @@ const getNestedValues = (history) => {
 export const HistoryPanel = ({ clusterEntity }) => {
   const targetRef = useRef();
   const history = useMemo(
-    () => getNestedValues(clusterEntity.spec.updates),
+    () => getHistory(clusterEntity.spec.updates),
     [clusterEntity.spec.updates]
   );
 
@@ -189,7 +178,7 @@ export const HistoryPanel = ({ clusterEntity }) => {
     searchItems: history,
   });
 
-  const { isCloudFetching, cloudStatus } = useCloudSync(
+  const { isCloudFetching, cloudStatus, syncCloud } = useCloudSync(
     clusterEntity.metadata.cloudUrl
   );
 
@@ -247,11 +236,6 @@ export const HistoryPanel = ({ clusterEntity }) => {
     }
   }, [filters, searchResults]);
 
-  const syncCloud = useCallback(
-    () => handleCloudSync(clusterEntity.metadata.cloudUrl),
-    [clusterEntity.metadata.cloudUrl]
-  );
-
   const handleSearchChange = useCallback(
     (e) => {
       setFilters({ ...filters, searchText: e.target.value });
@@ -291,7 +275,7 @@ export const HistoryPanel = ({ clusterEntity }) => {
               isCloudFetching || cloudStatus !== CONNECTION_STATUSES.CONNECTED
             }
             isCloudFetching={isCloudFetching}
-            onClick={syncCloud}
+            onClick={() => syncCloud()}
           >
             <Icon material="refresh" />
           </TableSyncButton>

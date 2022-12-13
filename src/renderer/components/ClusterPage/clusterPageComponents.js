@@ -64,13 +64,14 @@ export const TableSettings = styled.div(() => ({
   alignItems: 'center',
 }));
 
-export const TableSyncButton = styled.button`
-  margin-right: ${layout.pad * 2}px;
-  pointer-events: ${({ isDisabled }) => (isDisabled ? 'none' : 'auto')};
-  opacity: ${({ isDisabled }) => (isDisabled ? '0.5' : '1')};
-  animation: ${({ isCloudFetching }) =>
-    isCloudFetching ? `${rotate} 2s linear infinite` : 'none'};
-`;
+export const TableSyncButton = styled.button(
+  ({ isDisabled, isCloudFetching }) => ({
+    marginRight: layout.pad * 2,
+    pointerEvents: isDisabled ? 'none' : 'auto',
+    opacity: isDisabled ? '0.5' : '1',
+    animation: isCloudFetching ? `${rotate} 2s linear infinite` : 'none',
+  })
+);
 
 export const TableSearch = styled(SearchInput)(() => ({
   marginLeft: layout.pad * 1.25,
