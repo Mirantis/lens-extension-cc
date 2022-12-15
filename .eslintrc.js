@@ -80,6 +80,7 @@ const globals = {
   DEV_UNSAFE_NO_CERT: 'readonly',
   FEAT_CLUSTER_PAGE_ENABLED: 'readonly',
   FEAT_CLUSTER_PAGE_HISTORY_ENABLED: 'readonly',
+  FEAT_CLUSTER_PAGE_HEALTH_ENABLED: 'readonly',
   fetchMock: 'readonly', // from 'jest-fetch-mock' package
 };
 

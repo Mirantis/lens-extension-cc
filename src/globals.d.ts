@@ -10,3 +10,4 @@ declare const DEV_ENV: boolean;
 declare const DEV_UNSAFE_NO_CERT: boolean;
 declare const FEAT_CLUSTER_PAGE_ENABLED: boolean;
 declare const FEAT_CLUSTER_PAGE_HISTORY_ENABLED: boolean;
+declare const FEAT_CLUSTER_PAGE_HEALTH_ENABLED: boolean;
