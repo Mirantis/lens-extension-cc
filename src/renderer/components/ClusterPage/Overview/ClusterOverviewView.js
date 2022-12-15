@@ -6,6 +6,7 @@ import propTypes from 'prop-types';
 import * as strings from '../../../../strings';
 import { ConditionsPanel } from './ConditionsPanel';
 import { SummaryPanel } from './SummaryPanel';
+import { HealthPanel } from './HealthPanel';
 import { PanelTitle } from '../PanelTitle';
 import { DrawerTitleWrapper, PageContainer } from '../clusterPageComponents';
 
@@ -21,6 +22,10 @@ export const ClusterOverviewView = function ({ clusterEntity }) {
   return (
     <PageContainer>
       <SummaryPanel clusterEntity={clusterEntity} />
+
+      {FEAT_CLUSTER_PAGE_HEALTH_ENABLED ? (
+        <HealthPanel clusterEntity={clusterEntity} />
+      ) : null}
 
       <DrawerTitleWrapper>
         <PanelTitle
