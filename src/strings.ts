@@ -382,6 +382,60 @@ export const clusterPage: Dict = {
           proxies: (count) => (count === 1 ? 'Proxy' : 'Proxies'),
         },
       },
+      health: {
+        title: () => 'Health',
+        metrics: {
+          cpu: {
+            title: () => 'CPU',
+            used: () => 'Used',
+            system: () => 'System',
+            io: () => 'I/O',
+            idle: () => 'Idle',
+            tooltipInfoHtml: () => `
+              <p>Metrics are retrieved from the kubernetes cluster and may differ from OS level metrics.</p>
+              <p>Used: 1-minute average time spent performing.</p>
+              <p>System: 1-minute average time spent in the kernel.</p>
+              <p>I/O: 1-minute average time spent waiting for I/O.</p>
+              <p>Idle: 1-minute average idle time not performing tasks.</p>
+            `,
+          },
+          memory: {
+            title: () => 'Memory',
+            available: () => 'Available',
+            capacity: () => 'Capacity',
+            allocated: () => 'Allocated',
+            tooltipInfoHtml: () => `
+              <p>Metrics are retrieved from the kubernetes cluster and may differ from OS level metrics.</p>
+              <p>Available: Total availability for starting new applications, without the need for swapping.</p>
+              <p>Capacity: Total memory including available and allocated.</p>
+              <p>Allocated: Total memory currently in use by both the OS and running applications.</p>
+            `,
+          },
+          storage: {
+            title: () => 'Storage',
+            used: () => 'Used',
+            capacity: () => 'Capacity',
+            available: () => 'Available',
+            tooltipInfoHtml: () => `
+              <p>Metrics are received from the kubernetes cluster and may differ from OS level metrics.</p>
+              <p>Capacity: Total disk space across.</p>
+              <p>Available: Total free disk space.</p>
+              <p>Used: Total consumed disk space.</p>
+            `,
+          },
+          sizes: {
+            bytes: () => 'Bytes',
+            kb: () => 'KB',
+            mb: () => 'MB',
+            gb: () => 'GB',
+            tb: () => 'TB',
+            pb: () => 'PB',
+            eb: () => 'EB',
+            zb: () => 'ZB',
+            yb: () => 'YB',
+          },
+        },
+      },
       clusterConditions: {
         title: () => 'Cluster Conditions',
         noStatus: () => 'No status information available',

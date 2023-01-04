@@ -21,19 +21,25 @@ export const ClusterOverviewView = function ({ clusterEntity }) {
 
   return (
     <PageContainer>
-      <SummaryPanel clusterEntity={clusterEntity} />
+      <div>
+        <div>
+          <SummaryPanel clusterEntity={clusterEntity} />
+        </div>
+        <div>
+          {FEAT_CLUSTER_PAGE_HEALTH_ENABLED ? (
+            <HealthPanel clusterEntity={clusterEntity} />
+          ) : null}
+        </div>
+        <div>
+          <DrawerTitleWrapper>
+            <PanelTitle
+              title={strings.clusterPage.pages.overview.clusterConditions.title()}
+            />
+          </DrawerTitleWrapper>
 
-      {FEAT_CLUSTER_PAGE_HEALTH_ENABLED ? (
-        <HealthPanel clusterEntity={clusterEntity} />
-      ) : null}
-
-      <DrawerTitleWrapper>
-        <PanelTitle
-          title={strings.clusterPage.pages.overview.clusterConditions.title()}
-        />
-      </DrawerTitleWrapper>
-
-      <ConditionsPanel clusterEntity={clusterEntity} />
+          <ConditionsPanel clusterEntity={clusterEntity} />
+        </div>
+      </div>
     </PageContainer>
   );
 };
