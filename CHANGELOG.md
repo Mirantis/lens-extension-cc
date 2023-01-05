@@ -1,6 +1,6 @@
 # ChangeLog
 
-## UNRELEASED
+## v5.3.0
 
 - __New MCC cluster pages__: When opening an MCC cluster synced via this extension, a series of new [cluster pages](./README.md#cluster-pages) are available in the Lens sidenav providing MCC-specific details about the cluster.
 - Fixed styling of "Selective sync" button in light theme by giving it a consistent new secondary button style.
