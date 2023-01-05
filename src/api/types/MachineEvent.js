@@ -12,7 +12,6 @@ export const machineEventTs = mergeRtvShapes({}, resourceEventTs, {
 
   involvedObject: {
     kind: [rtv.STRING, { oneOf: apiKinds.MACHINE }],
-    uid: rtv.STRING, // machine event objects always have a UID
   },
 });
 

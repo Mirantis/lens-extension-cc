@@ -13,6 +13,12 @@ export const PageContainer = styled.div(() => ({
   display: 'flex',
   flexDirection: 'column',
   height: '100%',
+  overflow: 'auto',
+
+  // this means the entire Lens window is ~1000px and is necessary to force scrolling
+  //  when it's smaller because the various cluster pages we have don't render well
+  //  under 690px
+  minWidth: 690,
 }));
 
 export const DrawerTitleWrapper = styled.div(() => ({

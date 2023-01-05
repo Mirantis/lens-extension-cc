@@ -557,18 +557,10 @@ export class DataCloud extends EventDispatcher {
 
     let errorsOccurred = false;
     if (!this.preview) {
-      // only fetch these if cluster page is enabled
-      let resEventResults = {
-        resourceEvents: {},
-        tokensRefreshed: false,
-        errorsOccurred: false,
-      };
-      if (FEAT_CLUSTER_PAGE_ENABLED) {
-        resEventResults = await fetchResourceEvents(
-          this.cloud,
-          fetchedNamespaces
-        );
-      }
+      const resEventResults = await fetchResourceEvents(
+        this.cloud,
+        fetchedNamespaces
+      );
 
       // NOTE: for now, we only get updates if Webpack enabled the special flag
       //  since they require MCC v2.22 which adds the expected `status` field
@@ -578,7 +570,7 @@ export class DataCloud extends EventDispatcher {
         tokensRefreshed: false,
         errorsOccurred: false,
       };
-      if (FEAT_CLUSTER_PAGE_ENABLED && FEAT_CLUSTER_PAGE_HISTORY_ENABLED) {
+      if (FEAT_CLUSTER_PAGE_HISTORY_ENABLED) {
         resUpdateResults = await fetchResourceUpdates(
           this.cloud,
           fetchedNamespaces

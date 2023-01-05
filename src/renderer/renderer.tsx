@@ -42,7 +42,6 @@ const {
 const logger: any = loggerUtil; // get around TS compiler's complaining
 const CLUSTER_PAGE_ID = 'mcc-cluster-page';
 
-declare const FEAT_CLUSTER_PAGE_ENABLED: any;
 declare const FEAT_CLUSTER_PAGE_HISTORY_ENABLED: any;
 
 export default class ExtensionRenderer extends LensExtension {
@@ -338,61 +337,59 @@ export default class ExtensionRenderer extends LensExtension {
     //  (which should now be deprecated, I think). See
     //  https://github.com/lensapp/lens/issues/4591#issuecomment-1275204032
     //
-    if (FEAT_CLUSTER_PAGE_ENABLED) {
-      this.clusterPageMenus = [
-        {
-          id: CLUSTER_PAGE_ID,
-          title: strings.clusterPage.menuItems.group(),
-          components: {
-            Icon: () => (
-              <ClusterPageIcon
-                size={20}
-                style={{
-                  alignSelf: 'center',
-                  marginLeft: 1,
-                }}
-              />
-            ),
-          },
+    this.clusterPageMenus = [
+      {
+        id: CLUSTER_PAGE_ID,
+        title: strings.clusterPage.menuItems.group(),
+        components: {
+          Icon: () => (
+            <ClusterPageIcon
+              size={20}
+              style={{
+                alignSelf: 'center',
+                marginLeft: 1,
+              }}
+            />
+          ),
         },
-        {
-          parentId: CLUSTER_PAGE_ID,
-          target: { pageId: ROUTE_CLUSTER_OVERVIEW },
-          title: strings.clusterPage.menuItems.overview(),
-          components: {
-            Icon: null,
-          },
+      },
+      {
+        parentId: CLUSTER_PAGE_ID,
+        target: { pageId: ROUTE_CLUSTER_OVERVIEW },
+        title: strings.clusterPage.menuItems.overview(),
+        components: {
+          Icon: null,
         },
-        {
-          parentId: CLUSTER_PAGE_ID,
-          target: { pageId: ROUTE_CLUSTER_EVENTS },
-          title: strings.clusterPage.menuItems.events(),
-          components: {
-            Icon: null,
-          },
+      },
+      {
+        parentId: CLUSTER_PAGE_ID,
+        target: { pageId: ROUTE_CLUSTER_EVENTS },
+        title: strings.clusterPage.menuItems.events(),
+        components: {
+          Icon: null,
         },
-        ...(FEAT_CLUSTER_PAGE_HISTORY_ENABLED
-          ? [
-              {
-                parentId: CLUSTER_PAGE_ID,
-                target: { pageId: ROUTE_CLUSTER_HISTORY },
-                title: strings.clusterPage.menuItems.history(),
-                components: {
-                  Icon: null,
-                },
+      },
+      ...(FEAT_CLUSTER_PAGE_HISTORY_ENABLED
+        ? [
+            {
+              parentId: CLUSTER_PAGE_ID,
+              target: { pageId: ROUTE_CLUSTER_HISTORY },
+              title: strings.clusterPage.menuItems.history(),
+              components: {
+                Icon: null,
               },
-            ]
-          : []),
-        {
-          parentId: CLUSTER_PAGE_ID,
-          target: { pageId: ROUTE_CLUSTER_DETAILS },
-          title: strings.clusterPage.menuItems.details(),
-          components: {
-            Icon: null,
-          },
+            },
+          ]
+        : []),
+      {
+        parentId: CLUSTER_PAGE_ID,
+        target: { pageId: ROUTE_CLUSTER_DETAILS },
+        title: strings.clusterPage.menuItems.details(),
+        components: {
+          Icon: null,
         },
-      ];
-    }
+      },
+    ];
   }
 
   onDeactivate() {

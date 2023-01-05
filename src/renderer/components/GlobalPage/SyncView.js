@@ -60,6 +60,16 @@ const ButtonWrapper = styled.div`
   text-align: right;
 `;
 
+// NOTE: Lens Button component has `accent`, `light`, `plain`, and `outlined` styles,
+//  but none of them give us a button that is actually _outlined_ with a border,
+//  no fill, and label color that matches the border, so this is it
+// NOTE: Lens Button component must use `primary=true` as the basis for our secondary styles
+const SecondaryButton = styled(Button)(() => ({
+  background: 'transparent !important', // important: to beat the component's priority of .Button.primary
+  border: '1px solid var(--buttonPrimaryBackground)',
+  color: 'var(--buttonPrimaryBackground)',
+}));
+
 const mkGetCloudMenuItems = (cloudActions) => (cloud) =>
   [
     {
@@ -284,12 +294,9 @@ export const SyncView = () => {
                 />
               </>
             ) : (
-              <Button
-                variant="outlined"
-                // NOTE: Lens has a bug in its Button component where its font
-                //  color isn't themed, so in Light mode, the Button's label
-                //  remains white, which is barely readable
-                style={{ color: 'var(--textColorAccent)' }}
+              <SecondaryButton
+                // NOTE: secondary appearance is based on primary: Lens doesn't have a secondary style
+                primary
                 label={syncView.syncButtonLabel()}
                 onClick={openSelectiveSyncView}
               />

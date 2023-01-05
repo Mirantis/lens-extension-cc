@@ -501,11 +501,11 @@ export class Cluster extends Node {
       }
     }
 
-    const allUids = [this.uid];
+    const allNames = [this.uid];
 
     this.namespace.machines.forEach((m) => {
       if (m.clusterName === this.name) {
-        allUids.push(m.uid);
+        allNames.push(m.name);
         if (m.isController) {
           _controllers.push(m);
         } else {
@@ -535,18 +535,23 @@ export class Cluster extends Node {
     // NOTE: must be done AFTER finding machines so we can also find the machine events
     //  for this cluster (if any)
     _events = this.namespace.events.filter((event) =>
-      // NOTE: since UIDs are universal, we can be confident that if we have a match,
-      //  the related object will also be a ClusterEvent or MachineEvent instance
-      allUids.includes(event.targetUid)
+      // NOTE: since namespace+name is universal, we can be confident that if we have a match
+      //  (by the fact we're iterating only events in the same namespace as this cluster and
+      //  matching the event's target name to the name of a cluster in said namespace), the
+      //  related object will also be a ClusterEvent or MachineEvent instance
+      // NOTE: for events, `event.targetUid` is NOT guaranteed to be available, but `targetName` is
+      allNames.includes(event.targetName)
     );
 
     // NOTE: must be done AFTER finding machines so we can also find the machine updates
     //  for this cluster (if any)
     _updates = this.namespace.updates.filter((update) =>
-      // NOTE: since UIDs are universal, we can be confident that if we have a match,
-      //  the related object will also be a ClusterDeployment, ClusterUpgrade, MachineDeployment,
+      // NOTE: since namespace+name is universal, we can be confident that if we have a match
+      //  (by the fact we're iterating only updates in the same namespace as this cluster and
+      //  matching the update's target name to the name of a cluster in said namespace), the
+      //  related object will also be a ClusterDeployment, ClusterUpgrade, MachineDeployment,
       //  or MachineUpgrade instance
-      allUids.includes(update.targetUid)
+      allNames.includes(update.targetName)
     );
   }
 

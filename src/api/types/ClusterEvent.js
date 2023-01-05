@@ -12,7 +12,6 @@ export const clusterEventTs = mergeRtvShapes({}, resourceEventTs, {
 
   involvedObject: {
     kind: [rtv.STRING, { oneOf: apiKinds.CLUSTER }],
-    uid: rtv.STRING, // cluster event objects always have a UID
   },
 });
 

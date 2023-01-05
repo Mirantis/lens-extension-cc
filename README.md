@@ -134,6 +134,28 @@ When you're ready to introspect a synced cluster, just click on it in the Catalo
 
 ![Cluster metrics](./docs/v4-08-cluster-view.png)
 
+### Cluster pages
+
+__New in v5.3.0__
+
+When you're in the Lens cluster view, you can now find Mirantis Container Cloud-specific information in the __Container Cloud__ pages accessible at the bottom of the sidenav (highlighted in red below).
+
+![Cluster pages - Overview](./docs/v530-01-cluster-pages-overview.png)
+
+The overview page also provides information about all the cluster's conditions.
+
+![Cluster pages - Conditions](./docs/v530-02-cluster-pages-conditions.png)
+
+Cluster- and machine-related events are available in the second tab.
+
+> 💡 The event list is updated every ~5 minutes. Click on the __Refresh__ button in the toolbar (highlighted in red below) to refresh the event list right away.
+
+![Cluster pages - Events](./docs/v530-03-cluster-pages-events.png)
+
+Finally, the details page provides all the information normally available from the Catalog's "View details" slide-in panel so that it isn't necessary to go back to the Catalog to get that data.
+
+![Cluster pages - Details](./docs/v530-04-cluster-pages-details.png)
+
 ### Reconnecting a management cluster
 
 If the management cluster becomes "Disconnected", it's simply because the user session used for connection and API access has expired and it needs to be reconnected. In this case, use the management cluster's context menu and choose the __Reconnect__ option:
