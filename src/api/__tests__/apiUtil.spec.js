@@ -78,7 +78,8 @@ describe('/api/apiUtil', () => {
       refreshToken: REFRESH_TOKENS.VALID,
     });
 
-    mockConsole(['log', 'info', 'warn']); // automatically restored after each test
+    // NOTE: exceptionally, we expect to log errors during these tests
+    mockConsole(['log', 'info', 'warn', 'error']); // automatically restored after each test
   });
 
   describe('extractJwtPayload()', () => {
@@ -104,14 +105,13 @@ describe('/api/apiUtil', () => {
     });
 
     describe('errors', () => {
-      const logSpy = jest.spyOn(console, 'error');
-
       it('triggers an error', async () => {
         isTokensRefreshed = await apiUtil.cloudRefresh(
           fakeCloudWithInvalidRefreshToken
         );
         expect(isTokensRefreshed).toBe(false);
-        expect(logSpy.mock.calls[0][0]).toMatch(
+        // eslint-disable-next-line no-console
+        expect(console.error.mock.calls[0][0]).toMatch(
           /(Unable to refresh expired token)/i
         );
       });
