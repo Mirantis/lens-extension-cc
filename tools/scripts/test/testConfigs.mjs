@@ -182,7 +182,7 @@ export const baseConfig = function ({
         //  is ignored by Jest by default) that are shipped as ES6-only and need
         //  to be transpiled via 'babel-jest' configured in the 'transform' option
         // @see https://github.com/facebook/jest/issues/9292#issuecomment-569673251
-        'node_modules/(?!(monaco-editor|react-monaco-editor|query-string|filter-obj)/)',
+        'node_modules/(?!(monaco-editor|react-monaco-editor|query-string|filter-obj|decode-uri-component|split-on-first)/)',
       ],
       testMatch: testMatchGlobs,
 
