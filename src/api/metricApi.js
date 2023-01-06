@@ -209,9 +209,9 @@ export const getCpuMetrics = async function (cloud, promUrl, params) {
 
   try {
     const stats = {
-      idlePct: idleRes.body.data.result[0].value[1],
-      ioPct: ioRes.body.data.result[0].value[1],
-      systemPct: systemRes.body.data.result[0].value[1],
+      idlePct: Number(idleRes.body.data.result[0].value[1]),
+      ioPct: Number(ioRes.body.data.result[0].value[1]),
+      systemPct: Number(systemRes.body.data.result[0].value[1]),
     };
 
     return {
@@ -270,8 +270,8 @@ export const getMemoryMetrics = async function (cloud, promUrl, params) {
 
   try {
     const stats = {
-      availableByte: availableRes.body.data.result[0].value[1],
-      capacityByte: capacityRes.body.data.result[0].value[1],
+      availableByte: Number(availableRes.body.data.result[0].value[1]),
+      capacityByte: Number(capacityRes.body.data.result[0].value[1]),
     };
 
     return {
@@ -330,8 +330,8 @@ export const getDiskMetrics = async function (cloud, promUrl, params) {
 
   try {
     const stats = {
-      availableByte: availableRes.body.data.result[0].value[1],
-      capacityByte: capacityRes.body.data.result[0].value[1],
+      availableByte: Number(availableRes.body.data.result[0].value[1]),
+      capacityByte: Number(capacityRes.body.data.result[0].value[1]),
     };
 
     return {
