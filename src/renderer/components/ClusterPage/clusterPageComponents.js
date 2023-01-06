@@ -82,3 +82,11 @@ export const TableSyncButton = styled.button(
 export const TableSearch = styled(SearchInput)(() => ({
   marginLeft: layout.pad * 1.25,
 }));
+
+export const PanelsWrapper = styled.div(() => ({
+  overflow: 'auto',
+
+  '& > div:not(:last-of-type)': {
+    paddingBottom: layout.pad * 2.5,
+  },
+}));

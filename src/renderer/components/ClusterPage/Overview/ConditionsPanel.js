@@ -2,6 +2,8 @@ import propTypes from 'prop-types';
 import styled from '@emotion/styled';
 import { layout } from '../../styles';
 import * as strings from '../../../../strings';
+import { PanelTitle } from '../PanelTitle';
+import { DrawerTitleWrapper } from '../clusterPageComponents';
 
 //
 // INTERNAL STYLED COMPONENTS
@@ -75,30 +77,39 @@ export const ConditionsPanel = ({ clusterEntity }) => {
   const conditions = clusterEntity.spec.conditions || [];
 
   return (
-    <Container>
-      {conditions.length > 0 ? (
-        <ConditionsList>
-          {conditions
-            .concat()
-            .sort(sortByAsc)
-            .map((condition) => (
-              <li key={condition.type}>
-                <div>
-                  <StatusCircle isErrorState={!condition.ready}></StatusCircle>
-                  <p>
-                    <b>{condition.type}</b>
-                  </p>
-                  <TruncatedText>{condition.message}</TruncatedText>
-                </div>
-              </li>
-            ))}
-        </ConditionsList>
-      ) : (
-        <NoStatusMessage>
-          {strings.clusterPage.pages.overview.clusterConditions.noStatus()}
-        </NoStatusMessage>
-      )}
-    </Container>
+    <>
+      <DrawerTitleWrapper>
+        <PanelTitle
+          title={strings.clusterPage.pages.overview.clusterConditions.title()}
+        />
+      </DrawerTitleWrapper>
+      <Container>
+        {conditions.length > 0 ? (
+          <ConditionsList>
+            {conditions
+              .concat()
+              .sort(sortByAsc)
+              .map((condition) => (
+                <li key={condition.type}>
+                  <div>
+                    <StatusCircle
+                      isErrorState={!condition.ready}
+                    ></StatusCircle>
+                    <p>
+                      <b>{condition.type}</b>
+                    </p>
+                    <TruncatedText>{condition.message}</TruncatedText>
+                  </div>
+                </li>
+              ))}
+          </ConditionsList>
+        ) : (
+          <NoStatusMessage>
+            {strings.clusterPage.pages.overview.clusterConditions.noStatus()}
+          </NoStatusMessage>
+        )}
+      </Container>
+    </>
   );
 };
 

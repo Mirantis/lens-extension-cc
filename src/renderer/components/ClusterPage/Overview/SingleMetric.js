@@ -3,6 +3,7 @@ import styled from '@emotion/styled';
 import { MetricChart } from './MetricChart';
 import { layout } from '../../styles';
 import { Loader } from '../../Loader';
+import * as strings from '../../../../strings';
 
 //
 // INTERNAL STYLED COMPONENTS
@@ -53,18 +54,18 @@ export const SingleMetric = ({ chartColor, chartFillPercentage, info }) => {
             chartFillPercentage={chartFillPercentage}
           />
           <PercentageValue color={chartColor}>
-            {chartFillPercentage}%
+            {strings.clusterPage.pages.overview.health.metrics.chart.chartFillPercentage(
+              chartFillPercentage
+            )}
           </PercentageValue>
         </ChartWrapper>
         {info.length > 0 ? (
-          info.map((item, infoIndex) =>
-            Object.keys(item).map((key, keyIndex) => (
-              <Info key={`${infoIndex}-${keyIndex}`}>
-                <p>{key}</p>
-                <p>{item[key]}</p>
-              </Info>
-            ))
-          )
+          info.map((item, index) => (
+            <Info key={index}>
+              <p>{item.label}</p>
+              <p>{item.value}</p>
+            </Info>
+          ))
         ) : (
           <LoaderWrapper>
             <Loader />
@@ -78,5 +79,10 @@ export const SingleMetric = ({ chartColor, chartFillPercentage, info }) => {
 SingleMetric.propTypes = {
   chartColor: propTypes.string.isRequired,
   chartFillPercentage: propTypes.number.isRequired,
-  info: propTypes.arrayOf(propTypes.object).isRequired,
+  info: propTypes.arrayOf(
+    propTypes.shape({
+      label: propTypes.string,
+      value: propTypes.string,
+    })
+  ).isRequired,
 };

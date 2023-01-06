@@ -5,9 +5,9 @@ import { Doughnut } from 'react-chartjs-2';
 
 ChartJS.register(ArcElement);
 
-const style = getComputedStyle(document.body);
-
 const getData = (color, percentage) => {
+  const style = getComputedStyle(document.body);
+
   return {
     datasets: [
       {
@@ -25,20 +25,24 @@ const getData = (color, percentage) => {
   };
 };
 
-const defaultData = {
-  datasets: [
-    {
-      data: [0, 100],
-      backgroundColor: [
-        style.getPropertyValue('--borderFaintColor'),
-        style.getPropertyValue('--borderFaintColor'),
-      ],
-      borderColor: [
-        style.getPropertyValue('--borderFaintColor'),
-        style.getPropertyValue('--borderFaintColor'),
-      ],
-    },
-  ],
+const getDefaultData = () => {
+  const style = getComputedStyle(document.body);
+
+  return {
+    datasets: [
+      {
+        data: [0, 100],
+        backgroundColor: [
+          style.getPropertyValue('--borderFaintColor'),
+          style.getPropertyValue('--borderFaintColor'),
+        ],
+        borderColor: [
+          style.getPropertyValue('--borderFaintColor'),
+          style.getPropertyValue('--borderFaintColor'),
+        ],
+      },
+    ],
+  };
 };
 
 const options = {
@@ -58,7 +62,7 @@ const options = {
 };
 
 export const MetricChart = ({ chartColor, chartFillPercentage }) => {
-  const [chartData, setChartData] = useState(defaultData);
+  const [chartData, setChartData] = useState(getDefaultData());
 
   useEffect(() => {
     setChartData(getData(chartColor, chartFillPercentage));

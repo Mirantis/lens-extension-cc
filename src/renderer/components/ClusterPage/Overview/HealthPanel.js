@@ -19,12 +19,12 @@ const UPDATE_METRICS_INTERVAL = 60000; // 60000ms = 1min
 
 /**
  * Converts size in bytes to KB, MB, GB etc.
- * @param {string|number} bytes The size in bytes.
+ * @param {number} bytes The size in bytes. If not a number, treated as "no bytes" vs "0 bytes".
  * @param {number} decimals The number of characters after the period.
  * @returns {string} `--` if no bytes provided, formatted size in other case.
  */
 const formatBytes = (bytes, decimals = 2) => {
-  if (!bytes) {
+  if (typeof bytes !== 'number' || Number.isNaN(bytes)) {
     return strings.catalog.entities.common.details.emptyValue();
   }
 
@@ -50,34 +50,49 @@ const formatBytes = (bytes, decimals = 2) => {
 /**
  * Creates array with objects of CPU metrics for future render.
  * @param {Object} obj CPU metrics values.
- * @param {string|number} obj.used Used value from CPU metrics.
- * @param {string|number} obj.system System value from CPU metrics.
- * @param {string|number} obj.io I/O value from CPU metrics.
- * @param {string|number} obj.idle Idle value from CPU metrics.
- * @returns {Array<{ 'Used': string, 'System': string, 'I/O': string, 'Idle': string }>} array with objects of CPU metrics.
+ * @param {number} obj.used Used value from CPU metrics.
+ * @param {number} obj.system System value from CPU metrics.
+ * @param {number} obj.io I/O value from CPU metrics.
+ * @param {number} obj.idle Idle value from CPU metrics.
+ * @returns {Array<{ label: string, value: string}>} array with objects of CPU metrics.
  */
 const getCpuData = ({ used, system, io, idle }) => {
   return [
     {
-      [`${strings.clusterPage.pages.overview.health.metrics.cpu.used()}`]: used
-        ? `${Math.round(used * 100)}%`
-        : strings.catalog.entities.common.details.emptyValue(),
-    },
-    {
-      [`${strings.clusterPage.pages.overview.health.metrics.cpu.system()}`]:
-        system
-          ? `${Math.round(system * 100)}%`
+      label: strings.clusterPage.pages.overview.health.metrics.cpu.used(),
+      value:
+        typeof used === 'number' && !Number.isNaN(used)
+          ? strings.clusterPage.pages.overview.health.metrics.cpu.percentageValue(
+              Math.round(used * 100)
+            )
           : strings.catalog.entities.common.details.emptyValue(),
     },
     {
-      [`${strings.clusterPage.pages.overview.health.metrics.cpu.io()}`]: io
-        ? `${Math.round(io * 100)}%`
-        : strings.catalog.entities.common.details.emptyValue(),
+      label: strings.clusterPage.pages.overview.health.metrics.cpu.system(),
+      value:
+        typeof system === 'number' && !Number.isNaN(system)
+          ? strings.clusterPage.pages.overview.health.metrics.cpu.percentageValue(
+              Math.round(system * 100)
+            )
+          : strings.catalog.entities.common.details.emptyValue(),
     },
     {
-      [`${strings.clusterPage.pages.overview.health.metrics.cpu.idle()}`]: idle
-        ? `${Math.round(idle * 100)}%`
-        : strings.catalog.entities.common.details.emptyValue(),
+      label: strings.clusterPage.pages.overview.health.metrics.cpu.io(),
+      value:
+        typeof io === 'number' && !Number.isNaN(io)
+          ? strings.clusterPage.pages.overview.health.metrics.cpu.percentageValue(
+              Math.round(io * 100)
+            )
+          : strings.catalog.entities.common.details.emptyValue(),
+    },
+    {
+      label: strings.clusterPage.pages.overview.health.metrics.cpu.idle(),
+      value:
+        typeof idle === 'number' && !Number.isNaN(idle)
+          ? strings.clusterPage.pages.overview.health.metrics.cpu.percentageValue(
+              Math.round(idle * 100)
+            )
+          : strings.catalog.entities.common.details.emptyValue(),
     },
   ];
 };
@@ -85,24 +100,27 @@ const getCpuData = ({ used, system, io, idle }) => {
 /**
  * Creates array with objects of Memory metrics for future render.
  * @param {Object} obj Memory metrics values.
- * @param {string|number} obj.available Available memory value from Memory metrics.
- * @param {string|number} obj.capacity Capacity value from Memory metrics.
- * @param {string|number} obj.allocated Allocated memory value from Memory metrics.
- * @returns {Array<{ 'Available': string, 'Capacity': string, 'Allocated': string }>} array with objects of Memory metrics.
+ * @param {number} obj.available Available memory value from Memory metrics.
+ * @param {number} obj.capacity Capacity value from Memory metrics.
+ * @param {number} obj.allocated Allocated memory value from Memory metrics.
+ * @returns {Array<{ label: string, value: string}>} array with objects of Memory metrics.
  */
 const getMemoryData = ({ available, capacity, allocated }) => {
   return [
     {
-      [`${strings.clusterPage.pages.overview.health.metrics.memory.available()}`]:
-        formatBytes(available),
+      label:
+        strings.clusterPage.pages.overview.health.metrics.memory.available(),
+      value: formatBytes(available),
     },
     {
-      [`${strings.clusterPage.pages.overview.health.metrics.memory.capacity()}`]:
-        formatBytes(capacity),
+      label:
+        strings.clusterPage.pages.overview.health.metrics.memory.capacity(),
+      value: formatBytes(capacity),
     },
     {
-      [`${strings.clusterPage.pages.overview.health.metrics.memory.allocated()}`]:
-        formatBytes(allocated),
+      label:
+        strings.clusterPage.pages.overview.health.metrics.memory.allocated(),
+      value: formatBytes(allocated),
     },
   ];
 };
@@ -110,24 +128,26 @@ const getMemoryData = ({ available, capacity, allocated }) => {
 /**
  * Creates array with objects of Storage metrics for future render.
  * @param {Object} obj Storage metrics values.
- * @param {string|number} obj.used Used storage value from Storage metrics.
- * @param {string|number} obj.capacity Capacity value from Storage metrics.
- * @param {string|number} obj.available Available storage value from Storage metrics.
- * @returns {Array<{ 'Used': string, 'Capacity': string, 'Available': string }>} array with objects of Storage metrics.
+ * @param {number} obj.used Used storage value from Storage metrics.
+ * @param {number} obj.capacity Capacity value from Storage metrics.
+ * @param {number} obj.available Available storage value from Storage metrics.
+ * @returns {Array<{ label: string, value: string}>} array with objects of Storage metrics.
  */
 const getStorageData = ({ used, capacity, available }) => {
   return [
     {
-      [`${strings.clusterPage.pages.overview.health.metrics.storage.used()}`]:
-        formatBytes(used),
+      label: strings.clusterPage.pages.overview.health.metrics.storage.used(),
+      value: formatBytes(used),
     },
     {
-      [`${strings.clusterPage.pages.overview.health.metrics.storage.capacity()}`]:
-        formatBytes(capacity),
+      label:
+        strings.clusterPage.pages.overview.health.metrics.storage.capacity(),
+      value: formatBytes(capacity),
     },
     {
-      [`${strings.clusterPage.pages.overview.health.metrics.storage.available()}`]:
-        formatBytes(available),
+      label:
+        strings.clusterPage.pages.overview.health.metrics.storage.available(),
+      value: formatBytes(available),
     },
   ];
 };
@@ -154,6 +174,7 @@ const MetricItem = styled.div`
 `;
 
 export const HealthPanel = ({ clusterEntity }) => {
+  const mounted = useRef(false);
   const { clouds } = useClouds();
   const [cpuMetrics, setCpuMetrics] = useState(null);
   const [memoryMetrics, setMemoryMetrics] = useState(null);
@@ -164,11 +185,18 @@ export const HealthPanel = ({ clusterEntity }) => {
   const [cpuPercentage, setCpuPercentage] = useState(0);
   const [memoryPercentage, setMemoryPercentage] = useState(0);
   const [storagePercentage, setStoragePercentage] = useState(0);
+  const [updateMetricsTimeoutId, setUpdateMetricsTimeoutId] = useState(null);
   const [timerTrigger, setTimerTrigger] = useState(0);
 
-  const isCpuFirstRender = useRef(true);
-  const isMemoryFirstRender = useRef(true);
-  const isStorageFirstRender = useRef(true);
+  // Canceling the timeout if the component gets unmounted
+  useEffect(() => {
+    mounted.current = true;
+
+    return () => {
+      clearTimeout(updateMetricsTimeoutId);
+      mounted.current = false;
+    };
+  }, [updateMetricsTimeoutId]);
 
   useEffect(() => {
     /**
@@ -176,46 +204,51 @@ export const HealthPanel = ({ clusterEntity }) => {
      * @param {Object} cloud Cloud.
      */
     const getMetrics = async (cloud) => {
-      const promUrl =
-        'https://a3f5c7cc1fc794891a8e86d6f29a8fe7-616423632.us-east-2.elb.amazonaws.com';
+      const promUrl = clusterEntity.spec.lma.prometheusUrl;
 
-      try {
-        const metrics = await getCpuMetrics(cloud, promUrl);
-        setCpuMetrics(metrics);
-      } catch (err) {
-        logger.error(err.message);
+      if (promUrl) {
+        try {
+          const metrics = await getCpuMetrics(cloud, promUrl);
+          setCpuMetrics(metrics);
+        } catch (err) {
+          logger.error(err.message);
+          setCpuMetrics({});
+        }
+
+        try {
+          const metrics = await getMemoryMetrics(cloud, promUrl);
+          setMemoryMetrics(metrics);
+        } catch (err) {
+          logger.error(err.message);
+          setMemoryMetrics({});
+        }
+
+        try {
+          const metrics = await getDiskMetrics(cloud, promUrl);
+          setStorageMetrics(metrics);
+        } catch (err) {
+          logger.error(err.message);
+          setStorageMetrics({});
+        }
+
+        // Changes timer trigger every minute to update metrics.
+        setUpdateMetricsTimeoutId(
+          setTimeout(() => {
+            setTimerTrigger(timerTrigger + 1);
+          }, UPDATE_METRICS_INTERVAL)
+        );
+      } else {
         setCpuMetrics({});
-      }
-
-      try {
-        const metrics = await getMemoryMetrics(cloud, promUrl);
-        setMemoryMetrics(metrics);
-      } catch (err) {
-        logger.error(err.message);
         setMemoryMetrics({});
-      }
-
-      try {
-        const metrics = await getDiskMetrics(cloud, promUrl);
-        setStorageMetrics(metrics);
-      } catch (err) {
-        logger.error(err.message);
         setStorageMetrics({});
       }
-
-      // Changes timer trigger every minute to update metrics.
-      setTimeout(() => {
-        setTimerTrigger(timerTrigger + 1);
-      }, UPDATE_METRICS_INTERVAL);
     };
 
     getMetrics(clouds[clusterEntity.metadata.cloudUrl]);
   }, [clouds, clusterEntity, timerTrigger]);
 
   useEffect(() => {
-    if (isCpuFirstRender.current) {
-      isCpuFirstRender.current = false;
-    } else {
+    if (cpuMetrics !== null) {
       if (cpuMetrics) {
         setCpuData(
           getCpuData({
@@ -235,9 +268,7 @@ export const HealthPanel = ({ clusterEntity }) => {
   }, [cpuMetrics]);
 
   useEffect(() => {
-    if (isMemoryFirstRender.current) {
-      isMemoryFirstRender.current = false;
-    } else {
+    if (memoryMetrics !== null) {
       if (memoryMetrics) {
         setMemoryData(
           getMemoryData({
@@ -260,9 +291,7 @@ export const HealthPanel = ({ clusterEntity }) => {
   }, [memoryMetrics]);
 
   useEffect(() => {
-    if (isStorageFirstRender.current) {
-      isStorageFirstRender.current = false;
-    } else {
+    if (storageMetrics !== null) {
       if (storageMetrics) {
         setStorageData(
           getStorageData({

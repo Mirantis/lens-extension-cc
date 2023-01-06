@@ -398,6 +398,7 @@ export const clusterPage: Dict = {
               <p>I/O: 1-minute average time spent waiting for I/O.</p>
               <p>Idle: 1-minute average idle time not performing tasks.</p>
             `,
+            percentageValue: (percentage) => `${percentage}%`,
           },
           memory: {
             title: () => 'Memory',
@@ -433,6 +434,9 @@ export const clusterPage: Dict = {
             eb: () => 'EB',
             zb: () => 'ZB',
             yb: () => 'YB',
+          },
+          chart: {
+            chartFillPercentage: (percentage) => `${percentage}%`,
           },
         },
       },
