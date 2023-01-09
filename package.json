@@ -110,7 +110,7 @@
     "mobx": "^6.7.0",
     "mobx-react": "^7.6.0",
     "node-fetch": "^2.6.7",
-    "prettier": "^2.8.1",
+    "prettier": "^2.8.2",
     "prop-types": "^15.8.1",
     "query-string": "^8.1.0",
     "react": "^17.0.2",
