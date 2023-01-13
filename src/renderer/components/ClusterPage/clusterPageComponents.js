@@ -84,8 +84,6 @@ export const TableSearch = styled(SearchInput)(() => ({
 }));
 
 export const PanelsWrapper = styled.div(() => ({
-  overflow: 'auto',
-
   '& > div:not(:last-of-type)': {
     paddingBottom: layout.pad * 2.5,
   },

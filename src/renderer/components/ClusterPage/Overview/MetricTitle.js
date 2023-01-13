@@ -34,21 +34,23 @@ export const MetricTitle = ({ title, tooltipText }) => {
   return (
     <Title>
       <p>{title}</p>
-      <IconWrapper>
-        <Icon
-          material="info_outlined"
-          size={22}
-          style={tooltipIconStyles}
-          id={title}
-        />
-        <Tooltip targetId={title} style={{ textAlign: 'left' }}>
-          <div
-            dangerouslySetInnerHTML={{
-              __html: tooltipText,
-            }}
-          ></div>
-        </Tooltip>
-      </IconWrapper>
+      {tooltipText && (
+        <IconWrapper>
+          <Icon
+            material="info_outlined"
+            size={22}
+            style={tooltipIconStyles}
+            id={title}
+          />
+          <Tooltip targetId={title} style={{ textAlign: 'left' }}>
+            <div
+              dangerouslySetInnerHTML={{
+                __html: tooltipText,
+              }}
+            ></div>
+          </Tooltip>
+        </IconWrapper>
+      )}
     </Title>
   );
 };

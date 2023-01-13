@@ -385,6 +385,14 @@ export const clusterPage: Dict = {
       health: {
         title: () => 'Health',
         metrics: {
+          noMetrics: {
+            title: () =>
+              'Health metrics cannot be displayed for this cluster for one of the following reasons:',
+            reasonsList: () => [
+              'Stacklight is disabled.',
+              'Stacklight service is not available.',
+            ],
+          },
           cpu: {
             title: () => 'CPU',
             used: () => 'Used',
@@ -393,10 +401,10 @@ export const clusterPage: Dict = {
             idle: () => 'Idle',
             tooltipInfoHtml: () => `
               <p>Metrics are retrieved from the kubernetes cluster and may differ from OS level metrics.</p>
-              <p>Used: 1-minute average time spent performing.</p>
-              <p>System: 1-minute average time spent in the kernel.</p>
-              <p>I/O: 1-minute average time spent waiting for I/O.</p>
-              <p>Idle: 1-minute average idle time not performing tasks.</p>
+              <p>Used (%): 1-minute average time spent performing tasks, across the cluster.</p>
+              <p>System (%): 1-minute average time spent in the kernel, across the cluster.</p>
+              <p>I/O (%): 1-minute average time spent waiting for I/O, meaning system was disk- or network-bound, across the cluster.</p>
+              <p>Idle (%): 1-minute average idle time not performing tasks, across the cluster.</p>
             `,
             percentageValue: (percentage) => `${percentage}%`,
           },
@@ -407,9 +415,9 @@ export const clusterPage: Dict = {
             allocated: () => 'Allocated',
             tooltipInfoHtml: () => `
               <p>Metrics are retrieved from the kubernetes cluster and may differ from OS level metrics.</p>
-              <p>Available: Total availability for starting new applications, without the need for swapping.</p>
-              <p>Capacity: Total memory including available and allocated.</p>
-              <p>Allocated: Total memory currently in use by both the OS and running applications.</p>
+              <p>Available (GB): Total availability for starting new applications, without the need for swapping, across the cluster.</p>
+              <p>Capacity (GB): Total memory including available and allocated, across the cluster.</p>
+              <p>Allocated (GB): Total memory currently in use by both the OS and running applications, across the cluster.</p>
             `,
           },
           storage: {
@@ -418,10 +426,10 @@ export const clusterPage: Dict = {
             capacity: () => 'Capacity',
             available: () => 'Available',
             tooltipInfoHtml: () => `
-              <p>Metrics are received from the kubernetes cluster and may differ from OS level metrics.</p>
-              <p>Capacity: Total disk space across.</p>
-              <p>Available: Total free disk space.</p>
-              <p>Used: Total consumed disk space.</p>
+              <p>Metrics are retrieved from the kubernetes cluster and may differ from OS level metrics.</p>
+              <p>Capacity (GB): Total disk space across the cluster.</p>
+              <p>Available (GB): Total free disk space across the cluster.</p>
+              <p>Used (GB): Total consumed disk space across the cluster.</p>
             `,
           },
           sizes: {
