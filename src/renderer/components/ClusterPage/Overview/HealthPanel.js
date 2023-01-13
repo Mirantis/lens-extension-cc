@@ -13,7 +13,7 @@ import { DrawerTitleWrapper } from '../clusterPageComponents';
 import { SingleMetric } from './SingleMetric';
 import { MetricTitle } from './MetricTitle';
 import { layout } from '../../styles';
-import { logger } from '../../../../util/logger';
+import { logger, logValue } from '../../../../util/logger';
 import * as strings from '../../../../strings';
 
 const { Icon } = Renderer.Component;
@@ -213,28 +213,45 @@ export const HealthPanel = ({ clusterEntity }) => {
       if (promUrl) {
         setIsNoMetrics(false);
 
-        try {
-          const metrics = await getCpuMetrics(cloud, promUrl);
-          setCpuMetrics(metrics);
-        } catch (err) {
-          logger.error(err.message);
+        const [cpuDataRes, memoryDataRes, storageDataRes] =
+          await Promise.allSettled([
+            getCpuMetrics(cloud, promUrl),
+            getMemoryMetrics(cloud, promUrl),
+            getDiskMetrics(cloud, promUrl),
+          ]);
+
+        if (cpuDataRes.status === 'fulfilled') {
+          setCpuMetrics(cpuDataRes.value);
+        } else {
           setCpuMetrics({});
+          logger.error(
+            'HealthPanel.useEffect.getMetrics()',
+            `Failed to get CPU metrics; error=${logValue(cpuDataRes.reason)}`
+          );
         }
 
-        try {
-          const metrics = await getMemoryMetrics(cloud, promUrl);
-          setMemoryMetrics(metrics);
-        } catch (err) {
-          logger.error(err.message);
+        if (memoryDataRes.status === 'fulfilled') {
+          setMemoryMetrics(memoryDataRes.value);
+        } else {
           setMemoryMetrics({});
+          logger.error(
+            'HealthPanel.useEffect.getMetrics()',
+            `Failed to get Memory metrics; error=${logValue(
+              memoryDataRes.reason
+            )}`
+          );
         }
 
-        try {
-          const metrics = await getDiskMetrics(cloud, promUrl);
-          setStorageMetrics(metrics);
-        } catch (err) {
-          logger.error(err.message);
+        if (storageDataRes.status === 'fulfilled') {
+          setStorageMetrics(storageDataRes.value);
+        } else {
           setStorageMetrics({});
+          logger.error(
+            'HealthPanel.useEffect.getMetrics()',
+            `Failed to get Storage metrics; error=${logValue(
+              storageDataRes.reason
+            )}`
+          );
         }
 
         // Changes timer trigger every minute to update metrics.
