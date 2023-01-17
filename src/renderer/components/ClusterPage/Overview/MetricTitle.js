@@ -19,6 +19,12 @@ const Title = styled.div`
   }
 `;
 
+const TooltipInfo = styled.div`
+  p {
+    margin-top: ${layout.pad}px;
+  }
+`;
+
 const IconWrapper = styled.div`
   position: absolute;
   top: ${layout.grid / 2}px;
@@ -43,11 +49,11 @@ export const MetricTitle = ({ title, tooltipText }) => {
             id={title}
           />
           <Tooltip targetId={title} style={{ textAlign: 'left' }}>
-            <div
+            <TooltipInfo
               dangerouslySetInnerHTML={{
                 __html: tooltipText,
               }}
-            ></div>
+            ></TooltipInfo>
           </Tooltip>
         </IconWrapper>
       )}

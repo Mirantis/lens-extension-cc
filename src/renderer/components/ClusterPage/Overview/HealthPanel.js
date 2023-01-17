@@ -19,6 +19,7 @@ import * as strings from '../../../../strings';
 const { Icon } = Renderer.Component;
 
 const UPDATE_METRICS_INTERVAL = 60000; // 60000ms = 1min
+const healthPanelTitleHeight = 45; // px, height of title block
 
 /**
  * Converts size in bytes to KB, MB, GB etc.
@@ -168,13 +169,14 @@ const MetricsWrapper = styled.div`
   display: flex;
   padding: ${layout.pad * 3}px 0;
   background-color: var(--contentColor);
+  height: calc(100% - ${healthPanelTitleHeight}px);
 `;
 
 const MetricItem = styled.div`
   display: flex;
   flex-direction: column;
   width: calc(100% / 3);
-  padding: 0 ${layout.pad * 6.5}px;
+  padding: 0 ${layout.pad * 3}px;
 
   &:not(:last-of-type) {
     border-right: 1px solid var(--borderFaintColor);

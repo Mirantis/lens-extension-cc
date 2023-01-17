@@ -27,16 +27,14 @@ const PercentageValue = styled.div(({ color }) => ({
 
 const Info = styled.div`
   display: flex;
-  justify-content: center;
-  width: ${layout.grid * 52.5}px;
-  margin: 0 auto;
+  flex-wrap: wrap;
 
   &:not(:last-of-type) {
     margin-bottom: ${layout.pad * 3}px;
   }
 
   p {
-    width: 50%;
+    margin-right: ${layout.pad}px;
   }
 `;
 

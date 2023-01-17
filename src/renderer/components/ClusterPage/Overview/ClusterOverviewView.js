@@ -6,8 +6,11 @@ import propTypes from 'prop-types';
 import { ConditionsPanel } from './ConditionsPanel';
 import { SummaryPanel } from './SummaryPanel';
 import { HealthPanel } from './HealthPanel';
-
-import { PageContainer, PanelsWrapper } from '../clusterPageComponents';
+import {
+  PageContainer,
+  PanelsWrapper,
+  PanelItem,
+} from '../clusterPageComponents';
 
 //
 // MAIN COMPONENT
@@ -21,17 +24,17 @@ export const ClusterOverviewView = function ({ clusterEntity }) {
   return (
     <PageContainer>
       <PanelsWrapper>
-        <div>
+        <PanelItem isHalfWidth={FEAT_CLUSTER_PAGE_HEALTH_ENABLED || false}>
           <SummaryPanel clusterEntity={clusterEntity} />
-        </div>
+        </PanelItem>
         {FEAT_CLUSTER_PAGE_HEALTH_ENABLED ? (
-          <div>
+          <PanelItem isHalfWidth>
             <HealthPanel clusterEntity={clusterEntity} />
-          </div>
+          </PanelItem>
         ) : null}
-        <div>
+        <PanelItem>
           <ConditionsPanel clusterEntity={clusterEntity} />
-        </div>
+        </PanelItem>
       </PanelsWrapper>
     </PageContainer>
   );

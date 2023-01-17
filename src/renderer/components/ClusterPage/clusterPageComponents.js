@@ -12,6 +12,7 @@ export const PageContainer = styled.div(() => ({
   padding: '0',
   display: 'flex',
   flexDirection: 'column',
+  alignItems: 'center',
   height: '100%',
   overflow: 'auto',
 
@@ -56,6 +57,7 @@ const rotate = keyframes`
 export const TablePanelWrapper = styled.div(() => ({
   background: 'var(--contentColor)',
   height: '100%',
+  width: '100%',
 }));
 
 export const TableTopItems = styled.div(() => ({
@@ -84,7 +86,16 @@ export const TableSearch = styled(SearchInput)(() => ({
 }));
 
 export const PanelsWrapper = styled.div(() => ({
+  width: '100%',
+  display: 'flex',
+  justifyContent: 'space-between',
+  flexWrap: 'wrap',
+
   '& > div:not(:last-of-type)': {
     paddingBottom: layout.pad * 2.5,
   },
+}));
+
+export const PanelItem = styled.div(({ isHalfWidth }) => ({
+  width: isHalfWidth ? `calc(50% - ${layout.grid * 2.5}px)` : '100%',
 }));
