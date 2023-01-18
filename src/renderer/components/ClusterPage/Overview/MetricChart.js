@@ -2,6 +2,7 @@ import propTypes from 'prop-types';
 import { useEffect, useState } from 'react';
 import { Chart as ChartJS, ArcElement } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
+import { useThemeSwitching } from '../../useThemeSwitching';
 
 ChartJS.register(ArcElement);
 
@@ -63,10 +64,11 @@ const options = {
 
 export const MetricChart = ({ chartColor, chartFillPercentage }) => {
   const [chartData, setChartData] = useState(getDefaultData());
+  const { theme } = useThemeSwitching();
 
   useEffect(() => {
     setChartData(getData(chartColor, chartFillPercentage));
-  }, [chartColor, chartFillPercentage]);
+  }, [chartColor, chartFillPercentage, theme.mode]);
 
   return <Doughnut data={chartData} options={options} />;
 };
