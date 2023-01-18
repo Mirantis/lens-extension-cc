@@ -1,5 +1,9 @@
 # ChangeLog
 
+## UNRELEASED
+
+- Updated `kubelogin` binary dependency from [v1.25.3 to v1.26.0](https://github.com/int128/kubelogin/compare/v1.25.3...v1.26.0).
+
 ## v5.3.0
 
 - __New MCC cluster pages__: When opening an MCC cluster synced via this extension, a series of new [cluster pages](./README.md#cluster-pages) are available in the Lens sidenav providing MCC-specific details about the cluster.
