@@ -12,7 +12,7 @@ import * as strings from '../../../../strings';
 import { CONNECTION_STATUSES } from '../../../../common/Cloud';
 import { formatDate } from '../../../rendererUtil';
 import { apiKinds, apiUpdateStatuses } from '../../../../api/apiConstants';
-import { useCloudSync } from '../useCloudSync';
+import { useCloudConnection } from '../useCloudConnection';
 import { useTableSearch } from '../useTableSearch';
 import { ItemsTable } from '../ItemsTable';
 import {
@@ -181,7 +181,7 @@ export const HistoryPanel = ({ clusterEntity }) => {
     searchItems: history,
   });
 
-  const { isCloudFetching, cloudStatus, handleSyncCloud } = useCloudSync(
+  const { isCloudFetching, cloudStatus, handleSyncCloud } = useCloudConnection(
     clusterEntity.metadata.cloudUrl
   );
 

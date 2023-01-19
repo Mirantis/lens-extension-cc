@@ -385,13 +385,20 @@ export const clusterPage: Dict = {
       health: {
         title: () => 'Health',
         metrics: {
-          noMetrics: {
-            title: () =>
-              'Health metrics cannot be displayed for this cluster for one of the following reasons:',
-            reasonsList: () => [
-              'Stacklight is disabled.',
-              'Stacklight service is not available.',
-            ],
+          error: {
+            disconnectedManagementCluster: {
+              title: () =>
+                'Health metrics cannot be displayed for this cluster because its management cluster is disconnected.',
+              reconnectButtonLabel: () => 'Reconnect!',
+            },
+            noMetrics: {
+              title: () =>
+                'Health metrics cannot be displayed for this cluster for one of the following reasons:',
+              reasonsList: () => [
+                'Stacklight is disabled.',
+                'Stacklight service is not available.',
+              ],
+            },
           },
           cpu: {
             title: () => 'CPU',

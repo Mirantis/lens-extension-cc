@@ -5,11 +5,11 @@ import { IpcRenderer } from '../../IpcRenderer';
 import * as consts from '../../../constants';
 
 /**
- * Listens for fetching and cloud statuses during synchronization.
+ * Listens for fetching and cloud statuses during synchronization/connecting.
  * @param {string} cloudUrl Cloud url which is used for syncing.
- * @returns {{ isCloudFetching: boolean, cloudStatus: string, handleSyncCloud: Function }} fetching and cloud statuses, start sync method.
+ * @returns {{ isCloudFetching: boolean, cloudStatus: string, handleSyncCloud: Function, handleSyncCloud: Function }} fetching and cloud statuses, start sync method, start reconnect method.
  */
-export const useCloudSync = (cloudUrl) => {
+export const useCloudConnection = (cloudUrl) => {
   const { clouds } = useClouds();
 
   const [isCloudFetching, setIsCloudFetching] = useState(false);
@@ -55,5 +55,17 @@ export const useCloudSync = (cloudUrl) => {
     );
   }, [cloudUrl]);
 
-  return { isCloudFetching, cloudStatus, handleSyncCloud };
+  const handleReconnectCloud = useCallback(() => {
+    IpcRenderer.getInstance().invoke(
+      consts.ipcEvents.invoke.RECONNECT,
+      cloudUrl
+    );
+  }, [cloudUrl]);
+
+  return {
+    isCloudFetching,
+    cloudStatus,
+    handleSyncCloud,
+    handleReconnectCloud,
+  };
 };

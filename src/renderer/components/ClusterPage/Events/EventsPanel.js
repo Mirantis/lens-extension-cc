@@ -13,7 +13,7 @@ import { CONNECTION_STATUSES } from '../../../../common/Cloud';
 import { formatDate } from '../../../rendererUtil';
 import { apiKinds } from '../../../../api/apiConstants';
 import { useTableSearch } from '../useTableSearch';
-import { useCloudSync } from '../useCloudSync';
+import { useCloudConnection } from '../useCloudConnection';
 import { ItemsTable } from '../ItemsTable';
 import {
   TablePanelWrapper,
@@ -143,7 +143,7 @@ export const EventsPanel = ({ clusterEntity }) => {
     searchItems: clusterEntity.spec.events,
   });
 
-  const { isCloudFetching, cloudStatus, handleSyncCloud } = useCloudSync(
+  const { isCloudFetching, cloudStatus, handleSyncCloud } = useCloudConnection(
     clusterEntity.metadata.cloudUrl
   );
 

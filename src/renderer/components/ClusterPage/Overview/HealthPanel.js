@@ -3,11 +3,13 @@ import { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
 import { useClouds } from '../../../store/CloudProvider';
+import { CONNECTION_STATUSES } from '../../../../common/Cloud';
 import {
   getCpuMetrics,
   getMemoryMetrics,
   getDiskMetrics,
 } from '../../../../api/metricApi';
+import { useCloudConnection } from '../useCloudConnection';
 import { PanelTitle } from '../PanelTitle';
 import { DrawerTitleWrapper } from '../clusterPageComponents';
 import { SingleMetric } from './SingleMetric';
@@ -153,6 +155,11 @@ const getStorageData = ({ used, capacity, available }) => {
 // INTERNAL STYLED COMPONENTS
 //
 
+const ReconnectButton = styled.button`
+  margin-left: ${layout.pad / 2}px;
+  color: var(--primary);
+`;
+
 const NoMetrics = styled.div`
   padding: ${layout.pad * 2.25}px ${layout.pad * 4}px ${layout.pad * 1.5}px;
   background-color: var(--contentColor);
@@ -184,7 +191,14 @@ const MetricItem = styled.div`
 `;
 
 // Styles for info icon
-const infoIconStyles = {
+const disconnectedClusterInfoIconStyles = {
+  color: 'var(--colorError)',
+  marginLeft: layout.pad,
+  marginBottom: layout.pad,
+};
+
+// Styles for info icon
+const noMetricsInfoIconStyles = {
   color: 'var(--colorError)',
 };
 
@@ -201,6 +215,10 @@ export const HealthPanel = ({ clusterEntity }) => {
   const [memoryPercentage, setMemoryPercentage] = useState(0);
   const [storagePercentage, setStoragePercentage] = useState(0);
   const [timerTrigger, setTimerTrigger] = useState(0);
+
+  const { cloudStatus, handleReconnectCloud } = useCloudConnection(
+    clusterEntity.metadata.cloudUrl
+  );
 
   useEffect(() => {
     let timeoutId;
@@ -273,7 +291,7 @@ export const HealthPanel = ({ clusterEntity }) => {
     return () => {
       clearTimeout(timeoutId);
     };
-  }, [clouds, clusterEntity, timerTrigger]);
+  }, [clouds, clusterEntity, timerTrigger, cloudStatus]);
 
   useEffect(() => {
     if (cpuMetrics) {
@@ -334,14 +352,33 @@ export const HealthPanel = ({ clusterEntity }) => {
       <DrawerTitleWrapper>
         <PanelTitle title={strings.clusterPage.pages.overview.health.title()} />
       </DrawerTitleWrapper>
+      {cloudStatus === CONNECTION_STATUSES.DISCONNECTED && (
+        <NoMetrics>
+          <Icon
+            material="info_outlined"
+            size={22}
+            style={disconnectedClusterInfoIconStyles}
+          />
+          <div>
+            {strings.clusterPage.pages.overview.health.metrics.error.disconnectedManagementCluster.title()}
+            <ReconnectButton onClick={handleReconnectCloud}>
+              {strings.clusterPage.pages.overview.health.metrics.error.disconnectedManagementCluster.reconnectButtonLabel()}
+            </ReconnectButton>
+          </div>
+        </NoMetrics>
+      )}
       {isNoMetrics && (
         <NoMetrics>
           <div>
-            <Icon material="info_outlined" size={22} style={infoIconStyles} />
-            {strings.clusterPage.pages.overview.health.metrics.noMetrics.title()}
+            <Icon
+              material="info_outlined"
+              size={22}
+              style={noMetricsInfoIconStyles}
+            />
+            {strings.clusterPage.pages.overview.health.metrics.error.noMetrics.title()}
           </div>
           <ol>
-            {strings.clusterPage.pages.overview.health.metrics.noMetrics
+            {strings.clusterPage.pages.overview.health.metrics.error.noMetrics
               .reasonsList()
               .map((reason, index) => (
                 <li key={index}>{reason}</li>
