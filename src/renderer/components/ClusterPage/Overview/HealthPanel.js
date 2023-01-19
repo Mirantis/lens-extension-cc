@@ -156,7 +156,6 @@ const getStorageData = ({ used, capacity, available }) => {
 //
 
 const ReconnectButton = styled.button`
-  margin-left: ${layout.pad / 2}px;
   color: var(--primary);
 `;
 
@@ -216,9 +215,8 @@ export const HealthPanel = ({ clusterEntity }) => {
   const [storagePercentage, setStoragePercentage] = useState(0);
   const [timerTrigger, setTimerTrigger] = useState(0);
 
-  const { cloudStatus, handleReconnectCloud } = useCloudConnection(
-    clusterEntity.metadata.cloudUrl
-  );
+  const { isCloudFetching, cloudStatus, handleReconnectCloud } =
+    useCloudConnection(clusterEntity.metadata.cloudUrl);
 
   useEffect(() => {
     let timeoutId;
@@ -360,7 +358,9 @@ export const HealthPanel = ({ clusterEntity }) => {
             style={disconnectedClusterInfoIconStyles}
           />
           <div>
-            {strings.clusterPage.pages.overview.health.metrics.error.disconnectedManagementCluster.title()}
+            <div>
+              {strings.clusterPage.pages.overview.health.metrics.error.disconnectedManagementCluster.title()}
+            </div>
             <ReconnectButton onClick={handleReconnectCloud}>
               {strings.clusterPage.pages.overview.health.metrics.error.disconnectedManagementCluster.reconnectButtonLabel()}
             </ReconnectButton>
@@ -400,6 +400,7 @@ export const HealthPanel = ({ clusterEntity }) => {
             chartColor="--blue"
             chartFillPercentage={cpuPercentage}
             info={cpuData}
+            isUpdating={isCloudFetching}
           />
         </MetricItem>
         <MetricItem>
@@ -415,6 +416,7 @@ export const HealthPanel = ({ clusterEntity }) => {
             chartColor="--magenta"
             chartFillPercentage={memoryPercentage}
             info={memoryData}
+            isUpdating={isCloudFetching}
           />
         </MetricItem>
         <MetricItem>
@@ -430,6 +432,7 @@ export const HealthPanel = ({ clusterEntity }) => {
             chartColor="--golden"
             chartFillPercentage={storagePercentage}
             info={storageData}
+            isUpdating={isCloudFetching}
           />
         </MetricItem>
       </MetricsWrapper>

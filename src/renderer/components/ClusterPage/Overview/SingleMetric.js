@@ -42,7 +42,12 @@ const LoaderWrapper = styled.div`
   text-align: center;
 `;
 
-export const SingleMetric = ({ chartColor, chartFillPercentage, info }) => {
+export const SingleMetric = ({
+  chartColor,
+  chartFillPercentage,
+  info,
+  isUpdating,
+}) => {
   return (
     <>
       <div>
@@ -57,7 +62,7 @@ export const SingleMetric = ({ chartColor, chartFillPercentage, info }) => {
             )}
           </PercentageValue>
         </ChartWrapper>
-        {info.length > 0 ? (
+        {!isUpdating && info.length > 0 ? (
           info.map((item, index) => (
             <Info key={index}>
               <p>{item.label}</p>
@@ -83,4 +88,5 @@ SingleMetric.propTypes = {
       value: propTypes.string,
     })
   ).isRequired,
+  isUpdating: propTypes.bool.isRequired,
 };
