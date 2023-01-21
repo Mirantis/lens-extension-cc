@@ -14,17 +14,11 @@ import {
   apiEventTypes,
 } from '../api/apiConstants';
 import { timestampTs } from '../api/apiTypesets';
+import { kubeconfigDirName } from '../constants';
 
 const {
   Catalog: { CatalogEntity, KubernetesCluster },
 } = Common;
-
-/**
- * Name of the sub directory in the Lens-designated "extension storage" directory
- *  where kubeConfig files are written.
- * @type {string}
- */
-export const KUBECONFIG_DIR_NAME = 'kubeconfigs';
 
 /** Label names for various entity types. */
 export const entityLabels = Object.freeze({
@@ -195,10 +189,10 @@ export const clusterEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
 
   // based on Lens `KubernetesClusterSpec` type
   spec: {
-    // absolute path that includes a directory named `KUBECONFIG_DIR_NAME` taking into account
+    // absolute path that includes a directory named `kubeconfigDirName`
     kubeconfigPath: [
       rtv.STRING,
-      (v) => !!v.match(new RegExp(`(\\/|\\\\)${KUBECONFIG_DIR_NAME}\\1`)),
+      (v) => !!v.match(new RegExp(`(\\/|\\\\)${kubeconfigDirName}\\1`)),
     ],
 
     kubeconfigContext: rtv.STRING,
@@ -347,7 +341,7 @@ const _itemToString = function (item) {
   let other = '';
   if (item.metadata.kind === apiKinds.CLUSTER) {
     const match = item.spec.kubeconfigPath?.match(
-      new RegExp(`(\\/|\\\\)${KUBECONFIG_DIR_NAME}\\1`)
+      new RegExp(`(\\/|\\\\)${kubeconfigDirName}\\1`)
     );
     if (match) {
       other = logValue(

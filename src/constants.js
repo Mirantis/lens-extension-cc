@@ -9,6 +9,19 @@ export const skipTlsVerify =
   process.env.LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS &&
   process.env.LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS.match(/^(true|yes|1)$/);
 
+/**
+ * Name of the sub directory in the Lens-designated "extension storage" directory
+ *  where kubeConfig files are written.
+ * @type {string}
+ */
+export const kubeconfigDirName = 'kubeconfigs';
+
+/**
+ * Name of the sub directory in the Lens-designated "extension storage" directory
+ *  where `kubelogin` stores cached cluster access tokens.
+ */
+export const kubeloginCacheDirName = 'kubelogin-cache';
+
 // maximum number of projects (inclusive), at which point the warning icon will appear
 //  about potential performance issues
 export const projectsCountBeforeWarning = 10;

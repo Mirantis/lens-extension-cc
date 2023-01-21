@@ -3,8 +3,6 @@
 //
 // Environment Variables:
 // - TARGET: Either 'development' or 'production' (default).
-// - DEV_UNSAFE_NO_CERT: Set to 'thisisunsafe' to disable TLS certificate verification
-//     on MCC instances.
 // - FEAT_CLUSTER_PAGE_HISTORY_ENABLED: Set to 1 to enable the "Cluster Page > Update History" tab.
 //     Disabled by default.
 // - FEAT_CLUSTER_PAGE_HEALTH_ENABLED: Set to 1 to enable the "Cluster Page > Overview > Health" panel.
@@ -47,12 +45,9 @@ const plugins = [
     DEV_ENV: JSON.stringify(buildTarget !== 'production'),
     TEST_ENV: JSON.stringify(false), // always false (Jest configures it true always for tests)
     ENTITY_CACHE_VERSION:
-      process.env.ENTITY_CACHE_VERSION ||
-      JSON.stringify(`v${pkg.version}@${Date.now()}`),
-    DEV_UNSAFE_NO_CERT: JSON.stringify(
-      buildTarget !== 'production' &&
-        process.env.DEV_UNSAFE_NO_CERT === 'thisisunsafe'
-    ),
+      (process.env.ENTITY_CACHE_VERSION &&
+        JSON.stringify(process.env.ENTITY_CACHE_VERSION)) ||
+      JSON.stringify(`v${pkg.version}:${Date.now()}`),
     FEAT_CLUSTER_PAGE_HISTORY_ENABLED: JSON.stringify(
       !!Number(process.env.FEAT_CLUSTER_PAGE_HISTORY_ENABLED)
     ),
