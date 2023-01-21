@@ -4,17 +4,8 @@
 
 import process from 'process';
 import path from 'path';
+import * as rtv from 'rtvjs';
 import { logger } from './logger';
-import { skipTlsVerify } from '../constants';
-
-if (skipTlsVerify) {
-  // SECURITY: get around issues with Clouds that have self-signed certificates (typically used
-  //  for internal test Clouds of various kinds)
-  logger.warn(
-    'templates',
-    'Generated cluster kubeConfig files will skip TLS verification: Be careful!'
-  );
-}
 
 /**
  * @returns {string} The absolute path to the `kubelogin` binary for the current OS.
@@ -73,17 +64,50 @@ export const mkClusterContextName = function ({
  * @param {Object} config Configuration parameters for the template.
  * @param {Cluster} config.cluster Cluster for which to generate the config.
  * @param {string} config.username Username for authentication.
+ * @param {string} config.tokenCachePath Absolute path to the directory where OIDC login
+ *  tokens obtained by `kubelogin` should be stored.
+ * @param {boolean} [config.skipTlsVerify] If truthy, TLS (certificate) connection will be
+ *  checked against self-signed certificates; if falsy, certificate check is skipped.
  * @param {string} [config.token] Optional OAuth token for user for this cluster.
  * @param {string} [config.refreshToken] Optional OAuth refresh token for user for this cluster.
  *  Ignored if `token` is not specified.
+ * @param {boolean} [config.offlineAccess] If truthy, cluster access token will be long-lived;
+ *  if falsy, it will be short-lived (more secure).
  * @returns {Object} JSON object representing the KubeConfig for accessing the cluster.
  */
 export const mkKubeConfig = function ({
   cluster,
   username,
+  tokenCachePath,
+  skipTlsVerify,
   token,
   refreshToken,
+  offlineAccess,
 }) {
+  DEV_ENV && rtv.verify({ tokenCachePath }, { tokenCachePath: rtv.STRING });
+
+  const kubeloginArgs = [
+    'get-token',
+    `--token-cache-dir=${tokenCachePath}`, // no quotes around value (even if spaces in path)
+    `--oidc-issuer-url=${cluster.idpIssuerUrl}`, // no quotes around value
+    `--oidc-client-id=${cluster.idpClientId}`, // no quotes around value
+    `--certificate-authority-data=${cluster.idpCertificate}`, // no quotes around value
+  ];
+
+  if (skipTlsVerify) {
+    // SECURITY: get around issues with Clouds that have self-signed certificates (typically used
+    //  for internal test Clouds of various kinds)
+    logger.warn(
+      'templates.mkKubeConfig()',
+      `Generated kubeConfig for cluster "${cluster.toShortString()}" will skip TLS verification: Be careful!`
+    );
+    kubeloginArgs.push('--insecure-skip-tls-verify');
+  }
+
+  if (offlineAccess) {
+    kubeloginArgs.push('--oidc-extra-scope=offline_access');
+  }
+
   return {
     apiVersion: 'v1',
     clusters: [
@@ -131,13 +155,7 @@ export const mkKubeConfig = function ({
               exec: {
                 apiVersion: 'client.authentication.k8s.io/v1beta1',
                 command: getKubeloginPath(),
-                args: [
-                  'get-token',
-                  `--oidc-issuer-url=${cluster.idpIssuerUrl}`,
-                  `--oidc-client-id=${cluster.idpClientId}`,
-                  `--certificate-authority-data=${cluster.idpCertificate}`,
-                  ...(skipTlsVerify ? ['--insecure-skip-tls-verify'] : []),
-                ],
+                args: kubeloginArgs,
               },
             },
           },

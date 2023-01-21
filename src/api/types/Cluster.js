@@ -11,6 +11,7 @@ import { apiKinds, apiLabels } from '../apiConstants';
 import { nodeConditionTs } from '../apiTypesets';
 import { logger, logValue } from '../../util/logger';
 import { mkKubeConfig } from '../../util/templates';
+import { skipTlsVerify } from '../../constants';
 
 const {
   Catalog: { KubernetesCluster },
@@ -566,12 +567,16 @@ export class Cluster extends Node {
 
   /**
    * Generates a kube config object for this cluster.
+   * @param {string} tokenCachePath Absolute path to the directory where OIDC login
+   *  tokens obtained by `kubelogin` should be stored.
    * @returns {Object} Kube config for this cluster, as JSON.
    */
-  getKubeConfig() {
+  getKubeConfig(tokenCachePath) {
     return mkKubeConfig({
       cluster: this,
       username: this.cloud.username,
+      tokenCachePath,
+      skipTlsVerify,
     });
   }
 

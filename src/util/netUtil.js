@@ -135,9 +135,9 @@ export async function request(
     response = await nodeFetch(url, {
       ...requestOptions,
 
-      // SECURITY: If DEV_UNSAFE_NO_CERT is `true`, `httpsAgent` will be defined
+      // SECURITY: If `constants.skipTlsVerify=true`, `httpsAgent` will be defined
       //  and it will ignore any certificate issues on the remote server; otherwise,
-      //  `httpsAgent1` will be `undefined`, the default agent will be used, and
+      //  `httpsAgent` will be `undefined`, the default agent will be used, and
       //  if there are any certificate issues, the request will blocked
       agent: url.startsWith('https:') ? httpsAgent : undefined,
     });

@@ -173,4 +173,12 @@ export class Resource {
     // this is actually an extended class instance, so return only the properties
     return propStr;
   }
+
+  /**
+   * @returns {string} A __short(er)__ (less verbose than `toString()`) string representation
+   *  of this instance for logging/debugging.
+   */
+  toShortString() {
+    return `${this.name}/#${this.uid}/@${this.resourceVersion}/@@${this.cacheVersion}`;
+  }
 }
