@@ -389,7 +389,7 @@ export const clusterPage: Dict = {
             disconnectedManagementCluster: {
               title: () =>
                 'Health metrics cannot be displayed for this cluster because its management cluster is disconnected.',
-              reconnectButtonLabel: () => 'Reconnect!',
+              reconnectButtonLabel: () => 'Reconnect',
             },
             noMetrics: {
               title: () =>

@@ -157,6 +157,7 @@ const getStorageData = ({ used, capacity, available }) => {
 
 const ReconnectButton = styled.button`
   color: var(--primary);
+  padding-left: ${layout.pad / 2}px;
 `;
 
 const NoMetrics = styled.div`
@@ -189,15 +190,7 @@ const MetricItem = styled.div`
   }
 `;
 
-// Styles for info icon
-const disconnectedClusterInfoIconStyles = {
-  color: 'var(--colorError)',
-  marginLeft: layout.pad,
-  marginBottom: layout.pad,
-};
-
-// Styles for info icon
-const noMetricsInfoIconStyles = {
+const infoIconStyles = {
   color: 'var(--colorError)',
 };
 
@@ -302,10 +295,12 @@ export const HealthPanel = ({ clusterEntity }) => {
         })
       );
       setCpuPercentage(
-        cpuMetrics.usagePct ? Math.round(cpuMetrics.usagePct * 100) : 0
+        cpuMetrics.usagePct && !isCloudFetching
+          ? Math.round(cpuMetrics.usagePct * 100)
+          : 0
       );
     }
-  }, [cpuMetrics]);
+  }, [cpuMetrics, isCloudFetching]);
 
   useEffect(() => {
     if (memoryMetrics) {
@@ -317,14 +312,16 @@ export const HealthPanel = ({ clusterEntity }) => {
         })
       );
       setMemoryPercentage(
-        memoryMetrics.availableByte && memoryMetrics.capacityByte
+        memoryMetrics.availableByte &&
+          memoryMetrics.capacityByte &&
+          !isCloudFetching
           ? Math.round(
               (memoryMetrics.availableByte / memoryMetrics.capacityByte) * 100
             )
           : 0
       );
     }
-  }, [memoryMetrics]);
+  }, [memoryMetrics, isCloudFetching]);
 
   useEffect(() => {
     if (storageMetrics) {
@@ -336,14 +333,16 @@ export const HealthPanel = ({ clusterEntity }) => {
         })
       );
       setStoragePercentage(
-        storageMetrics.usedByte && storageMetrics.capacityByte
+        storageMetrics.usedByte &&
+          storageMetrics.capacityByte &&
+          !isCloudFetching
           ? Math.round(
               (storageMetrics.usedByte / storageMetrics.capacityByte) * 100
             )
           : 0
       );
     }
-  }, [storageMetrics]);
+  }, [storageMetrics, isCloudFetching]);
 
   return (
     <>
@@ -352,29 +351,17 @@ export const HealthPanel = ({ clusterEntity }) => {
       </DrawerTitleWrapper>
       {cloudStatus === CONNECTION_STATUSES.DISCONNECTED && (
         <NoMetrics>
-          <Icon
-            material="info_outlined"
-            size={22}
-            style={disconnectedClusterInfoIconStyles}
-          />
-          <div>
-            <div>
-              {strings.clusterPage.pages.overview.health.metrics.error.disconnectedManagementCluster.title()}
-            </div>
-            <ReconnectButton onClick={handleReconnectCloud}>
-              {strings.clusterPage.pages.overview.health.metrics.error.disconnectedManagementCluster.reconnectButtonLabel()}
-            </ReconnectButton>
-          </div>
+          <Icon material="info_outlined" size={22} style={infoIconStyles} />
+          {strings.clusterPage.pages.overview.health.metrics.error.disconnectedManagementCluster.title()}
+          <ReconnectButton onClick={handleReconnectCloud}>
+            {strings.clusterPage.pages.overview.health.metrics.error.disconnectedManagementCluster.reconnectButtonLabel()}
+          </ReconnectButton>
         </NoMetrics>
       )}
       {isNoMetrics && (
         <NoMetrics>
           <div>
-            <Icon
-              material="info_outlined"
-              size={22}
-              style={noMetricsInfoIconStyles}
-            />
+            <Icon material="info_outlined" size={22} style={infoIconStyles} />
             {strings.clusterPage.pages.overview.health.metrics.error.noMetrics.title()}
           </div>
           <ol>
