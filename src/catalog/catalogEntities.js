@@ -212,10 +212,10 @@ export const clusterEntityModelTs = mergeRtvShapes({}, catalogEntityModelTs, {
     apiStatus: rtv.STRING,
     controllerCount: rtv.SAFE_INT,
     workerCount: rtv.SAFE_INT,
-    region: rtv.STRING,
-    provider: rtv.STRING,
+    region: [rtv.EXPECTED, rtv.STRING],
+    provider: [rtv.EXPECTED, rtv.STRING],
     currentVersion: rtv.STRING,
-    dashboardUrl: rtv.STRING,
+    dashboardUrl: [rtv.EXPECTED, rtv.STRING],
     lma: [
       rtv.EXPECTED, // could be null, or an object
       {
