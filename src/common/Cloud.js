@@ -148,14 +148,15 @@ export const CLOUD_EVENTS = Object.freeze({
 });
 
 /**
- * Loads the config object from the Mgmt Cluster at the given URL.
- * @param {string} cloudUrl
- * @returns {Promise<Object>} The Mgmt cluster's config object as JSON if successful;
+ * Loads the config object from the Mgmt Cluster.
+ * @param {Cloud} cloud
+ * @returns {Promise<CloudConfig>} The Mgmt cluster's config object as JSON if successful;
  *  rejects with an `Error` if not.
  */
-const _loadConfig = async (cloudUrl) => {
+const _loadConfig = async (cloud) => {
   const res = await request(
-    `${cloudUrl}/config.js`,
+    // TODO[trustHost]: need to tell request() to cloud.trustHost...
+    `${cloud.cloudUrl}/config.js`,
     {},
     { extractBodyMethod: 'text' }
   );
@@ -167,7 +168,11 @@ const _loadConfig = async (cloudUrl) => {
       .replace('};', '}');
 
     try {
-      return new CloudConfig(cloudUrl, JSON.parse(content));
+      return new CloudConfig({
+        cloudUrl: cloud.cloudUrl,
+        trustHost: cloud.trustHost,
+        config: JSON.parse(content),
+      });
     } catch (err) {
       logger.error(
         'Cloud._loadConfig()',
@@ -226,6 +231,8 @@ export class Cloud extends EventDispatcher {
     username: [rtv.EXPECTED, rtv.STRING], // username used to obtain tokens; null if no tokens
     cloudUrl: [rtv.STRING, (v) => !v.endsWith('/')], // URL to the MCC instance (no trailing slash)
     name: rtv.STRING, // user-assigned name
+    offlineAccess: [rtv.OPTIONAL, rtv.BOOLEAN], // optional for backward compatibility
+    trustHost: [rtv.OPTIONAL, rtv.BOOLEAN], // optional for backward compatibility
     syncAll: rtv.BOOLEAN,
     namespaces: [[cloudNamespaceTs]], // all known namespaces, synced or ignored
   };
@@ -251,6 +258,8 @@ export class Cloud extends EventDispatcher {
     //  only if it was given
 
     let _name = null;
+    let _offlineAccess = false;
+    let _trustHost = false;
     let _syncAll = false;
     let _namespaces = {}; // map of name to CloudNamespace for internal efficiency
     let _syncedProjects = []; // cached from _namespaces for performance
@@ -282,11 +291,65 @@ export class Cloud extends EventDispatcher {
         return _name;
       },
       set(newValue) {
-        DEV_ENV &&
-          rtv.verify({ token: newValue }, { token: Cloud.specTs.name });
+        DEV_ENV && rtv.verify({ name: newValue }, { name: Cloud.specTs.name });
         if (_name !== newValue) {
           _name = newValue;
           this.dispatchEvent(CLOUD_EVENTS.PROP_CHANGE, {
+            isFromStore: _updatingFromStore,
+          });
+        }
+      },
+    });
+
+    /**
+     * @member {boolean} offlineAccess True if TLS verification should be disabled for this host;
+     *  false if it should be enabled.
+     */
+    Object.defineProperty(this, 'offlineAccess', {
+      enumerable: true,
+      get() {
+        return _offlineAccess;
+      },
+      set(newValue) {
+        DEV_ENV &&
+          rtv.verify(
+            { offlineAccess: newValue },
+            { offlineAccess: Cloud.specTs.offlineAccess }
+          );
+        const newBool = !!newValue; // due to backward compatibility, could be null/undefined/boolean
+        if (_offlineAccess !== newBool) {
+          _offlineAccess = newBool;
+          // NOTE: considered a sync-related change because changing this setting must result in
+          //  generating new kubeconfigs for all synced clusters
+          this.dispatchEvent(CLOUD_EVENTS.SYNC_CHANGE, {
+            isFromStore: _updatingFromStore,
+          });
+        }
+      },
+    });
+
+    /**
+     * @member {boolean} trustHost True if TLS verification should be disabled for this host;
+     *  false if it should be enabled.
+     */
+    Object.defineProperty(this, 'trustHost', {
+      enumerable: true,
+      get() {
+        return _trustHost;
+      },
+      set(newValue) {
+        DEV_ENV &&
+          rtv.verify(
+            { trustHost: newValue },
+            { trustHost: Cloud.specTs.trustHost }
+          );
+        const newBool = !!newValue; // due to backward compatibility, could be null/undefined/boolean
+        if (_trustHost !== newBool) {
+          _trustHost = newBool;
+          // NOTE: considered a sync-related change because it affects how we connect to the
+          //  host when syncing, and if we allowed changing this setting in the UI, we would
+          //  have to put the configuration UI in the Selective Sync View (which is sync-related)
+          this.dispatchEvent(CLOUD_EVENTS.SYNC_CHANGE, {
             isFromStore: _updatingFromStore,
           });
         }
@@ -304,7 +367,7 @@ export class Cloud extends EventDispatcher {
       },
       set(newValue) {
         DEV_ENV &&
-          rtv.verify({ token: newValue }, { token: Cloud.specTs.syncAll });
+          rtv.verify({ syncAll: newValue }, { syncAll: Cloud.specTs.syncAll });
         if (_syncAll !== newValue) {
           _syncAll = newValue;
           this.dispatchEvent(CLOUD_EVENTS.SYNC_CHANGE, {
@@ -924,6 +987,8 @@ export class Cloud extends EventDispatcher {
         _updatingFromStore = !!isFromStore;
 
         this.name = spec.name;
+        this.offlineAccess = spec.offlineAccess;
+        this.trustHost = spec.trustHost;
         this.syncAll = spec.syncAll;
         this.replaceNamespaces(spec.namespaces);
         this.username = spec.username;
@@ -1049,6 +1114,8 @@ export class Cloud extends EventDispatcher {
     return {
       cloudUrl: this.cloudUrl,
       name: this.name,
+      offlineAccess: this.offlineAccess,
+      trustHost: this.trustHost,
       syncAll: this.syncAll,
       username: this.username,
 
@@ -1087,19 +1154,21 @@ export class Cloud extends EventDispatcher {
   /** @returns {string} String representation of this Cloud for logging/debugging. */
   toString() {
     const validTillStr = logDate(this.tokenValidTill);
-    return `{Cloud url: ${logValue(this.cloudUrl)}, status: ${logValue(
-      this.status
-    )}, loaded: ${this.loaded}, fetching: ${this.fetching}, sync: ${
-      this.syncedProjects.length
-    }/${this.allProjects.length}, all: ${this.syncAll}, token: ${
+    return `{Cloud url: ${logValue(this.cloudUrl)}, trusted: ${
+      this.trustHost
+    }, status: ${logValue(this.status)}, loaded: ${this.loaded}, fetching: ${
+      this.fetching
+    }, sync: ${this.syncedProjects.length}/${this.allProjects.length}, all: ${
+      this.syncAll
+    }, token: ${
       this.token
         ? `"${this.token.slice(0, 15)}..${this.token.slice(-15)}"`
         : this.token
     }, valid: ${this.tokenValid}, validTill: ${
       validTillStr ? `"${validTillStr}"` : validTillStr
-    }, refreshValid: ${this.refreshTokenValid}, connectError: ${logValue(
-      this.connectError
-    )}}`;
+    }, refreshValid: ${this.refreshTokenValid}, offlineAccess: ${
+      this.offlineAccess
+    }, connectError: ${logValue(this.connectError)}}`;
   }
 
   /**
@@ -1109,7 +1178,7 @@ export class Cloud extends EventDispatcher {
    */
   async loadConfig() {
     try {
-      this.config = await _loadConfig(this.cloudUrl);
+      this.config = await _loadConfig(this);
       this.connectError = null;
     } catch (err) {
       this.connectError = err;

@@ -99,7 +99,7 @@ export const mkKubeConfig = function ({
     //  for internal test Clouds of various kinds)
     logger.warn(
       'templates.mkKubeConfig()',
-      `Generated kubeConfig for cluster "${cluster.toShortString()}" will skip TLS verification: Be careful!`
+      `Generated kubeConfig for cluster "${cluster.toShortString()}" will skip TLS verification!`
     );
     kubeloginArgs.push('--insecure-skip-tls-verify');
   }

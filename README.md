@@ -63,9 +63,11 @@ When there are no management clusters, you'll see the Welcome screen, as above. 
 
 ![Connect to cloud](./docs/v4-02-add-cloud.png)
 
-In the first field, enter a friendly name of your choice (no spaces or special characters allowed) for the management cluster you will connect to. This name will be used in Catalog labels to identify resources belonging to this management cluster in order to help with searching/filtering.
-
-In the second field, enter the URL to the management cluster itself.
+- __Management cluster name:__ Enter a friendly name of your choice (no spaces or special characters allowed) for the management cluster you will connect to. This name will be used in Catalog labels to identify resources belonging to this management cluster in order to help with searching/filtering.
+- __Management cluster URL:__ Enter the URL to the management cluster itself.
+    - 💬 This is not the URL to a child cluster inside the management cluster. The management cluster is essentially the Mirantis Container Cloud _instance_. However, using a child cluster URL is OK as the extension will use it to determine the proper URL for you.
+- __Use offline tokens:__ (✳️ New in [v5.5.0](CHANGELOG.md#v550), not pictured above) By default, short-lived (more secure) cluster access tokens are used in the generated kubeconfigs used by Lens to connect to synced clusters. Enable this option to use long-lived tokens to stay connected to them for a longer period of time. See the [offline tokens](#offline-tokens) section for more information.
+    - 💬 The "offline" term should not be confused with [offline support](#offline-support). A network connection is always necessary in order to get the latest cluster status.
 
 > ⚠️ By default, the extension will not connect to management clusters that use __self-signed certificates__. If that is your scenario, and you trust the endpoint, then see the [Security](#security) section for how to allow these connections.
 
@@ -94,6 +96,8 @@ Finally, click on __Synchronize selected projects__ to complete the setup.
 After adding a new management cluster, you'll be shown the __Sync View__. As highlighted, the __Name__ column on the far left shows the short name for the management cluster, along with all synced projects. Under each project, you'll find the number of resources that have been synced to Lens and are available in the Catalog.
 
 The highlighted __Status__ column on the far right shows the current sync status of each project, as well as the connection status to the management cluster. As sync takes place periodically (every 5 minutes or so), the management cluster's status will change from "Connected" to "Updating" whenever it's synchronizing.
+
+> 💡 Click the __Selective sync__ button (top/right corner) to update management cluster sync settings (e.g. which projects to sync, or use of [offline tokens](#offline-tokens) for synced clusters).
 
 ### Lens Catalog
 
@@ -136,7 +140,7 @@ When you're ready to introspect a synced cluster, just click on it in the Catalo
 
 ### Cluster pages
 
-__New in v5.3.0__
+✳️ __New in [v5.3.0](CHANGELOG.md#v530)__
 
 When you're in the Lens cluster view, you can now find Mirantis Container Cloud-specific information in the __Container Cloud__ pages accessible at the bottom of the sidenav (highlighted in red below).
 
@@ -188,9 +192,29 @@ Click __Cancel__ (next to the _Synchronize selected projects_ button) to back ou
 
 ## Offline support
 
-Whether a management cluster becomes "disconnected" and is not re-connected for a while, or Lens is closed for a long period of time, all resources that were last synced prior to disconnection or quitting the app will be kept in the Catalog and restored in Lens the next time it's opened.
+Whether a management cluster becomes _disconnected_ and is not re-connected for a while, or Lens is closed for a long period of time, all resources that were last synced prior to disconnection or quitting the app will be kept in the Catalog and restored in Lens the next time it's opened.
 
 Just reconnect when you're able and let the synchronization process update to the current state of things in order to keep your Catalog up-to-date.
+
+> ❗️ A network connection is always necessary in order to have the most up-to-date cluster data and status. This is simply a convenience feature should you have to use Lens while temporarily offline.
+
+## Offline tokens
+
+✳️ __New in [v5.5.0](CHANGELOG.md#v550)__
+
+The `Use offline tokens` option (offered both when [adding](#adding-your-first-management-cluster) a management cluster, or updating its sync settings via the [Selective sync](#sync-view) view) determines whether the cluster access tokens are short-lived or long-lived.
+
+When a cluster is synced via this extension, a kubeconfig file is generated. This file is then used by Lens to connect with the cluster when opening it from the Catalog.
+
+The kubeconfig is configured to use the [kube-login](https://github.com/int128/kubelogin) binary (bundled with the extension) to enable Lens to obtain cluster access tokens (different from the API access token used to "connect" to a management cluster).
+
+This is why your default browser is toggled when you open the cluster for the first time (or whenever the tokens expire and Lens needs to obtain new ones).
+
+> ⚠️ Expired tokens [can cause some havoc](https://github.com/lensapp/lens/issues/6966), especially when the tokens are short-lived, though using long-lived tokens would not necessarily make you immune to this issue; it would simply push it off further into the future.
+
+These cluster access tokens are those which are partially configured via the `Use offline tokens` option, which applies uniformally to all synced clusters from a given management cluster.
+
+> 💬 "Offline" tokens should not be confused with [offline support](#offline-support), which is about retaining the ability to see synced objects even when temporarily offline (disconnected from your network). Eventually, even long-lived tokens will expire and will need to be renewed.
 
 ## FAQ
 
@@ -201,9 +225,10 @@ Just reconnect when you're able and let the synchronization process update to th
     - Typically, the extension is able to renew these tokens for a few hours, but once the renewal is no longer possible (for security reasons, a more recent authorization becomes necessary), a management cluster will become disconnected even while Lens is still running.
     - Quitting Lens for more than 30 minutes will definitely result in disconnection as the access token (which has a ~5 minute lifespan) as well as the refresh token, which has a ~30 minute lifespan, will both have expired.
 - Lens keeps toggling my browser to authenticate with a synced cluster.
-    - This appears to be an issue with Lens, not the extension. The kubeconfig provided to Lens for the synced cluster is valid, though it's different from kubeconfigs normally used by Lens in that it doesn't contain any offline tokens. Instead, it causes Lens to go through the `kube-login` binary (bundled with the extension) to obtain SSO tokens, and `kube-login` goes through your system's default browser to obtain those tokens.
+    - This appears to be an [issue with Lens](https://github.com/lensapp/lens/issues/6966), not this extension. The kubeconfig provided to Lens for the synced cluster is valid, though it's different from kubeconfigs normally used by Lens in that it doesn't contain any offline tokens. Instead, it causes Lens to go through the [kube-login](https://github.com/int128/kubelogin) binary (bundled with the extension) to obtain SSO tokens, and `kube-login` goes through your system's default browser to obtain those tokens.
     - Quitting and restarting Lens normally fixes the issue.
     - If the issue persists after quitting Lens (and leaving it closed because you don't need to use it for a while), then you may need to check for rogue Lens-related processes in your operating system's process explorer app and kill those lingering ones for the behavior to stop.
+    - 💡 As of [v5.5.0](CHANGELOG.md#v550), it's possible to work around this issue by using [offline tokens](#offline-tokens) for cluster access.
 
 ## Security
 

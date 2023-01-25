@@ -25,9 +25,16 @@ export class CloudStore extends Common.Store.ExtensionStore {
   /**
    * @member {IpcMain|undefined} ipcMain IpcMain singleton instance if this store instance
    *  is running on the MAIN thread; `undefined` if it's on the RENDERER thread. `undefined`
-   *  until the store is loaded with the Extension via `loadExtension()`.
+   *  until the store is loaded with the Extension via `main.tsx > loadExtension()`.
    */
   ipcMain; // NOT observable on purpose; set only once
+
+  /**
+   * @member {IpcRenderer|undefined} ipcRenderer IpcRenderer singleton instance if this store
+   *  instance is running on the RENDERER thread; `undefined` if it's on the MAIN thread.
+   *  `undefined` until the store is loaded with the Extension via `renderer.tsx > loadExtension()`.
+   */
+  ipcRenderer; // NOT observable on purpose; set only once
 
   static getDefaults() {
     return {
@@ -48,11 +55,31 @@ export class CloudStore extends Common.Store.ExtensionStore {
    * @override
    * @param {Main.LensExtension|Renderer.LensExtension} extension Main or Renderer extension
    *  instance.
-   * @param {IpcMain} [ipcMainInstance] IpcMain singleton instance if being loaded on the
+   * @param {Object} params
+   * @param {IpcMain} [params.ipcMainInstance] IpcMain singleton instance if being loaded on the
    *  MAIN thread; `undefined` otherwise.
+   * @param {IpcRenderer} [params.ipcRendererInstance] IpcRenderer singleton instance if being
+   *  loaded on the RENDERER thread; `undefined` otherwise.
+   * @throws {Error} If both `ipcMain` and `ipcRenderer` are somehow provided at the same time,
+   *  or if neither are provided.
    */
-  loadExtension(extension, ipcMainInstance) {
+  loadExtension(
+    extension,
+    { ipcMain: ipcMainInstance, ipcRenderer: ipcRendererInstance }
+  ) {
+    if (ipcMainInstance && ipcRendererInstance) {
+      throw new Error(
+        'Cannot provide both ipcMain and ipcRenderer at the same time'
+      );
+    }
+
+    if (!ipcMainInstance && !ipcRendererInstance) {
+      throw new Error('Either ipcMain or ipcRenderer must be provided');
+    }
+
     this.ipcMain = ipcMainInstance;
+    this.ipcRenderer = ipcRendererInstance;
+
     super.loadExtension(extension);
   }
 
@@ -185,6 +212,34 @@ export class CloudStore extends Common.Store.ExtensionStore {
         )} on cloud=${logValue(cloud.cloudUrl)}`
       );
 
+      if (this.ipcRenderer && name === CLOUD_EVENTS.SYNC_CHANGE) {
+        logger.log(
+          'CloudStore.onCloudChange()',
+          `<RENDERER> Broadcasting cloud sync change IPC event for cloud=${logValue(
+            cloud.cloudUrl
+          )}`
+        );
+
+        // NOTE: doing this here, under the shelter of `!isFromStore`, and in the event handler
+        //  for CLOUD_EVENTS.SYNC_CHANGE (instead of on every individual property in Cloud.js
+        //  where the SYNC_CHANGE event is dispatched) means we can avoid broadcasting a bunch
+        //  of these events either in succession (since SYNC_CHANGE is dispatched as a result
+        //  of updating multiple Cloud properties) or at the wrong time (i.e. resulting from a
+        //  store update instead of an actual user update)
+        // NOTE: broadcasting this event just before forcing an update to the CloudStore to trigger
+        //  the MAIN thread to get the changes does open the door to a race condition because we
+        //  really want the MAIN thread to know about the sync change __before__ it gets the new
+        //  Cloud-related data (i.e. new set of synced namespaces and objects therein), but since
+        //  the update to the CloudStore has to first go to disk, and then get picked up by the
+        //  MAIN thread, notify the SyncManager, related Cloud gets updated on MAIN thread,
+        //  triggers related DataCloud to fetch new data, DataCloud makes a bunch of async network
+        //  requests, and finally, SyncManager sees a DATA_UPDATED event from the DataCloud, there
+        //  is a __very__ high likelihood the IPC notification will get there first... and if it
+        //  doesn't, the SyncManager will still do the work, just 5 minutes later on the next
+        //  scheduled sync interval
+        this.ipcRenderer.notifyCloudSyncChange(cloud.cloudUrl);
+      }
+
       // NOTE: this event doesn't mean we have a new Cloud instance; it just means
       //  one or more properties of the Cloud object were changed, and by assigning
       //  a new shallow copy of the existing store, we'll trigger the Store to persist
@@ -255,7 +310,7 @@ export class CloudStore extends Common.Store.ExtensionStore {
         )}`
       );
       eventNames = [
-        CLOUD_EVENTS.SYNC_CHANGE, // selective sync changes only happend on RENDERER
+        CLOUD_EVENTS.SYNC_CHANGE, // selective sync changes only happen on RENDERER
         CLOUD_EVENTS.PROP_CHANGE, // may change on RENDERER if we allow editing name
       ];
     }

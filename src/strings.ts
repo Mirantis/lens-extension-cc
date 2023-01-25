@@ -44,6 +44,7 @@ export const closeButton: Dict = {
   label: () => 'Close',
   title: () => 'ESC',
 };
+
 export const connectionBlock: Dict = {
   title: () => `Add a ${mccFullName} Management Cluster to Lens`,
   clusterName: {
@@ -53,6 +54,17 @@ export const connectionBlock: Dict = {
   },
   clusterUrl: {
     label: () => 'Management Cluster URL:',
+  },
+  trustHost: {
+    label: () => 'Trust this host',
+    help: () => 'By trusting this host, TLS verification will be disabled',
+    warning: () =>
+      'This is unsafe. Note that untrusting the host in the future will require the management cluster to be removed and re-added without this option.',
+  },
+  offlineAccess: {
+    label: () => 'Use offline tokens',
+    help: () =>
+      'Less secure as long-lived tokens will not require re-authentication as often',
   },
   button: {
     label: () => 'Connect',
@@ -77,6 +89,7 @@ export const synchronizeBlock = {
   title: () => 'Select projects to synchronize',
   synchronizeButtonLabel: () => 'Synchronize selected projects',
   synchronizeFutureProjects: () => 'Synchronize future projects',
+  useOfflineTokens: () => 'Use offline tokens',
   checkAllCheckboxLabel: () => 'Project name',
   noProjectsFound: () =>
     'No projects found. At least one project is required for syncing. Try another management cluster.',
@@ -107,7 +120,8 @@ export const managementClusters = {
       name: () => 'Name',
       url: () => 'URL',
       username: () => 'Username',
-      autosync: () => 'Auto-sync',
+      autoSync: () => 'Auto-sync',
+      offlineAccess: () => 'Offline tokens',
       status: () => 'Status',
     },
     tbodyDetailedInfo: {

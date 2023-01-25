@@ -19,8 +19,6 @@ describe('/renderer/components/EnhancedTable/EnhancedTable', () => {
     user = userEvent.setup();
     mockConsole(['log', 'info', 'warn']); // automatically restored after each test
 
-    IpcRenderer.createInstance(extension);
-
     fakeCloudFoo = new Cloud({
       cloudUrl: 'http://foo.com',
       name: 'foo',
@@ -57,7 +55,8 @@ describe('/renderer/components/EnhancedTable/EnhancedTable', () => {
       ],
     });
 
-    CloudStore.createInstance().loadExtension(extension);
+    const ipcRenderer = IpcRenderer.createInstance(extension);
+    CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
   });
 
   [true, false].forEach((isSelectiveSyncView) => {

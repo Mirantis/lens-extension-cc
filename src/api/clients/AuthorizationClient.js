@@ -42,6 +42,7 @@ export class AuthorizationClient {
    */
   request(endpoint, { options = {}, expectedStatuses = [200], errorMessage }) {
     return request(
+      // TODO[trustHost]: need to tell request() to trustHost...
       `${this.baseUrl}/${AuthorizationClient.apiPrefix}/${endpoint}`,
       {
         credentials: 'same-origin',

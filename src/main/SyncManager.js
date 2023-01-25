@@ -82,6 +82,7 @@ export class SyncManager extends Singleton {
 
     let _dataClouds = {};
     let _extFolderPath = null;
+    let _cloudSyncChangedMap = {};
 
     /**
      * @readonly
@@ -154,16 +155,33 @@ export class SyncManager extends Singleton {
       },
     });
 
+    /**
+     * @readonly
+     * @member {Record<string,true>} cloudSyncChangedMap Map of Cloud URL to `true`
+     *  if the Cloud has had a recent change to its sync-related properties.
+     */
+    Object.defineProperty(this, 'cloudSyncChangedMap', {
+      enumerable: true,
+      get() {
+        return _cloudSyncChangedMap;
+      },
+    });
+
     //// Initialize
 
     ipcMain.handle(consts.ipcEvents.invoke.SYNC_NOW, this.handleSyncNow);
     ipcMain.handle(consts.ipcEvents.invoke.RECONNECT, this.handleReconnect);
 
+    ipcMain.listen(
+      consts.ipcEvents.broadcast.CLOUD_SYNC_CHANGE,
+      this.handleCloudSyncChange
+    );
+
     // @see https://mobx.js.org/reactions.html#reaction
     reaction(
       // react to changes in `clouds` array
       () => cloudStore.clouds,
-      this.onCloudStoreChange,
+      this.handleCloudStoreChange,
       {
         // fire right away because it's unclear if the SyncStore will be loaded by now
         //  or now, and we don't want to sit there waiting for it when it's already
@@ -178,7 +196,7 @@ export class SyncManager extends Singleton {
 
     // @see https://mobx.js.org/reactions.html#reaction
     reaction(
-      // react to changes in `clouds` array
+      // react to changes in SyncStore lists
       () => ({
         credentials: syncStore.credentials,
         sshKeys: syncStore.sshKeys,
@@ -186,7 +204,7 @@ export class SyncManager extends Singleton {
         licenses: syncStore.licenses,
         proxies: syncStore.proxies,
       }),
-      this.onSyncStoreChange,
+      this.handleSyncStoreChange,
       {
         // fire right away because it's unclear if the SyncStore will be loaded by now
         //  or now, and we don't want to sit there waiting for it when it's already
@@ -611,7 +629,8 @@ export class SyncManager extends Singleton {
     );
 
     const ACTION_ADDED = 'added';
-    const ACTION_UPDATED = 'updated';
+    const ACTION_UPDATED = 'updated'; // props and/or config were updated
+    const ACTION_CONFIG_UPDATED = 'configUpdated'; // if only kubeconfig was updated
 
     //// GET KUBECONFIG FILE BASE PATH
 
@@ -634,7 +653,9 @@ export class SyncManager extends Singleton {
     //   cluster: Cluster,
     //   model: clusterEntityModelTs, // model created from `cluster`
     //   catEntity?: KubernetesCluster, // EXISTING Catalog Entity (if action not 'added')
-    //   action: 'added' | 'updated' | null
+    //   action: 'added' | 'updated' | 'configUpdated' | null,
+    //   // `changes` only specified if `action='updated'`
+    //   changes?: { cacheChanged: boolean, resourceChanged: boolean, clusterEventsChanged?: boolean, clusterUpdatesChanged?: boolean },
     // }
     const promises = clusters.map((cluster) => {
       if (!cluster.configReady) {
@@ -651,21 +672,37 @@ export class SyncManager extends Singleton {
 
       const catEntity = findEntity(this.catalogSource, model);
       let action = ACTION_ADDED; // assume new entity until we see if we already know it
+      let changes;
 
       if (catEntity) {
         // entity exists already in the Catalog: either same (no changes) or updated
-        if (entityHasChanged(catEntity, cluster)) {
+        changes = entityHasChanged(catEntity, cluster);
+        if (changes) {
           // something about that resource has changed since the last time we fetched it
           action = ACTION_UPDATED;
+        } else if (this.cloudSyncChangedMap[dataCloud.cloudUrl]) {
+          // entity itself hasn't changed, but a related sync-related property (e.g.
+          //  `offlineAccess` setting) has changed so we still need to at least
+          //  update its kubeconfig file
+          action = ACTION_CONFIG_UPDATED;
         } else {
           // no changes
           action = null;
         }
       }
 
-      if (action) {
-        // new or updated entity: create/update kubeconfig file
-        const kubeConfig = cluster.getKubeConfig(this.getTokenCachePath());
+      if (
+        action === ACTION_ADDED ||
+        (action === ACTION_UPDATED &&
+          (changes.cacheChanged || changes.resourceChanged)) ||
+        action === ACTION_CONFIG_UPDATED
+      ) {
+        // new or updated entity, or updated cloud sync settings which could include a change
+        //  to its `offlineToken` setting: create/update kubeconfig file
+        const kubeConfig = cluster.getKubeConfig(this.getTokenCachePath(), {
+          offlineAccess: dataCloud.cloud.offlineAccess,
+          // TODO[trustHost]: skipTlsVerify must come from cloud also
+        });
         this.ipcMain.capture(
           'log',
           'SyncManager.updateClusterEntities()',
@@ -673,7 +710,11 @@ export class SyncManager extends Singleton {
             action === ACTION_ADDED ? 'Writing' : 'Overwriting'
           } kubeconfig file for cluster=${logValue(
             cluster.toShortString()
-          )}; filePath=${logValue(configFilePath)}`
+          )}; action=${logValue(action)}; changes=${
+            changes
+              ? JSON.stringify(changes).split(',').join(', ')
+              : logValue(changes)
+          }; filePath=${logValue(configFilePath)}`
         );
         return fs.mkdir(configDirPath, { recursive: true }).then(
           () =>
@@ -692,6 +733,7 @@ export class SyncManager extends Singleton {
                   model,
                   catEntity, // `undefined` if `action=ACTION_ADDED` (i.e. new) and not found in Catalog
                   action,
+                  changes,
                 }),
                 (err) => {
                   throw new Error(
@@ -714,14 +756,20 @@ export class SyncManager extends Singleton {
           }
         );
       } else {
+        // if there were changes, they didn't require updating the kubeconfig
         return Promise.resolve({
           cluster,
           model,
           catEntity,
           action,
+          changes,
         });
       }
     });
+
+    // remove from the map if it was there now that we've looped through all synced clusters
+    //  in the Cloud
+    delete this.cloudSyncChangedMap[dataCloud.cloudUrl];
 
     //// ADD, UPDATE, DELETE CATALOG ENTITIES
 
@@ -734,7 +782,7 @@ export class SyncManager extends Singleton {
 
       results.forEach((result) => {
         if (result.status === 'fulfilled') {
-          const { cluster, model, catEntity, action } = result.value;
+          const { cluster, model, catEntity, action, changes } = result.value;
 
           cloudClusterIds[cluster.uid] = true;
 
@@ -758,7 +806,7 @@ export class SyncManager extends Singleton {
                 catEntity.metadata.cacheVersion
               )} -> ${logValue(
                 cluster.cacheVersion
-              )}) (cluster events/updates may also have changed)`
+              )}); changes=${JSON.stringify(changes).split(',').join(', ')}`
             );
 
             if (this.updateEntity(catEntity, model)) {
@@ -772,7 +820,9 @@ export class SyncManager extends Singleton {
             this.ipcMain.capture(
               'log',
               'SyncManager.updateClusterEntities()',
-              `Skipping ${cluster} update: No changes detected`
+              `Skipping ${cluster} update: No prop changes detected; action=${logValue(
+                action
+              )}`
             );
           }
         } else {
@@ -976,7 +1026,7 @@ export class SyncManager extends Singleton {
    *  by the reaction()).
    * @see https://mobx.js.org/reactions.html#reaction
    */
-  onCloudStoreChange = () => {
+  handleCloudStoreChange = () => {
     const oldSyncedDCs = { ...this.dataClouds };
 
     // add new DataClouds for new Clouds added to CloudStore
@@ -987,7 +1037,7 @@ export class SyncManager extends Singleton {
         // NOTE: initial data fetch is scheduled internally by the DataCloud itself
         this.ipcMain.capture(
           'info',
-          'SyncManager.onCloudStoreChange()',
+          'SyncManager.handleCloudStoreChange()',
           `Detected new Cloud, creating new DataCloud for it; cloud=${cloud}`
         );
 
@@ -995,14 +1045,17 @@ export class SyncManager extends Singleton {
 
         dataCloud.addEventListener(
           DATA_CLOUD_EVENTS.DATA_UPDATED,
-          this.onDataUpdated
+          this.handleDataCloudUpdated
         );
 
         this.dataClouds[cloudUrl] = dataCloud;
       }
     });
 
-    // filter out updated Clouds
+    // filter out updated Clouds because the CloudStore has already updated them,
+    //  which has already triggered their wrapping DataClouds to fetch new data,
+    //  which will soon dispatch DataCloud.EVENTS.DATA_UPDATED events, calling the
+    //  `SyncManager.handleDataCloudUpdated()` handler
     Object.keys(oldSyncedDCs).forEach((cloudUrl) => {
       if (cloudStore.clouds[cloudUrl]) {
         // still exists so remove from the old list so we don't destroy it
@@ -1010,6 +1063,14 @@ export class SyncManager extends Singleton {
         //  they change in the cloud-store.json file, and those updates will cause
         //  CLOUD_EVENTS to fire if appropriate, which wrapping DataClouds will have
         //  already seen by now
+        // NOTE: this is what allows existing DataClouds to receive updated namespace
+        //  lists, because the Clouds get updated on RENDERER (with namespace selection),
+        //  which writes to the CloudStore on RENDERER, which causes the CloudStore on
+        //  MAIN to get updated (`CloudStore.fromStore()`), which finds the existing
+        //  Cloud and calls `Cloud.update()` with the newer Cloud JSON (carrying the
+        //  updated list of synced namespaces), which dispatches a SYNC_CHANGE event,
+        //  which the existing DataCloud (on MAIN) that wraps the Cloud is listening
+        //  for, triggering it to fetch updated data...
         delete oldSyncedDCs[cloudUrl];
       }
     });
@@ -1018,13 +1079,13 @@ export class SyncManager extends Singleton {
     Object.entries(oldSyncedDCs).forEach(([cloudUrl, dataCloud]) => {
       this.ipcMain.capture(
         'info',
-        'SyncManager.onCloudStoreChange()',
+        'SyncManager.handleCloudStoreChange()',
         `Destroying old DataCloud removed from CloudStore; dataCloud=${dataCloud}`
       );
 
       dataCloud.removeEventListener(
         DATA_CLOUD_EVENTS.DATA_UPDATED,
-        this.onDataUpdated
+        this.handleDataCloudUpdated
       );
 
       this.removeCloudFromCatalog(dataCloud);
@@ -1033,11 +1094,12 @@ export class SyncManager extends Singleton {
       dataCloud.destroy();
 
       delete this.dataClouds[cloudUrl];
+      delete this.cloudSyncChangedMap[cloudUrl];
     });
 
     this.ipcMain.capture(
       'info',
-      'SyncManager.onCloudStoreChange()',
+      'SyncManager.handleCloudStoreChange()',
       'Done: DataClouds updated'
     );
   };
@@ -1053,10 +1115,10 @@ export class SyncManager extends Singleton {
    * }} state State of the SyncStore (value generated by configured reaction()).
    * @see https://mobx.js.org/reactions.html#reaction
    */
-  onSyncStoreChange = (state) => {
+  handleSyncStoreChange = (state) => {
     this.ipcMain.capture(
       'info',
-      'SyncManager.onSyncStoreChange()',
+      'SyncManager.handleSyncStoreChange()',
       'SyncStore state has changed: Updating Catalog'
     );
 
@@ -1077,7 +1139,7 @@ export class SyncManager extends Singleton {
             // something about that resource has changed since the last time we fetched it
             this.ipcMain.capture(
               'log',
-              'SyncManager.onSyncStoreChange()',
+              'SyncManager.handleSyncStoreChange()',
               `Updating ${modelToString(
                 model
               )} in Catalog: resourceVersion ${logValue(
@@ -1098,7 +1160,7 @@ export class SyncManager extends Singleton {
           } else {
             this.ipcMain.capture(
               'log',
-              'SyncManager.onSyncStoreChange()',
+              'SyncManager.handleSyncStoreChange()',
               `Skipping ${modelToString(model)} update: No changes detected`
             );
           }
@@ -1106,7 +1168,7 @@ export class SyncManager extends Singleton {
           // new entity we have discovered: add to Catalog
           this.ipcMain.capture(
             'log',
-            'SyncManager.onSyncStoreChange()',
+            'SyncManager.handleSyncStoreChange()',
             `Adding new ${modelToString(model)} to Catalog`
           );
           newEntities.push(this.mkEntity(model));
@@ -1126,7 +1188,7 @@ export class SyncManager extends Singleton {
         const entity = this.catalogSource[idx];
         this.ipcMain.capture(
           'log',
-          'SyncManager.onSyncStoreChange()',
+          'SyncManager.handleSyncStoreChange()',
           `Removing entity ${entityToString(entity)} from Catalog: Deleted`
         );
         this.catalogSource.splice(idx, 1);
@@ -1138,14 +1200,14 @@ export class SyncManager extends Singleton {
 
       this.ipcMain.capture(
         'info',
-        'SyncManager.onSyncStoreChange()',
+        'SyncManager.handleSyncStoreChange()',
         `Added=${newEntities.length}, updated=${updateCount}, deleted=${deleteCount} ${type} Catalog entities`
       );
     });
 
     this.ipcMain.capture(
       'info',
-      'SyncManager.onSyncStoreChange()',
+      'SyncManager.handleSyncStoreChange()',
       'Done: Catalog updated'
     );
   };
@@ -1153,7 +1215,7 @@ export class SyncManager extends Singleton {
   /**
    * Called to trigger an immediate sync of the specified Cloud if it's known and
    *  isn't currently fetching data.
-   * @param {string} event ID provided by Lens.
+   * @param {string} event IPC event ID provided by Lens.
    * @param {string} cloudUrl URL for the Cloud to sync.
    */
   handleSyncNow = (event, cloudUrl) => {
@@ -1184,7 +1246,7 @@ export class SyncManager extends Singleton {
 
   /**
    * Called to trigger a reconnection to a Cloud that should be currently disconnected.
-   * @param {string} event ID provided by Lens.
+   * @param {string} event IPC event ID provided by Lens.
    * @param {string} cloudUrl URL for the Cloud.
    */
   handleReconnect = (event, cloudUrl) => {
@@ -1214,14 +1276,39 @@ export class SyncManager extends Singleton {
   };
 
   /**
+   * Signals that a Cloud had a change to its sync-related properties on another thread.
+   * @param {string} event IPC event ID provided by Lens.
+   * @param {string} cloudUrl URL for the Cloud that had the change.
+   */
+  handleCloudSyncChange = (event, cloudUrl) => {
+    if (cloudUrl && this.dataClouds[cloudUrl]) {
+      this.ipcMain.capture(
+        'info',
+        'SyncManager.handleCloudSyncChange()',
+        `Flagging cloud=${logValue(
+          cloudUrl
+        )} as having sync-changed for next data cloud update`
+      );
+
+      this.cloudSyncChangedMap[cloudUrl] = true;
+    } else {
+      this.ipcMain.capture(
+        'error',
+        'SyncManager.handleCloudSyncChange()',
+        `Unknown Cloud; cloudUrl=${logValue(cloudUrl)}`
+      );
+    }
+  };
+
+  /**
    * Called whenever a DataCloud's data has been updated.
    * @param {Object} event
    * @param {DataCloud} event.dataCloud The updated DataCloud.
    */
-  onDataUpdated = async ({ target: dataCloud }) => {
+  handleDataCloudUpdated = async ({ target: dataCloud }) => {
     this.ipcMain.capture(
       'info',
-      'SyncManager.onDataUpdated()',
+      'SyncManager.handleDataCloudUpdated()',
       `Updating Catalog and SyncStore after changes in dataCloud=${dataCloud}`
     );
 
@@ -1255,7 +1342,7 @@ export class SyncManager extends Singleton {
 
     this.ipcMain.capture(
       'info',
-      'SyncManager.onDataUpdated()',
+      'SyncManager.handleDataCloudUpdated()',
       `Done: Updated Catalog and SyncStore for changes in dataCloud=${dataCloud}`
     );
   };

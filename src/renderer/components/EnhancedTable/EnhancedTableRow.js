@@ -130,6 +130,7 @@ export const EnhancedTableRow = ({
     makeCheckboxesInitialState(cloud)
   );
   const [syncAll, setSyncAll] = useState(cloud.syncAll);
+  const [offlineAccess, setOfflineAccess] = useState(cloud.offlineAccess);
   const [isOpenFirstLevel, setIsOpenFirstLevel] = useState(false);
   const [openNamespaces, setOpenNamespaces] = useState([]);
 
@@ -138,7 +139,7 @@ export const EnhancedTableRow = ({
   useEffect(() => {
     if (isSyncStarted && typeof getDataToSync === 'function') {
       getDataToSync(
-        { syncedNamespaces, ignoredNamespaces, syncAll },
+        { syncedNamespaces, ignoredNamespaces, syncAll, offlineAccess },
         cloud.cloudUrl
       );
     }
@@ -147,6 +148,7 @@ export const EnhancedTableRow = ({
     isSyncStarted,
     getSyncedData,
     syncAll,
+    offlineAccess,
     cloud.cloudUrl,
     syncedNamespaces,
     ignoredNamespaces,
@@ -296,13 +298,24 @@ export const EnhancedTableRow = ({
           )}
         </EnhTableRowCell>
         {withCheckboxes && (
-          <EnhTableRowCell>
-            <TriStateCheckbox
-              label={strings.synchronizeBlock.synchronizeFutureProjects()}
-              onChange={() => setSyncAll(!syncAll)}
-              value={syncAll ? checkValues.CHECKED : checkValues.UNCHECKED}
-            />
-          </EnhTableRowCell>
+          <>
+            <EnhTableRowCell>
+              <TriStateCheckbox
+                label={strings.synchronizeBlock.synchronizeFutureProjects()}
+                onChange={() => setSyncAll(!syncAll)}
+                value={syncAll ? checkValues.CHECKED : checkValues.UNCHECKED}
+              />
+            </EnhTableRowCell>
+            <EnhTableRowCell>
+              <TriStateCheckbox
+                label={strings.synchronizeBlock.useOfflineTokens()}
+                onChange={() => setOfflineAccess(!offlineAccess)}
+                value={
+                  offlineAccess ? checkValues.CHECKED : checkValues.UNCHECKED
+                }
+              />
+            </EnhTableRowCell>
+          </>
         )}
         <EnhTableRowCell>{cloud.cloudUrl}</EnhTableRowCell>
         {renderRestSyncTableRows()}

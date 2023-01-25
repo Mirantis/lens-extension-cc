@@ -22,8 +22,6 @@ describe('/renderer/components/GlobalPage/AddCloudInstance', () => {
     user = userEvent.setup();
     mockConsole(); // automatically restored after each test
 
-    IpcRenderer.createInstance(extension);
-
     fakeCloud = new Cloud({
       name: 'bar',
       cloudUrl: 'http://bar.com',
@@ -96,7 +94,8 @@ describe('/renderer/components/GlobalPage/AddCloudInstance', () => {
       namespaces: [],
     };
 
-    CloudStore.createInstance().loadExtension(extension);
+    const ipcRenderer = IpcRenderer.createInstance(extension);
+    CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
   });
 
   it('renders component', () => {

@@ -63,6 +63,7 @@ export class ApiClient {
       'Content-Type': 'application/x-www-form-urlencoded',
     };
     return request(
+      // TODO[trustHost]: need to tell request() to config.trustHost...
       `${this.baseUrl}/${this.issuerRoute}/${authRoute}/${endpoint}`,
       {
         credentials: 'same-origin',

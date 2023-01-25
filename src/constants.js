@@ -130,6 +130,7 @@ export const ipcEvents = deepFreeze({
      *
      * Signature: `(event: string, cloudUrl: string, status: { connecting: boolean, connectError: string|null }) => void`
      *
+     * - `cloudUrl`: URL of the Cloud that changed.
      * - `status.connecting`: True if the Cloud is currently connecting (i.e. getting config
      *     or tokens).
      * - `status.connectError`: Error message if connection failed; `null` if no errors reported.
@@ -141,6 +142,7 @@ export const ipcEvents = deepFreeze({
      *
      * Signature: `(event: string, cloudUrl: string, loaded: boolean) => void`
      *
+     * - `cloudUrl`: URL of the Cloud that changed.
      * - `loaded`: New loaded state.
      */
     CLOUD_LOADED_CHANGE: 'cloudLoadedChange',
@@ -150,9 +152,21 @@ export const ipcEvents = deepFreeze({
      *
      * Signature: `(event: string, cloudUrl: string, fetching: boolean) => void`
      *
+     * - `cloudUrl`: URL of the Cloud that changed.
      * - `fetching`: New fetching state.
      */
     CLOUD_FETCHING_CHANGE: 'cloudFetchingChange',
+
+    /**
+     * A Cloud's sync-related properties have changed (i.e. a `CLOUD_EVENTS.SYNC_CHANGE`
+     *  event was dispatched on a Cloud on one thread or another).
+     *
+     * Signature: `(event: string, cloudUrl: string) => void`
+     *
+     * - `cloudUrl`: URL of the Cloud that changed.
+     * - `fetching`: New fetching state.
+     */
+    CLOUD_SYNC_CHANGE: 'cloudSyncChange',
 
     /**
      * System power is being suspended.

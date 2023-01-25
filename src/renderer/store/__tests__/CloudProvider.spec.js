@@ -102,8 +102,8 @@ describe('/renderer/store/CloudProvider', () => {
           },
         });
 
-        CloudStore.createInstance().loadExtension(extension);
-        IpcRenderer.createInstance(extension);
+        const ipcRenderer = IpcRenderer.createInstance(extension);
+        CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
       });
 
       describe('cloudActions.removeCloud()', () => {

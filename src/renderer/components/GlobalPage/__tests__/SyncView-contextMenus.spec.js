@@ -17,12 +17,13 @@ const {
 describe('/renderer/components/GlobalPage/SyncView', () => {
   const extension = {};
   let user;
+  let ipcRenderer;
 
   beforeEach(() => {
     user = userEvent.setup();
     mockConsole(['log', 'info', 'warn']); // automatically restored after each test
 
-    IpcRenderer.createInstance(extension);
+    ipcRenderer = IpcRenderer.createInstance(extension);
   });
 
   describe('getCloudMenuItems()', () => {
@@ -82,7 +83,7 @@ describe('/renderer/components/GlobalPage/SyncView', () => {
           'http://foo.com': disconnectedFakeCloudJson,
         },
       });
-      CloudStore.createInstance().loadExtension(extension);
+      CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
 
       render(
         <CloudProvider>
@@ -102,7 +103,7 @@ describe('/renderer/components/GlobalPage/SyncView', () => {
           'http://bar.com': fakeCloudWithoutNamespacesJson,
         },
       });
-      CloudStore.createInstance().loadExtension(extension);
+      CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
 
       render(
         <CloudProvider>
@@ -122,7 +123,7 @@ describe('/renderer/components/GlobalPage/SyncView', () => {
           'http://bar.com': fakeCloudJson,
         },
       });
-      CloudStore.createInstance().loadExtension(extension);
+      CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
 
       render(
         <CloudProvider>
@@ -146,7 +147,7 @@ describe('/renderer/components/GlobalPage/SyncView', () => {
           'http://bar.com': fakeCloudJson,
         },
       });
-      CloudStore.createInstance().loadExtension(extension);
+      CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
 
       render(
         <CloudProvider>

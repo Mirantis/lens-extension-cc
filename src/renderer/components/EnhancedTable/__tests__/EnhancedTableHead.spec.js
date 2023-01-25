@@ -15,8 +15,8 @@ describe('/renderer/components/EnhancedTable/EnhancedTableHead', () => {
     const { headCellValue } = getTableData(isSelectiveSync);
     const testSortedBy = headCellValue.NAME;
 
-    const headerCells = Object.keys(headCellValue).map((key) => ({
-      label: managementClusters.table.thead[key.toLowerCase()](),
+    const headerCells = Object.values(headCellValue).map((key) => ({
+      label: managementClusters.table.thead[key](),
       key,
     }));
 

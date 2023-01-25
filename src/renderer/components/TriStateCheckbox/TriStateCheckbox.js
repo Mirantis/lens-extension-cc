@@ -9,6 +9,7 @@ const CheckboxItem = styled.div(() => ({
   minWidth: 64,
   height: 'auto',
   display: 'flex',
+  flexDirection: 'column',
 }));
 
 const CheckboxControlPart = styled.label(() => ({
@@ -52,6 +53,13 @@ const CheckboxLabel = styled.span(() => ({
   overflow: 'hidden',
 }));
 
+const HelpText = styled.p(() => ({
+  flex: 1, // flex child of <CheckboxItem>
+  marginTop: layout.grid,
+  fontStyle: 'italic',
+  cursor: 'default',
+}));
+
 const iconStyles = {
   color: 'var(--inputControlBackground)',
   fontSize: '16px',
@@ -63,9 +71,15 @@ export const checkValues = {
   MIXED: 'MIXED',
 };
 
-export const TriStateCheckbox = ({ label, onChange, value }) => {
+export const TriStateCheckbox = ({
+  label,
+  help,
+  onChange,
+  value,
+  ...props
+}) => {
   return (
-    <CheckboxItem>
+    <CheckboxItem {...props}>
       <CheckboxControlPart>
         <CheckboxControl isChecked={value !== checkValues.UNCHECKED}>
           {value === checkValues.MIXED && (
@@ -84,12 +98,14 @@ export const TriStateCheckbox = ({ label, onChange, value }) => {
           {label}
         </CheckboxLabel>
       </CheckboxControlPart>
+      {help ? <HelpText>{help}</HelpText> : null}
     </CheckboxItem>
   );
 };
 
 TriStateCheckbox.propTypes = {
   label: PropTypes.string.isRequired,
+  help: PropTypes.string, // help text, if any
   onChange: PropTypes.func.isRequired,
   value: PropTypes.string.isRequired,
 };

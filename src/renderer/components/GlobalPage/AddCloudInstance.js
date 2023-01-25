@@ -110,12 +110,22 @@ export const AddCloudInstance = ({ onAdd, onCancel }) => {
     Notifications.error(addCloudInstance.connectionError());
   };
 
-  const handleClusterConnect = async function (clusterUrl, clusterName) {
+  const handleClusterConnect = async function ({
+    clusterUrl,
+    clusterName,
+    offlineAccess,
+    trustHost,
+  }) {
     cleanCloudsState();
-    const normUrl = normalizeUrl(clusterUrl.trim());
     setLoading(true);
-    let newCloud = new Cloud(normUrl);
+
+    const normUrl = normalizeUrl(clusterUrl.trim());
+
+    const newCloud = new Cloud(normUrl);
     newCloud.name = clusterName;
+    newCloud.offlineAccess = offlineAccess;
+    newCloud.trustHost = trustHost;
+
     const statusListener = () => {
       if (newCloud.status === CONNECTION_STATUSES.CONNECTING) {
         setLoading(true);
@@ -132,7 +142,9 @@ export const AddCloudInstance = ({ onAdd, onCancel }) => {
         }
       }
     };
+
     newCloud.addEventListener(CLOUD_EVENTS.STATUS_CHANGE, statusListener);
+
     await newCloud.connect();
   };
 
@@ -141,7 +153,7 @@ export const AddCloudInstance = ({ onAdd, onCancel }) => {
       <MainColumn>
         <ConnectionBlock
           loading={loading}
-          handleClusterConnect={handleClusterConnect}
+          onClusterConnect={handleClusterConnect}
         />
         {loading ? (
           <Spinner />

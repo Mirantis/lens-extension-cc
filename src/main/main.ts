@@ -44,24 +44,24 @@ export default class ExtensionMain extends Main.LensExtension {
     // NOTE: an extension can only have ONE registered Catalog Source
     this.addCatalogSource(consts.catalog.source, catalogSource);
 
-    const ipc = IpcMain.createInstance(this);
+    const ipcMain = IpcMain.createInstance(this);
 
-    cloudStore.loadExtension(this, ipc);
-    syncStore.loadExtension(this, ipc);
+    cloudStore.loadExtension(this, { ipcMain });
+    syncStore.loadExtension(this, { ipcMain });
 
     // AFTER load stores
     SyncManager.createInstance({
       extension: this,
       catalogSource,
-      ipcMain: ipc,
+      ipcMain: ipcMain,
     });
 
     this.powerDisposers.push(
-      Main.Power.onSuspend(async () => ipc.notifyPowerSuspend())
+      Main.Power.onSuspend(async () => ipcMain.notifyPowerSuspend())
     );
 
     this.powerDisposers.push(
-      Main.Power.onResume(async () => ipc.notifyPowerResume())
+      Main.Power.onResume(async () => ipcMain.notifyPowerResume())
     );
   }
 
