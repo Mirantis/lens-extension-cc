@@ -10,12 +10,16 @@ const { Icon, Tooltip } = Renderer.Component;
 //
 
 const Title = styled.div`
-  position: relative;
-  display: inline-block;
-  margin: 0 auto;
+  display: flex;
+  justify-content: center;
 
   & > p {
     font-size: calc(var(--font-size) * 1.28);
+  }
+
+  i {
+    display: block;
+    margin-left: ${layout.pad}px;
   }
 `;
 
@@ -23,12 +27,6 @@ const TooltipInfo = styled.div`
   p {
     margin-top: ${layout.pad}px;
   }
-`;
-
-const IconWrapper = styled.div`
-  position: absolute;
-  top: ${layout.grid / 2}px;
-  right: -${layout.grid * 10.5}px;
 `;
 
 // Styles for metrics tooltip
@@ -41,7 +39,7 @@ export const MetricTitle = ({ title, tooltipText }) => {
     <Title>
       <p>{title}</p>
       {tooltipText && (
-        <IconWrapper>
+        <>
           <Icon
             material="info_outlined"
             size={22}
@@ -55,7 +53,7 @@ export const MetricTitle = ({ title, tooltipText }) => {
               }}
             ></TooltipInfo>
           </Tooltip>
-        </IconWrapper>
+        </>
       )}
     </Title>
   );

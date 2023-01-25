@@ -1,7 +1,6 @@
 import propTypes from 'prop-types';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import styled from '@emotion/styled';
-import { Renderer } from '@k8slens/extensions';
 import { useClouds } from '../../../store/CloudProvider';
 import { CONNECTION_STATUSES } from '../../../../common/Cloud';
 import {
@@ -14,14 +13,12 @@ import { PanelTitle } from '../PanelTitle';
 import { DrawerTitleWrapper } from '../clusterPageComponents';
 import { SingleMetric } from './SingleMetric';
 import { MetricTitle } from './MetricTitle';
+import { InlineNotice, types } from '../../InlineNotice';
 import { layout } from '../../styles';
 import { logger, logValue } from '../../../../util/logger';
 import * as strings from '../../../../strings';
 
-const { Icon } = Renderer.Component;
-
 const UPDATE_METRICS_INTERVAL = 60000; // 60000ms = 1min
-const healthPanelTitleHeight = 45; // px, height of title block
 
 /**
  * Converts size in bytes to KB, MB, GB etc.
@@ -160,15 +157,14 @@ const ReconnectButton = styled.button`
   padding-left: ${layout.pad / 2}px;
 `;
 
-const NoMetrics = styled.div`
-  padding: ${layout.pad * 2.25}px ${layout.pad * 4}px ${layout.pad * 1.5}px;
+const ErrorMessage = styled(InlineNotice)`
+  padding: ${layout.pad * 2.25}px ${layout.pad * 2.75}px ${layout.pad * 1.5}px;
   background-color: var(--contentColor);
 
   ol {
     list-style: decimal;
-    padding-left: ${layout.pad * 4.5}px;
+    padding-left: ${layout.pad * 2}px;
     padding-top: ${layout.pad * 2}px;
-    padding-left: ${layout.pad * 4.5}px;
   }
 `;
 
@@ -176,7 +172,7 @@ const MetricsWrapper = styled.div`
   display: flex;
   padding: ${layout.pad * 3}px 0;
   background-color: var(--contentColor);
-  height: calc(100% - ${healthPanelTitleHeight}px);
+  height: 100%;
 `;
 
 const MetricItem = styled.div`
@@ -189,10 +185,6 @@ const MetricItem = styled.div`
     border-right: 1px solid var(--borderFaintColor);
   }
 `;
-
-const infoIconStyles = {
-  color: 'var(--colorError)',
-};
 
 export const HealthPanel = ({ clusterEntity }) => {
   const { clouds } = useClouds();
@@ -207,9 +199,17 @@ export const HealthPanel = ({ clusterEntity }) => {
   const [memoryPercentage, setMemoryPercentage] = useState(0);
   const [storagePercentage, setStoragePercentage] = useState(0);
   const [timerTrigger, setTimerTrigger] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const { isCloudFetching, cloudStatus, handleReconnectCloud } =
-    useCloudConnection(clusterEntity.metadata.cloudUrl);
+  const { cloudStatus, handleReconnectCloud } = useCloudConnection(
+    clusterEntity.metadata.cloudUrl
+  );
+
+  useEffect(() => {
+    if (cloudStatus !== CONNECTION_STATUSES.CONNECTING) {
+      setIsLoading(false);
+    }
+  }, [cloudStatus]);
 
   useEffect(() => {
     let timeoutId;
@@ -295,12 +295,12 @@ export const HealthPanel = ({ clusterEntity }) => {
         })
       );
       setCpuPercentage(
-        cpuMetrics.usagePct && !isCloudFetching
+        cpuMetrics.usagePct && !isLoading
           ? Math.round(cpuMetrics.usagePct * 100)
           : 0
       );
     }
-  }, [cpuMetrics, isCloudFetching]);
+  }, [cpuMetrics, isLoading]);
 
   useEffect(() => {
     if (memoryMetrics) {
@@ -312,16 +312,14 @@ export const HealthPanel = ({ clusterEntity }) => {
         })
       );
       setMemoryPercentage(
-        memoryMetrics.availableByte &&
-          memoryMetrics.capacityByte &&
-          !isCloudFetching
+        memoryMetrics.availableByte && memoryMetrics.capacityByte && !isLoading
           ? Math.round(
               (memoryMetrics.availableByte / memoryMetrics.capacityByte) * 100
             )
           : 0
       );
     }
-  }, [memoryMetrics, isCloudFetching]);
+  }, [memoryMetrics, isLoading]);
 
   useEffect(() => {
     if (storageMetrics) {
@@ -333,16 +331,19 @@ export const HealthPanel = ({ clusterEntity }) => {
         })
       );
       setStoragePercentage(
-        storageMetrics.usedByte &&
-          storageMetrics.capacityByte &&
-          !isCloudFetching
+        storageMetrics.usedByte && storageMetrics.capacityByte && !isLoading
           ? Math.round(
               (storageMetrics.usedByte / storageMetrics.capacityByte) * 100
             )
           : 0
       );
     }
-  }, [storageMetrics, isCloudFetching]);
+  }, [storageMetrics, isLoading]);
+
+  const handleReconnect = useCallback(() => {
+    setIsLoading(true);
+    handleReconnectCloud();
+  }, [handleReconnectCloud]);
 
   return (
     <>
@@ -350,20 +351,22 @@ export const HealthPanel = ({ clusterEntity }) => {
         <PanelTitle title={strings.clusterPage.pages.overview.health.title()} />
       </DrawerTitleWrapper>
       {cloudStatus === CONNECTION_STATUSES.DISCONNECTED && (
-        <NoMetrics>
-          <Icon material="info_outlined" size={22} style={infoIconStyles} />
-          {strings.clusterPage.pages.overview.health.metrics.error.disconnectedManagementCluster.title()}
-          <ReconnectButton onClick={handleReconnectCloud}>
-            {strings.clusterPage.pages.overview.health.metrics.error.disconnectedManagementCluster.reconnectButtonLabel()}
-          </ReconnectButton>
-        </NoMetrics>
+        <>
+          <ErrorMessage type={types.ERROR}>
+            <p>
+              {strings.clusterPage.pages.overview.health.metrics.error.disconnectedManagementCluster.title()}
+              <ReconnectButton onClick={handleReconnect}>
+                {strings.clusterPage.pages.overview.health.metrics.error.disconnectedManagementCluster.reconnectButtonLabel()}
+              </ReconnectButton>
+            </p>
+          </ErrorMessage>
+        </>
       )}
       {isNoMetrics && (
-        <NoMetrics>
-          <div>
-            <Icon material="info_outlined" size={22} style={infoIconStyles} />
+        <ErrorMessage type={types.ERROR}>
+          <p>
             {strings.clusterPage.pages.overview.health.metrics.error.noMetrics.title()}
-          </div>
+          </p>
           <ol>
             {strings.clusterPage.pages.overview.health.metrics.error.noMetrics
               .reasonsList()
@@ -371,7 +374,7 @@ export const HealthPanel = ({ clusterEntity }) => {
                 <li key={index}>{reason}</li>
               ))}
           </ol>
-        </NoMetrics>
+        </ErrorMessage>
       )}
       <MetricsWrapper>
         <MetricItem>
@@ -387,7 +390,7 @@ export const HealthPanel = ({ clusterEntity }) => {
             chartColor="--blue"
             chartFillPercentage={cpuPercentage}
             info={cpuData}
-            isUpdating={isCloudFetching}
+            isUpdating={isLoading}
           />
         </MetricItem>
         <MetricItem>
@@ -403,7 +406,7 @@ export const HealthPanel = ({ clusterEntity }) => {
             chartColor="--magenta"
             chartFillPercentage={memoryPercentage}
             info={memoryData}
-            isUpdating={isCloudFetching}
+            isUpdating={isLoading}
           />
         </MetricItem>
         <MetricItem>
@@ -419,7 +422,7 @@ export const HealthPanel = ({ clusterEntity }) => {
             chartColor="--golden"
             chartFillPercentage={storagePercentage}
             info={storageData}
-            isUpdating={isCloudFetching}
+            isUpdating={isLoading}
           />
         </MetricItem>
       </MetricsWrapper>

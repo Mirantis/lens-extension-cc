@@ -98,4 +98,6 @@ export const PanelsWrapper = styled.div(() => ({
 
 export const PanelItem = styled.div(({ isHalfWidth }) => ({
   width: isHalfWidth ? `calc(50% - ${layout.grid * 2.5}px)` : '100%',
+  display: 'flex',
+  flexDirection: 'column',
 }));
