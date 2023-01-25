@@ -278,22 +278,9 @@ export class Cluster extends Node {
     });
 
     /**
-     * True if this Cluster's providers are ready for use, which implies that
-     *  the `data.status.providerStatus` property exists.
-     *
-     * @member {boolean} providerReady
-     */
-    Object.defineProperty(this, 'providerReady', {
-      enumerable: true,
-      get() {
-        return !!data.status?.providerStatus?.ready;
-      },
-    });
-
-    /**
      * True if this Cluster has all the data necessary to generate a kubeConfig for it.
      *
-     * NOTE: It's possible for the Cluster to be config-ready, but not overall `ready`.
+     * NOTE: It's possible for the Cluster to be config-ready, but not {@link Node#ready}.
      *
      * @readonly
      * @member {boolean} configReady
@@ -305,12 +292,11 @@ export class Cluster extends Node {
         //  these fields are all available and defined, and cluster isn't being deleted
         return !!(
           !this.deleteInProgress &&
-          this.providerReady &&
-          data.status.providerStatus.loadBalancerHost &&
-          data.status.providerStatus.apiServerCertificate &&
-          data.status.providerStatus.oidc?.ready &&
-          data.status.providerStatus.oidc?.certificate &&
-          data.status.providerStatus.oidc?.clientId
+          data.status?.providerStatus?.loadBalancerHost &&
+          data.status?.providerStatus?.apiServerCertificate &&
+          data.status?.providerStatus?.oidc?.ready &&
+          data.status?.providerStatus?.oidc?.certificate &&
+          data.status?.providerStatus?.oidc?.clientId
         );
       },
     });
@@ -387,14 +373,12 @@ export class Cluster extends Node {
     Object.defineProperty(this, 'dashboardUrl', {
       enumerable: true,
       get() {
-        return this.providerReady
-          ? data.status.providerStatus.ucpDashboard
-          : null;
+        return data.status?.providerStatus?.ucpDashboard || null;
       },
     });
 
     /**
-     * Logging, Monitoring, and Alerting info, if ready.
+     * Logging, Monitoring, and Alerting info, if available.
      * @readonly
      * @member {{
      *   alertaUrl?: string,
@@ -409,9 +393,8 @@ export class Cluster extends Node {
       enumerable: true,
       get() {
         if (
-          this.providerReady &&
-          data.status.providerStatus.helm?.ready &&
-          data.status.providerStatus.helm?.releases?.stacklight
+          data.status?.providerStatus?.helm?.ready &&
+          data.status?.providerStatus?.helm?.releases?.stacklight
         ) {
           const { stacklight: stackLight = {} } =
             data.status.providerStatus.helm.releases;
@@ -445,7 +428,7 @@ export class Cluster extends Node {
     Object.defineProperty(this, 'awsRegion', {
       enumerable: true,
       get() {
-        return this.configReady ? data.spec.providerSpec.region : null;
+        return data.spec?.providerSpec?.value?.region || null;
       },
     });
 

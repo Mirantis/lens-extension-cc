@@ -32,7 +32,7 @@ export class Node extends NamedResource {
 
     /**
      * @readonly
-     * @member {string} region
+     * @member {string|null} region
      */
     Object.defineProperty(this, 'region', {
       enumerable: true,
@@ -43,7 +43,7 @@ export class Node extends NamedResource {
 
     /**
      * @readonly
-     * @member {string} provider
+     * @member {string|null} provider
      */
     Object.defineProperty(this, 'provider', {
       enumerable: true,
@@ -55,6 +55,7 @@ export class Node extends NamedResource {
     /**
      * @readonly
      * @member {Array<{ message: string, ready: boolean, type: string }>} conditions
+     *  List of conditions, or empty list if none.
      */
     Object.defineProperty(this, 'conditions', {
       enumerable: true,
