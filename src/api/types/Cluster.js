@@ -421,17 +421,6 @@ export class Cluster extends Node {
       },
     });
 
-    /**
-     * @readonly
-     * @member {sting|null} awsRegion
-     */
-    Object.defineProperty(this, 'awsRegion', {
-      enumerable: true,
-      get() {
-        return data.spec?.providerSpec?.value?.region || null;
-      },
-    });
-
     //// Initialize
 
     // NOTE: if any of these warnings get logged, it's probably because the `namespace`
