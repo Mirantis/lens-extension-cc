@@ -50,13 +50,24 @@ const ServerStatus = styled.p`
 `;
 
 /**
- * Get string of entity labels and returns count of them
- * @param {string} clusterLabels Cluster labels.
- * @returns {string} String with count of entity labels.
+ * Determine the number of items in a given cluster label.
+ * @param {string|null} label Label on a cluster containing a comma-delimited list of values
+ *  like credential or SSH key names.
+ * @returns {number} Count of entity labels.
  */
-const getClusterLabelsCount = (clusterLabels) => {
-  return clusterLabels ? `${clusterLabels.split(',').length} ` : '0 ';
+const getLabelCount = (label) => {
+  return label ? label.split(',').length : 0;
 };
+
+/**
+ * Pretty-prints a given cluster label.
+ * @param {string|null} label Label on a cluster containing a comma-delimited list of values
+ *  like credential or SSH key names.
+ * @returns {string} Pretty string version of the label.
+ */
+const prettyPrintLabel = (clusterLabel) =>
+  (clusterLabel && clusterLabel.split(',').join(', ')) ||
+  strings.clusterPage.common.emptyValue();
 
 export const SummaryPanel = ({ clusterEntity }) => {
   //
@@ -134,15 +145,12 @@ export const SummaryPanel = ({ clusterEntity }) => {
                   <Icon material="verified_user" />
                 </IconWrapper>
                 {strings.clusterPage.pages.overview.summary.clusterObjects.credentials(
-                  getClusterLabelsCount(
-                    clusterEntity.metadata.labels['credential']
-                  )
+                  getLabelCount(clusterEntity.metadata.labels['credential'])
                 )}
                 :
               </EntityWrapper>
               <span>
-                {clusterEntity.metadata.labels['credential'] ||
-                  strings.clusterPage.common.emptyValue()}
+                {prettyPrintLabel(clusterEntity.metadata.labels['credential'])}
               </span>
             </div>
           ) : (
@@ -150,13 +158,9 @@ export const SummaryPanel = ({ clusterEntity }) => {
               <IconWrapper>
                 <Icon material="verified_user" />
               </IconWrapper>
-              {getClusterLabelsCount(
-                clusterEntity.metadata.labels['credential']
-              )}
+              {getLabelCount(clusterEntity.metadata.labels['credential'])}{' '}
               {strings.clusterPage.pages.overview.summary.clusterObjects.credentials(
-                getClusterLabelsCount(
-                  clusterEntity.metadata.labels['credential']
-                )
+                getLabelCount(clusterEntity.metadata.labels['credential'])
               )}
             </>
           )}
@@ -169,15 +173,12 @@ export const SummaryPanel = ({ clusterEntity }) => {
                   <Icon material="vpn_key" />
                 </IconWrapper>
                 {strings.clusterPage.pages.overview.summary.clusterObjects.sshKeys(
-                  getClusterLabelsCount(
-                    clusterEntity.metadata.labels['ssh-key']
-                  )
+                  getLabelCount(clusterEntity.metadata.labels['ssh-key'])
                 )}
                 :
               </EntityWrapper>
               <span>
-                {clusterEntity.metadata.labels['ssh-key'] ||
-                  strings.clusterPage.common.emptyValue()}
+                {prettyPrintLabel(clusterEntity.metadata.labels['ssh-key'])}
               </span>
             </div>
           ) : (
@@ -185,9 +186,9 @@ export const SummaryPanel = ({ clusterEntity }) => {
               <IconWrapper>
                 <Icon material="vpn_key" />
               </IconWrapper>
-              {getClusterLabelsCount(clusterEntity.metadata.labels['ssh-key'])}
+              {getLabelCount(clusterEntity.metadata.labels['ssh-key'])}{' '}
               {strings.clusterPage.pages.overview.summary.clusterObjects.sshKeys(
-                getClusterLabelsCount(clusterEntity.metadata.labels['ssh-key'])
+                getLabelCount(clusterEntity.metadata.labels['ssh-key'])
               )}
             </>
           )}
@@ -200,15 +201,12 @@ export const SummaryPanel = ({ clusterEntity }) => {
                   <Icon material="card_membership" />
                 </IconWrapper>
                 {strings.clusterPage.pages.overview.summary.clusterObjects.rhelLicenses(
-                  getClusterLabelsCount(
-                    clusterEntity.metadata.labels['license']
-                  )
+                  getLabelCount(clusterEntity.metadata.labels['license'])
                 )}
                 :
               </EntityWrapper>
               <span>
-                {clusterEntity.metadata.labels['license'] ||
-                  strings.clusterPage.common.emptyValue()}
+                {prettyPrintLabel(clusterEntity.metadata.labels['license'])}
               </span>
             </div>
           ) : (
@@ -216,9 +214,9 @@ export const SummaryPanel = ({ clusterEntity }) => {
               <IconWrapper>
                 <Icon material="card_membership" />
               </IconWrapper>
-              {getClusterLabelsCount(clusterEntity.metadata.labels['license'])}
+              {getLabelCount(clusterEntity.metadata.labels['license'])}{' '}
               {strings.clusterPage.pages.overview.summary.clusterObjects.rhelLicenses(
-                getClusterLabelsCount(clusterEntity.metadata.labels['license'])
+                getLabelCount(clusterEntity.metadata.labels['license'])
               )}
             </>
           )}
@@ -231,13 +229,12 @@ export const SummaryPanel = ({ clusterEntity }) => {
                   <Icon material="assistant_direction" />
                 </IconWrapper>
                 {strings.clusterPage.pages.overview.summary.clusterObjects.proxies(
-                  getClusterLabelsCount(clusterEntity.metadata.labels['proxy'])
+                  getLabelCount(clusterEntity.metadata.labels['proxy'])
                 )}
                 :
               </EntityWrapper>
               <span>
-                {clusterEntity.metadata.labels['proxy'] ||
-                  strings.clusterPage.common.emptyValue()}
+                {prettyPrintLabel(clusterEntity.metadata.labels['proxy'])}
               </span>
             </div>
           ) : (
@@ -245,9 +242,9 @@ export const SummaryPanel = ({ clusterEntity }) => {
               <IconWrapper>
                 <Icon material="assistant_direction" />
               </IconWrapper>
-              {getClusterLabelsCount(clusterEntity.metadata.labels['proxy'])}
+              {getLabelCount(clusterEntity.metadata.labels['proxy'])}{' '}
               {strings.clusterPage.pages.overview.summary.clusterObjects.proxies(
-                getClusterLabelsCount(clusterEntity.metadata.labels['proxy'])
+                getLabelCount(clusterEntity.metadata.labels['proxy'])
               )}
             </>
           )}
