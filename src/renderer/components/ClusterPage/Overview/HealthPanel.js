@@ -350,6 +350,21 @@ export const HealthPanel = ({ clusterEntity }) => {
       <DrawerTitleWrapper>
         <PanelTitle title={strings.clusterPage.pages.overview.health.title()} />
       </DrawerTitleWrapper>
+      {(isNoMetrics && cloudStatus === CONNECTION_STATUSES.DISCONNECTED) ||
+        (isNoMetrics && (
+          <ErrorMessage type={types.ERROR}>
+            <p>
+              {strings.clusterPage.pages.overview.health.metrics.error.noMetrics.title()}
+            </p>
+            <ol>
+              {strings.clusterPage.pages.overview.health.metrics.error.noMetrics
+                .reasonsList()
+                .map((reason, index) => (
+                  <li key={index}>{reason}</li>
+                ))}
+            </ol>
+          </ErrorMessage>
+        ))}
       {cloudStatus === CONNECTION_STATUSES.DISCONNECTED && (
         <>
           <ErrorMessage type={types.ERROR}>
@@ -361,20 +376,6 @@ export const HealthPanel = ({ clusterEntity }) => {
             </p>
           </ErrorMessage>
         </>
-      )}
-      {isNoMetrics && (
-        <ErrorMessage type={types.ERROR}>
-          <p>
-            {strings.clusterPage.pages.overview.health.metrics.error.noMetrics.title()}
-          </p>
-          <ol>
-            {strings.clusterPage.pages.overview.health.metrics.error.noMetrics
-              .reasonsList()
-              .map((reason, index) => (
-                <li key={index}>{reason}</li>
-              ))}
-          </ol>
-        </ErrorMessage>
       )}
       <MetricsWrapper>
         <MetricItem>

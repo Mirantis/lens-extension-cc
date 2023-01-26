@@ -34,6 +34,10 @@ const Notice = styled.div(function ({ iconSize }) {
 const Container = styled.div(function () {
   return {
     display: 'flex',
+
+    '> .Icon': {
+      marginTop: layout.grid / 2,
+    },
   };
 });
 
