@@ -8,6 +8,8 @@
 - Relax the notion of a cluster's "config-ready" state (state in which a kubeconfig can be successfully generated for it), increasing the likelyhood that it won't be ignored during sync.
 - Fix incorrect cluster region displayed in detail views, particularly for AWS clusters.
     - Instead of seeing "aws" as the region, it should now show something like "us-west-2".
+- Fix how cluster label values are listed in the `Cluster page > MCC > Overview` panel.
+    - Some contain lists of referenced objects like credentials and SSH keys, and these lists are now pretty-printed with spaces.
 
 ## v5.3.0
 
