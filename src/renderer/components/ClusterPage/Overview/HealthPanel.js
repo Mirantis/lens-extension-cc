@@ -188,7 +188,7 @@ const MetricItem = styled.div`
 
 export const HealthPanel = ({ clusterEntity }) => {
   const { clouds } = useClouds();
-  const [isNoMetrics, setIsNoMetrics] = useState(false);
+  const [hasPromUrl, setHasPromUrl] = useState(true);
   const [cpuMetrics, setCpuMetrics] = useState(null);
   const [memoryMetrics, setMemoryMetrics] = useState(null);
   const [storageMetrics, setStorageMetrics] = useState(null);
@@ -222,7 +222,7 @@ export const HealthPanel = ({ clusterEntity }) => {
       const promUrl = clusterEntity.spec.lma?.prometheusUrl || '';
 
       if (promUrl) {
-        setIsNoMetrics(false);
+        setHasPromUrl(true);
 
         const [cpuDataRes, memoryDataRes, storageDataRes] =
           await Promise.allSettled([
@@ -270,7 +270,7 @@ export const HealthPanel = ({ clusterEntity }) => {
           setTimerTrigger(timerTrigger + 1);
         }, UPDATE_METRICS_INTERVAL);
       } else {
-        setIsNoMetrics(true);
+        setHasPromUrl(false);
         setCpuMetrics({});
         setMemoryMetrics({});
         setStorageMetrics({});
@@ -350,22 +350,22 @@ export const HealthPanel = ({ clusterEntity }) => {
       <DrawerTitleWrapper>
         <PanelTitle title={strings.clusterPage.pages.overview.health.title()} />
       </DrawerTitleWrapper>
-      {(isNoMetrics && cloudStatus === CONNECTION_STATUSES.DISCONNECTED) ||
-        (isNoMetrics && (
-          <ErrorMessage type={types.ERROR}>
-            <p>
-              {strings.clusterPage.pages.overview.health.metrics.error.noMetrics.title()}
-            </p>
-            <ol>
-              {strings.clusterPage.pages.overview.health.metrics.error.noMetrics
-                .reasonsList()
-                .map((reason, index) => (
-                  <li key={index}>{reason}</li>
-                ))}
-            </ol>
-          </ErrorMessage>
-        ))}
-      {cloudStatus === CONNECTION_STATUSES.DISCONNECTED && (
+      {(!hasPromUrl && cloudStatus === CONNECTION_STATUSES.DISCONNECTED) ||
+      !hasPromUrl ? (
+        <ErrorMessage type={types.ERROR}>
+          <p>
+            {strings.clusterPage.pages.overview.health.metrics.error.noMetrics.title()}
+          </p>
+          <ol>
+            {strings.clusterPage.pages.overview.health.metrics.error.noMetrics
+              .reasonsList()
+              .map((reason, index) => (
+                <li key={index}>{reason}</li>
+              ))}
+          </ol>
+        </ErrorMessage>
+      ) : null}
+      {hasPromUrl && cloudStatus === CONNECTION_STATUSES.DISCONNECTED ? (
         <>
           <ErrorMessage type={types.ERROR}>
             <p>
@@ -376,13 +376,13 @@ export const HealthPanel = ({ clusterEntity }) => {
             </p>
           </ErrorMessage>
         </>
-      )}
+      ) : null}
       <MetricsWrapper>
         <MetricItem>
           <MetricTitle
             title={strings.clusterPage.pages.overview.health.metrics.cpu.title()}
             tooltipText={
-              isNoMetrics
+              !hasPromUrl
                 ? ''
                 : strings.clusterPage.pages.overview.health.metrics.cpu.tooltipInfoHtml()
             }
@@ -398,7 +398,7 @@ export const HealthPanel = ({ clusterEntity }) => {
           <MetricTitle
             title={strings.clusterPage.pages.overview.health.metrics.memory.title()}
             tooltipText={
-              isNoMetrics
+              !hasPromUrl
                 ? ''
                 : strings.clusterPage.pages.overview.health.metrics.memory.tooltipInfoHtml()
             }
@@ -414,7 +414,7 @@ export const HealthPanel = ({ clusterEntity }) => {
           <MetricTitle
             title={strings.clusterPage.pages.overview.health.metrics.storage.title()}
             tooltipText={
-              isNoMetrics
+              !hasPromUrl
                 ? ''
                 : strings.clusterPage.pages.overview.health.metrics.storage.tooltipInfoHtml()
             }
