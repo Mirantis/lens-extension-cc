@@ -350,8 +350,7 @@ export const HealthPanel = ({ clusterEntity }) => {
       <DrawerTitleWrapper>
         <PanelTitle title={strings.clusterPage.pages.overview.health.title()} />
       </DrawerTitleWrapper>
-      {(!hasPromUrl && cloudStatus === CONNECTION_STATUSES.DISCONNECTED) ||
-      !hasPromUrl ? (
+      {!hasPromUrl ? (
         <ErrorMessage type={types.ERROR}>
           <p>
             {strings.clusterPage.pages.overview.health.metrics.error.noMetrics.title()}
@@ -366,16 +365,14 @@ export const HealthPanel = ({ clusterEntity }) => {
         </ErrorMessage>
       ) : null}
       {hasPromUrl && cloudStatus === CONNECTION_STATUSES.DISCONNECTED ? (
-        <>
-          <ErrorMessage type={types.ERROR}>
-            <p>
-              {strings.clusterPage.pages.overview.health.metrics.error.disconnectedManagementCluster.title()}
-              <ReconnectButton onClick={handleReconnect}>
-                {strings.clusterPage.pages.overview.health.metrics.error.disconnectedManagementCluster.reconnectButtonLabel()}
-              </ReconnectButton>
-            </p>
-          </ErrorMessage>
-        </>
+        <ErrorMessage type={types.ERROR}>
+          <p>
+            {strings.clusterPage.pages.overview.health.metrics.error.disconnectedManagementCluster.title()}
+            <ReconnectButton onClick={handleReconnect}>
+              {strings.clusterPage.pages.overview.health.metrics.error.disconnectedManagementCluster.reconnectButtonLabel()}
+            </ReconnectButton>
+          </p>
+        </ErrorMessage>
       ) : null}
       <MetricsWrapper>
         <MetricItem>
