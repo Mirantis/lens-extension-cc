@@ -3,7 +3,11 @@
 //
 
 import propTypes from 'prop-types';
-import { PageContainer } from '../clusterPageComponents';
+import {
+  PageContainer,
+  PanelsWrapper,
+  PanelItem,
+} from '../clusterPageComponents';
 import { GeneralInformation } from './GeneralInformation';
 import { KubernetesInformation } from './KubernetesInformation';
 import { ServerInformation } from './ServerInformation';
@@ -20,13 +24,20 @@ export const ClusterDetailsView = function ({ clusterEntity }) {
 
   return (
     <PageContainer>
-      <GeneralInformation clusterEntity={clusterEntity} />
-
-      <KubernetesInformation clusterEntity={clusterEntity} />
-
-      <ServerInformation clusterEntity={clusterEntity} />
-
-      <LmaInformation clusterEntity={clusterEntity} />
+      <PanelsWrapper>
+        <PanelItem>
+          <GeneralInformation clusterEntity={clusterEntity} />
+        </PanelItem>
+        <PanelItem>
+          <KubernetesInformation clusterEntity={clusterEntity} />
+        </PanelItem>
+        <PanelItem>
+          <ServerInformation clusterEntity={clusterEntity} />
+        </PanelItem>
+        <PanelItem>
+          <LmaInformation clusterEntity={clusterEntity} />
+        </PanelItem>
+      </PanelsWrapper>
     </PageContainer>
   );
 };

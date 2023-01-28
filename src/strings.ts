@@ -382,6 +382,85 @@ export const clusterPage: Dict = {
           proxies: (count) => (count === 1 ? 'Proxy' : 'Proxies'),
         },
       },
+      health: {
+        title: () => 'Health',
+        metrics: {
+          error: {
+            disconnectedManagementCluster: {
+              title: () =>
+                'Health metrics cannot be displayed for this cluster because its management cluster is disconnected.',
+              reconnectButtonLabel: () => 'Reconnect',
+            },
+            noMetrics: {
+              title: () =>
+                'Health metrics cannot be displayed for this cluster for one of the following reasons:',
+              reasonsList: () => [
+                'Stacklight is disabled.',
+                'Stacklight service is not available.',
+              ],
+            },
+          },
+          cpu: {
+            title: () => 'CPU',
+            used: () => 'Used',
+            system: () => 'System',
+            io: () => 'I/O',
+            idle: () => 'Idle',
+            tooltipInfoHtml: () => `
+              <ul>
+                <li>- Used (%): 1-minute average time spent performing tasks, across the cluster.</li>
+                <li>- System (%): 1-minute average time spent in the kernel, across the cluster.</li>
+                <li>- I/O (%): 1-minute average time spent waiting for I/O, meaning system was disk- or network-bound, across the cluster.</li>
+                <li>- Idle (%): 1-minute average idle time not performing tasks, across the cluster.</li>
+              </ul>
+              <p>* Metrics are retrieved from the kubernetes cluster and may differ from OS level metrics.</p>
+            `,
+            percentageValue: (percentage) => `${percentage}%`,
+          },
+          memory: {
+            title: () => 'Memory',
+            available: () => 'Available',
+            capacity: () => 'Capacity',
+            allocated: () => 'Allocated',
+            tooltipInfoHtml: () => `
+              <ul>
+                <li>- Available (GB): Total availability for starting new applications, without the need for swapping, across the cluster.</li>
+                <li>- Capacity (GB): Total memory including available and allocated, across the cluster.</li>
+                <li>- Allocated (GB): Total memory currently in use by both the OS and running applications, across the cluster.</li>
+              </ul>
+              <p>* Metrics are retrieved from the kubernetes cluster and may differ from OS level metrics.</p>
+            `,
+          },
+          storage: {
+            title: () => 'Storage',
+            used: () => 'Used',
+            capacity: () => 'Capacity',
+            available: () => 'Available',
+            tooltipInfoHtml: () => `
+              <ul>
+                <li>- Capacity (GB): Total disk space across the cluster.</li>
+                <li>- Available (GB): Total free disk space across the cluster.</li>
+                <li>- Used (GB): Total consumed disk space across the cluster.</li>
+              </ul>
+              <p>* Metrics are retrieved from the kubernetes cluster and may differ from OS level metrics.</p>
+            `,
+          },
+          sizes: {
+            bytes: () => 'Bytes',
+            kb: () => 'KB',
+            mb: () => 'MB',
+            gb: () => 'GB',
+            tb: () => 'TB',
+            pb: () => 'PB',
+            eb: () => 'EB',
+            zb: () => 'ZB',
+            yb: () => 'YB',
+          },
+          chart: {
+            chartFillPercentage: (percentage) => `${percentage}%`,
+          },
+        },
+      },
       clusterConditions: {
         title: () => 'Cluster Conditions',
         noStatus: () => 'No status information available',

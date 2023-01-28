@@ -61,7 +61,6 @@
     "download:kubelogin:license:nix": "yarn create:bin:nix && ([[ -f ./bin/kubelogin-license.txt ]] || curl -slL https://raw.githubusercontent.com/int128/kubelogin/v1.26.0/LICENSE > ./bin/kubelogin-license.txt)",
     "download:kubelogin:license:windows": "yarn create:bin:windows && sh -c \"[[ -f ./bin/kubelogin-license.txt ]] || curl -slL https://raw.githubusercontent.com/int128/kubelogin/v1.26.0/LICENSE > ./bin/kubelogin-license.txt\""
   },
-  "dependencies": {},
   "devDependencies": {
     "@babel/cli": "^7.20.7",
     "@babel/core": "^7.20.12",
@@ -93,6 +92,7 @@
     "babel-plugin-lodash": "^3.3.4",
     "babel-plugin-module-resolver": "^5.0.0",
     "browserslist": "^4.21.4",
+    "chart.js": "^4.1.1",
     "dayjs": "^1.11.7",
     "electron": "^19.1.9",
     "eslint": "^7.32.0",
@@ -114,6 +114,7 @@
     "prop-types": "^15.8.1",
     "query-string": "^8.1.0",
     "react": "^17.0.2",
+    "react-chartjs-2": "^5.1.0",
     "react-dom": "^17.0.2",
     "react-select": "^5.7.0",
     "rtvjs": "^4.1.0",

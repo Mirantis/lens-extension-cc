@@ -3,12 +3,14 @@
 //
 
 import propTypes from 'prop-types';
-import * as strings from '../../../../strings';
 import { ConditionsPanel } from './ConditionsPanel';
 import { SummaryPanel } from './SummaryPanel';
 import { HealthPanel } from './HealthPanel';
-import { PanelTitle } from '../PanelTitle';
-import { DrawerTitleWrapper, PageContainer } from '../clusterPageComponents';
+import {
+  PageContainer,
+  PanelsWrapper,
+  PanelItem,
+} from '../clusterPageComponents';
 
 //
 // MAIN COMPONENT
@@ -21,19 +23,19 @@ export const ClusterOverviewView = function ({ clusterEntity }) {
 
   return (
     <PageContainer>
-      <SummaryPanel clusterEntity={clusterEntity} />
-
-      {FEAT_CLUSTER_PAGE_HEALTH_ENABLED ? (
-        <HealthPanel clusterEntity={clusterEntity} />
-      ) : null}
-
-      <DrawerTitleWrapper>
-        <PanelTitle
-          title={strings.clusterPage.pages.overview.clusterConditions.title()}
-        />
-      </DrawerTitleWrapper>
-
-      <ConditionsPanel clusterEntity={clusterEntity} />
+      <PanelsWrapper>
+        <PanelItem isHalfWidth={FEAT_CLUSTER_PAGE_HEALTH_ENABLED || false}>
+          <SummaryPanel clusterEntity={clusterEntity} />
+        </PanelItem>
+        {FEAT_CLUSTER_PAGE_HEALTH_ENABLED ? (
+          <PanelItem isHalfWidth>
+            <HealthPanel clusterEntity={clusterEntity} />
+          </PanelItem>
+        ) : null}
+        <PanelItem>
+          <ConditionsPanel clusterEntity={clusterEntity} />
+        </PanelItem>
+      </PanelsWrapper>
     </PageContainer>
   );
 };
