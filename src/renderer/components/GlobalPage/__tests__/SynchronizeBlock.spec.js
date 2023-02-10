@@ -183,9 +183,9 @@ describe('/renderer/components/GlobalPage/AddCloudInstance', () => {
     // Projects should be ordered by default (first render)
     const firstRenderProjectsName = [];
     document
-      .querySelectorAll('ul input[type="checkbox"]')
+      .querySelectorAll('ul [data-cclex-component="TriStateCheckbox"]')
       .forEach((checkbox) => {
-        firstRenderProjectsName.push(checkbox.parentNode.textContent);
+        firstRenderProjectsName.push(checkbox.textContent);
       });
 
     expect(firstRenderProjectsName).toEqual(expectedDefaultProjectsName);
@@ -195,9 +195,9 @@ describe('/renderer/components/GlobalPage/AddCloudInstance', () => {
 
     const firstTimeSortedProjectsName = [];
     document
-      .querySelectorAll('ul input[type="checkbox"]')
+      .querySelectorAll('ul [data-cclex-component="TriStateCheckbox"]')
       .forEach((checkbox) => {
-        firstTimeSortedProjectsName.push(checkbox.parentNode.textContent);
+        firstTimeSortedProjectsName.push(checkbox.textContent);
       });
 
     expect(firstTimeSortedProjectsName).toEqual(expectedAscProjectsName);
@@ -207,9 +207,9 @@ describe('/renderer/components/GlobalPage/AddCloudInstance', () => {
 
     const secondTimeSortedProjectsName = [];
     document
-      .querySelectorAll('ul input[type="checkbox"]')
+      .querySelectorAll('ul [data-cclex-component="TriStateCheckbox"]')
       .forEach((checkbox) => {
-        secondTimeSortedProjectsName.push(checkbox.parentNode.textContent);
+        secondTimeSortedProjectsName.push(checkbox.textContent);
       });
 
     expect(secondTimeSortedProjectsName).toEqual(expectedDescProjectsName);
