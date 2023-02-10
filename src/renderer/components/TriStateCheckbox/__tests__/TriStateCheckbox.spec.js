@@ -1,6 +1,6 @@
 import { render, screen } from 'testingUtility';
 import userEvent from '@testing-library/user-event';
-import { TriStateCheckbox } from '../TriStateCheckbox';
+import { TriStateCheckbox, checkValues } from '../TriStateCheckbox';
 
 describe('/renderer/components/TriStateCheckbox', () => {
   const randomString = (Math.random() + 1).toString(36).substring(7);
@@ -15,13 +15,17 @@ describe('/renderer/components/TriStateCheckbox', () => {
       <TriStateCheckbox
         label={randomString}
         onChange={() => {}}
-        value={randomString}
+        value={checkValues.UNCHECKED}
       />
     );
 
-    const checkboxEl = screen.getBySelector('input[type="checkbox"]');
-    expect(checkboxEl).toHaveAttribute('type', 'checkbox');
-    expect(checkboxEl.parentNode).toHaveTextContent(randomString);
+    const checkboxEl = screen.getBySelector(
+      '[data-cclex-component="TriStateCheckbox"]'
+    );
+    expect(
+      checkboxEl.querySelector('.cclex-tristatecheckbox-field')
+    ).toHaveAttribute('type', 'checkbox');
+    expect(checkboxEl).toHaveTextContent(randomString);
   });
 
   ['CHECKED', 'MIXED', 'UNCHECKED'].forEach((checkValue) => {
@@ -34,20 +38,18 @@ describe('/renderer/components/TriStateCheckbox', () => {
         />
       );
 
-      const checkboxEl = screen.getBySelector('input[type="checkbox"]');
+      const ctrlEl = screen.getBySelector(
+        '[data-cclex-component="TriStateCheckbox"] .cclex-tristatecheckbox-control'
+      );
 
       if (checkValue === 'CHECKED') {
-        expect(
-          checkboxEl.parentNode.parentNode.querySelector('i[material="check"]')
-        ).toBeInTheDocument();
+        expect(ctrlEl.querySelector('i[material="check"]')).toBeInTheDocument();
       } else if (checkValue === 'MIXED') {
         expect(
-          checkboxEl.parentNode.parentNode.querySelector('i[material="remove"]')
+          ctrlEl.querySelector('i[material="remove"]')
         ).toBeInTheDocument();
       } else if (checkValue === 'UNCHECKED') {
-        expect(
-          checkboxEl.parentNode.parentNode.querySelector('i')
-        ).not.toBeInTheDocument();
+        expect(ctrlEl.querySelector('i')).not.toBeInTheDocument();
       } else {
         throw new Error(`Unknown value=${checkValue}`);
       }
@@ -62,31 +64,40 @@ describe('/renderer/components/TriStateCheckbox', () => {
         />
       );
 
-      const checkboxEl = screen.getBySelector('input[type="checkbox"]');
+      const fieldEl = screen.getBySelector(
+        '[data-cclex-component="TriStateCheckbox"] .cclex-tristatecheckbox-field'
+      );
 
       if (checkValue === 'CHECKED' || checkValue === 'MIXED') {
-        expect(checkboxEl.checked).toBe(true);
+        expect(fieldEl.checked).toBe(true);
       } else if (checkValue === 'UNCHECKED') {
-        expect(checkboxEl.checked).toBe(false);
+        expect(fieldEl.checked).toBe(false);
       } else {
         throw new Error(`Unknown value=${checkValue}`);
       }
     });
-  });
 
-  it('clicking on checkbox triggers onClick handler', async () => {
-    const handler = jest.fn();
-    render(
-      <TriStateCheckbox
-        label={randomString}
-        onChange={handler}
-        value={randomString}
-      />
-    );
+    ['control', 'label'].forEach((target) => {
+      it(`clicking on |${checkValue}| checkbox |${target}| triggers onChange handler`, async () => {
+        const handler = jest.fn();
+        render(
+          <TriStateCheckbox
+            label={randomString}
+            onChange={handler}
+            value={checkValue}
+          />
+        );
 
-    const checkboxEl = screen.getBySelector('input[type="checkbox"]');
+        const targetEl = screen.getBySelector(
+          `[data-cclex-component="TriStateCheckbox"] .cclex-tristatecheckbox-${target}`
+        );
 
-    await user.click(checkboxEl);
-    expect(handler).toHaveBeenCalled();
+        await user.click(targetEl);
+        expect(handler).toHaveBeenCalled();
+        expect(handler.mock.calls[0][1]).toEqual({
+          checked: checkValue === checkValues.CHECKED ? false : true,
+        });
+      });
+    });
   });
 });

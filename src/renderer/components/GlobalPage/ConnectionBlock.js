@@ -102,13 +102,13 @@ export const ConnectionBlock = ({ loading, onClusterConnect }) => {
     onClusterConnect({ clusterUrl: originUrl, clusterName, offlineAccess });
   }, [onClusterConnect, clusterName, clusterUrl, offlineAccess]);
 
-  const handleOfflineAccessChange = useCallback((event) => {
-    setOfflineAccess(event.target.checked);
+  const handleOfflineAccessChange = useCallback((event, { checked }) => {
+    setOfflineAccess(checked);
   }, []);
 
   // TODO[trustHost]
-  // const handleTrustHostChange = useCallback((event) => {
-  //   setTrustHost(event.target.checked);
+  // const handleTrustHostChange = useCallback((event, { checked }) => {
+  //   setTrustHost(checked);
   // }, []);
 
   //
