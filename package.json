@@ -107,7 +107,7 @@
     "jest-mock-console": "^2.0.0",
     "jest-transform-stub": "^2.0.0",
     "lodash": "^4.17.21",
-    "mobx": "^6.7.0",
+    "mobx": "^6.8.0",
     "mobx-react": "^7.6.0",
     "node-fetch": "^2.6.9",
     "prettier": "^2.8.4",
