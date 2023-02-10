@@ -22,11 +22,13 @@ describe('/renderer/components/EnhancedTable/EnhancedTable', () => {
     color: 'var(--halfGray)',
   };
 
+  let ipcRenderer;
+
   beforeEach(() => {
     user = userEvent.setup();
     mockConsole(['log', 'info', 'warn']); // automatically restored after each test
 
-    IpcRenderer.createInstance(extension);
+    ipcRenderer = IpcRenderer.createInstance(extension);
   });
 
   describe('render', () => {
@@ -59,7 +61,7 @@ describe('/renderer/components/EnhancedTable/EnhancedTable', () => {
         cloudUrl: 'http://bar.com',
       });
 
-      CloudStore.createInstance().loadExtension(extension);
+      CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
     });
 
     [true, false].forEach((isSyncStarted) => {

@@ -82,6 +82,6 @@ export class NamedResource extends Resource {
    *  of this instance for logging/debugging.
    */
   toShortString() {
-    return `${this.namespace.name}/${this.name}/#${this.uid}/@${this.resourceVersion}/@@${this.cacheVersion}`;
+    return `{NamedResource ${this.namespace.name}/${this.name}/#${this.uid}/@${this.resourceVersion}/@@${this.cacheVersion}}`;
   }
 }

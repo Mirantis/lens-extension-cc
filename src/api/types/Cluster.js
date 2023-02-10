@@ -541,14 +541,18 @@ export class Cluster extends Node {
    * Generates a kube config object for this cluster.
    * @param {string} tokenCachePath Absolute path to the directory where OIDC login
    *  tokens obtained by `kubelogin` should be stored.
+   * @param {Object} [options]
+   * @param {boolean} [options.offlineAccess] True if the kubeconfig should use long-lived
+   *  tokens; false (default) if it should use short-lived tokens.
    * @returns {Object} Kube config for this cluster, as JSON.
    */
-  getKubeConfig(tokenCachePath) {
+  getKubeConfig(tokenCachePath, { offlineAccess = false } = {}) {
     return mkKubeConfig({
       cluster: this,
       username: this.cloud.username,
       tokenCachePath,
-      skipTlsVerify,
+      skipTlsVerify, // TODO[trustHost]: needs to come from the cloud...
+      offlineAccess,
     });
   }
 

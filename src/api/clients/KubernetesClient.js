@@ -48,6 +48,7 @@ export class KubernetesClient {
     { options = {}, expectedStatuses = [200], errorMessage, extractBodyMethod }
   ) {
     return request(
+      // TODO[trustHost]: need to tell request() to trustHost...
       `${this.baseUrl}/${KubernetesClient.apiPrefix}/${endpoint}`,
       {
         credentials: 'same-origin',

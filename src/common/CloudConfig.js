@@ -44,16 +44,20 @@ export const cloudConfigTs = {
 export class CloudConfig {
   /**
    * Constructor
-   * @param {string} cloudUrl URL of the mgmt cluster.
-   * @param {Object} config JSON config.js object from the mgmt cluster.
+   * @param {Object} params
+   * @param {string} params.cloudUrl URL of the mgmt cluster.
+   * @param {Object} [params.config] JSON config.js object from the mgmt cluster.
+   * @param {boolean} [params.trustHost] True if TLS verification when connecting
+   *  to the mgmt cluster should be disabled; false if it should be enabled.
    */
-  constructor(cloudUrl, config) {
+  constructor({ cloudUrl, config, trustHost = false }) {
     DEV_ENV &&
       rtv.verify(
-        { cloudUrl, config },
+        { cloudUrl, config, trustHost },
         {
           cloudUrl: rtv.STRING,
           config: cloudConfigTs,
+          trustHost: rtv.BOOLEAN,
         }
       );
 
@@ -61,7 +65,19 @@ export class CloudConfig {
     Object.defineProperty(this, 'cloudUrl', {
       enumerable: true,
       writable: false,
+      configurable: false,
       value: cloudUrl,
+    });
+
+    /**
+     * @member {boolean} trustHost True if TLS verification when connecting
+     *  to the mgmt cluster should be disabled; false if it should be enabled.
+     */
+    Object.defineProperty(this, 'trustHost', {
+      enumerable: true,
+      writable: false,
+      configurable: false,
+      value: trustHost,
     });
 
     // proxy everything we get via class properties of same name to maintain
@@ -70,6 +86,7 @@ export class CloudConfig {
       Object.defineProperty(this, key, {
         enumerable: true,
         writable: false,
+        configurable: false,
         value: config[key],
       });
     });
@@ -150,7 +167,7 @@ export class CloudConfig {
       this.ssoEnabled
     }, bmAvailable: ${this.isResourceAvailable(
       apiResourceTypes.METAL_HOST
-    )}, cloudUrl: ${logValue(this.cloudUrl)}`;
+    )}, cloudUrl: ${logValue(this.cloudUrl)}, trusted: ${this.trustHost}`;
 
     return `{CloudConfig ${propStr}}`;
   }

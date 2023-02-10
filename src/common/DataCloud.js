@@ -650,7 +650,7 @@ export class DataCloud extends EventDispatcher {
     this.cloud.updateNamespaces(allNamespaces);
 
     this.error = null;
-    this.namespaces = allNamespaces;
+    this.namespaces = allNamespaces; // setter will dispatch DATA_UPDATED event to listeners
 
     if (!this.loaded) {
       // successfully loaded at least once

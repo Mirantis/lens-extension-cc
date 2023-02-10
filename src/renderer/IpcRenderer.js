@@ -3,6 +3,7 @@
 //
 
 import { Renderer } from '@k8slens/extensions';
+import * as rtv from 'rtvjs';
 import { logger } from '../util/logger';
 import { ipcEvents } from '../constants';
 
@@ -46,5 +47,21 @@ export class IpcRenderer extends Renderer.Ipc {
   /** Notifies listeners that network connectivity has been restored. */
   notifyNetworkOnline() {
     this.broadcast(ipcEvents.broadcast.NETWORK_ONLINE);
+  }
+
+  /**
+   * Notifies of a change in a Cloud's sync-related properties.
+   * @param {string} cloudUrl URL of the Cloud (mgmt cluster).
+   */
+  notifyCloudSyncChange(cloudUrl) {
+    DEV_ENV &&
+      rtv.verify(
+        { cloudUrl },
+        {
+          cloudUrl: rtv.STRING,
+        }
+      );
+
+    this.broadcast(ipcEvents.broadcast.CLOUD_SYNC_CHANGE, cloudUrl);
   }
 }

@@ -232,10 +232,11 @@ export const SyncView = () => {
 
       // go through all clouds and update properties
       Object.keys(newSyncedClouds).map((cloudUrl) => {
-        const { syncAll, syncedNamespaces, ignoredNamespaces } =
+        const { syncAll, offlineAccess, syncedNamespaces, ignoredNamespaces } =
           newSyncedClouds[cloudUrl];
         const cloud = clouds[cloudUrl];
         cloud.syncAll = syncAll;
+        cloud.offlineAccess = offlineAccess;
         cloud.updateSyncedProjects(syncedNamespaces, ignoredNamespaces);
       });
 

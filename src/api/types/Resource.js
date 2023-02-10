@@ -179,6 +179,6 @@ export class Resource {
    *  of this instance for logging/debugging.
    */
   toShortString() {
-    return `${this.name}/#${this.uid}/@${this.resourceVersion}/@@${this.cacheVersion}`;
+    return `{Resource ${this.name}/#${this.uid}/@${this.resourceVersion}/@@${this.cacheVersion}}`;
   }
 }

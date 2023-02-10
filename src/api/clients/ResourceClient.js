@@ -86,6 +86,7 @@ export class ResourceClient {
     { options = {}, expectedStatuses = [200], errorMessage, extractBodyMethod }
   ) {
     return request(
+      // TODO[trustHost]: need to tell request() to trustHost...
       `${this.baseUrl}/${this.apiPrefix}/${endpoint}`,
       {
         credentials: 'same-origin',

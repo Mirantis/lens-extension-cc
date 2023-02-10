@@ -10,17 +10,18 @@ import { SyncView } from '../SyncView';
 describe('/renderer/components/GlobalPage/SyncView', () => {
   const extension = {};
   let user;
+  let ipcRenderer;
 
   beforeEach(() => {
     user = userEvent.setup();
     mockConsole(['log', 'info', 'warn']); // automatically restored after each test
 
-    IpcRenderer.createInstance(extension);
+    ipcRenderer = IpcRenderer.createInstance(extension);
   });
 
   describe('clouds do not exist', () => {
     beforeEach(() => {
-      CloudStore.createInstance().loadExtension(extension);
+      CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
     });
 
     it('renders WelcomeView component instead of dataClouds table', () => {
@@ -113,7 +114,7 @@ describe('/renderer/components/GlobalPage/SyncView', () => {
           },
         },
       });
-      CloudStore.createInstance().loadExtension(extension);
+      CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
     });
 
     it('renders SyncView component', () => {

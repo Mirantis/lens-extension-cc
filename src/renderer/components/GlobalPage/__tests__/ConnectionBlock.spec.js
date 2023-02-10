@@ -12,36 +12,38 @@ jest.mock('../../../../common/Cloud');
 
 describe('/renderer/components/GlobalPage/ConnectionBlock', () => {
   const extension = {};
-  let user;
 
-  const TestConnectionBlockComponent = ({ loading, handleClusterConnect }) => {
+  const TestConnectionBlockComponent = ({ loading, onClusterConnect }) => {
     return (
       <CloudProvider>
         <ConnectionBlock
           loading={loading}
-          handleClusterConnect={handleClusterConnect}
+          onClusterConnect={onClusterConnect}
         />
       </CloudProvider>
     );
   };
 
+  let user;
+  let ipcRenderer;
+
   beforeEach(() => {
     user = userEvent.setup();
     mockConsole(); // automatically restored after each test
 
-    IpcRenderer.createInstance(extension);
+    ipcRenderer = IpcRenderer.createInstance(extension);
   });
 
   describe('renders', () => {
     beforeEach(() => {
-      CloudStore.createInstance().loadExtension(extension);
+      CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
     });
 
     it('renders connection block', () => {
       render(
         <TestConnectionBlockComponent
           loading={false}
-          handleClusterConnect={() => {}}
+          onClusterConnect={() => {}}
         />
       );
 
@@ -56,7 +58,7 @@ describe('/renderer/components/GlobalPage/ConnectionBlock', () => {
       render(
         <TestConnectionBlockComponent
           loading={false}
-          handleClusterConnect={handler}
+          onClusterConnect={handler}
         />
       );
 
@@ -76,14 +78,14 @@ describe('/renderer/components/GlobalPage/ConnectionBlock', () => {
 
   describe('triggers', () => {
     beforeEach(() => {
-      CloudStore.createInstance().loadExtension(extension);
+      CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
     });
 
     it('triggers setUrl() handler by changing cluster url input', async () => {
       render(
         <TestConnectionBlockComponent
           loading={false}
-          handleClusterConnect={() => {}}
+          onClusterConnect={() => {}}
         />
       );
 
@@ -95,13 +97,13 @@ describe('/renderer/components/GlobalPage/ConnectionBlock', () => {
       expect(inputUrlEl.value).toBe(testUrl);
     });
 
-    it('triggers handleClusterConnect handler by clicking on submit button', async () => {
+    it('triggers onClusterConnect handler by clicking on submit button', async () => {
       const handler = jest.fn();
 
       render(
         <TestConnectionBlockComponent
           loading={false}
-          handleClusterConnect={handler}
+          onClusterConnect={handler}
         />
       );
 
@@ -158,12 +160,12 @@ describe('/renderer/components/GlobalPage/ConnectionBlock', () => {
     });
 
     it('shows error message if name is invalid', async () => {
-      CloudStore.createInstance().loadExtension(extension);
+      CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
 
       render(
         <TestConnectionBlockComponent
           loading={false}
-          handleClusterConnect={() => {}}
+          onClusterConnect={() => {}}
         />
       );
 
@@ -199,12 +201,12 @@ describe('/renderer/components/GlobalPage/ConnectionBlock', () => {
         },
       });
 
-      CloudStore.createInstance().loadExtension(extension);
+      CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
 
       render(
         <TestConnectionBlockComponent
           loading={false}
-          handleClusterConnect={() => {}}
+          onClusterConnect={() => {}}
         />
       );
 
@@ -237,12 +239,12 @@ describe('/renderer/components/GlobalPage/ConnectionBlock', () => {
         },
       });
 
-      CloudStore.createInstance().loadExtension(extension);
+      CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
 
       render(
         <TestConnectionBlockComponent
           loading={false}
-          handleClusterConnect={() => {}}
+          onClusterConnect={() => {}}
         />
       );
 

@@ -405,7 +405,16 @@ export const findEntity = function (list, model) {
  *  needs updating.
  * @param {CatalogEntity} entity
  * @param {Resource|Object} resourceOrModel
- * @returns {boolean} True if the entity has changed and needs updating; false if not.
+ * @returns {{
+ *   cacheChanged: boolean,
+ *   resourceChanged: boolean,
+ *   clusterEventsChanged?: boolean,
+ *   clusterUpdatesChanged?: boolean
+ * }|undefined} Object with specific changes identified if the entity has changed and needs
+ *  updating; `undefined` if no changes were detected.
+ *
+ * 💬 As an optimization, cluster events and updates are __not checked__ if either a resource or
+ *  cache change is detected (and these two types of changes only apply to cluster entities).
  */
 export const entityHasChanged = function (entity, resourceOrModel) {
   if (!(entity instanceof CatalogEntity)) {
@@ -428,13 +437,21 @@ export const entityHasChanged = function (entity, resourceOrModel) {
   const getResOrModObjects = (resOrMod, listName) =>
     resOrMod.resourceVersion ? resOrMod[listName] : resOrMod.spec[listName];
 
-  let changed =
-    entity.metadata.resourceVersion !== getResOrModVersion(resourceOrModel) ||
+  const resourceChanged =
+    entity.metadata.resourceVersion !== getResOrModVersion(resourceOrModel);
+  const cacheChanged =
     entity.metadata.cacheVersion !== getResOrModCache(resourceOrModel);
 
-  // check to see if it's a cluster with updated events or updates
-  if (!changed && entity instanceof KubernetesCluster) {
-    changed = ['events', 'updates'].some((listName) => {
+  // IIF we didn't see a change in cache or resource version, check to see if it's a cluster
+  //  with updated events or updates
+  let clusterEventsChanged;
+  let clusterUpdatesChanged;
+  if (
+    !resourceChanged &&
+    !cacheChanged &&
+    entity instanceof KubernetesCluster
+  ) {
+    ['events', 'updates'].forEach((listName) => {
       // if list lengths are difference, there was a change
       let modified =
         entity.spec[listName].length !==
@@ -472,9 +489,25 @@ export const entityHasChanged = function (entity, resourceOrModel) {
           );
         });
 
-      return modified;
+      if (modified) {
+        if (listName === 'events') {
+          clusterEventsChanged = true;
+        } else {
+          clusterUpdatesChanged = true;
+        }
+      }
     });
   }
 
-  return changed;
+  return resourceChanged ||
+    cacheChanged ||
+    clusterEventsChanged ||
+    clusterUpdatesChanged
+    ? {
+        resourceChanged,
+        cacheChanged,
+        clusterEventsChanged,
+        clusterUpdatesChanged,
+      }
+    : undefined; // no changes detected
 };

@@ -1,22 +1,26 @@
 import { get, orderBy } from 'lodash';
 
+// NOTE: values map to properties in `strings.managementClusters.table.thead`
 export const SELECTIVE_HEAD_CELL_VALUES = {
-  NAME: 'NAME',
-  AUTOSYNC: 'AUTOSYNC',
-  URL: 'URL',
+  NAME: 'name',
+  AUTOSYNC: 'autoSync',
+  OFFLINE_ACCESS: 'offlineAccess',
+  URL: 'url',
 };
 
 export const selectivePathToData = {
   [SELECTIVE_HEAD_CELL_VALUES.NAME]: ['name'],
   [SELECTIVE_HEAD_CELL_VALUES.AUTOSYNC]: ['syncAll'],
+  [SELECTIVE_HEAD_CELL_VALUES.OFFLINE_ACCESS]: ['offlineAccess'],
   [SELECTIVE_HEAD_CELL_VALUES.URL]: ['cloudUrl'],
 };
 
+// NOTE: values map to properties in `strings.managementClusters.table.thead`
 export const HEAD_CELL_VALUES = {
-  NAME: 'NAME',
-  URL: 'URL',
-  USERNAME: 'USERNAME',
-  STATUS: 'STATUS',
+  NAME: 'name',
+  URL: 'url',
+  USERNAME: 'username',
+  STATUS: 'status',
 };
 
 export const pathToData = {

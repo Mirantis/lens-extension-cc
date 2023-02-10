@@ -1,13 +1,18 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { Renderer } from '@k8slens/extensions';
 import { InlineNotice } from '../InlineNotice';
+// TODO[trustHost]: import { InlineNotice, types as noticeTypes } from '../InlineNotice';
 import styled from '@emotion/styled';
 import { layout } from '../styles';
 import { normalizeUrl } from '../../../util/netUtil';
 import { connectionBlock } from '../../../strings';
 import { useClouds } from '../../store/CloudProvider';
 import { RequiredMark } from '../RequiredMark';
+import {
+  checkValues,
+  TriStateCheckbox,
+} from '../TriStateCheckbox/TriStateCheckbox';
 
 const {
   Component: { Input, Button },
@@ -22,6 +27,14 @@ const MainContent = styled.form(() => ({
   marginTop: layout.gap * 3,
   maxWidth: '750px',
   width: '100%',
+
+  '.trust-host-warning': {
+    marginTop: layout.pad,
+  },
+
+  '.connection-notice-info': {
+    marginTop: layout.gap,
+  },
 }));
 
 const Field = styled.div(() => ({
@@ -35,10 +48,6 @@ const Field = styled.div(() => ({
     marginBottom: layout.pad,
     display: 'inline-block',
   },
-}));
-
-const ButtonWrapper = styled.div(() => ({
-  marginTop: layout.gap,
 }));
 
 const mkCloudAlreadySyncedValidator = (clouds) => ({
@@ -65,27 +74,50 @@ const getOriginUrl = (url) => {
   }
 };
 
-export const ConnectionBlock = ({ loading, handleClusterConnect }) => {
+export const ConnectionBlock = ({ loading, onClusterConnect }) => {
+  //
+  // STATE
+  //
+
   const { clouds } = useClouds();
   const [clusterName, setClusterName] = useState('');
   const [clusterUrl, setClusterUrl] = useState('');
-  const [showInfoBox, setShowInfoBox] = useState(true);
+  const [showInfoBox, setShowInfoBox] = useState(false);
+  const [offlineAccess, setOfflineAccess] = useState(false);
+  // TODO[trustHost]: const [trustHost, setTrustHost] = useState(false);
 
-  const setUrl = (value) => {
-    if (!showInfoBox) {
-      setShowInfoBox(true);
-    }
+  //
+  // EVENTS
+  //
+
+  const setUrl = useCallback((value) => {
     setClusterUrl(value);
-  };
+  }, []);
 
-  const handleConnectClick = () => {
-    setShowInfoBox(false);
-
+  const handleConnectClick = useCallback(() => {
     const originUrl = getOriginUrl(clusterUrl);
-
     setClusterUrl(originUrl);
-    handleClusterConnect(originUrl, clusterName);
-  };
+
+    setShowInfoBox(true);
+    onClusterConnect({ clusterUrl: originUrl, clusterName, offlineAccess });
+  }, [onClusterConnect, clusterName, clusterUrl, offlineAccess]);
+
+  const handleOfflineAccessChange = useCallback((event) => {
+    setOfflineAccess(event.target.checked);
+  }, []);
+
+  // TODO[trustHost]
+  // const handleTrustHostChange = useCallback((event) => {
+  //   setTrustHost(event.target.checked);
+  // }, []);
+
+  //
+  // EFFECTS
+  //
+
+  //
+  // RENDER
+  //
 
   return (
     <MainContent>
@@ -124,19 +156,42 @@ export const ConnectionBlock = ({ loading, handleClusterConnect }) => {
           required
           trim
         />
-        <ButtonWrapper>
-          <Button
-            primary
-            type="button"
-            label={connectionBlock.button.label()}
-            onClick={handleConnectClick}
-            disabled={loading}
-          />
-        </ButtonWrapper>
       </Field>
+      <Field>
+        <TriStateCheckbox
+          label={connectionBlock.offlineAccess.label()}
+          help={connectionBlock.offlineAccess.help()}
+          onChange={handleOfflineAccessChange}
+          value={offlineAccess ? checkValues.CHECKED : checkValues.UNCHECKED}
+        />
+      </Field>
+      {/* // TODO[trustHost] */}
+      {/* <Field>
+        <TriStateCheckbox
+          label={connectionBlock.trustHost.label()}
+          help={connectionBlock.trustHost.help()}
+          onChange={handleTrustHostChange}
+          value={trustHost ? checkValues.CHECKED : checkValues.UNCHECKED}
+        />
+        {trustHost ? (
+          <InlineNotice
+            className="trust-host-warning"
+            type={noticeTypes.WARNING}
+          >
+            <p>{connectionBlock.trustHost.warning()}</p>
+          </InlineNotice>
+        ) : null}
+      </Field> */}
+      <Button
+        primary
+        type="button"
+        label={connectionBlock.button.label()}
+        onClick={handleConnectClick}
+        disabled={loading}
+      />
       <div>
         {showInfoBox && (
-          <InlineNotice>
+          <InlineNotice className="connection-notice-info">
             <p
               dangerouslySetInnerHTML={{
                 __html: connectionBlock.notice.info(),
@@ -151,5 +206,5 @@ export const ConnectionBlock = ({ loading, handleClusterConnect }) => {
 
 ConnectionBlock.propTypes = {
   loading: PropTypes.bool.isRequired,
-  handleClusterConnect: PropTypes.func.isRequired,
+  onClusterConnect: PropTypes.func.isRequired,
 };

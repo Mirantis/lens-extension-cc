@@ -22,8 +22,8 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
     user = userEvent.setup();
     mockConsole(['log', 'info', 'warn']); // automatically restored after each test
 
-    IpcRenderer.createInstance(extension);
-    CloudStore.createInstance().loadExtension(extension);
+    const ipcRenderer = IpcRenderer.createInstance(extension);
+    CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
   });
 
   (function () {

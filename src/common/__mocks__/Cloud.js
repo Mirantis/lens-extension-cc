@@ -31,6 +31,8 @@ export const mkCloudJson = (props) =>
       // NOTE: these properties are the ones required by Cloud.specTs in the real Cloud.js
       cloudUrl: 'http://cloud.url',
       name: 'cloud-name',
+      offlineAccess: false,
+      trustHost: false,
       syncAll: false,
       username: 'fred',
       id_token: null,
@@ -82,6 +84,8 @@ export class Cloud extends EventDispatcher {
       {
         cloudUrl: json.cloudUrl,
         name: json.name,
+        offlineAccess: json.offlineAccess,
+        trustHost: json.trustHost,
         syncAll: json.syncAll,
         username: json.username,
         token: json.id_token,

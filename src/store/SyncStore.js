@@ -56,11 +56,18 @@ export class SyncStore extends Common.Store.ExtensionStore {
   @observable proxies;
 
   /**
-   * @member {boolean|undefined} isMainThread True if this store instance is running on the
-   *  Main thread; false if it's on the Renderer thread. `undefined` until the store is
-   *  loaded with the Extension via `loadExtension()`.
+   * @member {IpcMain|undefined} ipcMain IpcMain singleton instance if this store instance
+   *  is running on the MAIN thread; `undefined` if it's on the RENDERER thread. `undefined`
+   *  until the store is loaded with the Extension via `main.tsx > loadExtension()`.
    */
-  isMainThread; // NOT observable on purpose; set only once
+  ipcMain; // NOT observable on purpose; set only once
+
+  /**
+   * @member {IpcRenderer|undefined} ipcRenderer IpcRenderer singleton instance if this store
+   *  instance is running on the RENDERER thread; `undefined` if it's on the MAIN thread.
+   *  `undefined` until the store is loaded with the Extension via `renderer.tsx > loadExtension()`.
+   */
+  ipcRenderer; // NOT observable on purpose; set only once
 
   static getDefaults() {
     return {
@@ -85,10 +92,31 @@ export class SyncStore extends Common.Store.ExtensionStore {
    * @override
    * @param {Main.LensExtension|Renderer.LensExtension} extension Main or Renderer extension
    *  instance.
-   * @param {boolean} [isMainThread] True if this store instance is on the Main thread.
+   * @param {Object} params
+   * @param {IpcMain} [params.ipcMainInstance] IpcMain singleton instance if being loaded on the
+   *  MAIN thread; `undefined` otherwise.
+   * @param {IpcRenderer} [params.ipcRendererInstance] IpcRenderer singleton instance if being
+   *  loaded on the RENDERER thread; `undefined` otherwise.
+   * @throws {Error} If both `ipcMain` and `ipcRenderer` are somehow provided at the same time,
+   *  or if neither are provided.
    */
-  loadExtension(extension, isMainThread) {
-    this.isMainThread = !!isMainThread;
+  loadExtension(
+    extension,
+    { ipcMain: ipcMainInstance, ipcRenderer: ipcRendererInstance }
+  ) {
+    if (ipcMainInstance && ipcRendererInstance) {
+      throw new Error(
+        'Cannot provide both ipcMain and ipcRenderer at the same time'
+      );
+    }
+
+    if (!ipcMainInstance && !ipcRendererInstance) {
+      throw new Error('Either ipcMain or ipcRenderer must be provided');
+    }
+
+    this.ipcMain = ipcMainInstance;
+    this.ipcRenderer = ipcRendererInstance;
+
     super.loadExtension(extension);
   }
 

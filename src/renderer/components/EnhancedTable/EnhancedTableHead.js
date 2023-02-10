@@ -50,8 +50,8 @@ export const EnhancedTableHead = ({
   order,
   headerValues,
 }) => {
-  const headerCells = Object.keys(headerValues).map((key) => ({
-    label: managementClusters.table.thead[key.toLowerCase()](),
+  const headerCells = Object.values(headerValues).map((key) => ({
+    label: managementClusters.table.thead[key](),
     key,
   }));
 
