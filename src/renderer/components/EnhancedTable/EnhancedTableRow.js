@@ -16,6 +16,7 @@ import {
 import { sortNamespaces } from './tableUtil';
 import * as consts from '../../../constants';
 import * as strings from '../../../strings';
+import { getCloudConnectionError } from '../../rendererUtil';
 import { CloudNamespace } from '../../../common/CloudNamespace';
 
 const { Icon, MenuItem, MenuActions, Tooltip } = Renderer.Component;
@@ -106,6 +107,15 @@ const Warning = styled.div`
     pointer-events: all;
   `}
 `;
+
+const ConnectionError = styled.div(() => ({
+  marginLeft: layout.grid,
+}));
+
+const CloudStatus = styled.div(() => ({
+  display: 'flex',
+  alignItems: 'center',
+}));
 
 const expandIconStyles = {
   color: 'var(--textColorPrimary)',
@@ -222,12 +232,38 @@ export const EnhancedTableRow = ({
     if (withCheckboxes) {
       return null;
     }
+
     const cloudMenuItems = getCloudMenuItems(cloud);
     const { cloudStatus, styles } = status;
+
+    let errorIcon;
+    if (cloud.connectError) {
+      const message = getCloudConnectionError(cloud);
+      errorIcon = (
+        <ConnectionError>
+          <Icon
+            id={`${cloud.name}-cloud-connection-error`}
+            material="error"
+            focusable={false}
+            interactive={false}
+            style={{ color: 'var(--colorError)' }}
+          />
+          <Tooltip targetId={`${cloud.name}-cloud-connection-error`}>
+            {message}
+          </Tooltip>
+        </ConnectionError>
+      );
+    }
+
     return (
       <>
         <EnhTableRowCell>{cloud.username}</EnhTableRowCell>
-        <EnhTableRowCell style={styles}>{cloudStatus}</EnhTableRowCell>
+        <EnhTableRowCell style={styles}>
+          <CloudStatus>
+            <span>{cloudStatus}</span>
+            {errorIcon}
+          </CloudStatus>
+        </EnhTableRowCell>
         <EnhTableRowCell isRightAligned>
           <EnhMore>
             <MenuActions>

@@ -105,8 +105,8 @@ describe('/renderer/components/GlobalPage/AddCloudInstance', () => {
         );
 
         const testUrl = 'https://foo.com/';
-        const inputNameEl = document.getElementById('lecc-cluster-name');
-        const inputUrlEl = document.getElementById('lecc-cluster-url');
+        const inputNameEl = document.getElementById('cclex-cluster-name');
+        const inputUrlEl = document.getElementById('cclex-cluster-url');
 
         await user.type(inputNameEl, testCloudName);
         await user.type(inputUrlEl, testUrl);
@@ -123,7 +123,7 @@ describe('/renderer/components/GlobalPage/AddCloudInstance', () => {
           ).not.toBeInTheDocument();
           expect(
             document.querySelector('.notification.error')
-          ).toHaveTextContent(strings.addCloudInstance.connectionError());
+          ).toHaveTextContent(strings.cloudConnectionErrors.connectionError());
         } else {
           expect(
             screen.getByText(strings.synchronizeBlock.title())

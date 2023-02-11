@@ -55,12 +55,25 @@ const mkCloudAlreadySyncedValidator = (clouds) => ({
   validate: (url) => !clouds[normalizeUrl(url)],
 });
 
-const nameSymbols = {
+const urlFormatValidator = {
+  message: () => connectionBlock.notice.urlWrongFormat(),
+  validate: (value) => {
+    try {
+      // NOTE: `URL` is different under Jest than it is in Lens and would need to be mocked
+      // https://github.com/facebook/jest/issues/10045
+      return TEST_ENV ? true : Boolean(new URL(value));
+    } catch (err) {
+      return false;
+    }
+  },
+};
+
+const nameSymbolsValidator = {
   message: () => connectionBlock.notice.nameSymbolsAreNotValid(),
   validate: (name) => /^[a-zA-Z0-9_-]*$/.test(name),
 };
 
-const mkNameValidator = (clouds) => ({
+const mkUniqueNameValidator = (clouds) => ({
   message: () => connectionBlock.notice.nameAlreadyUsed(),
   validate: (value) =>
     !Object.values(clouds).find(({ name }) => name === value),
@@ -74,7 +87,12 @@ const getOriginUrl = (url) => {
   }
 };
 
-export const ConnectionBlock = ({ loading, onClusterConnect }) => {
+export const ConnectionBlock = ({
+  loading,
+  loaded,
+  connectError,
+  onClusterConnect,
+}) => {
   //
   // STATE
   //
@@ -82,7 +100,6 @@ export const ConnectionBlock = ({ loading, onClusterConnect }) => {
   const { clouds } = useClouds();
   const [clusterName, setClusterName] = useState('');
   const [clusterUrl, setClusterUrl] = useState('');
-  const [showInfoBox, setShowInfoBox] = useState(false);
   const [offlineAccess, setOfflineAccess] = useState(false);
   // TODO[trustHost]: const [trustHost, setTrustHost] = useState(false);
 
@@ -90,15 +107,17 @@ export const ConnectionBlock = ({ loading, onClusterConnect }) => {
   // EVENTS
   //
 
-  const setUrl = useCallback((value) => {
+  const handleNameChange = useCallback((value) => {
+    setClusterName(value);
+  }, []);
+
+  const handleUrlChange = useCallback((value) => {
     setClusterUrl(value);
   }, []);
 
   const handleConnectClick = useCallback(() => {
     const originUrl = getOriginUrl(clusterUrl);
     setClusterUrl(originUrl);
-
-    setShowInfoBox(true);
     onClusterConnect({ clusterUrl: originUrl, clusterName, offlineAccess });
   }, [onClusterConnect, clusterName, clusterUrl, offlineAccess]);
 
@@ -119,11 +138,24 @@ export const ConnectionBlock = ({ loading, onClusterConnect }) => {
   // RENDER
   //
 
+  const nameValidators = [nameSymbolsValidator, mkUniqueNameValidator(clouds)];
+  const urlValidators = [
+    urlFormatValidator,
+    mkCloudAlreadySyncedValidator(clouds),
+  ];
+
+  const nameValid = nameValidators.every((validator) =>
+    validator.validate(clusterName)
+  );
+  const urlValid = urlValidators.every((validator) =>
+    validator.validate(clusterUrl)
+  );
+
   return (
     <MainContent>
       <Title>{connectionBlock.title()}</Title>
       <Field>
-        <label htmlFor="lecc-cluster-name">
+        <label htmlFor="cclex-cluster-name">
           {connectionBlock.clusterName.label()}
           <RequiredMark />
         </label>
@@ -131,47 +163,51 @@ export const ConnectionBlock = ({ loading, onClusterConnect }) => {
           type="text"
           theme="round-black" // borders on all sides, rounded corners
           placeholder={connectionBlock.clusterName.placeholder()}
-          id="lecc-cluster-name"
+          id="cclex-cluster-name"
           value={clusterName}
-          onChange={setClusterName}
-          disabled={loading}
-          validators={[nameSymbols, mkNameValidator(clouds)]}
+          onChange={handleNameChange}
+          disabled={loading || (loaded && !connectError)}
+          validators={nameValidators}
           required
           trim
         />
       </Field>
       <Field>
-        <label htmlFor="lecc-cluster-url">
+        <label htmlFor="cclex-cluster-url">
           {connectionBlock.clusterUrl.label()}
           <RequiredMark />
         </label>
         <Input
-          type="url"
+          type="text"
           theme="round-black" // borders on all sides, rounded corners
-          id="lecc-cluster-url"
+          id="cclex-cluster-url"
           value={clusterUrl}
-          onChange={setUrl}
-          validators={[mkCloudAlreadySyncedValidator(clouds)]}
-          disabled={loading}
+          onChange={handleUrlChange}
+          validators={urlValidators}
+          disabled={loading || (loaded && !connectError)}
           required
           trim
         />
       </Field>
       <Field>
         <TriStateCheckbox
+          id="cclex-cluster-offlineToken"
           label={connectionBlock.offlineAccess.label()}
           help={connectionBlock.offlineAccess.help()}
-          onChange={handleOfflineAccessChange}
+          disabled={loading || (loaded && !connectError)}
           value={offlineAccess ? checkValues.CHECKED : checkValues.UNCHECKED}
+          onChange={handleOfflineAccessChange}
         />
       </Field>
       {/* // TODO[trustHost] */}
       {/* <Field>
         <TriStateCheckbox
+          id="cclex-cluster-trustHost"
           label={connectionBlock.trustHost.label()}
           help={connectionBlock.trustHost.help()}
-          onChange={handleTrustHostChange}
+          disabled={loading || (loaded && !connectError)}
           value={trustHost ? checkValues.CHECKED : checkValues.UNCHECKED}
+          onChange={handleTrustHostChange}
         />
         {trustHost ? (
           <InlineNotice
@@ -187,10 +223,17 @@ export const ConnectionBlock = ({ loading, onClusterConnect }) => {
         type="button"
         label={connectionBlock.button.label()}
         onClick={handleConnectClick}
-        disabled={loading}
+        disabled={
+          !clusterName ||
+          !nameValid ||
+          !clusterUrl ||
+          !urlValid ||
+          loading ||
+          (loaded && !connectError)
+        }
       />
       <div>
-        {showInfoBox && (
+        {loading || connectError ? (
           <InlineNotice className="connection-notice-info">
             <p
               dangerouslySetInnerHTML={{
@@ -198,13 +241,19 @@ export const ConnectionBlock = ({ loading, onClusterConnect }) => {
               }}
             />
           </InlineNotice>
-        )}
+        ) : null}
       </div>
     </MainContent>
   );
 };
 
 ConnectionBlock.propTypes = {
-  loading: PropTypes.bool.isRequired,
+  loading: PropTypes.bool,
+  loaded: PropTypes.bool,
+  connectError: PropTypes.string, // connection error, if any
   onClusterConnect: PropTypes.func.isRequired,
+};
+ConnectionBlock.defaultProps = {
+  loading: false,
+  loaded: false,
 };

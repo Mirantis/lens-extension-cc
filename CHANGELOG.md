@@ -6,6 +6,10 @@
     - ❗️ This works around a [Lens issue](https://github.com/lensapp/lens/issues/6966) whereby dozens/hundreds of login windows can be opened in the default browser if Lens is left running in the background and the short-lived cluster access token expires.
     - See the [docs](README.md#offline-tokens) for more info.
 - Added keyboard support (i.e. for tab key) to custom tri-state checkbox component used throughout the extension.
+- Improved how connection errors are displayed when adding a new management cluster, or when reconnecting to a disconnected management cluster:
+    - When adding, error messages are displayed in an error popup notification which does not auto-dismiss.
+    - When syncing, error messages are surfaced in an error icon next to the status string in the Sync View table. Mouse over for a tooltip containing the error message.
+    - Error messages are introspected for two specific cases in order to provide more helpful messages: Untrusted self-signed certificates, and unable to reach the host.
 
 ## v5.4.0
 

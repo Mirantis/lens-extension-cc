@@ -8,6 +8,8 @@ const { Icon } = Renderer.Component;
 
 const controlWidth = layout.grid * 4; // 16px
 const controlLabelGap = layout.grid * 2.5; // 10px
+const disabledColor = 'var(--textColorDimmed)';
+const checkedColor = 'var(--primary)';
 
 const Wrapper = styled.div(() => ({
   minWidth: 64,
@@ -22,7 +24,7 @@ const ControlPart = styled.div(() => ({
   alignItems: 'center',
 }));
 
-const Control = styled.div(({ isChecked }) => ({
+const Control = styled.div(({ isChecked, disabled }) => ({
   flex: '0 0 auto',
   display: 'flex',
   justifyContent: 'center',
@@ -32,9 +34,10 @@ const Control = styled.div(({ isChecked }) => ({
   borderWidth: 2,
   borderRadius: 2,
   borderStyle: 'solid',
-  borderColor: isChecked ? 'var(--primary)' : 'var(--textColorSecondary)',
-  backgroundColor: isChecked ? 'var(--primary)' : 'transparent',
-  cursor: 'pointer',
+  borderColor: isChecked ? checkedColor : 'var(--textColorSecondary)',
+  backgroundColor: isChecked ? checkedColor : 'transparent',
+  cursor: disabled ? 'default' : 'pointer',
+  opacity: disabled ? '50%' : undefined, // same as what Lens does for a disabled <Button>
 
   ':focus': {
     borderColor: 'var(--colorInfo)',
@@ -51,12 +54,13 @@ const HiddenField = styled.input(() => ({
   display: 'none',
 }));
 
-const Label = styled.label(() => ({
+const Label = styled.label(({ disabled }) => ({
   paddingLeft: controlLabelGap,
-  cursor: 'pointer',
+  cursor: disabled ? 'default' : 'pointer',
   overflowWrap: 'break-word',
   hyphens: 'auto',
   overflow: 'hidden',
+  color: disabled ? disabledColor : undefined, // inherit color when enabled
 }));
 
 const HelpText = styled.p(() => ({
@@ -195,6 +199,7 @@ export const TriStateCheckbox = ({
           className={`${classPrefix}-control`}
           role="checkbox"
           isChecked={value !== checkValues.UNCHECKED}
+          disabled={disabled}
           tabIndex={tab}
           ref={ctrlRef}
           onClick={handleCtrlClick}
@@ -218,7 +223,11 @@ export const TriStateCheckbox = ({
             <Icon material="check" style={iconStyles} />
           )}
         </Control>
-        <Label className={`${classPrefix}-label`} onClick={handleLabelClick}>
+        <Label
+          className={`${classPrefix}-label`}
+          disabled={disabled}
+          onClick={handleLabelClick}
+        >
           {label}
         </Label>
       </ControlPart>

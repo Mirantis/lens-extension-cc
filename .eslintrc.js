@@ -76,6 +76,7 @@ const env = {
 
 const globals = {
   DEV_ENV: 'readonly',
+  TEST_ENV: 'readonly',
   ENTITY_CACHE_VERSION: 'readonly',
   FEAT_CLUSTER_PAGE_HISTORY_ENABLED: 'readonly',
   FEAT_CLUSTER_PAGE_HEALTH_ENABLED: 'readonly',
