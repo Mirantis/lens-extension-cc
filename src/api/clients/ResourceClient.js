@@ -11,11 +11,6 @@ const metalEndpoint = 'apis/metal3.io/v1alpha1';
 const namespacePrefix = (namespaceName) =>
   namespaceName ? `namespaces/${namespaceName}/` : '';
 
-/**
- * Used to work with namespace-specific Kubernetes resources.
- * @param {string} baseUrl The MCC base URL (i.e. the URL to the MCC UI). Expected to
- *  be "http[s]://<host>" and to NOT end with a slash.
- */
 export class ResourceClient {
   // resource type to '/apis/GROUP/VERSION' prefix
   static typeToApiPrefix = {
@@ -43,7 +38,20 @@ export class ResourceClient {
     [apiResourceTypes.PROXY]: kaasEndpoint,
   };
 
-  constructor(baseUrl, token, resourceType) {
+  /**
+   * Used to work with namespace-specific Kubernetes resources.
+   * @class ResourceClient
+   * @param {Object} params
+   * @param {string} params.baseUrl The MCC base URL (i.e. the URL to the MCC UI). Expected to
+   *  be "http[s]://<host>" and to NOT end with a slash.
+   * @param {string} params.token Current/valid SSO access token.
+   * @param {string} params.resourceType Type of kube resource to work with. Value from
+   *  the `apiResourceTypes` enum.
+   * @param {boolean} [params.trustHost] If truthy, TLS verification of the host
+   *  __will be skipped__. If falsy, secure requests will fail if the host's certificate
+   *  cannot be verified (typically the case when it's self-signed).
+   */
+  constructor({ baseUrl, token, resourceType, trustHost = false }) {
     if (!baseUrl || !token || !resourceType) {
       throw new Error('baseUrl, token, and resourceType are required');
     }
@@ -57,6 +65,8 @@ export class ResourceClient {
 
     this.baseUrl = baseUrl.replace(/\/$/, ''); // remove end slash if any
     this.token = token;
+    this.trustHost = !!trustHost;
+
     this.headers = {
       Accept: 'application/json',
       'Content-Type': 'application/json',
@@ -83,10 +93,15 @@ export class ResourceClient {
    */
   request(
     endpoint,
-    { options = {}, expectedStatuses = [200], errorMessage, extractBodyMethod }
+    {
+      options = {},
+      expectedStatuses = [200],
+      errorMessage,
+      extractBodyMethod,
+      trustHost,
+    }
   ) {
     return request(
-      // TODO[trustHost]: need to tell request() to trustHost...
       `${this.baseUrl}/${this.apiPrefix}/${endpoint}`,
       {
         credentials: 'same-origin',
@@ -96,7 +111,12 @@ export class ResourceClient {
           ...(options?.headers || {}),
         },
       },
-      { expectedStatuses, errorMessage, extractBodyMethod }
+      {
+        expectedStatuses,
+        errorMessage,
+        extractBodyMethod,
+        trustHost: trustHost === undefined ? this.trustHost : !!trustHost,
+      }
     );
   }
 

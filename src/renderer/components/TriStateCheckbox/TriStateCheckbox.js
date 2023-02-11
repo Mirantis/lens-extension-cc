@@ -63,12 +63,13 @@ const Label = styled.label(({ disabled }) => ({
   color: disabled ? disabledColor : undefined, // inherit color when enabled
 }));
 
-const HelpText = styled.p(() => ({
+const HelpText = styled.p(({ disabled }) => ({
   flex: 1, // flex child of <CheckboxItem>
   marginTop: layout.grid,
   marginLeft: controlWidth + controlLabelGap,
   fontStyle: 'italic',
   cursor: 'default',
+  color: disabled ? disabledColor : undefined, // inherit color when enabled
 }));
 
 const iconStyles = {
@@ -232,7 +233,9 @@ export const TriStateCheckbox = ({
         </Label>
       </ControlPart>
       {help ? (
-        <HelpText className={`${classPrefix}-help`}>{help}</HelpText>
+        <HelpText className={`${classPrefix}-help`} disabled={disabled}>
+          {help}
+        </HelpText>
       ) : null}
     </Wrapper>
   );

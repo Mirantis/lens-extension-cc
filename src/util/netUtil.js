@@ -4,23 +4,13 @@ import https from 'https';
 import { Common } from '@k8slens/extensions';
 import queryString from 'query-string';
 import * as strings from '../strings';
-import { logger } from './logger';
-import { skipTlsVerify } from '../constants';
 
 const { Util } = Common;
 
-let httpsAgent;
-if (skipTlsVerify) {
-  // SECURITY: get around issues with Clouds that have self-signed certificates (typically used
-  //  for internal test Clouds of various kinds)
-  logger.warn(
-    'netUtil',
-    'Self-signed certificates will be permitted for all network requests: Be careful!'
-  );
-  httpsAgent = new https.Agent({
-    rejectUnauthorized: false,
-  });
-}
+/** Agent to use for trusted unsafe HTTPS connections (e.g. self-signed certs) */
+const trustedUnsafeAgent = new https.Agent({
+  rejectUnauthorized: false,
+});
 
 /**
  * Attempts to extract the body of a response.
@@ -105,6 +95,12 @@ export function buildQueryString(params) {
  * @param {string} [options.errorMessage] Error message to use if the request is
  *  deemed to have failed (per other options); otherwise, a generated message
  *  is used, based on response status.
+ * @param {boolean} [options.trustHost] If truthy, TLS verification of the host
+ *  __will be skipped__. If falsy, secure requests will fail if the host's certificate
+ *  cannot be verified (typically the case when it's self-signed).
+ *
+ *  ⚠️ Ignored if `requestionOptions.agent` is specified.
+ *
  * @returns {Promise<Object>} If successful, the object has this shape:
  *  `{response: Response, expectedStatuses, body: any, url: string}`:
  *  - response: The Fetch Response object.
@@ -127,19 +123,24 @@ export function buildQueryString(params) {
 export async function request(
   url,
   requestOptions,
-  { expectedStatuses, errorMessage, extractBodyMethod = 'json' } = {}
+  {
+    expectedStatuses,
+    errorMessage,
+    extractBodyMethod = 'json',
+    trustHost = false,
+  } = {}
 ) {
   let response = {};
 
   try {
     response = await nodeFetch(url, {
-      ...requestOptions,
+      // SECURITY: If `trustHost=true`, ignore any certificate issues on the remote host;
+      //  otherwise, using `undefined`, the default agent will be used, and if there are
+      //  any certificate issues, the request will blocked
+      agent:
+        trustHost && url.startsWith('https:') ? trustedUnsafeAgent : undefined,
 
-      // SECURITY: If `constants.skipTlsVerify=true`, `httpsAgent` will be defined
-      //  and it will ignore any certificate issues on the remote server; otherwise,
-      //  `httpsAgent` will be `undefined`, the default agent will be used, and
-      //  if there are any certificate issues, the request will blocked
-      agent: url.startsWith('https:') ? httpsAgent : undefined,
+      ...requestOptions,
     });
   } catch (e) {
     return {

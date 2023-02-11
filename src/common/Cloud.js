@@ -155,10 +155,9 @@ export const CLOUD_EVENTS = Object.freeze({
  */
 const _loadConfig = async (cloud) => {
   const res = await request(
-    // TODO[trustHost]: need to tell request() to cloud.trustHost...
     `${cloud.cloudUrl}/config.js`,
     {},
-    { extractBodyMethod: 'text' }
+    { extractBodyMethod: 'text', trustHost: cloud.trustHost }
   );
   if (res.error) {
     throw new Error(res.error);
@@ -1236,7 +1235,7 @@ export class Cloud extends EventDispatcher {
       const state = this.cloudUrl;
 
       try {
-        ssoUtil.startAuthorization({ config: this.config, state });
+        ssoUtil.startAuthorization({ cloud: this, state });
       } catch (err) {
         this.connectError = err;
         this.connecting = false;
@@ -1255,7 +1254,6 @@ export class Cloud extends EventDispatcher {
         try {
           await ssoUtil.finishAuthorization({
             oAuth,
-            config: this.config,
             cloud: this,
           });
         } catch (err) {

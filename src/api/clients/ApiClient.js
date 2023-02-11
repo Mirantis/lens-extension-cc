@@ -11,11 +11,14 @@ const authRoute = 'protocol/openid-connect'; // NEVER begins/ends with a slash
  * Authentication Client able to get OAuth tokens from Keycloak/SSO,
  *  and refresh those tokens if they expire.
  * @class ApiClient
- * @param {Object} options
- * @param {CloudConfig} options.config The MCC Configuration object.
+ * @param {Object} params
+ * @param {CloudConfig} params.config The MCC Configuration object.
+ * @param {boolean} [params.trustHost] If truthy, TLS verification of the host
+ *  __will be skipped__. If falsy, secure requests will fail if the host's certificate
+ *  cannot be verified (typically the case when it's self-signed).
  */
 export class ApiClient {
-  constructor({ config }) {
+  constructor({ config, trustHost = false }) {
     if (!config || !config.ssoEnabled) {
       throw new Error(
         'config is always required and must be for an instance that uses Keycloak/SSO'
@@ -30,6 +33,7 @@ export class ApiClient {
     const authUrl = keyUrl.replace(issuerUrl, '');
 
     this.baseUrl = authUrl.replace(/\/$/, ''); // remove end slash if any
+    this.trustHost = !!trustHost;
 
     // remove any beginning and/or ending slashes
     this.issuerRoute = issuerUrl.replace(/(^\/|\/$)/g, '');
@@ -52,25 +56,42 @@ export class ApiClient {
    * @param {string} [options.errorMessage] Error message to use if the request is
    *  deemed to have failed (per other options); otherwise, a generated message
    *  is used, based on response status.
+   * @param {boolean} [options.trustHost] If truthy, TLS verification of the host
+   *  __will be skipped__. If falsy, secure requests will fail if the host's certificate
+   *  cannot be verified (typically the case when it's self-signed).
+   *
+   *  ⚠️ Overrides the client's configured `trustHost` option. Ignored if
+   *   `options.options.agent` is specified.
+   *
    * @returns {Promise<Object>} See netUtil.request() for response shape.
    */
   request(
     endpoint,
-    { options = {}, expectedStatuses = [200], errorMessage, extractBodyMethod }
+    {
+      options = {},
+      expectedStatuses = [200],
+      errorMessage,
+      extractBodyMethod,
+      trustHost,
+    }
   ) {
     const headers = {
       Accept: 'application/json',
       'Content-Type': 'application/x-www-form-urlencoded',
     };
     return request(
-      // TODO[trustHost]: need to tell request() to config.trustHost...
       `${this.baseUrl}/${this.issuerRoute}/${authRoute}/${endpoint}`,
       {
         credentials: 'same-origin',
         ...options,
         headers: { ...headers, ...(options?.headers || {}) },
       },
-      { expectedStatuses, errorMessage, extractBodyMethod }
+      {
+        expectedStatuses,
+        errorMessage,
+        extractBodyMethod,
+        trustHost: trustHost === undefined ? this.trustHost : !!trustHost,
+      }
     );
   }
 

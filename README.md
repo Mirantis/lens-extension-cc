@@ -61,15 +61,15 @@ Click on the __Mirantis Container Cloud__ button in the top bar, on the right si
 
 When there are no management clusters, you'll see the Welcome screen, as above. Click on the button at the bottom.
 
-![Connect to cloud](./docs/v4-02-add-cloud.png)
+![Connect to cloud](./docs/v550-01-add-cloud.png)
 
 - __Management cluster name:__ Enter a friendly name of your choice (no spaces or special characters allowed) for the management cluster you will connect to. This name will be used in Catalog labels to identify resources belonging to this management cluster in order to help with searching/filtering.
 - __Management cluster URL:__ Enter the URL to the management cluster itself.
     - 💬 This is not the URL to a child cluster inside the management cluster. The management cluster is essentially the Mirantis Container Cloud _instance_. However, using a child cluster URL is OK as the extension will use it to determine the proper URL for you.
-- __Use offline tokens:__ (✳️ New in [v5.5.0](CHANGELOG.md#v550), not pictured above) By default, short-lived (more secure) cluster access tokens are used in the generated kubeconfigs used by Lens to connect to synced clusters. Enable this option to use long-lived tokens to stay connected to them for a longer period of time. See the [offline tokens](#offline-tokens) section for more information.
+- __Use offline tokens:__ (✳️ New in [v5.5.0](CHANGELOG.md#v550)) By default, short-lived (more secure) cluster access tokens are used in the generated kubeconfigs used by Lens to connect to synced clusters. Enable this option to use long-lived tokens to stay connected to them for a longer period of time. See the [offline tokens](#offline-tokens) section for more information.
     - 💬 The "offline" term should not be confused with [offline support](#offline-support). A network connection is always necessary in order to get the latest cluster status.
-
-> ⚠️ By default, the extension will not connect to management clusters that use __self-signed certificates__. If that is your scenario, and you trust the endpoint, then see the [Security](#security) section for how to allow these connections.
+- __Trust this host:__ (✳️ New in [v5.5.0](CHANGELOG.md#v550)) By default, the extension will not connect to management clusters that use __self-signed certificates__ or have expired/invalid certificates. If that is your scenario, and you trust the endpoint, then check this option.
+    - ⚠️ Trusting a host is inherently __unsafe__. [Read more](#trusted-hosts) about this option before using it.
 
 When you click on __Connect__, your default browser will open to the management cluster's sign in screen.
 
@@ -216,6 +216,28 @@ These cluster access tokens are those which are partially configured via the `Us
 
 > 💬 "Offline" tokens should not be confused with [offline support](#offline-support), which is about retaining the ability to see synced objects even when temporarily offline (disconnected from your network). Eventually, even long-lived tokens will expire and will need to be renewed.
 
+## Trusted hosts
+
+✳️ __New in [v5.5.0](CHANGELOG.md#v550)__
+
+By default, the extension does not support management clusters that use self-signed certificates (or certificates that are expired, or not verifiable for whatever reason). They are treated as untrusted hosts for security reasons (because their identity cannot be verified).
+
+> ❗️ Mirantis does not recommend connecting to an unverified host and takes no responsibility whatsoever for any negative consequences that may ensue. The host could be one posing as the real thing, but in actuality, one owned by a threat actor with malicious goals. This extension is [MIT-licensed](./LICENSE). Proceed at your own risk.
+
+There are some legitimate reasons to use self-signed certificates, however, and it is possible to connect to a management cluster that uses one by setting the `Trust this host` option offered when [adding](#adding-your-first-management-cluster) a management cluster.
+
+When trusting a management cluster, the trust also applies to __all clusters synced__ through it, which means that all generated cluster kubeConfigs will also skip TLS verification.
+
+> ⚠️ This flag can only be set when __adding__ the management cluster. This is because a host that uses a self-signed certificate typically continues to do so into the future.
+>
+> If your management cluster's certificate suddenly expires, contact your IT department and ask them to look into the issue before resorting to trusting the host.
+
+To __untrust__ the host, remove the management cluster, and add it again without the `Trust this host` option enabled.
+
+It's not possible to trust a host you've already added on the premise that if a host's certificate becomes invalid, it's a good indication that something might be amis and should be verified/rectified prior to reconnecting. Contact your IT department and ask them to look into the issue before resorting to trusting the host.
+
+If a host had to be trusted when it was added, we're assuming it probably always has to be trusted (e.g. it's an internal, test, or demo system that always uses a self-signed certificate) and there would be no reason to suddenly no longer trust it and require TLS verification. However, if this is something you _frequently_ encounter, please let us know by [opening an issue](https://github.com/Mirantis/lens-extension-cc/issues) and explaining your use case.
+
 ## FAQ
 
 - I was able to add my cluster to Lens, but Lens fails to show it because of an authentication error.
@@ -229,47 +251,6 @@ These cluster access tokens are those which are partially configured via the `Us
     - Quitting and restarting Lens normally fixes the issue.
     - If the issue persists after quitting Lens (and leaving it closed because you don't need to use it for a while), then you may need to check for rogue Lens-related processes in your operating system's process explorer app and kill those lingering ones for the behavior to stop.
     - 💡 As of [v5.5.0](CHANGELOG.md#v550), it's possible to work around this issue by using [offline tokens](#offline-tokens) for cluster access.
-
-## Security
-
-### Self-signed certificates
-
-By default, the extension does not support management clusters that use self-signed certificates. They are treated as untrusted hosts for security reasons (because their identity cannot be verified).
-
-There are some legitimate reasons to use self-signed certificates, however, and it is possible to enable the extension to skip certificate verification by starting Lens from the command line with a special `LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS` flag, where values of `1`, `true`, or `yes` will enable self-signed certificate support.
-
-> ⚠️ Using this flag will also configure generated cluster kubeConfig files to skip TLS verification, and restarting Lens without the flag will not cause those kubeConfig files to be regenerated.
->
-> To force all kubeConfigs to be regenerated with/without the setting, remove the project to which the cluster belongs from your sync settings, and re-add it. Removing the entire management cluster and re-adding it will also cause all kubeConfigs for all synced clusters belonging to it to be regenerated.
-
-__macOS__
-
-From a Terminal:
-
-```bash
-LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS=1 /Applications/Lens.app/Contents/MacOS/Lens
-```
-
-__Linux__
-
-From a Terminal:
-
-```bash
-LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS=1 snap run lens
-```
-
-> 💬 This presumes a Snap-based installation. How to run Lens will differ if you used an alternate installation method.
-
-__Windows__
-
-From a Command Prompt:
-
-```
-set LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS=1
-C:\Users\USERNAME\AppData\Local\Programs\Lens\Lens.exe
-```
-
-> 💬 Replace `USERNAME` with your Windows username.
 
 ## Upgrading from v3 to v4
 

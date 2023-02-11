@@ -5,6 +5,8 @@
 import { Renderer } from '@k8slens/extensions';
 import dayjs from 'dayjs';
 import dayjsRelativeTimePlugin from 'dayjs/plugin/relativeTime';
+import { getCloudErrorType } from '../api/apiUtil';
+import { apiCloudErrorTypes } from '../api/apiConstants';
 import * as consts from '../constants';
 import * as strings from '../strings';
 
@@ -53,9 +55,10 @@ export const getCloudConnectionError = function (cloud) {
   let message;
   if (cloud.connectError) {
     message = strings.cloudConnectionErrors.connectionError(); // generic error/reconnect message
-    if (cloud.connectError.match(/unable to verify.*certificate/i)) {
+    const errorType = getCloudErrorType(cloud.connectError);
+    if (errorType === apiCloudErrorTypes.CERT_VERIFICATION) {
       message = strings.cloudConnectionErrors.untrustedCertificate();
-    } else if (cloud.connectError.match(/getaddrinfo.*ENOTFOUND/i)) {
+    } else if (errorType === apiCloudErrorTypes.HOST_NOT_FOUND) {
       message = strings.cloudConnectionErrors.hostNotFound();
     }
   }

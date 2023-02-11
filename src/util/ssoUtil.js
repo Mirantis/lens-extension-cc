@@ -8,17 +8,19 @@ import * as strings from '../strings';
  *  Start authorization with MCC to get the temp access code via the
  *  redirect URI that will use the 'lens://' protocol to redirect the user
  *  to Lens and ultimately call back into `finishAuthorization()`.
- * @param {Object} options
- * @param {CloudConfig} options.config MCC Config object.
- * @param {string} [options.state] Any string that should be returned verbatim
+ * @param {Object} params
+ * @param {Cloud} params.cloud Cloud to authorize with.
+ * @param {string} [params.state] Any string that should be returned verbatim
  *  in a `state` request parameter in the redirect request.
  * @throws {Error} If the MCC instance doesn't support SSO.
  * @throws {Error} If the MCC instance has an illegal Keycloak URL.
  */
-export const startAuthorization = function ({ config, state }) {
-  const apiClient = new ApiClient({ config });
-
-  if (config.ssoEnabled) {
+export const startAuthorization = function ({ cloud, state }) {
+  if (cloud.config?.ssoEnabled) {
+    const apiClient = new ApiClient({
+      config: cloud.config,
+      trustHost: cloud.trustHost,
+    });
     const url = apiClient.getSsoAuthUrl({ state });
     try {
       openBrowser(url); // open in default browser (will throw if `url` is blacklisted)
@@ -33,16 +35,21 @@ export const startAuthorization = function ({ config, state }) {
 /**
  * [ASYNC] Completes the authorization process by exchanging the temp access code
  *  for access tokens.
- *
- * @param {Object} options
- * @param {Object} options.oAuth OAuth response data from request for auth code.
+ * @param {Object} params
+ * @param {Object} params.oAuth OAuth response data from request for auth code.
  *  See `extEventOauthCodeTs` typeset in `eventBus.ts` for expected shape.
- * @param {Object} options.config MCC Config object.
- * @param {Cloud} options.cloud Current authentication information.
- *  This instance WILL be cleared and updated with new tokens.
+ * @param {Cloud} params.cloud Cloud with which an SSO connection is being authorized.
+ *  Tokens WILL be cleared and updated with new ones for the new connection.
  */
-export const finishAuthorization = async function ({ oAuth, config, cloud }) {
-  const apiClient = new ApiClient({ config });
+export const finishAuthorization = async function ({ oAuth, cloud }) {
+  if (!cloud.config?.ssoEnabled) {
+    throw new Error(strings.ssoUtil.error.ssoNotSupported());
+  }
+
+  const apiClient = new ApiClient({
+    config: cloud.config,
+    trustHost: cloud.trustHost,
+  });
   let body;
   let error;
 
