@@ -73,6 +73,7 @@ export const connectionBlock: Dict = {
     info: () =>
       "You will be directed to your Management Cluster's login page through your web browser where you should enter your SSO credentials",
     urlAlreadyUsed: () => 'This Management Cluster is already being synced',
+    urlWrongFormat: () => 'Wrong URL format',
     nameSymbolsAreNotValid: () =>
       'The name cannot contain whitespace or special characters, except for hyphens (-) and underscores (_)',
     nameAlreadyUsed: () =>
@@ -80,9 +81,13 @@ export const connectionBlock: Dict = {
   },
 };
 
-export const addCloudInstance = {
+export const cloudConnectionErrors = {
   connectionError: () =>
-    'An error occurred while connecting to the management cluster and retrieving its projects. Click on the Connect button to try again.',
+    'An error occurred while connecting to the management cluster. Check your network connection, make sure your VPN is active (if it is required to access the host), and try connecting again.',
+  hostNotFound: () =>
+    'The management cluster cannot be reached. Check your network connection, make sure your VPN is active (if it is required to access the host), and try connecting again.',
+  untrustedCertificate: () =>
+    'The management cluster appears to be using a self-signed certificate which cannot be verified. See the "Security" section of the documentation for a possible workaround.', // TODO[trustHost]: replace second sentence with, 'If you trust the host, enable the "Trust this host" option and try connecting again.'
 };
 
 export const synchronizeBlock = {

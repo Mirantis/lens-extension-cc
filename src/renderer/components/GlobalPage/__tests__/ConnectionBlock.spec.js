@@ -13,13 +13,10 @@ jest.mock('../../../../common/Cloud');
 describe('/renderer/components/GlobalPage/ConnectionBlock', () => {
   const extension = {};
 
-  const TestConnectionBlockComponent = ({ loading, onClusterConnect }) => {
+  const TestConnectionBlockComponent = (props) => {
     return (
       <CloudProvider>
-        <ConnectionBlock
-          loading={loading}
-          onClusterConnect={onClusterConnect}
-        />
+        <ConnectionBlock {...props} />
       </CloudProvider>
     );
   };
@@ -40,36 +37,90 @@ describe('/renderer/components/GlobalPage/ConnectionBlock', () => {
     });
 
     it('renders connection block', () => {
-      render(
-        <TestConnectionBlockComponent
-          loading={false}
-          onClusterConnect={() => {}}
-        />
-      );
+      render(<TestConnectionBlockComponent loading={false} />);
 
       expect(
         screen.getByText(strings.connectionBlock.title())
       ).toBeInTheDocument();
     });
 
-    it('shows info box by changing cluster url input after clicking on submit button', async () => {
-      const handler = jest.fn();
+    it('does not show info box if not loading and enables all fields', async () => {
+      render(<TestConnectionBlockComponent loading={false} />);
 
+      expect(document.querySelector('#cclex-cluster-name')).toBeEnabled();
+      expect(document.querySelector('#cclex-cluster-url')).toBeEnabled();
+      expect(
+        document.querySelector(
+          '#cclex-cluster-offlineToken .cclex-tristatecheckbox-field'
+        )
+      ).toBeEnabled();
+      expect(
+        screen.getByRole('button', {
+          label: strings.connectionBlock.button.label(),
+        })
+      ).toBeDisabled(); // button disabled because required fields are empty
+      expect(
+        screen.queryByText(strings.connectionBlock.notice.info())
+      ).not.toBeInTheDocument();
+    });
+
+    it('does not show info box if loaded and disables button because required fields not filled', async () => {
+      render(<TestConnectionBlockComponent loading={false} />);
+
+      expect(document.querySelector('#cclex-cluster-name')).toBeEnabled();
+      expect(document.querySelector('#cclex-cluster-url')).toBeEnabled();
+      expect(
+        document.querySelector(
+          '#cclex-cluster-offlineToken .cclex-tristatecheckbox-field'
+        )
+      ).toBeEnabled();
+      expect(
+        screen.getByRole('button', {
+          label: strings.connectionBlock.button.label(),
+        })
+      ).toBeDisabled();
+      expect(
+        screen.queryByText(strings.connectionBlock.notice.info())
+      ).not.toBeInTheDocument();
+    });
+
+    it('shows info box if loading and disables all fields', async () => {
+      render(<TestConnectionBlockComponent loading={true} />);
+
+      expect(document.querySelector('#cclex-cluster-name')).toBeDisabled();
+      expect(document.querySelector('#cclex-cluster-url')).toBeDisabled();
+      expect(
+        document.querySelector(
+          '#cclex-cluster-offlineToken .cclex-tristatecheckbox-field'
+        )
+      ).toBeDisabled();
+      expect(
+        screen.getByRole('button', {
+          label: strings.connectionBlock.button.label(),
+        })
+      ).toBeDisabled();
+      expect(
+        screen.getByText(strings.connectionBlock.notice.info())
+      ).toBeInTheDocument();
+    });
+
+    it('shows info box if not loading but connection error and enables all fields', async () => {
       render(
-        <TestConnectionBlockComponent
-          loading={false}
-          onClusterConnect={handler}
-        />
+        <TestConnectionBlockComponent loading={false} connectError="error" />
       );
 
-      const testUrl = 'https://foo.com/';
-      const inputUrlEl = document.getElementById('lecc-cluster-url');
-
-      await user.click(
-        screen.getByText(strings.connectionBlock.button.label())
-      );
-      await user.type(inputUrlEl, testUrl);
-
+      expect(document.querySelector('#cclex-cluster-name')).toBeEnabled();
+      expect(document.querySelector('#cclex-cluster-url')).toBeEnabled();
+      expect(
+        document.querySelector(
+          '#cclex-cluster-offlineToken .cclex-tristatecheckbox-field'
+        )
+      ).toBeEnabled();
+      expect(
+        screen.getByRole('button', {
+          label: strings.connectionBlock.button.label(),
+        })
+      ).toBeDisabled(); // button still disabled because required fields are empty
       expect(
         screen.getByText(strings.connectionBlock.notice.info())
       ).toBeInTheDocument();
@@ -82,15 +133,10 @@ describe('/renderer/components/GlobalPage/ConnectionBlock', () => {
     });
 
     it('triggers setUrl() handler by changing cluster url input', async () => {
-      render(
-        <TestConnectionBlockComponent
-          loading={false}
-          onClusterConnect={() => {}}
-        />
-      );
+      render(<TestConnectionBlockComponent loading={false} />);
 
       const testUrl = 'https://foo.com/';
-      const inputUrlEl = document.getElementById('lecc-cluster-url');
+      const inputUrlEl = document.getElementById('cclex-cluster-url');
 
       await user.type(inputUrlEl, testUrl);
 
@@ -107,8 +153,30 @@ describe('/renderer/components/GlobalPage/ConnectionBlock', () => {
         />
       );
 
+      // button disabled because required fields are empty
+      expect(
+        screen.getByRole('button', {
+          label: strings.connectionBlock.button.label(),
+        })
+      ).toBeDisabled();
+
+      const inputNameEl = document.getElementById('cclex-cluster-name');
+      const inputUrlEl = document.getElementById('cclex-cluster-url');
+
+      await user.type(inputNameEl, 'foo');
+      await user.type(inputUrlEl, 'http://foo.com');
+
+      // button should be enabled now that all required fields are filled
+      expect(
+        screen.getByRole('button', {
+          label: strings.connectionBlock.button.label(),
+        })
+      ).toBeEnabled();
+
       await user.click(
-        screen.getByText(strings.connectionBlock.button.label())
+        screen.getByRole('button', {
+          label: strings.connectionBlock.button.label(),
+        })
       );
 
       expect(handler).toHaveBeenCalled();
@@ -162,15 +230,10 @@ describe('/renderer/components/GlobalPage/ConnectionBlock', () => {
     it('shows error message if name is invalid', async () => {
       CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
 
-      render(
-        <TestConnectionBlockComponent
-          loading={false}
-          onClusterConnect={() => {}}
-        />
-      );
+      render(<TestConnectionBlockComponent loading={false} />);
 
       const testInvalidName = '...';
-      const inputNameEl = document.getElementById('lecc-cluster-name');
+      const inputNameEl = document.getElementById('cclex-cluster-name');
 
       // input should be valid after render
       // error message isn't visible
@@ -203,16 +266,11 @@ describe('/renderer/components/GlobalPage/ConnectionBlock', () => {
 
       CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
 
-      render(
-        <TestConnectionBlockComponent
-          loading={false}
-          onClusterConnect={() => {}}
-        />
-      );
+      render(<TestConnectionBlockComponent loading={false} />);
 
       const testAlreadySyncedName = 'foobar';
 
-      const inputNameEl = document.getElementById('lecc-cluster-name');
+      const inputNameEl = document.getElementById('cclex-cluster-name');
 
       // input should be valid after render
       // error message isn't visible
@@ -241,16 +299,11 @@ describe('/renderer/components/GlobalPage/ConnectionBlock', () => {
 
       CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
 
-      render(
-        <TestConnectionBlockComponent
-          loading={false}
-          onClusterConnect={() => {}}
-        />
-      );
+      render(<TestConnectionBlockComponent loading={false} />);
 
       const testAlreadySyncedUrl = 'http://barfoo.com';
 
-      const inputUrlEl = document.getElementById('lecc-cluster-url');
+      const inputUrlEl = document.getElementById('cclex-cluster-url');
 
       // input should be valid after render
       // error message isn't visible

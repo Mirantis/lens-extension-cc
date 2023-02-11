@@ -297,7 +297,7 @@ export class DataCloud extends EventDispatcher {
     //  succession because of CloudStore updates or expired tokens that got refreshed
     this.addEventListener(DATA_CLOUD_EVENTS.FETCH_DATA, this.onFetchData);
 
-    // schedule the initial data load/fetch, afterwhich we'll either start watching or polling
+    // schedule the initial data load/fetch, afterwhich we'll start watching
     this.dispatchEvent(DATA_CLOUD_EVENTS.FETCH_DATA);
 
     ipc.listen(ipcEvents.broadcast.POWER_SUSPEND, () =>

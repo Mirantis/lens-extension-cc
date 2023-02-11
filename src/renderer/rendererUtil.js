@@ -6,6 +6,7 @@ import { Renderer } from '@k8slens/extensions';
 import dayjs from 'dayjs';
 import dayjsRelativeTimePlugin from 'dayjs/plugin/relativeTime';
 import * as consts from '../constants';
+import * as strings from '../strings';
 
 dayjs.extend(dayjsRelativeTimePlugin);
 
@@ -41,4 +42,23 @@ export const formatDate = (date, includeRelative = true) => {
         'YYYY-MM-DD, HH:mm:ss'
       )})`
     : dayjs(date).format('YYYY-MM-DD, HH:mm:ss');
+};
+
+/**
+ * Generates a user-friendly connection error message based on a Cloud's status.
+ * @param {Cloud} cloud
+ * @returns {string|undefined} Error message; `undefined` if the Cloud isn't in an error state.
+ */
+export const getCloudConnectionError = function (cloud) {
+  let message;
+  if (cloud.connectError) {
+    message = strings.cloudConnectionErrors.connectionError(); // generic error/reconnect message
+    if (cloud.connectError.match(/unable to verify.*certificate/i)) {
+      message = strings.cloudConnectionErrors.untrustedCertificate();
+    } else if (cloud.connectError.match(/getaddrinfo.*ENOTFOUND/i)) {
+      message = strings.cloudConnectionErrors.hostNotFound();
+    }
+  }
+
+  return message;
 };

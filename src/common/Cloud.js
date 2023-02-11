@@ -233,6 +233,7 @@ export class Cloud extends EventDispatcher {
     name: rtv.STRING, // user-assigned name
     offlineAccess: [rtv.OPTIONAL, rtv.BOOLEAN], // optional for backward compatibility
     trustHost: [rtv.OPTIONAL, rtv.BOOLEAN], // optional for backward compatibility
+    connectError: [rtv.OPTIONAL, rtv.STRING],
     syncAll: rtv.BOOLEAN,
     namespaces: [[cloudNamespaceTs]], // all known namespaces, synced or ignored
   };
@@ -497,7 +498,14 @@ export class Cloud extends EventDispatcher {
       },
     });
 
-    /** @member {string} connectError */
+    /**
+     * Most recent connection error.
+     *
+     * 💬 Setter accepts either `null`, a `string`, or an `Error`, but getter is always
+     *  either `null|string`.
+     *
+     * @member {string|null} connectError
+     */
     Object.defineProperty(this, 'connectError', {
       enumerable: true,
       get() {
@@ -516,10 +524,13 @@ export class Cloud extends EventDispatcher {
           this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, {
             isFromStore: _updatingFromStore,
           });
-          ipcMain?.notifyCloudStatusChange(this.cloudUrl, {
-            connecting: this.connecting,
-            connectError: _connectError,
-          });
+          // NOTE: `connectError` is written to the CloudStore as JSON so there's no
+          //  need to notify over IPC when it changes; this is primarily done because
+          //  when Lens starts up and we attempt to reconnect to all Clouds on MAIN, if
+          //  we hit a connection error and rely on IPC to communicate that to the RENDERER,
+          //  the RENDERER will likely __miss__ the notification because it hasn't started
+          //  listening for IPC events yet; the only sure way to get the "message" accross
+          //  is to go to disk via the CloudStore
         }
       },
     });
@@ -992,6 +1003,7 @@ export class Cloud extends EventDispatcher {
         this.syncAll = spec.syncAll;
         this.replaceNamespaces(spec.namespaces);
         this.username = spec.username;
+        this.connectError = spec.connectError || null;
 
         if (spec.id_token && spec.refresh_token) {
           this.updateTokens(spec);
@@ -1119,6 +1131,14 @@ export class Cloud extends EventDispatcher {
       syncAll: this.syncAll,
       username: this.username,
 
+      // NOTE: `connectError` is written to the CloudStore as JSON primarily because
+      //  when Lens starts up and we attempt to reconnect to all Clouds on MAIN, if
+      //  we hit a connection error and rely on IPC to communicate that to the RENDERER,
+      //  the RENDERER will likely __miss__ the notification because it hasn't started
+      //  listening for IPC events yet; the only sure way to get the "message" accross
+      //  is to go to disk via the CloudStore
+      connectError: this.connectError,
+
       // NOTE: we intentionally don't store `loading` and `fetching` state (we use
       //  IPC from MAIN -> RENDERER to communicate this state instead of trying to
       //  use the CloudStore because using the store results in endless read/write
@@ -1154,13 +1174,13 @@ export class Cloud extends EventDispatcher {
   /** @returns {string} String representation of this Cloud for logging/debugging. */
   toString() {
     const validTillStr = logDate(this.tokenValidTill);
-    return `{Cloud url: ${logValue(this.cloudUrl)}, trusted: ${
-      this.trustHost
-    }, status: ${logValue(this.status)}, loaded: ${this.loaded}, fetching: ${
-      this.fetching
-    }, sync: ${this.syncedProjects.length}/${this.allProjects.length}, all: ${
-      this.syncAll
-    }, token: ${
+    return `{Cloud name: ${logValue(this.name)}, url: ${logValue(
+      this.cloudUrl
+    )}, trusted: ${this.trustHost}, status: ${logValue(this.status)}, loaded: ${
+      this.loaded
+    }, fetching: ${this.fetching}, sync: ${this.syncedProjects.length}/${
+      this.allProjects.length
+    }, all: ${this.syncAll}, token: ${
       this.token
         ? `"${this.token.slice(0, 15)}..${this.token.slice(-15)}"`
         : this.token
@@ -1184,7 +1204,7 @@ export class Cloud extends EventDispatcher {
       this.connectError = err;
       logger.error(
         'Cloud.loadConfig()',
-        `Failed to get config, error="${err?.message || err}", cloud=${this}`
+        `Failed to get config, error=${logValue(err)}, cloud=${this}`
       );
     }
   }

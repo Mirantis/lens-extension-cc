@@ -9,7 +9,7 @@ import { DataCloud, DATA_CLOUD_EVENTS } from '../../../common/DataCloud';
 import { IpcRenderer } from '../../IpcRenderer';
 import { Renderer } from '@k8slens/extensions';
 import { normalizeUrl } from '../../../util/netUtil';
-import { addCloudInstance } from '../../../strings';
+import { getCloudConnectionError } from '../../rendererUtil';
 import {
   Cloud,
   CONNECTION_STATUSES,
@@ -106,8 +106,9 @@ export const AddCloudInstance = ({ onAdd, onCancel }) => {
     return () => dataCloud?.destroy();
   }, [dataCloud]);
 
-  const checkConnectionError = () => {
-    Notifications.error(addCloudInstance.connectionError());
+  const checkConnectionError = (newCloud) => {
+    const message = getCloudConnectionError(newCloud);
+    Notifications.error(message, { timeout: 0 }); // require user to dismiss
   };
 
   const handleClusterConnect = async function ({
@@ -138,7 +139,7 @@ export const AddCloudInstance = ({ onAdd, onCancel }) => {
         if (newCloud.status === CONNECTION_STATUSES.CONNECTED) {
           setCloud(newCloud);
         } else {
-          checkConnectionError();
+          checkConnectionError(newCloud);
         }
       }
     };
@@ -153,6 +154,8 @@ export const AddCloudInstance = ({ onAdd, onCancel }) => {
       <MainColumn>
         <ConnectionBlock
           loading={loading}
+          loaded={!!cloud}
+          connectError={cloud?.connectError}
           onClusterConnect={handleClusterConnect}
         />
         {loading ? (
