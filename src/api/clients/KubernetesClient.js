@@ -3,22 +3,30 @@ import * as strings from '../../strings';
 import { apiResourceTypes } from '../apiConstants';
 import { logValue } from '../../util/logger';
 
-/**
- * Used to work with Kubernetes cluster-wide resources (i.e. not in a namespace) resources
- *  such as namespaces.
- * @param {string} baseUrl The MCC base URL (i.e. the URL to the MCC UI). Expected to
- *  be "http[s]://<host>" and to NOT end with a slash.
- */
 export class KubernetesClient {
   static apiPrefix = 'api/v1'; // no start nor end slashes
 
-  constructor(baseUrl, token) {
+  /**
+   * Used to work with Kubernetes cluster-wide resources (i.e. not in a namespace) resources
+   *  such as namespaces.
+   * @class KubernetesClient
+   * @param {Object} params
+   * @param {string} params.baseUrl The MCC base URL (i.e. the URL to the MCC UI). Expected to
+   *  be "http[s]://<host>" and to NOT end with a slash.
+   * @param {string} params.token Current/valid SSO access token.
+   * @param {boolean} [params.trustHost] If truthy, TLS verification of the host
+   *  __will be skipped__. If falsy, secure requests will fail if the host's certificate
+   *  cannot be verified (typically the case when it's self-signed).
+   */
+  constructor({ baseUrl, token, trustHost = false }) {
     if (!baseUrl || !token) {
       throw new Error('baseUrl and token are required');
     }
 
     this.baseUrl = baseUrl.replace(/\/$/, ''); // remove end slash if any
     this.token = token;
+    this.trustHost = !!trustHost;
+
     this.headers = {
       Accept: 'application/json',
       'Content-Type': 'application/json',
@@ -41,14 +49,26 @@ export class KubernetesClient {
    * @param {string} [options.errorMessage] Error message to use if the request is
    *  deemed to have failed (per other options); otherwise, a generated message
    *  is used, based on response status.
+   * @param {boolean} [options.trustHost] If truthy, TLS verification of the host
+   *  __will be skipped__. If falsy, secure requests will fail if the host's certificate
+   *  cannot be verified (typically the case when it's self-signed).
+   *
+   *  ⚠️ Overrides the client's configured `trustHost` option. Ignored if
+   *   `options.options.agent` is specified.
+   *
    * @returns {Promise<Object>} See netUtil.request() for response shape.
    */
   request(
     endpoint,
-    { options = {}, expectedStatuses = [200], errorMessage, extractBodyMethod }
+    {
+      options = {},
+      expectedStatuses = [200],
+      errorMessage,
+      extractBodyMethod,
+      trustHost,
+    }
   ) {
     return request(
-      // TODO[trustHost]: need to tell request() to trustHost...
       `${this.baseUrl}/${KubernetesClient.apiPrefix}/${endpoint}`,
       {
         credentials: 'same-origin',
@@ -58,7 +78,12 @@ export class KubernetesClient {
           ...(options?.headers || {}),
         },
       },
-      { expectedStatuses, errorMessage, extractBodyMethod }
+      {
+        expectedStatuses,
+        errorMessage,
+        extractBodyMethod,
+        trustHost: trustHost === undefined ? this.trustHost : !!trustHost,
+      }
     );
   }
 

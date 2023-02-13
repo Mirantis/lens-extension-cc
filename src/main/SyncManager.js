@@ -698,10 +698,10 @@ export class SyncManager extends Singleton {
         action === ACTION_CONFIG_UPDATED
       ) {
         // new or updated entity, or updated cloud sync settings which could include a change
-        //  to its `offlineToken` setting: create/update kubeconfig file
+        //  to its `offlineToken` or `trustHost` settings: create/update kubeconfig file
         const kubeConfig = cluster.getKubeConfig(this.getTokenCachePath(), {
           offlineAccess: dataCloud.cloud.offlineAccess,
-          // TODO[trustHost]: skipTlsVerify must come from cloud also
+          trustHost: dataCloud.cloud.trustHost,
         });
         this.ipcMain.capture(
           'log',

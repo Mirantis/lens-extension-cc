@@ -28,8 +28,13 @@ import { mockPromRequest } from './__tests__/metricPromMock'; // TODO[metrics]: 
  * @param {string} options.endpoint Subpath from the API endpoint (e.g. method to call, 'query',
  *  'query_range', etc.).
  * @param {Record<string, string>} [options.params] Query parameters.
- * @param {{ expectedStatuses?: Array<number>, extractBodyMethod?: string, errorMessage?: string }} [options.requestOptions]
- *  Options for the `request()` function itself. See JSDocs on that function for more info.
+ * @param {{
+ *   expectedStatuses?: Array<number>,
+ *   extractBodyMethod?: string,
+ *   errorMessage?: string,
+ *   trustHost?: boolean
+ * }} [options.requestOptions] Options for the `request()` function itself. See JSDocs on that
+ *  function for more info.
  * @param {Record<string, any>} [options.fetchOptions] Options for the underlying `fetch()` call
  *  that `request()` will make. NOTE: `method` and `body` will be ignored.
  * @returns {Promise<ApiSuccessResponse|ApiErrorResponse>}
@@ -87,7 +92,10 @@ const _promRequest = async function ({
         method: 'POST',
         body: queryString.stringify(params),
       },
-      Object.assign({ expectedStatuses: [200] }, requestOptions)
+      Object.assign(
+        { expectedStatuses: [200], trustHost: cloud.trustHost },
+        requestOptions
+      )
     );
   };
 

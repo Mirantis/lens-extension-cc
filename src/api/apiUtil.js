@@ -8,7 +8,7 @@ import { AuthorizationClient } from './clients/AuthorizationClient';
 import { KubernetesClient } from './clients/KubernetesClient';
 import { ResourceClient } from './clients/ResourceClient';
 import { logger, logValue } from '../util/logger';
-import { apiResourceTypes } from './apiConstants';
+import { apiCloudErrorTypes, apiResourceTypes } from './apiConstants';
 import { Cloud } from '../common/Cloud';
 
 /**
@@ -113,8 +113,8 @@ export async function cloudRefresh(cloud) {
   }
 
   const apiClient = new ApiClient({
-    baseUrl: cloud.cloudUrl,
     config: cloud.config,
+    trustHost: cloud.trustHost,
   });
   const {
     response,
@@ -156,8 +156,8 @@ export async function cloudLogout(cloud) {
   }
 
   const apiClient = new ApiClient({
-    baseUrl: cloud.cloudUrl,
     config: cloud.config,
+    trustHost: cloud.trustHost,
   });
   const { error: logoutError } = await apiClient.logout(cloud.refreshToken);
 
@@ -207,7 +207,12 @@ export async function cloudRequest({ cloud, method, resourceType, args }) {
   }
 
   // the first attempt to fetch
-  let k8sClient = new Client(cloud.cloudUrl, cloud.token, resourceType);
+  let k8sClient = new Client({
+    baseUrl: cloud.cloudUrl,
+    token: cloud.token,
+    resourceType,
+    trustHost: cloud.trustHost,
+  });
   let { response, error, body, url } = await k8sClient[method](
     resourceType,
     args
@@ -228,7 +233,12 @@ export async function cloudRequest({ cloud, method, resourceType, args }) {
     }
 
     // try to fetch again with updated token
-    k8sClient = new Client(cloud.cloudUrl, cloud.token, resourceType);
+    k8sClient = new Client({
+      baseUrl: cloud.cloudUrl,
+      token: cloud.token,
+      resourceType,
+      trustHost: cloud.trustHost,
+    });
     ({ response, error, body, url } = await k8sClient[method](
       resourceType,
       args
@@ -246,3 +256,21 @@ export async function cloudRequest({ cloud, method, resourceType, args }) {
     path,
   };
 }
+
+/**
+ * Determines if a given error is a known Cloud error.
+ * @param {Error|string} error Object or message.
+ * @returns {string|undefined} One of `apiCloudErrorTypes` enum identifying the type if known;
+ *  `undefined` if the error couldn't be identified.
+ */
+export const getCloudErrorType = function (error) {
+  const msg = (typeof error === 'string' ? error : error?.message) || '';
+
+  if (msg.match(/unable to verify.+certificate/i)) {
+    return apiCloudErrorTypes.CERT_VERIFICATION;
+  } else if (msg.match(/getaddrinfo.+ENOTFOUND/i)) {
+    return apiCloudErrorTypes.HOST_NOT_FOUND;
+  }
+
+  return undefined;
+};

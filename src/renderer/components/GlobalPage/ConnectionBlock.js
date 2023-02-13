@@ -1,8 +1,7 @@
 import { useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { Renderer } from '@k8slens/extensions';
-import { InlineNotice } from '../InlineNotice';
-// TODO[trustHost]: import { InlineNotice, types as noticeTypes } from '../InlineNotice';
+import { InlineNotice, types as noticeTypes } from '../InlineNotice';
 import styled from '@emotion/styled';
 import { layout } from '../styles';
 import { normalizeUrl } from '../../../util/netUtil';
@@ -28,13 +27,18 @@ const MainContent = styled.form(() => ({
   maxWidth: '750px',
   width: '100%',
 
-  '.trust-host-warning': {
-    marginTop: layout.pad,
-  },
-
   '.connection-notice-info': {
     marginTop: layout.gap,
   },
+}));
+
+const TrustHostWarning = styled(InlineNotice)(({ disabled }) => ({
+  marginTop: layout.pad,
+  marginLeft: 25, // align with Checkbox help text
+
+  // results in text color that matches `var(--textColorDimmed)` used in <TriStateCheckbox/>
+  //  when the TrustHost Checkbox is disabled
+  opacity: disabled ? 0.55 : undefined,
 }));
 
 const Field = styled.div(() => ({
@@ -101,7 +105,7 @@ export const ConnectionBlock = ({
   const [clusterName, setClusterName] = useState('');
   const [clusterUrl, setClusterUrl] = useState('');
   const [offlineAccess, setOfflineAccess] = useState(false);
-  // TODO[trustHost]: const [trustHost, setTrustHost] = useState(false);
+  const [trustHost, setTrustHost] = useState(false);
 
   //
   // EVENTS
@@ -118,17 +122,21 @@ export const ConnectionBlock = ({
   const handleConnectClick = useCallback(() => {
     const originUrl = getOriginUrl(clusterUrl);
     setClusterUrl(originUrl);
-    onClusterConnect({ clusterUrl: originUrl, clusterName, offlineAccess });
-  }, [onClusterConnect, clusterName, clusterUrl, offlineAccess]);
+    onClusterConnect({
+      clusterUrl: originUrl,
+      clusterName,
+      offlineAccess,
+      trustHost,
+    });
+  }, [onClusterConnect, clusterName, clusterUrl, offlineAccess, trustHost]);
 
   const handleOfflineAccessChange = useCallback((event, { checked }) => {
     setOfflineAccess(checked);
   }, []);
 
-  // TODO[trustHost]
-  // const handleTrustHostChange = useCallback((event, { checked }) => {
-  //   setTrustHost(checked);
-  // }, []);
+  const handleTrustHostChange = useCallback((event, { checked }) => {
+    setTrustHost(checked);
+  }, []);
 
   //
   // EFFECTS
@@ -199,8 +207,7 @@ export const ConnectionBlock = ({
           onChange={handleOfflineAccessChange}
         />
       </Field>
-      {/* // TODO[trustHost] */}
-      {/* <Field>
+      <Field>
         <TriStateCheckbox
           id="cclex-cluster-trustHost"
           label={connectionBlock.trustHost.label()}
@@ -210,14 +217,14 @@ export const ConnectionBlock = ({
           onChange={handleTrustHostChange}
         />
         {trustHost ? (
-          <InlineNotice
-            className="trust-host-warning"
+          <TrustHostWarning
             type={noticeTypes.WARNING}
+            disabled={loading || (loaded && !connectError)} // dim it when field is dimmed to match state
           >
             <p>{connectionBlock.trustHost.warning()}</p>
-          </InlineNotice>
+          </TrustHostWarning>
         ) : null}
-      </Field> */}
+      </Field>
       <Button
         primary
         type="button"

@@ -83,9 +83,10 @@ export class CloudStore extends Common.Store.ExtensionStore {
     super.loadExtension(extension);
   }
 
-  // NOTE: this method is not just called when reading from disk; it's also called in the
-  //  sync process between the Main and Renderer threads should code on either thread
-  //  update any of the store's properties
+  // NOTE: this method is not just called when reading from disk on Lens startup; it's
+  //  also called in the sync process between the Main and Renderer threads should code
+  //  on either thread update any of the store's properties (which is probably also done
+  //  by writing to disk and watching for changes to the cloud-store.json file)
   @action // prevent mobx from emitting a change event until the function returns
   fromStore(store) {
     // NOTE: don't gate this with DEV_ENV because we want to do it every time so we
@@ -125,6 +126,17 @@ export class CloudStore extends Common.Store.ExtensionStore {
               // add new Cloud we don't know about yet
               cloud = new Cloud(cloudJson, this.ipcMain);
               this.listenForChanges(cloud);
+
+              // only check and flag this on MAIN because we don't add clouds directly on MAIN;
+              //  we flag this is `addCloud()` on RENDERER
+              if (this.ipcMain && cloud.trustHost) {
+                logger.warn(
+                  'CloudStore.fromStore()',
+                  `<MAIN> API calls with (and generated kubeConfigs for ALL clusters in) ${logValue(
+                    cloud.name
+                  )} Cloud will skip TLS verification; cloud=${cloud}`
+                );
+              }
             }
 
             cloudMap[cloudUrl] = cloud;
@@ -267,6 +279,18 @@ export class CloudStore extends Common.Store.ExtensionStore {
         )}; existing=${this.clouds[cloudUrl]}, new=${cloud}`
       );
       return;
+    }
+
+    // NOTE: only flag this on RENDERER since that's where we add Clouds directly; we flag
+    //  it in `fromStore()` on MAIN since MAIN always reacts to new Clouds rather than adding
+    //  them directly
+    if (this.ipcRenderer && cloud.trustHost) {
+      logger.warn(
+        'CloudStore.fromStore()',
+        `<RENDERER> API calls with (and generated kubeConfigs for ALL clusters in) ${logValue(
+          cloud.name
+        )} Cloud will skip TLS verification; cloud=${cloud}`
+      );
     }
 
     this.listenForChanges(cloud);

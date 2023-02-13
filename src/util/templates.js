@@ -5,7 +5,6 @@
 import process from 'process';
 import path from 'path';
 import * as rtv from 'rtvjs';
-import { logger } from './logger';
 
 /**
  * @returns {string} The absolute path to the `kubelogin` binary for the current OS.
@@ -66,8 +65,9 @@ export const mkClusterContextName = function ({
  * @param {string} config.username Username for authentication.
  * @param {string} config.tokenCachePath Absolute path to the directory where OIDC login
  *  tokens obtained by `kubelogin` should be stored.
- * @param {boolean} [config.skipTlsVerify] If truthy, TLS (certificate) connection will be
- *  checked against self-signed certificates; if falsy, certificate check is skipped.
+ * @param {boolean} [config.trustHost] If truthy, TLS (certificate) connection will be
+ *  __skipped__ (e.g. permitting connections to hosts with self-signed certificates);
+ *  if falsy, certificate checks will be enabled.
  * @param {string} [config.token] Optional OAuth token for user for this cluster.
  * @param {string} [config.refreshToken] Optional OAuth refresh token for user for this cluster.
  *  Ignored if `token` is not specified.
@@ -79,7 +79,7 @@ export const mkKubeConfig = function ({
   cluster,
   username,
   tokenCachePath,
-  skipTlsVerify,
+  trustHost,
   token,
   refreshToken,
   offlineAccess,
@@ -94,13 +94,9 @@ export const mkKubeConfig = function ({
     `--certificate-authority-data=${cluster.idpCertificate}`, // no quotes around value
   ];
 
-  if (skipTlsVerify) {
+  if (trustHost) {
     // SECURITY: get around issues with Clouds that have self-signed certificates (typically used
     //  for internal test Clouds of various kinds)
-    logger.warn(
-      'templates.mkKubeConfig()',
-      `Generated kubeConfig for cluster "${cluster.toShortString()}" will skip TLS verification!`
-    );
     kubeloginArgs.push('--insecure-skip-tls-verify');
   }
 

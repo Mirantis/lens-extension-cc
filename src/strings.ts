@@ -87,7 +87,7 @@ export const cloudConnectionErrors = {
   hostNotFound: () =>
     'The management cluster cannot be reached. Check your network connection, make sure your VPN is active (if it is required to access the host), and try connecting again.',
   untrustedCertificate: () =>
-    'The management cluster appears to be using a self-signed certificate which cannot be verified. See the "Security" section of the documentation for a possible workaround.', // TODO[trustHost]: replace second sentence with, 'If you trust the host, enable the "Trust this host" option and try connecting again.'
+    'The management cluster appears to be using a self-signed certificate which cannot be verified. If you trust the host, enable the "Trust this host" option and try connecting again.',
 };
 
 export const synchronizeBlock = {

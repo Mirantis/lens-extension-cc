@@ -11,7 +11,6 @@ import { apiKinds, apiLabels } from '../apiConstants';
 import { nodeConditionTs } from '../apiTypesets';
 import { logger, logValue } from '../../util/logger';
 import { mkKubeConfig } from '../../util/templates';
-import { skipTlsVerify } from '../../constants';
 
 const {
   Catalog: { KubernetesCluster },
@@ -544,14 +543,19 @@ export class Cluster extends Node {
    * @param {Object} [options]
    * @param {boolean} [options.offlineAccess] True if the kubeconfig should use long-lived
    *  tokens; false (default) if it should use short-lived tokens.
+   * @param {boolean} [options.trustHost] True if TLS verification should be skipped on the
+   *  cluster's host; false (default) if it should be verified.
    * @returns {Object} Kube config for this cluster, as JSON.
    */
-  getKubeConfig(tokenCachePath, { offlineAccess = false } = {}) {
+  getKubeConfig(
+    tokenCachePath,
+    { offlineAccess = false, trustHost = false } = {}
+  ) {
     return mkKubeConfig({
       cluster: this,
       username: this.cloud.username,
       tokenCachePath,
-      skipTlsVerify, // TODO[trustHost]: needs to come from the cloud...
+      trustHost,
       offlineAccess,
     });
   }

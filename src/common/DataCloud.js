@@ -16,6 +16,8 @@ import { logger, logValue } from '../util/logger';
 import { EventDispatcher } from './EventDispatcher';
 import { ipcEvents } from '../constants';
 import * as strings from '../strings';
+import { getCloudErrorType } from '../api/apiUtil';
+import { apiCloudErrorTypes } from '../api/apiConstants';
 
 export const DATA_CLOUD_EVENTS = Object.freeze({
   /**
@@ -534,13 +536,35 @@ export class DataCloud extends EventDispatcher {
     //  have been deleted, resulting in all the user's sync settings being lost and all
     //  items removed from the Catalog...
     if (nsResults.error) {
+      this.fetching = false;
+
+      const errorType = getCloudErrorType(nsResults.error);
+      const disconnected =
+        errorType === apiCloudErrorTypes.CERT_VERIFICATION ||
+        errorType === apiCloudErrorTypes.HOST_NOT_FOUND;
+
       this.error = nsResults.error.message;
       logger.error(
         'DataCloud.fetchData()',
-        `Failed to get namespaces: Aborting data fetch, will try again soon; dataCloud=${this}`
+        `Failed to get namespaces: Aborting data fetch${
+          disconnected ? ', disconnected' : ', will try again soon'
+        }; dataCloud=${this}`
       );
-      this.fetching = false;
-      this.startInterval(FETCH_INTERVAL_QUICK); // retry sooner rather than later
+
+      if (disconnected) {
+        // these types of errors are connection errors, so flag that in Cloud too since
+        //  it appears we're now disconnected
+        logger.error(
+          'DataCloud.fetchData()',
+          `Identified namespace failure as cloud connection error type=${logValue(
+            errorType
+          )}: Flagging connection error on cloud=${this.cloud}`
+        );
+        this.cloud.connectError = nsResults.error.message;
+      } else {
+        this.startInterval(FETCH_INTERVAL_QUICK); // retry sooner rather than later
+      }
+
       return;
     }
 
