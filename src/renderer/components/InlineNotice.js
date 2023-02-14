@@ -41,7 +41,14 @@ const Container = styled.div(function () {
   };
 });
 
-export const InlineNotice = function ({ type, iconSize, children, ...props }) {
+const displayName = 'InlineNotice';
+
+export const InlineNotice = function ({
+  type,
+  iconSize,
+  children,
+  ...otherProps
+}) {
   let color;
   switch (type) {
     case types.NOTE:
@@ -65,7 +72,12 @@ export const InlineNotice = function ({ type, iconSize, children, ...props }) {
   }
 
   return (
-    <Container type={type} {...props}>
+    <Container
+      {...otherProps}
+      // AFTER other props as picked earlier or not overrideable
+      data-cclex-component={displayName}
+      type={type}
+    >
       <Component.Icon
         material={type}
         smallest={iconSize === iconSizes.SMALL}
@@ -78,6 +90,7 @@ export const InlineNotice = function ({ type, iconSize, children, ...props }) {
   );
 };
 
+InlineNotice.displayName = displayName;
 InlineNotice.propTypes = {
   iconSize: propTypes.oneOf(Object.values(iconSizes)),
   type: propTypes.oneOf(Object.values(types)),
@@ -88,7 +101,6 @@ InlineNotice.propTypes = {
     propTypes.node,
   ]),
 };
-
 InlineNotice.defaultProps = {
   iconSize: iconSizes.NORMAL,
   type: types.INFO,

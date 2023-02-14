@@ -198,8 +198,47 @@ class Spinner extends React.Component {
   }
 }
 
-let confirmDialogInstance;
+// @see https://github.com/lensapp/lens/blob/master/packages/core/src/renderer/components/dialog/dialog.tsx
+// NOTE: technically, the real Lens Dialog is stateful, more like the ConfirmDialog mocked below,
+//  but so far, we don't use the stateful aspect of it for our own Modal component that's based
+//  on the Lens Dialog
+class Dialog extends React.Component {
+  constructor(props) {
+    super(props);
+  }
 
+  render() {
+    // NOTE: Lens Dialog does not support 'other props'; they don't apply them anywhere
+    const { children, isOpen, className, modal, pinned, onClose } = this.props;
+    return isOpen ? (
+      <div
+        className={`Dialog flex center${modal ? ' modal' : ''}${
+          pinned ? ' pinned' : ''
+        } ${className}`.trim()}
+        onClick={onClose} // click on overlay closes (also ESC key, but we don't support in mock)
+      >
+        <div className="box">{children}</div>
+      </div>
+    ) : null;
+  }
+}
+
+Dialog.propTypes = {
+  children: childrenPropType,
+  className: propTypes.string,
+  isOpen: propTypes.bool,
+  modal: propTypes.bool,
+  pinned: propTypes.bool,
+  onClose: propTypes.func,
+};
+Dialog.defaultProps = {
+  isOpen: false,
+  modal: false,
+  pinned: false,
+};
+
+// @see https://github.com/lensapp/lens/blob/master/packages/core/src/renderer/components/confirm-dialog/confirm-dialog.tsx
+let confirmDialogInstance;
 class ConfirmDialog extends React.Component {
   constructor(props) {
     super(props);
@@ -527,6 +566,7 @@ export const Renderer = {
     MenuItem,
     Menu,
     MenuActions,
+    Dialog,
     ConfirmDialog,
   },
   Catalog: {

@@ -25,7 +25,7 @@ class CloudProviderStore extends ProviderStore {
         { 'CloudProvider.store': this.store },
         {
           'CloudProvider.store': {
-            // map of cloudUrl -> DataCloud instance
+            // map of cloudUrl -> Cloud instance
             clouds: [
               rtv.HASH_MAP,
               { $values: [rtv.CLASS_OBJECT, { ctor: Cloud }] },

@@ -57,7 +57,8 @@ export const connectionBlock: Dict = {
   },
   trustHost: {
     label: () => 'Trust this host',
-    help: () => 'By trusting this host, TLS verification will be disabled',
+    help: () =>
+      'By trusting this host, TLS verification will be disabled (only applies to secure connections using HTTPS)',
     warning: () =>
       'This is unsafe. Note that untrusting the host in the future will require the management cluster to be removed and re-added without this option.',
   },
@@ -73,7 +74,8 @@ export const connectionBlock: Dict = {
     info: () =>
       "You will be directed to your Management Cluster's login page through your web browser where you should enter your SSO credentials",
     urlAlreadyUsed: () => 'This Management Cluster is already being synced',
-    urlWrongFormat: () => 'Wrong URL format',
+    urlIncorrectFormat: () => 'Incorrect URL format',
+    urlUnsupportedProtocol: () => 'Unsupported protocol: Must be HTTP or HTTPS',
     nameSymbolsAreNotValid: () =>
       'The name cannot contain whitespace or special characters, except for hyphens (-) and underscores (_)',
     nameAlreadyUsed: () =>
@@ -117,6 +119,22 @@ export const syncView: Dict = {
   syncButtonLabel: () => 'Selective sync...',
   connectButtonLabel: () => 'Connect new Management Cluster',
   autoSync: () => 'Auto-sync',
+
+  trustHostModal: {
+    title: () => 'Configure trusted hosts',
+    callLabel: () => 'Save',
+    deprecationHtml: () =>
+      'The command line option <code>LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS</code> was <strong>deprecated</strong> in v5.5.0 and will be removed in the next major release of this extension. <strong>This flag should no longer be used.</strong>',
+    newfeatureHtml: () =>
+      'A new option to <strong>trust the host</strong> is now provided when adding a new management cluster. See <a href="#1">Trusted hosts</a> for details.',
+    promptHtml: () =>
+      'Choose which management clusters should be trusted. If you do nothing, they will be treated as <strong>untrusted</strong> and will fail to connect (e.g. if they use self-signed certificates).',
+  },
+};
+
+export const modal = {
+  defaultCallLabel: () => 'OK',
+  defaultCancelLabel: () => 'Cancel',
 };
 
 export const managementClusters = {

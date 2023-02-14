@@ -1,4 +1,4 @@
-# Mirantis Container Cloud Lens Extension
+ # Mirantis Container Cloud Lens Extension
 
 ![CI](https://github.com/Mirantis/lens-extension-cc/workflows/CI/badge.svg?branch=master&event=push)
 
@@ -220,7 +220,7 @@ These cluster access tokens are those which are partially configured via the `Us
 
 ✳️ __New in [v5.5.0](CHANGELOG.md#v550)__
 
-By default, the extension does not support management clusters that use self-signed certificates (or certificates that are expired, or not verifiable for whatever reason). They are treated as untrusted hosts for security reasons (because their identity cannot be verified).
+By default, the extension does not support management clusters that use self-signed certificates (or certificates that are expired, or not verifiable for whatever reason) over `HTTPS` connections. They are treated as untrusted hosts for security reasons (because their identity cannot be verified).
 
 > ❗️ Mirantis does not recommend connecting to an unverified host and takes no responsibility whatsoever for any negative consequences that may ensue. The host could be one posing as the real thing, but in actuality, one owned by a threat actor with malicious goals. This extension is [MIT-licensed](./LICENSE). Proceed at your own risk.
 
@@ -237,6 +237,8 @@ To __untrust__ the host, remove the management cluster, and add it again without
 It's not possible to trust a host you've already added on the premise that if a host's certificate becomes invalid, it's a good indication that something might be amis and should be verified/rectified prior to reconnecting. Contact your IT department and ask them to look into the issue before resorting to trusting the host.
 
 If a host had to be trusted when it was added, we're assuming it probably always has to be trusted (e.g. it's an internal, test, or demo system that always uses a self-signed certificate) and there would be no reason to suddenly no longer trust it and require TLS verification. However, if this is something you _frequently_ encounter, please let us know by [opening an issue](https://github.com/Mirantis/lens-extension-cc/issues) and explaining your use case.
+
+> 💬 This option is irrelevant to management clusters using unsecure `HTTP` connections as certificates are involved in the connection handshake.
 
 ## FAQ
 

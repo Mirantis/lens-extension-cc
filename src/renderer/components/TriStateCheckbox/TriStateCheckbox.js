@@ -111,14 +111,15 @@ const toggleValue = function (value) {
 /**
  * Handle an event that should cause the value to be toggled.
  * @param {Event} event Trigger event.
- * @param {{ value: string, onChange: Function }} props Some component props.
+ * @param {{ data: any, value: string, onChange: Function }} props Some component props.
  */
-const handleToggleEvent = function (event, { value, onChange }) {
+const handleToggleEvent = function (event, { data, value, onChange }) {
   const checked = toggleValue(value);
 
   if (typeof onChange === 'function') {
     onChange(event, {
       checked,
+      data,
     });
   }
 };
@@ -126,6 +127,7 @@ const handleToggleEvent = function (event, { value, onChange }) {
 const noop = () => {};
 
 export const TriStateCheckbox = ({
+  data,
   disabled,
   label,
   help,
@@ -149,10 +151,10 @@ export const TriStateCheckbox = ({
   const handleCtrlClick = useCallback(
     function (event) {
       if (!disabled) {
-        handleToggleEvent(event, { value, onChange });
+        handleToggleEvent(event, { data, value, onChange });
       }
     },
-    [disabled, value, onChange]
+    [data, disabled, value, onChange]
   );
 
   const handleLabelClick = useCallback(
@@ -161,11 +163,11 @@ export const TriStateCheckbox = ({
         // NOTE: native HTML checkboxes fire their onClick event whether the user
         //  clicks on the box or the label, and clicking on the label sets focus
         //  to the related <input>, so we do the same here
-        handleToggleEvent(event, { value, onChange });
+        handleToggleEvent(event, { data, value, onChange });
         ctrlRef.current?.focus(); // focus the CTRL, not the hidden FIELD
       }
     },
-    [disabled, value, onChange]
+    [data, disabled, value, onChange]
   );
 
   //
@@ -180,11 +182,11 @@ export const TriStateCheckbox = ({
           // prevent unintentional scrolling when pressing SPACEBAR
           event.preventDefault();
 
-          handleToggleEvent(event, { value, onChange });
+          handleToggleEvent(event, { data, value, onChange });
         }
       }
     },
-    [disabled, value, onChange]
+    [data, disabled, value, onChange]
   );
 
   //
@@ -243,6 +245,7 @@ export const TriStateCheckbox = ({
 
 TriStateCheckbox.displayName = displayName;
 TriStateCheckbox.propTypes = {
+  data: PropTypes.any, // generic data/hint assigned to this checkbox, returned in `onChange`
   disabled: PropTypes.bool,
   label: PropTypes.string.isRequired,
   help: PropTypes.string, // help text, if any
@@ -258,9 +261,10 @@ TriStateCheckbox.propTypes = {
    * ⚠️ The event __will never be__ the `<input type="checkbox">` that serves as the
    *  underlying
    *
-   * Signature: `(event: MouseEvent|KeyboardEvent, info: { checked: boolean }) => void`
+   * Signature: `(event: MouseEvent|KeyboardEvent, info: { checked: boolean, data: any }) => void`
    *
    * - `info.checked`: New checked state/value.
+   * - `info.data`: `data` prop value.
    */
   onChange: PropTypes.func.isRequired,
 };

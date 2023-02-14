@@ -11,12 +11,26 @@ import { CreateClusterWizard } from '../CreateClusterWizard/CreateClusterWizard'
 import { CONNECTION_STATUSES } from '../../../common/Cloud';
 import { openBrowser } from '../../../util/netUtil';
 import { IpcRenderer } from '../../IpcRenderer';
+import { TrustHostModal } from './TrustHostModal';
+import {
+  getSkipTlsVerifyFlagWarningShown,
+  setSkipTlsVerifyFlagWarningShown,
+} from '../../rendererUtil';
 import * as consts from '../../../constants';
 import * as strings from '../../../strings';
 
 const {
   Component: { Button, Spinner, ConfirmDialog },
 } = Renderer;
+
+// TODO[CCLEX-196]: DEPRECATED, remove for next major
+// NOTE: there seems to be a bug with Webpack in that if we use optional chaining (`?.`)
+//  to make this statement more terse, it just removes the `?` instead of (1) leaving
+//  it there like it should (and does for the rest of the code everywhere), or (2)
+//  transpiling it to what we've explicitly used here to get around this issue
+const skipTlsVerifyFlag =
+  process.env.LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS &&
+  process.env.LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS.match(/^(true|yes|1)$/);
 
 const Content = styled.div`
   position: relative;
@@ -150,8 +164,8 @@ const mkGetNamespaceMenuItems =
       },
     ];
 
-    // TODO: for now, Create Cluster is only in local dev mode and always enable item
-    //  if in local dev mode
+    // TODO[create-cluster]: for now, Create Cluster is only in local dev mode and always
+    //  enable item if in local dev mode
     if (DEV_ENV) {
       items.push({
         title: strings.contextMenus.namespace.createCluster(),
@@ -167,12 +181,29 @@ const mkGetNamespaceMenuItems =
   };
 
 export const SyncView = () => {
-  const { clouds, actions: cloudActions } = useClouds();
+  const {
+    clouds, // map of cloud URL -> Cloud class instance
+    actions: cloudActions,
+  } = useClouds();
+
+  // TODO[CCLEX-196]: DEPRECATED, remove for next major
+  const untrustedClouds = Object.values(clouds).filter(
+    (cloud) =>
+      cloud.cloudUrl.toLowerCase().startsWith('https:') && !cloud.trustHost
+  );
+
   const [showAddCloudComponent, setShowAddCloudComponent] = useState(false);
   const [showCreateClusterWizard, setShowCreateClusterWizard] = useState(false);
   const [isSelectiveSyncView, setIsSelectiveSyncView] = useState(false);
   const [isSyncStarted, setIsSyncStarted] = useState(false);
   const [syncedClouds, setSyncedClouds] = useState({});
+
+  // TODO[CCLEX-196]: DEPRECATED, remove for next major
+  const [showTrustHostModal, setShowTrustHostModal] = useState(
+    skipTlsVerifyFlag &&
+      !getSkipTlsVerifyFlagWarningShown() &&
+      untrustedClouds.length > 0
+  );
 
   const handleAddCloud = useCallback(
     function (cloud) {
@@ -201,7 +232,29 @@ export const SyncView = () => {
   );
   const handleCreateClusterComplete = useCallback((data) => {
     setShowCreateClusterWizard(false);
-    // TODO: make API call using `data`...
+    // TODO[create-cluster]: make API call using `data`...
+  }, []);
+
+  // TODO[CCLEX-196]: DEPRECATED, remove for next major
+  const handleTrustHostModalSave = useCallback(
+    (event, { trustedHosts }) => {
+      setShowTrustHostModal(false);
+      setSkipTlsVerifyFlagWarningShown();
+
+      Object.values(clouds).forEach((cloud) => {
+        if (trustedHosts[cloud.cloudUrl]) {
+          cloud.trustHost = true;
+        }
+        // else: skip HTTP clouds, already-trusted clouds, and non-trusted clouds
+      });
+    },
+    [clouds]
+  );
+
+  // TODO[CCLEX-196]: DEPRECATED, remove for next major
+  const handleTrustHostModalClose = useCallback(() => {
+    setShowTrustHostModal(false);
+    setSkipTlsVerifyFlagWarningShown();
   }, []);
 
   const closeSelectiveSyncView = () => {
@@ -275,7 +328,7 @@ export const SyncView = () => {
   }
 
   // otherwise, show dataClouds table
-  if (Object.keys(clouds).length) {
+  if (Object.keys(clouds).length > 0) {
     return (
       <Content>
         <ContentTop>
@@ -326,6 +379,16 @@ export const SyncView = () => {
             disabled={isSelectiveSyncView}
           />
         </ButtonWrapper>
+
+        {showTrustHostModal ? (
+          // TODO[CCLEX-196]: DEPRECATED, remove for next major
+          <TrustHostModal
+            clouds={untrustedClouds}
+            onSave={handleTrustHostModalSave}
+            onCancel={handleTrustHostModalClose}
+            onClose={handleTrustHostModalClose}
+          />
+        ) : null}
       </Content>
     );
   }
