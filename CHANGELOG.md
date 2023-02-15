@@ -12,7 +12,9 @@
     - When syncing, error messages are surfaced in an error icon next to the status string in the Sync View table. Mouse over for a tooltip containing the error message.
     - Error messages are introspected for two specific cases in order to provide more helpful messages: Untrusted self-signed certificates, and unable to reach the host.
 - Removed the `LEX_CC_UNSAFE_ALLOW_SELFSIGNED_CERTS` Lens startup command line option in favor of the new per-management cluster __trust host__ feature.
+    - 💬 To help users migrate to the new per-management cluster setting, away from the command line, if the flag is set and at least one untrusted management cluster with a secure connection (`https`) is being synced, a temporary "Configure trusted hosts" dialog will appear the first time the SyncView is rendered. This dialog will give the user a chance to trust selected hosts if necessary. Hosts with connection errors will have an error icon with a tooltip announcing the error (helpful to see if it needs to be trusted because of certificate issues).
 - Added keyboard support (i.e. for tab key) to custom tri-state checkbox component used throughout the extension.
+- Restricted the management cluster URL to `http` or `https` protocols when adding new management clusters since that's what we expect for MCC instances.
 
 ## v5.4.0
 

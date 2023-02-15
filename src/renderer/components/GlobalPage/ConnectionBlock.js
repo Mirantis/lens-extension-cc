@@ -59,8 +59,23 @@ const mkCloudAlreadySyncedValidator = (clouds) => ({
   validate: (url) => !clouds[normalizeUrl(url)],
 });
 
+const urlProtocolValidator = {
+  message: () => connectionBlock.notice.urlUnsupportedProtocol(),
+  validate: (value) => {
+    // NOTE: these URL validators just don't work in Jest for some mysterious reason
+    if (TEST_ENV) {
+      return true;
+    }
+
+    return (
+      value?.toLowerCase().startsWith('http:') ||
+      value?.toLowerCase().startsWith('https:')
+    );
+  },
+};
+
 const urlFormatValidator = {
-  message: () => connectionBlock.notice.urlWrongFormat(),
+  message: () => connectionBlock.notice.urlIncorrectFormat(),
   validate: (value) => {
     try {
       // NOTE: `URL` is different under Jest than it is in Lens and would need to be mocked
@@ -90,6 +105,8 @@ const getOriginUrl = (url) => {
     return url;
   }
 };
+
+const isSecureUrl = (url) => url.toLowerCase().startsWith('https:');
 
 export const ConnectionBlock = ({
   loading,
@@ -126,7 +143,7 @@ export const ConnectionBlock = ({
       clusterUrl: originUrl,
       clusterName,
       offlineAccess,
-      trustHost,
+      trustHost: isSecureUrl(clusterUrl) && trustHost,
     });
   }, [onClusterConnect, clusterName, clusterUrl, offlineAccess, trustHost]);
 
@@ -148,6 +165,7 @@ export const ConnectionBlock = ({
 
   const nameValidators = [nameSymbolsValidator, mkUniqueNameValidator(clouds)];
   const urlValidators = [
+    urlProtocolValidator,
     urlFormatValidator,
     mkCloudAlreadySyncedValidator(clouds),
   ];
@@ -212,11 +230,17 @@ export const ConnectionBlock = ({
           id="cclex-cluster-trustHost"
           label={connectionBlock.trustHost.label()}
           help={connectionBlock.trustHost.help()}
-          disabled={loading || (loaded && !connectError)}
-          value={trustHost ? checkValues.CHECKED : checkValues.UNCHECKED}
+          disabled={
+            !isSecureUrl(clusterUrl) || loading || (loaded && !connectError)
+          }
+          value={
+            isSecureUrl(clusterUrl) && trustHost
+              ? checkValues.CHECKED
+              : checkValues.UNCHECKED
+          }
           onChange={handleTrustHostChange}
         />
-        {trustHost ? (
+        {isSecureUrl(clusterUrl) && trustHost ? (
           <TrustHostWarning
             type={noticeTypes.WARNING}
             disabled={loading || (loaded && !connectError)} // dim it when field is dimmed to match state

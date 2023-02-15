@@ -138,7 +138,7 @@ export async function request(
       //  otherwise, using `undefined`, the default agent will be used, and if there are
       //  any certificate issues, the request will blocked
       agent:
-        trustHost && url.startsWith('https:') ? trustedUnsafeAgent : undefined,
+        url.startsWith('https:') && trustHost ? trustedUnsafeAgent : undefined,
 
       ...requestOptions,
     });

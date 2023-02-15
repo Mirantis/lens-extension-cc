@@ -2,7 +2,7 @@
 // Custom Wizard component
 //
 // NOTE: Lens provides a Wizard in
-//  https://github.com/lensapp/lens/blob/master/src/renderer/components/wizard/wizard.tsx
+//  https://github.com/lensapp/lens/tree/master/packages/core/src/renderer/components/wizard
 //  but it doesn't work well, isn't documented, and renders steps horizontally, while
 //  this Wizard renders steps vertically.
 //

@@ -14,6 +14,15 @@ dayjs.extend(dayjsRelativeTimePlugin);
 
 const { Catalog } = Renderer;
 
+// TODO[CCLEX-196]: DEPRECATED, remove for next major
+let skipTlsVerifyFlagWarningShown = false;
+export const getSkipTlsVerifyFlagWarningShown = function () {
+  return skipTlsVerifyFlagWarningShown;
+};
+export const setSkipTlsVerifyFlagWarningShown = function () {
+  skipTlsVerifyFlagWarningShown = true;
+};
+
 /**
  * @returns {Array<Common.Catalog.KubernetesCluster>} List of clusters in the
  *  Lens Catalog.
