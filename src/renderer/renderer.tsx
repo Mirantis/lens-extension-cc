@@ -1,5 +1,5 @@
 import React from 'react';
-import { Renderer } from '@k8slens/extensions';
+import { Common, Renderer } from '@k8slens/extensions';
 import { GlobalPage } from './components/GlobalPage/GlobalPage';
 import { ContainerCloudIcon as ClusterPageIcon } from './components/ContainerCloudIcon';
 import { ClusterPage } from './components/ClusterPage/ClusterPage';
@@ -31,7 +31,6 @@ import { catalogEntityDetails } from './catalogEntityDetails';
 import { generateTopBarItems } from './topBarItems';
 import { openBrowser } from '../util/netUtil';
 import { generateEntityUrl } from '../catalog/catalogEntities';
-import { KubernetesCluster } from '@k8slens/extensions/dist/src/common/catalog-entities';
 
 const {
   LensExtension,
@@ -254,7 +253,7 @@ export default class ExtensionRenderer extends LensExtension {
    * @param {KubernetesCluster} cluster
    */
   public async isEnabledForCluster(
-    cluster: KubernetesCluster
+    cluster: Common.Catalog.KubernetesCluster
   ): Promise<boolean> {
     //
     // NOTE: This hook is or will soon (6.y.z) be DEPRECATED. Follow
