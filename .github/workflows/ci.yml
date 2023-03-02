@@ -14,7 +14,7 @@ jobs:
       CI: true
     strategy:
       matrix:
-        node-version: [16.x, 18.x]
+        node-version: [lts/gallium] # @k8slens/core@^6.4.0 requires 16.x (2023/03/02)
     steps:
       - uses: actions/checkout@v2
 
