@@ -2,6 +2,7 @@ import { merge } from 'lodash';
 import * as rtv from 'rtvjs';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
 import { NamedResource, namedResourceTs } from './NamedResource';
+import { entityLabels } from '../../catalog/catalogEntities';
 import { apiEventTypes } from '../apiConstants';
 import { logValue } from '../../util/logger';
 
@@ -40,13 +41,13 @@ export class ResourceEvent extends NamedResource {
   /**
    * @constructor
    * @param {Object} params
-   * @param {Object} params.data Raw data payload from the API.
+   * @param {Object} params.kube Raw kube object payload from the API.
    * @param {Namespace} params.namespace Namespace to which the object belongs.
-   * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
+   * @param {DataCloud} params.dataCloud Reference to the DataCloud used to get the data.
    * @param {rtv.Typeset} params.typeset Typeset for verifying the data.
    */
-  constructor({ data, namespace, cloud, typeset = resourceEventTs }) {
-    super({ data, cloud, namespace, typeset });
+  constructor({ kube, namespace, dataCloud, typeset = resourceEventTs }) {
+    super({ kube, namespace, dataCloud, typeset });
 
     /**
      * @readonly
@@ -55,7 +56,7 @@ export class ResourceEvent extends NamedResource {
     Object.defineProperty(this, 'type', {
       enumerable: true,
       get() {
-        return data.type;
+        return kube.type;
       },
     });
 
@@ -66,7 +67,7 @@ export class ResourceEvent extends NamedResource {
     Object.defineProperty(this, 'lastDate', {
       enumerable: true,
       get() {
-        return new Date(data.lastTimestamp);
+        return new Date(kube.lastTimestamp);
       },
     });
 
@@ -77,7 +78,7 @@ export class ResourceEvent extends NamedResource {
     Object.defineProperty(this, 'count', {
       enumerable: true,
       get() {
-        return data.count;
+        return kube.count;
       },
     });
 
@@ -88,7 +89,7 @@ export class ResourceEvent extends NamedResource {
     Object.defineProperty(this, 'sourceComponent', {
       enumerable: true,
       get() {
-        return data.source.component;
+        return kube.source.component;
       },
     });
 
@@ -100,7 +101,7 @@ export class ResourceEvent extends NamedResource {
     Object.defineProperty(this, 'targetKind', {
       enumerable: true,
       get() {
-        return data.involvedObject.kind;
+        return kube.involvedObject.kind;
       },
     });
 
@@ -112,7 +113,7 @@ export class ResourceEvent extends NamedResource {
     Object.defineProperty(this, 'targetUid', {
       enumerable: true,
       get() {
-        return data.involvedObject.uid || null;
+        return kube.involvedObject.uid || null;
       },
     });
 
@@ -123,7 +124,7 @@ export class ResourceEvent extends NamedResource {
     Object.defineProperty(this, 'targetName', {
       enumerable: true,
       get() {
-        return data.involvedObject.name;
+        return kube.involvedObject.name;
       },
     });
 
@@ -134,7 +135,7 @@ export class ResourceEvent extends NamedResource {
     Object.defineProperty(this, 'reason', {
       enumerable: true,
       get() {
-        return data.reason;
+        return kube.reason;
       },
     });
 
@@ -145,7 +146,7 @@ export class ResourceEvent extends NamedResource {
     Object.defineProperty(this, 'message', {
       enumerable: true,
       get() {
-        return data.message;
+        return kube.message;
       },
     });
   }
@@ -159,6 +160,12 @@ export class ResourceEvent extends NamedResource {
     const model = super.toModel();
 
     return merge({}, model, {
+      metadata: {
+        labels: {
+          [entityLabels.CLOUD]: this.dataCloud.name,
+          [entityLabels.NAMESPACE]: this.namespace.name,
+        },
+      },
       spec: {
         type: this.type,
         lastTimeAt: this.lastDate.toISOString(),

@@ -120,9 +120,20 @@ export class ResourceClient {
     );
   }
 
-  get(resourceType, { namespaceName, resourceName } = {}) {
+  /**
+   * Get a single resource.
+   * @param {string} resourceType
+   * @param {Object} options
+   * @param {string} [options.namespaceName] Namespace name, if any.
+   * @param {string} [options.resourceName] Resource name, if any.
+   * @param {Record<string,any>} [options.filters] Query parameters, if any.
+   * @returns {Promise<Object>} See netUtil.request() for response shape.
+   */
+  get(resourceType, { namespaceName, resourceName, filters } = {}) {
     return this.request(
-      `${namespacePrefix(namespaceName)}${resourceType}/${resourceName}`,
+      `${namespacePrefix(namespaceName)}${resourceType}${
+        resourceName ? `/${resourceName}` : ''
+      }${buildQueryString(filters)}`,
       {
         errorMessage: strings.apiClient.error.failedToGet(resourceType),
       }
@@ -130,10 +141,10 @@ export class ResourceClient {
   }
 
   /**
-   * List resources within a given namespace.
+   * List resources optionally within a given namespace.
    * @param {string} resourceType Value from the `apiResourceTypes` enum.
    * @param {Object} options
-   * @param {string} options.namespaceName
+   * @param {string} [options.namespaceName]
    * @param {number} [options.limit] To limit the number of items fetched.
    * @param {string} [options.resourceVersion] If specified, establishes a __watch__ on the
    *  __collection__, from that version on (to get change notifications via long-poll).
@@ -144,6 +155,7 @@ export class ResourceClient {
    *  Ignored if `resourceName` is falsy. Value from the `apiResourceTypes` enum.
    * @param {any} [options.requestOptions] Any remaining properties in the `options` object are
    *  passed down to the raw request as node-fetch options.
+   * @returns {Promise<Object>} See netUtil.request() for response shape.
    */
   list(
     resourceType,
@@ -181,6 +193,7 @@ export class ResourceClient {
    * @param {string} resourceType
    * @param {Object} [options]
    * @param {number} [options.limit] To limit the number of items fetched.
+   * @returns {Promise<Object>} See netUtil.request() for response shape.
    */
   listAll(resourceType, { limit } = {}) {
     const paramStr = buildQueryString({ limit });
@@ -189,6 +202,12 @@ export class ResourceClient {
     });
   }
 
+  /**
+   * @param {string} resourceType
+   * @param {Object} options
+   * @param {string} options.spec JSON payload.
+   * @param {string} [options.namespaceName]
+   */
   create(resourceType, { namespaceName, spec } = {}) {
     return this.request(
       `${namespacePrefix(namespaceName)}${resourceType}/create`,
@@ -200,18 +219,13 @@ export class ResourceClient {
     );
   }
 
-  delete(resourceType, { namespaceName, name } = {}) {
-    return this.request(
-      `${namespacePrefix(namespaceName)}${resourceType}/${name}`,
-      {
-        options: { method: 'DELETE' },
-        errorMessage: strings.apiClient.error.failedToDelete(
-          `${logValue(resourceType)} ${logValue(name)}`
-        ),
-      }
-    );
-  }
-
+  /**
+   * @param {string} resourceType
+   * @param {Object} options
+   * @param {string} options.name
+   * @param {Object} options.patch JSON payload.
+   * @param {string} [options.namespaceName]
+   */
   update(resourceType, { namespaceName, name, patch } = {}) {
     return this.request(
       `${namespacePrefix(namespaceName)}${resourceType}/${name}`,
@@ -226,5 +240,41 @@ export class ResourceClient {
         ),
       }
     );
+  }
+
+  /**
+   * @param {string} resourceType
+   * @param {Object} options
+   * @param {string} options.name
+   * @param {string} [options.namespaceName]
+   */
+  delete(resourceType, { namespaceName, name } = {}) {
+    return this.request(
+      `${namespacePrefix(namespaceName)}${resourceType}/${name}`,
+      {
+        options: { method: 'DELETE' },
+        errorMessage: strings.apiClient.error.failedToDelete(
+          `${logValue(resourceType)} ${logValue(name)}`
+        ),
+      }
+    );
+  }
+
+  reviewRules() {
+    return Promise.resolve({
+      error: 'Method "reviewRules" not supported on ResourceClient',
+      response: undefined,
+      expectedStatuses: [],
+      body: undefined,
+    });
+  }
+
+  nsAccess() {
+    return Promise.resolve({
+      error: 'Method "nsAccess" not supported on ResourceClient',
+      response: undefined,
+      expectedStatuses: [],
+      body: undefined,
+    });
   }
 }

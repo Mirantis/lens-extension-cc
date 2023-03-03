@@ -1,8 +1,10 @@
 import * as rtv from 'rtvjs';
 import * as consts from '../../constants';
-import { Cloud } from '../../common/Cloud';
 import { timestampTs } from '../apiTypesets';
 import { logValue } from '../../util/logger';
+
+// NOTE: ideally, we'd import `DataCloud` here, but doing so results in a circular dependency
+import { Cloud } from '../../common/Cloud';
 
 /**
  * Typeset for a basic MCC API Object.
@@ -32,62 +34,91 @@ export class Resource {
   /**
    * @constructor
    * @param {Object} params
-   * @param {Object} params.data Raw data payload from the API.
-   * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
+   * @param {Object} params.kube Raw kube object payload from the API.
+   * @param {DataCloud} params.dataCloud Reference to the DataCloud used to get the data.
    * @param {rtv.Typeset} params.typeset Typeset for verifying the data.
    */
-  constructor({ data, cloud, typeset = null }) {
+  constructor({ kube, dataCloud, typeset = null }) {
     DEV_ENV &&
       rtv.verify(
-        { data, cloud },
+        { kube, dataCloud },
         {
           // if `typeset` was specified, `null` here will cause `verify()` to fail, which is good
           //  since `typeset` should be considered required
-          data: typeset,
+          kube: typeset,
 
-          cloud: [rtv.CLASS_OBJECT, { ctor: Cloud }],
+          // NOTE: ideally, we'd check `dataCloud` directly as an instance of `DataCloud`
+          //  but we can't import the `DataCloud` class due to a circular dependency; so
+          //  the next best thing is to check that the object has a `cloud` property, which
+          //  is unique to a `DataCloud` instance
+          dataCloud: {
+            cloud: [rtv.CLASS_OBJECT, { ctor: Cloud }],
+          },
         }
       );
 
     const _syncedDate = new Date(); // any time a Resource is created, it's because we're syncing it
-    const _createdDate = new Date(data.metadata.creationTimestamp);
+    const _createdDate = new Date(kube.metadata.creationTimestamp);
 
-    /** @member {Cloud} cloud */
-    Object.defineProperty(this, 'cloud', {
+    /**
+     * @readonly
+     * @member {DataCloud} dataCloud
+     */
+    Object.defineProperty(this, 'dataCloud', {
       enumerable: true,
       get() {
-        return cloud;
+        return dataCloud;
       },
     });
 
-    /** @member {string} uid */
-    Object.defineProperty(this, 'uid', {
+    // convenience getter
+    /**
+     * @readonly
+     * @member {Cloud} cloud
+     */
+    Object.defineProperty(this, 'cloud', {
       enumerable: true,
       get() {
-        return data.metadata.uid;
+        return dataCloud.cloud;
       },
     });
 
     /**
+     * @readonly
+     * @member {string} uid
+     */
+    Object.defineProperty(this, 'uid', {
+      enumerable: true,
+      get() {
+        return kube.metadata.uid;
+      },
+    });
+
+    /**
+     * @readonly
      * @member {string|null} kind One of the known API kinds in the `apiConstants.apiKinds` enum.
      *  `null` if the Resource doesn't have a kind (e.g. in the case of a Namespace or ResourceEvent).
      */
     Object.defineProperty(this, 'kind', {
       enumerable: true,
       get() {
-        return data.kind || null;
-      },
-    });
-
-    /** @member {string} name */
-    Object.defineProperty(this, 'name', {
-      enumerable: true,
-      get() {
-        return data.metadata.name;
+        return kube.kind || null;
       },
     });
 
     /**
+     * @readonly
+     * @member {string} name
+     */
+    Object.defineProperty(this, 'name', {
+      enumerable: true,
+      get() {
+        return kube.metadata.name;
+      },
+    });
+
+    /**
+     * @readonly
      * Identifies a specific version of this resource in the Kube API. This opaque
      *  string value can be used to detect when the resource has changed, so it
      *  essentially reprents a type of hash of the resource's values/state.
@@ -97,10 +128,14 @@ export class Resource {
     Object.defineProperty(this, 'resourceVersion', {
       enumerable: true,
       get() {
-        return data.metadata.resourceVersion;
+        return kube.metadata.resourceVersion;
       },
     });
 
+    /**
+     * @readonly
+     * @member {string} cacheVersion
+     */
     Object.defineProperty(this, 'cacheVersion', {
       enumerable: true,
       get() {
@@ -108,7 +143,10 @@ export class Resource {
       },
     });
 
-    /** @member {Date} createdDate */
+    /**
+     * @readonly
+     * @member {Date} createdDate
+     */
     Object.defineProperty(this, 'createdDate', {
       enumerable: true,
       get() {
@@ -116,7 +154,10 @@ export class Resource {
       },
     });
 
-    /** @member {Date} syncedDate */
+    /**
+     * @readonly
+     * @member {Date} syncedDate
+     */
     Object.defineProperty(this, 'syncedDate', {
       enumerable: true,
       get() {
@@ -124,11 +165,14 @@ export class Resource {
       },
     });
 
-    /** @member {boolean|null} deleteInProgress */
+    /**
+     * @readonly
+     * @member {boolean|null} deleteInProgress
+     */
     Object.defineProperty(this, 'deleteInProgress', {
       enumerable: true,
       get() {
-        return !!data.metadata.deletionTimestamp;
+        return !!kube.metadata.deletionTimestamp;
       },
     });
   }
@@ -144,8 +188,14 @@ export class Resource {
         name: this.name,
         source: consts.catalog.source,
         description: null,
-        labels: {},
-        cloudUrl: this.cloud.cloudUrl,
+        labels: {}, // NOTE: these are not necessarily to be the same as any `metadata.labels` we may have on the `data`
+        cloudUrl: this.dataCloud.cloudUrl,
+        cloudRelease: this.dataCloud.release
+          ? {
+              active: this.dataCloud.release.active,
+              version: this.dataCloud.release.version,
+            }
+          : null,
         kind: this.kind, // NOTE: could be `null` if unknown
         resourceVersion: this.resourceVersion,
         cacheVersion: this.cacheVersion,
@@ -164,7 +214,7 @@ export class Resource {
       this.kind
     )}, uid: ${logValue(this.uid)}, revision: ${
       this.resourceVersion
-    }, cloudUrl: ${logValue(this.cloud.cloudUrl)}`;
+    }, cloudUrl: ${logValue(this.dataCloud.cloudUrl)}`;
 
     if (Object.getPrototypeOf(this).constructor === Resource) {
       return `{Resource ${propStr}}`;

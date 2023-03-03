@@ -86,6 +86,8 @@ export const apiKinds = Object.freeze({
   RHEL_LICENSE: 'RHELLicense',
   PROXY: 'Proxy',
   EVENT: 'Event', // cluster events
+  KAAS_RELEASE_LIST: 'KaaSReleaseList', // list of `KAAS_RELEASE` objects in `items` root property
+  KAAS_RELEASE: 'KaaSRelease', // info about a released version of MCC
 });
 
 /**

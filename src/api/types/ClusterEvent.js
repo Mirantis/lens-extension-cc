@@ -23,12 +23,12 @@ export class ClusterEvent extends ResourceEvent {
   /**
    * @constructor
    * @param {Object} params
-   * @param {Object} params.data Raw data payload from the API.
+   * @param {Object} params.kube Raw kube object payload from the API.
    * @param {Namespace} params.namespace Namespace to which the object belongs.
-   * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
+   * @param {DataCloud} params.dataCloud Reference to the DataCloud used to get the data.
    */
-  constructor({ data, namespace, cloud }) {
-    super({ data, cloud, namespace, typeset: clusterEventTs });
+  constructor({ kube, namespace, dataCloud }) {
+    super({ kube, namespace, dataCloud, typeset: clusterEventTs });
   }
 
   // NOTE: we don't have toEntity() because we don't show ClusterEvents in the Catalog at

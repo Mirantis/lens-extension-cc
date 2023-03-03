@@ -173,13 +173,21 @@ export async function cloudLogout(cloud) {
  * @param {Object} options
  * @param {Cloud} options.cloud An Cloud object. NOTE: This instance will be UPDATED
  *  with new tokens if the token is expired and successfully refreshed.
- * @param {string} options.method Name of the method to call on the `resourceType`.
- * @param {string} options.resourceType One of the keys (i.e. API resource types) from
- *  the `typeToClient` map. This is the API resource type on which to call the `method`.
+ * @param {string} options.resourceType A value from the `apiResourceTypes` enum. This type must
+ *  also be a key in the `typeToClient` map, determining the connection client on which the `method`
+ *  will ultimately be called.
+ * @param {'get'|'list'|'listAll'|'create'|'update'|'delete'|'reviewRules'|'nsAccess'} [options.method]
+ *  Name of the method to call on the `resourceType`. ⚠️ __Not all resource types support the
+ *  same methods.__ Request will fail if method isn't supported.
  * @param {Object} [options.args] Optional arguments for the `method` on the `resourceType`.
  * @returns {Promise<ApiSuccessResponse|ApiErrorResponse>}
  */
-export async function cloudRequest({ cloud, method, resourceType, args }) {
+export async function cloudRequest({
+  cloud,
+  resourceType,
+  method = 'get',
+  args,
+}) {
   if (!cloud || !(cloud instanceof Cloud)) {
     throw new Error('cloud parameter must be a Cloud instance');
   }

@@ -57,16 +57,16 @@ export class Machine extends Node {
   /**
    * @constructor
    * @param {Object} params
-   * @param {Object} params.data Raw data payload from the API.
+   * @param {Object} params.kube Raw kube object payload from the API.
    * @param {Namespace} params.namespace Namespace to which the object belongs.
    *
    *  NOTE: The namespace is expected to already contain all known Licenses that
    *   this Machine might reference.
    *
-   * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
+   * @param {DataCloud} params.dataCloud Reference to the DataCloud used to get the data.
    */
-  constructor({ data, namespace, cloud }) {
-    super({ data, cloud, namespace, typeset: machineTs });
+  constructor({ kube, namespace, dataCloud }) {
+    super({ kube, namespace, dataCloud, typeset: machineTs });
 
     let _license = null;
 
@@ -77,7 +77,7 @@ export class Machine extends Node {
     Object.defineProperty(this, 'clusterName', {
       enumerable: true,
       get() {
-        return data.metadata.labels?.[apiLabels.CLUSTER_NAME] || null;
+        return kube.metadata.labels?.[apiLabels.CLUSTER_NAME] || null;
       },
     });
 
@@ -88,7 +88,7 @@ export class Machine extends Node {
     Object.defineProperty(this, 'isController', {
       enumerable: true,
       get() {
-        return !!data.metadata.labels?.[apiLabels.CLUSTER_CONTROLLER];
+        return !!kube.metadata.labels?.[apiLabels.CLUSTER_CONTROLLER];
       },
     });
 
@@ -104,8 +104,8 @@ export class Machine extends Node {
 
     //// Initialize
 
-    if (data.spec.providerSpec.value.rhelLicense) {
-      const licenseName = data.spec.providerSpec.value.rhelLicense;
+    if (kube.spec.providerSpec.value.rhelLicense) {
+      const licenseName = kube.spec.providerSpec.value.rhelLicense;
       _license =
         this.namespace.licenses.find((li) => li.name === licenseName) || null;
       if (!_license) {

@@ -32,13 +32,13 @@ export class Namespace extends Resource {
   /**
    * @constructor
    * @param {Object} params
-   * @param {Object} params.data Raw data payload from the API.
-   * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
+   * @param {Object} params.kube Raw kube object payload from the API.
+   * @param {DataCloud} params.dataCloud Reference to the DataCloud used to get the data.
    * @param {boolean} [params.preview] True if this Namespace is for preview
    *  purposes only, and so only the __count__ properties will be valid.
    */
-  constructor({ data, cloud, preview = false }) {
-    super({ data, cloud, typeset: namespaceTs });
+  constructor({ kube, dataCloud, preview = false }) {
+    super({ kube, dataCloud, typeset: namespaceTs });
 
     let _clusters = [];
     let _events = [];
@@ -64,7 +64,7 @@ export class Namespace extends Resource {
     Object.defineProperty(this, 'phase', {
       enumerable: true,
       get() {
-        return data.status.phase;
+        return kube.status.phase;
       },
     });
 

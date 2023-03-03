@@ -25,12 +25,12 @@ export class ClusterDeployment extends ResourceUpdate {
   /**
    * @constructor
    * @param {Object} params
-   * @param {Object} params.data Raw data payload from the API.
+   * @param {Object} params.kube Raw kube object payload from the API.
    * @param {Namespace} params.namespace Namespace to which the object belongs.
-   * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
+   * @param {DataCloud} params.dataCloud Reference to the DataCloud used to get the data.
    */
-  constructor({ data, namespace, cloud }) {
-    super({ data, cloud, namespace, typeset: clusterDeploymentTs });
+  constructor({ kube, namespace, dataCloud }) {
+    super({ kube, namespace, dataCloud, typeset: clusterDeploymentTs });
 
     /**
      * @readonly
@@ -40,7 +40,7 @@ export class ClusterDeployment extends ResourceUpdate {
     Object.defineProperty(this, 'release', {
       enumerable: true,
       get() {
-        return data.release || '-1.0.0'; // TODO[cluster-history]: remove '-1.0.0' fallback
+        return kube.release || '-1.0.0'; // TODO[cluster-history]: remove '-1.0.0' fallback
       },
     });
   }

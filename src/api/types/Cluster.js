@@ -16,13 +16,13 @@ const {
   Catalog: { KubernetesCluster },
 } = Common;
 
-const isMgmtCluster = function (data) {
-  const kaas = get(data.spec, 'providerSpec.value.kaas', {});
+const isMgmtCluster = function (kube) {
+  const kaas = get(kube.spec, 'providerSpec.value.kaas', {});
   return get(kaas, 'management.enabled', false) && !!get(kaas, 'regional');
 };
 
-const getServerUrl = function (data) {
-  const ip = data.status.providerStatus.loadBalancerHost;
+const getServerUrl = function (kube) {
+  const ip = kube.status.providerStatus.loadBalancerHost;
   return `https://${ip}:443`;
 };
 
@@ -149,18 +149,18 @@ export class Cluster extends Node {
   /**
    * @constructor
    * @param {Object} params
-   * @param {Object} params.data Raw data payload from the API.
+   * @param {Object} params.kube Raw kube object payload from the API.
    * @param {Namespace} params.namespace Namespace to which the object belongs.
    *
    *  NOTE: The namespace is expected to already contain all known Credentials,
    *   SSH Keys, Proxies, Machines, and Licenses that this Cluster might reference.
    *
-   * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
+   * @param {DataCloud} params.dataCloud Reference to the DataCloud used to get the data.
    * @param {string|null} [params.licenseName] Name of the RHEL License used by
    *  this cluster (found on its machines).
    */
-  constructor({ data, namespace, cloud }) {
-    super({ data, cloud, namespace, typeset: clusterTs });
+  constructor({ kube, namespace, dataCloud }) {
+    super({ kube, namespace, dataCloud, typeset: clusterTs });
 
     let _controllers = [];
     let _workers = [];
@@ -261,7 +261,7 @@ export class Cluster extends Node {
     Object.defineProperty(this, 'isMgmtCluster', {
       enumerable: true,
       get() {
-        return isMgmtCluster(data);
+        return isMgmtCluster(kube);
       },
     });
 
@@ -272,7 +272,7 @@ export class Cluster extends Node {
     Object.defineProperty(this, 'currentVersion', {
       enumerable: true,
       get() {
-        return data.status?.providerStatus?.releaseRefs.current.version || null;
+        return kube.status?.providerStatus?.releaseRefs.current.version || null;
       },
     });
 
@@ -291,11 +291,11 @@ export class Cluster extends Node {
         //  these fields are all available and defined, and cluster isn't being deleted
         return !!(
           !this.deleteInProgress &&
-          data.status?.providerStatus?.loadBalancerHost &&
-          data.status?.providerStatus?.apiServerCertificate &&
-          data.status?.providerStatus?.oidc?.ready &&
-          data.status?.providerStatus?.oidc?.certificate &&
-          data.status?.providerStatus?.oidc?.clientId
+          kube.status?.providerStatus?.loadBalancerHost &&
+          kube.status?.providerStatus?.apiServerCertificate &&
+          kube.status?.providerStatus?.oidc?.ready &&
+          kube.status?.providerStatus?.oidc?.certificate &&
+          kube.status?.providerStatus?.oidc?.clientId
         );
       },
     });
@@ -307,7 +307,7 @@ export class Cluster extends Node {
     Object.defineProperty(this, 'serverUrl', {
       enumerable: true,
       get() {
-        return this.configReady ? getServerUrl(data) : null;
+        return this.configReady ? getServerUrl(kube) : null;
       },
     });
 
@@ -320,7 +320,7 @@ export class Cluster extends Node {
       enumerable: true,
       get() {
         return this.configReady
-          ? data.status.providerStatus.oidc.issuerUrl
+          ? kube.status.providerStatus.oidc.issuerUrl
           : null;
       },
     });
@@ -333,7 +333,7 @@ export class Cluster extends Node {
       enumerable: true,
       get() {
         return this.configReady
-          ? data.status.providerStatus.oidc.certificate
+          ? kube.status.providerStatus.oidc.certificate
           : null;
       },
     });
@@ -346,7 +346,7 @@ export class Cluster extends Node {
       enumerable: true,
       get() {
         return this.configReady
-          ? data.status.providerStatus.oidc.clientId
+          ? kube.status.providerStatus.oidc.clientId
           : null;
       },
     });
@@ -359,7 +359,7 @@ export class Cluster extends Node {
       enumerable: true,
       get() {
         return this.configReady
-          ? data.status.providerStatus.apiServerCertificate
+          ? kube.status.providerStatus.apiServerCertificate
           : null;
       },
     });
@@ -372,7 +372,7 @@ export class Cluster extends Node {
     Object.defineProperty(this, 'dashboardUrl', {
       enumerable: true,
       get() {
-        return data.status?.providerStatus?.ucpDashboard || null;
+        return kube.status?.providerStatus?.ucpDashboard || null;
       },
     });
 
@@ -392,11 +392,11 @@ export class Cluster extends Node {
       enumerable: true,
       get() {
         if (
-          data.status?.providerStatus?.helm?.ready &&
-          data.status?.providerStatus?.helm?.releases?.stacklight
+          kube.status?.providerStatus?.helm?.ready &&
+          kube.status?.providerStatus?.helm?.releases?.stacklight
         ) {
           const { stacklight: stackLight = {} } =
-            data.status.providerStatus.helm.releases;
+            kube.status.providerStatus.helm.releases;
           const lma = {
             alertaUrl: stackLight.alerta?.url || undefined,
             alertManagerUrl: stackLight.alertmanager?.url || undefined, // yes, different casing...
@@ -425,7 +425,7 @@ export class Cluster extends Node {
     // NOTE: if any of these warnings get logged, it's probably because the `namespace`
     //  given to the constructor isn't loaded yet with all other resource types
 
-    data.spec.providerSpec.value.publicKeys?.forEach(({ name: keyName }) => {
+    kube.spec.providerSpec.value.publicKeys?.forEach(({ name: keyName }) => {
       const sshKey = this.namespace.sshKeys.find((key) => key.name === keyName);
       if (sshKey) {
         _sshKeys.push(sshKey);
@@ -436,13 +436,13 @@ export class Cluster extends Node {
             keyName
           )} for cluster=${logValue(this.name)}, namespace=${logValue(
             this.namespace.name
-          )}, cloud=${logValue(this.cloud.cloudUrl)}`
+          )}, cloud=${logValue(this.dataCloud.cloudUrl)}`
         );
       }
     });
 
-    if (data.spec.providerSpec.value.credentials) {
-      const credName = data.spec.providerSpec.value.credentials;
+    if (kube.spec.providerSpec.value.credentials) {
+      const credName = kube.spec.providerSpec.value.credentials;
       _credential =
         this.namespace.credentials.find((cr) => cr.name === credName) || null;
       if (!_credential) {
@@ -452,13 +452,13 @@ export class Cluster extends Node {
             credName
           )} for cluster=${logValue(this.name)}, namespace=${logValue(
             this.namespace.name
-          )}, cloud=${logValue(this.cloud.cloudUrl)}`
+          )}, cloud=${logValue(this.dataCloud.cloudUrl)}`
         );
       }
     }
 
-    if (data.spec.providerSpec.value.proxy) {
-      const proxyName = data.spec.providerSpec.value.proxy;
+    if (kube.spec.providerSpec.value.proxy) {
+      const proxyName = kube.spec.providerSpec.value.proxy;
       _proxy =
         this.namespace.proxies.find((pr) => pr.name === proxyName) || null;
       if (!_proxy) {
@@ -468,7 +468,7 @@ export class Cluster extends Node {
             proxyName
           )} for cluster=${logValue(this.name)}, namespace=${logValue(
             this.namespace.name
-          )}, cloud=${logValue(this.cloud.cloudUrl)}`
+          )}, cloud=${logValue(this.dataCloud.cloudUrl)}`
         );
       }
     }
@@ -492,7 +492,7 @@ export class Cluster extends Node {
         `Unable to find any machines for cluster=${logValue(
           this.name
         )}, namespace=${logValue(this.namespace.name)}, cloud=${logValue(
-          this.cloud.cloudUrl
+          this.dataCloud.cloudUrl
         )}`
       );
     } else {
@@ -533,7 +533,7 @@ export class Cluster extends Node {
    */
   get contextName() {
     // NOTE: this mirrors how MCC generates kubeconfig context names
-    return `${this.cloud.username}@${this.namespace.name}@${this.name}`;
+    return `${this.dataCloud.cloud.username}@${this.namespace.name}@${this.name}`;
   }
 
   /**
@@ -553,7 +553,7 @@ export class Cluster extends Node {
   ) {
     return mkKubeConfig({
       cluster: this,
-      username: this.cloud.username,
+      username: this.dataCloud.cloud.username,
       tokenCachePath,
       trustHost,
       offlineAccess,
@@ -576,7 +576,7 @@ export class Cluster extends Node {
     //  and giving it a value of `undefined` will result in the entity getting
     //  a label with a value of "undefined" (rather than ignoring it)
     const labels = {
-      [entityLabels.CLOUD]: this.cloud.name,
+      [entityLabels.CLOUD]: this.dataCloud.name,
       [entityLabels.NAMESPACE]: this.namespace.name,
     };
 

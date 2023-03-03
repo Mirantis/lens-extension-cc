@@ -43,15 +43,15 @@ export class Credential extends NamedResource {
   /**
    * @constructor
    * @param {Object} params
-   * @param {Object} params.data Raw data payload from the API.
+   * @param {Object} params.kube Raw kube object payload from the API.
    * @param {Namespace} params.namespace Namespace to which the object belongs.
-   * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
+   * @param {DataCloud} params.dataCloud Reference to the DataCloud used to get the data.
    */
-  constructor({ data, namespace, cloud }) {
+  constructor({ kube, namespace, dataCloud }) {
     super({
-      data,
+      kube,
       namespace,
-      cloud,
+      dataCloud,
       typeset: credentialTs,
     });
 
@@ -59,7 +59,7 @@ export class Credential extends NamedResource {
     Object.defineProperty(this, 'region', {
       enumerable: true,
       get() {
-        return data.metadata.labels?.[apiLabels.KAAS_REGION] || null;
+        return kube.metadata.labels?.[apiLabels.KAAS_REGION] || null;
       },
     });
 
@@ -67,7 +67,7 @@ export class Credential extends NamedResource {
     Object.defineProperty(this, 'provider', {
       enumerable: true,
       get() {
-        return data.metadata.labels?.[apiLabels.KAAS_PROVIDER] || null;
+        return kube.metadata.labels?.[apiLabels.KAAS_PROVIDER] || null;
       },
     });
 
@@ -76,7 +76,7 @@ export class Credential extends NamedResource {
       enumerable: true,
       get() {
         // NOTE: BYOCredential objects do not have a `status` for some reason
-        return !!data.status?.valid;
+        return !!kube.status?.valid;
       },
     });
   }
@@ -93,7 +93,7 @@ export class Credential extends NamedResource {
     return merge({}, model, {
       metadata: {
         labels: {
-          [entityLabels.CLOUD]: this.cloud.name,
+          [entityLabels.CLOUD]: this.dataCloud.name,
           [entityLabels.NAMESPACE]: this.namespace.name,
         },
       },

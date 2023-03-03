@@ -1331,7 +1331,12 @@ export class SyncManager extends Singleton {
     // ALL resources of each type across ALL __synced__ namespaces since we don't
     //  know what changed
     const resources = types.reduce((acc, type) => {
-      acc[type] = dataCloud.syncedNamespaces.flatMap((ns) => ns[type]);
+      // NOTE: due to event dispatch timings, it's somewhat possible we get here with
+      //  `syncedNamespaces` being an array of unfilled slots, in which case we need
+      //  to filter those out and deal only with what we actually got (if anything)
+      acc[type] = dataCloud.syncedNamespaces
+        .filter((ns) => !!ns)
+        .flatMap((ns) => ns[type]);
       return acc;
     }, {});
 
