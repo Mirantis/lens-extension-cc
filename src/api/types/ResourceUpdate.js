@@ -49,10 +49,10 @@ export const resourceUpdateTs = mergeRtvShapes({}, namedResourceTs, {
         name: rtv.STRING, // short message/phrase/summary, more like a title
         message: [rtv.OPTIONAL, rtv.STRING], // detailed message, if any
 
-        // TODO[cluster-history]: add this when release (MCC v2.22+)
+        // NOTE: `status` field REQUIRES MCC v2.22+
         // NOTE: we don't validate this against `apiUpdateStatuses` in case additional statuses
         //  are added in the future without our knowledge; we just expect a non-empty string
-        // status: rtv.STRING, // status code like 'Success', 'InProgress', 'NotStarted', 'Fail'
+        status: rtv.STRING, // status code like 'Success', 'InProgress', 'NotStarted', 'Fail'
 
         // ISO8601, not provided unless stage is done (successfully or has been attempted
         //  at least once)
@@ -123,16 +123,7 @@ export class ResourceUpdate extends NamedResource {
         return kube.stages.map((stage) => ({
           name: stage.name,
           message: stage.message || null,
-
-          // TODO[cluster-history]: should just be this when published
-          // status: stage.status,
-          // for now, we rely on success + timestamp
-          status: stage.timestamp
-            ? stage.success || stage.success === undefined
-              ? 'Success'
-              : 'InProgress'
-            : 'NotStarted',
-
+          status: stage.status,
           time: stage.timestamp ? new Date(stage.timestamp) : null,
         }));
       },

@@ -13,8 +13,9 @@ export const machineDeploymentTs = mergeRtvShapes({}, resourceUpdateTs, {
   //  related to what we expect to find in order to create a `MachineDeployment` class instance
 
   kind: [rtv.STRING, { oneOf: apiKinds.MACHINE_DEPLOYMENT_STATUS }],
-  // TODO[cluster-history]: add this when release (MCC v2.22+)
-  // release: rtv.STRING, // release version deployed
+
+  // NOTE: `release` field REQUIRES MCC v2.22+
+  release: rtv.STRING, // release version deployed
 });
 
 /**
@@ -40,7 +41,7 @@ export class MachineDeployment extends ResourceUpdate {
     Object.defineProperty(this, 'release', {
       enumerable: true,
       get() {
-        return kube.release || '-1.0.0'; // TODO[cluster-history]: remove '-1.0.0' fallback
+        return kube.release;
       },
     });
   }

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Common, Renderer } from '@k8slens/extensions';
+import { computed } from 'mobx';
+import { Renderer } from '@k8slens/extensions';
 import { GlobalPage } from './components/GlobalPage/GlobalPage';
 import { ContainerCloudIcon as ClusterPageIcon } from './components/ContainerCloudIcon';
 import { ClusterPage } from './components/ClusterPage/ClusterPage';
@@ -30,18 +31,23 @@ import { mkClusterContextName } from '../util/templates';
 import { catalogEntityDetails } from './catalogEntityDetails';
 import { generateTopBarItems } from './topBarItems';
 import { openBrowser } from '../util/netUtil';
-import { generateEntityUrl } from '../catalog/catalogEntities';
+import {
+  generateEntityUrl,
+  cloudVersionIsGTE,
+} from '../catalog/catalogEntities';
 
 const {
   LensExtension,
-  Catalog,
+  Catalog: {
+    catalogCategories,
+    catalogEntities,
+    activeCluster: activeClusterProxy,
+  },
   Component: { Notifications },
 } = Renderer;
 
 const logger: any = loggerUtil; // get around TS compiler's complaining
 const CLUSTER_PAGE_ID = 'mcc-cluster-page';
-
-declare const FEAT_CLUSTER_PAGE_HISTORY_ENABLED: any;
 
 export default class ExtensionRenderer extends LensExtension {
   //
@@ -58,7 +64,9 @@ export default class ExtensionRenderer extends LensExtension {
   ];
 
   // NOTE: the cluster page is dynamically added to the cluster menu in onActivate()
-  //  depending on what the active entity is at the time
+  //  depending on what the active entity is at the time; this stuff merely defines
+  //  the routing based on page IDs; in onActivate(), menu items are added that
+  //  target these routes
   clusterPages = [
     {
       id: ROUTE_CLUSTER_OVERVIEW,
@@ -80,20 +88,16 @@ export default class ExtensionRenderer extends LensExtension {
         ),
       },
     },
-    ...(FEAT_CLUSTER_PAGE_HISTORY_ENABLED
-      ? [
-          {
-            id: ROUTE_CLUSTER_HISTORY,
-            components: {
-              Page: () => (
-                <ClusterPage>
-                  <ClusterHistoryView />
-                </ClusterPage>
-              ),
-            },
-          },
-        ]
-      : []),
+    {
+      id: ROUTE_CLUSTER_HISTORY,
+      components: {
+        Page: () => (
+          <ClusterPage>
+            <ClusterHistoryView />
+          </ClusterPage>
+        ),
+      },
+    },
     {
       id: ROUTE_CLUSTER_DETAILS,
       components: {
@@ -247,26 +251,6 @@ export default class ExtensionRenderer extends LensExtension {
   //   });
   // };
 
-  /**
-   * Updates the cluster page menus with our custom cluster page menu item if
-   *  the active Catalog entity is an MCC cluster.
-   * @param {KubernetesCluster} cluster
-   */
-  public async isEnabledForCluster(
-    cluster: Common.Catalog.KubernetesCluster
-  ): Promise<boolean> {
-    //
-    // NOTE: This hook is or will soon (6.y.z) be DEPRECATED. Follow
-    //  https://github.com/lensapp/lens/issues/4591#issuecomment-1275204032
-    //
-    const entity =
-      typeof cluster.metadata.uid === 'string' // could also be an object for some reason
-        ? Renderer.Catalog.catalogEntities.getById(cluster.metadata.uid)
-        : undefined;
-
-    return entity?.metadata.source === consts.catalog.source;
-  }
-
   //
   // METHODS
   //
@@ -279,9 +263,25 @@ export default class ExtensionRenderer extends LensExtension {
     IpcRenderer.getInstance().notifyNetworkOnline();
   };
 
+  /**
+   * Gets the Catalog Entity for the active cluster, if any.
+   * @returns {Common.Catalog.CatalogEntity|undefined} The entity if we have an active
+   *  cluster and we can find it in the Catalog; `undefined` otherwise.
+   */
+  protected getActiveClusterEntity = () => {
+    // NOTE: we will only have an active cluster if this code is executing in the context
+    //  of the __Lens Cluster Page__
+    const activeCluster = activeClusterProxy.get();
+
+    // NOTE: `uid` could also be an object for some reason; probably some Mobx thing
+    return activeCluster && typeof activeCluster.metadata.uid === 'string'
+      ? catalogEntities.getById(activeCluster.metadata.uid)
+      : undefined;
+  };
+
   // WARNING: Lens calls this method more often that just when the extension
-  //  gets activated. For example, it will call it _again_ if it adds a cluster
-  //  page and the cluster page is activated.
+  //  gets activated for the first time after Lens is opened. For example, it will
+  //  call it _again_ if it adds a cluster page and the cluster page is activated.
   onActivate() {
     logger.log('ExtensionRenderer.onActivate()', 'extension activated');
 
@@ -290,7 +290,7 @@ export default class ExtensionRenderer extends LensExtension {
     cloudStore.loadExtension(this, { ipcRenderer });
     syncStore.loadExtension(this, { ipcRenderer });
 
-    const category = Catalog.catalogCategories.getForGroupKind(
+    const category = catalogCategories.getForGroupKind(
       consts.catalog.entities.kubeCluster.group,
       consts.catalog.entities.kubeCluster.kind
     );
@@ -317,29 +317,18 @@ export default class ExtensionRenderer extends LensExtension {
     window.addEventListener('offline', this.handleNetworkOffline);
     window.addEventListener('online', this.handleNetworkOnline);
 
-    // NOTE: Cluster page menu list must be STATIC. Checking here if the
-    //  `Renderer.Catalog.catalogEntities.activeEntity` is an MCC cluster will
-    //  not work. Neither will adding a mobx reaction like this
-    //
-    //    this.activeEntityDisposer = reaction(
-    //      () => Renderer.Catalog.catalogEntities.activeEntity,
-    //      this.updateClusterPageMenus
-    //    );
-    //
-    //  It has to be static, and also, it's currently not possible to decide whether
-    //   one cluster page is visible and another is not: It's all or nothing, and
-    //   must be done by overriding the `isEnabledForCluster(cluster)` method on
-    //   this class.
-    //
-    // NOTE: In some 6.y.z release, they introduced `Renderer.Catalog.activeCluster`
-    //  which we could use __instead of the `public async isEnabledForCluster()` hook__
-    //  (which should now be deprecated, I think). See
-    //  https://github.com/lensapp/lens/issues/4591#issuecomment-1275204032
-    //
+    //// CLUSTER PAGE ACTIVATION SPECIFICS
+
+    const showClusterPage = () => {
+      const entity = this.getActiveClusterEntity();
+      return !!(entity?.metadata.source === consts.catalog.source);
+    };
+
     this.clusterPageMenus = [
       {
         id: CLUSTER_PAGE_ID,
         title: strings.clusterPage.menuItems.group(),
+        visible: computed(showClusterPage),
         components: {
           Icon: () => (
             <ClusterPageIcon
@@ -356,6 +345,7 @@ export default class ExtensionRenderer extends LensExtension {
         parentId: CLUSTER_PAGE_ID,
         target: { pageId: ROUTE_CLUSTER_OVERVIEW },
         title: strings.clusterPage.menuItems.overview(),
+        visible: computed(showClusterPage),
         components: {
           Icon: null,
         },
@@ -364,26 +354,33 @@ export default class ExtensionRenderer extends LensExtension {
         parentId: CLUSTER_PAGE_ID,
         target: { pageId: ROUTE_CLUSTER_EVENTS },
         title: strings.clusterPage.menuItems.events(),
+        visible: computed(showClusterPage),
         components: {
           Icon: null,
         },
       },
-      ...(FEAT_CLUSTER_PAGE_HISTORY_ENABLED
-        ? [
-            {
-              parentId: CLUSTER_PAGE_ID,
-              target: { pageId: ROUTE_CLUSTER_HISTORY },
-              title: strings.clusterPage.menuItems.history(),
-              components: {
-                Icon: null,
-              },
-            },
-          ]
-        : []),
+      {
+        parentId: CLUSTER_PAGE_ID,
+        target: { pageId: ROUTE_CLUSTER_HISTORY },
+        title: strings.clusterPage.menuItems.history(),
+        visible: computed(() => {
+          if (showClusterPage()) {
+            const entity = this.getActiveClusterEntity();
+            return (
+              entity && cloudVersionIsGTE(entity, consts.historyCloudVersion)
+            );
+          }
+          return false;
+        }),
+        components: {
+          Icon: null,
+        },
+      },
       {
         parentId: CLUSTER_PAGE_ID,
         target: { pageId: ROUTE_CLUSTER_DETAILS },
         title: strings.clusterPage.menuItems.details(),
+        visible: computed(showClusterPage),
         components: {
           Icon: null,
         },

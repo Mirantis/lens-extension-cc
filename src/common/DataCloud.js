@@ -16,7 +16,7 @@ import {
 } from '../api/apiFetch';
 import { logger, logValue } from '../util/logger';
 import { EventDispatcher } from './EventDispatcher';
-import { ipcEvents, mccCodeName } from '../constants';
+import { ipcEvents, mccCodeName, historyCloudVersion } from '../constants';
 import * as strings from '../strings';
 import { getCloudErrorType } from '../api/apiUtil';
 import { apiCloudErrorTypes } from '../api/apiConstants';
@@ -641,13 +641,12 @@ export class DataCloud extends EventDispatcher {
         errorsOccurred: false,
       };
 
-      // NOTE: updates require MCC v2.22+ which adds the expected `status` field to stage objects
-      if (release?.isGTE('2.22.0')) {
+      if (release?.isGTE(historyCloudVersion)) {
         resUpdateResults = await fetchResourceUpdates(this, fetchedNamespaces);
       } else {
         logger.warn(
           'DataCloud.fetchData()',
-          `Skipping ResourceUpdate objects fetch: ${mccCodeName} >=2.22.0 is required; release=${logValue(
+          `Skipping ResourceUpdate objects fetch: ${mccCodeName} >=${historyCloudVersion} is required; release=${logValue(
             release
           )}`
         );

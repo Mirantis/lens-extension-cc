@@ -14,7 +14,23 @@ export const clusterUpgradeTs = mergeRtvShapes({}, resourceUpdateTs, {
 
   kind: [rtv.STRING, { oneOf: apiKinds.CLUSTER_UPGRADE_STATUS }],
   fromRelease: rtv.STRING,
-  toRelease: rtv.STRING, // TODO[cluster-history] change to 'release' per PRODX-28727
+
+  // NOTE: MCC will rename `toRelease` to `release` in a future release which means
+  //  `toRelease` must now be optional; but if `release` isn't defined, `toRelease`
+  //  MUST be defined since it predates the history features
+  toRelease: [rtv.OPTIONAL, rtv.STRING],
+  release: [
+    rtv.OPTIONAL,
+    rtv.STRING,
+    (value, match, typeset, { parent }) => {
+      // CAREFUL: use `parent` instead of `originalValue` from `context` param because
+      //  this typeset gets executed at different levels of hierarchy, so `originalValue`
+      //  will not always be what you think
+      if (!value && !parent.toRelease) {
+        throw new Error('/toRelease must be defined when /release is not');
+      }
+    },
+  ],
 });
 
 /**
@@ -50,7 +66,8 @@ export class ClusterUpgrade extends ResourceUpdate {
     Object.defineProperty(this, 'release', {
       enumerable: true,
       get() {
-        return kube.toRelease; // TODO[cluster-history] change to 'release' per PRODX-28727
+        // NOTE: `toRelease` will be renamed to `release` in a future MCC release
+        return kube.release || kube.toRelease;
       },
     });
   }

@@ -93,7 +93,7 @@ const getStatusColor = (status) => {
       return 'var(--colorWarning)';
     case apiUpdateStatuses.SUCCESS:
       return 'var(--colorSuccess)';
-    case apiUpdateStatuses.FAILED:
+    case apiUpdateStatuses.FAILURE:
       return 'var(--colorError)';
     default:
       return 'var(--textColorPrimary)';
