@@ -25,12 +25,12 @@ export class MachineUpgrade extends ResourceUpdate {
   /**
    * @constructor
    * @param {Object} params
-   * @param {Object} params.data Raw data payload from the API.
+   * @param {Object} params.kube Raw kube object payload from the API.
    * @param {Namespace} params.namespace Namespace to which the object belongs.
-   * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
+   * @param {DataCloud} params.dataCloud Reference to the DataCloud used to get the data.
    */
-  constructor({ data, namespace, cloud }) {
-    super({ data, cloud, namespace, typeset: machineUpgradeTs });
+  constructor({ kube, namespace, dataCloud }) {
+    super({ kube, namespace, dataCloud, typeset: machineUpgradeTs });
 
     /**
      * @readonly
@@ -39,7 +39,7 @@ export class MachineUpgrade extends ResourceUpdate {
     Object.defineProperty(this, 'fromRelease', {
       enumerable: true,
       get() {
-        return data.fromRelease;
+        return kube.fromRelease;
       },
     });
 
@@ -50,7 +50,7 @@ export class MachineUpgrade extends ResourceUpdate {
     Object.defineProperty(this, 'release', {
       enumerable: true,
       get() {
-        return data.toRelease; // TODO[cluster-history] change to 'release' per PRODX-28727
+        return kube.toRelease; // TODO[cluster-history] change to 'release' per PRODX-28727
       },
     });
   }

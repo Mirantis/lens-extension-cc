@@ -44,17 +44,21 @@ const plugins = [
   new DefinePlugin({
     DEV_ENV: JSON.stringify(buildTarget !== 'production'),
     TEST_ENV: JSON.stringify(false), // always false (Jest configures it true always for tests)
+    'process.env.TARGET': JSON.stringify(buildTarget),
+
+    // automatic cache-break when publish new package version or new build of same version
     ENTITY_CACHE_VERSION:
       (process.env.ENTITY_CACHE_VERSION &&
         JSON.stringify(process.env.ENTITY_CACHE_VERSION)) ||
       JSON.stringify(`v${pkg.version}:${Date.now()}`),
+
     FEAT_CLUSTER_PAGE_HISTORY_ENABLED: JSON.stringify(
       !!Number(process.env.FEAT_CLUSTER_PAGE_HISTORY_ENABLED)
     ),
+
     FEAT_CLUSTER_PAGE_HEALTH_ENABLED: JSON.stringify(
       !!Number(process.env.FEAT_CLUSTER_PAGE_HEALTH_ENABLED)
     ),
-    'process.env.TARGET': JSON.stringify(buildTarget),
   }),
 ];
 

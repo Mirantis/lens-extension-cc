@@ -81,6 +81,17 @@ export const catalogEntityModelTs = {
 
     kind: apiKindTs,
     resourceVersion: rtv.STRING,
+    syncedAt: rtv.STRING,
+
+    // optional for backward compatibility
+    // `null` if release is unknown
+    cloudRelease: [
+      rtv.OPTIONAL,
+      {
+        active: rtv.BOOLEAN,
+        version: rtv.STRING,
+      },
+    ],
 
     // this is a string that essentially identifies the version of the extension which
     //  created the entity; it should be treated as an opaque value at the entity level
@@ -90,7 +101,6 @@ export const catalogEntityModelTs = {
     //  if necessary
     namespace: rtv.STRING,
     cloudUrl: [rtv.STRING, (v) => !v.endsWith('/')], // no trailing slash
-    syncedAt: rtv.STRING,
   },
 
   // spec is specific to the type of entity being added to the Catalog; e.g. for a cluster,

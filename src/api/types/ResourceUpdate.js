@@ -2,6 +2,7 @@ import { merge, omit } from 'lodash';
 import * as rtv from 'rtvjs';
 import { mergeRtvShapes } from '../../util/mergeRtvShapes';
 import { NamedResource, namedResourceTs } from './NamedResource';
+import { entityLabels } from '../../catalog/catalogEntities';
 import { apiKinds } from '../apiConstants';
 import { timestampTs } from '../apiTypesets';
 import { logValue } from '../../util/logger';
@@ -69,13 +70,13 @@ export class ResourceUpdate extends NamedResource {
   /**
    * @constructor
    * @param {Object} params
-   * @param {Object} params.data Raw data payload from the API.
+   * @param {Object} params.kube Raw kube object payload from the API.
    * @param {Namespace} params.namespace Namespace to which the object belongs.
-   * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
+   * @param {DataCloud} params.dataCloud Reference to the DataCloud used to get the data.
    * @param {rtv.Typeset} params.typeset Typeset for verifying the data.
    */
-  constructor({ data, namespace, cloud, typeset = resourceUpdateTs }) {
-    super({ data, cloud, namespace, typeset });
+  constructor({ kube, namespace, dataCloud, typeset = resourceUpdateTs }) {
+    super({ kube, namespace, dataCloud, typeset });
 
     /**
      * @readonly
@@ -85,7 +86,7 @@ export class ResourceUpdate extends NamedResource {
     Object.defineProperty(this, 'targetKind', {
       enumerable: true,
       get() {
-        return data.metadata.ownerReferences[0].kind;
+        return kube.metadata.ownerReferences[0].kind;
       },
     });
 
@@ -96,7 +97,7 @@ export class ResourceUpdate extends NamedResource {
     Object.defineProperty(this, 'targetUid', {
       enumerable: true,
       get() {
-        return data.metadata.ownerReferences[0].uid;
+        return kube.metadata.ownerReferences[0].uid;
       },
     });
 
@@ -107,7 +108,7 @@ export class ResourceUpdate extends NamedResource {
     Object.defineProperty(this, 'targetName', {
       enumerable: true,
       get() {
-        return data.metadata.ownerReferences[0].name;
+        return kube.metadata.ownerReferences[0].name;
       },
     });
 
@@ -119,7 +120,7 @@ export class ResourceUpdate extends NamedResource {
     Object.defineProperty(this, 'stages', {
       enumerable: true,
       get() {
-        return data.stages.map((stage) => ({
+        return kube.stages.map((stage) => ({
           name: stage.name,
           message: stage.message || null,
 
@@ -147,6 +148,12 @@ export class ResourceUpdate extends NamedResource {
     const model = super.toModel();
 
     return merge({}, model, {
+      metadata: {
+        labels: {
+          [entityLabels.CLOUD]: this.dataCloud.name,
+          [entityLabels.NAMESPACE]: this.namespace.name,
+        },
+      },
       spec: {
         targetKind: this.targetKind,
         targetUid: this.targetUid,

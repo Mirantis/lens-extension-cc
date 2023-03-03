@@ -87,17 +87,27 @@ export class KubernetesClient {
     );
   }
 
+  get() {
+    return Promise.resolve({
+      error: 'Method "get" not supported on KubernetesClient',
+      response: undefined,
+      expectedStatuses: [],
+      body: undefined,
+    });
+  }
+
   /**
    * List resources within a given namespace.
    * @param {string} resourceType
    * @param {Object} options
-   * @param {string} options.namespaceName
+   * @param {string} options.namespaceName Required.
    * @param {number} [options.limit] To limit the number of items fetched.
    * @param {string} [options.resourceVersion] If specified, establishes a __watch__ on the
    *  __collection__, from that version on (to get change notifications via long-poll).
-   *  NOTE: This is __not__ related to `options.resourceName`.
+   *  NOTE: This is __not__ related to a specific resource, but to the collection as a whole.
    * @param {any} [options.requestOptions] Any remaining properties in the `options` object are
    *  passed down to the raw request as node-fetch options.
+   * @returns {Promise<Object>} See netUtil.request() for response shape.
    */
   list(
     resourceType,
@@ -123,6 +133,21 @@ export class KubernetesClient {
     });
   }
 
+  listAll() {
+    return Promise.resolve({
+      error: 'Method "listAll" not supported on KubernetesClient',
+      response: undefined,
+      expectedStatuses: [],
+      body: undefined,
+    });
+  }
+
+  /**
+   * @param {string} resourceType
+   * @param {Object} options
+   * @param {string} options.namespaceName Required.
+   * @param {Object} options.spec JSON payload.
+   */
   create(resourceType, { namespaceName, spec } = {}) {
     const url = {
       [apiResourceTypes.NAMESPACE]: resourceType,
@@ -137,16 +162,49 @@ export class KubernetesClient {
     });
   }
 
-  delete(resourceType, { namespaceName, name } = {}) {
+  update() {
+    return Promise.resolve({
+      error: 'Method "update" not supported on KubernetesClient',
+      response: undefined,
+      expectedStatuses: [],
+      body: undefined,
+    });
+  }
+
+  /**
+   * @param {string} resourceType
+   * @param {Object} options
+   * @param {string} options.namespaceName Required.
+   * @param {string} options.resourceName
+   */
+  delete(resourceType, { namespaceName, resourceName } = {}) {
     const url = {
-      [apiResourceTypes.NAMESPACE]: `${resourceType}/${name}`,
-      [apiResourceTypes.SECRET]: `${apiResourceTypes.NAMESPACE}/${namespaceName}/${resourceType}/${name}`,
+      [apiResourceTypes.NAMESPACE]: `${resourceType}/${resourceName}`,
+      [apiResourceTypes.SECRET]: `${apiResourceTypes.NAMESPACE}/${namespaceName}/${resourceType}/${resourceName}`,
     };
     return this.request(url[resourceType], {
       options: { method: 'DELETE' },
       errorMessage: strings.apiClient.error.failedToDelete(
-        `${logValue(resourceType)} "${name}"`
+        `${logValue(resourceType)} "${resourceName}"`
       ),
+    });
+  }
+
+  reviewRules() {
+    return Promise.resolve({
+      error: 'Method "reviewRules" not supported on KubernetesClient',
+      response: undefined,
+      expectedStatuses: [],
+      body: undefined,
+    });
+  }
+
+  nsAccess() {
+    return Promise.resolve({
+      error: 'Method "nsAccess" not supported on KubernetesClient',
+      response: undefined,
+      expectedStatuses: [],
+      body: undefined,
     });
   }
 }

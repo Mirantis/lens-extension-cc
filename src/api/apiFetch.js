@@ -26,6 +26,7 @@ import {
   machineDeploymentTs,
 } from './types/MachineDeployment';
 import { MachineUpgrade, machineUpgradeTs } from './types/MachineUpgrade';
+import { Release, releaseTs } from './types/Release';
 import { logger, logValue } from '../util/logger';
 import {
   apiResourceTypes,
@@ -45,7 +46,7 @@ import {
  *  Function called to create new instance of an `Resource`-based class that represents the API
  *  resourceType. If a falsy value is returned, it will be silently filtered out of the resulting
  *  list of resources.
- *  - `data` is the raw object returned from the API for the resourceType.
+ *  - `kube` is the raw object returned from the API for the resourceType.
  *  - `namespace` is the related Namespace (`undefined` when fetching namespaces themselves
  *      with `resourceType === apiResourceTypes.NAMESPACE`).
  *  - Returns: The resource, or a falsy value to filter it out (skip).
@@ -67,16 +68,16 @@ const _deserializeCollection = function (
   }
 
   return body.items
-    .map((data, idx) => {
+    .map((kube, idx) => {
       try {
-        return create({ data, namespace });
+        return create({ kube, namespace });
       } catch (err) {
         logger.warn(
           'apiFetch._deserializeCollection()',
           `Ignoring ${logValue(
             resourceType
           )} resource index=${idx}: Could not be deserialized; name=${logValue(
-            data?.metadata?.name
+            kube?.metadata?.name
           )}; namespace=${logValue(namespace.name)}; error=${logValue(err)}`,
           err
         );
@@ -92,7 +93,7 @@ const _deserializeCollection = function (
  * @param {Object} params
  * @param {string} params.resourceType API resource type to fetch (one of
  *  `apiConstants.apiResourceTypes` enum values).
- * @param {Cloud} params.cloud An Cloud object. Tokens will be updated/cleared
+ * @param {Cloud} params.cloud A Cloud object. Tokens will be updated/cleared
  *  if necessary.
  * @param {Array<Namespace>} [params.namespaces] List of namespaces in which to get the resources.
  *  __REQUIRED__ unless `resourceType === apiResourceTypes.NAMESPACE`, in which case this parameter is
@@ -114,7 +115,7 @@ const _deserializeCollection = function (
  *   resources: { [index: string]: Array<Resource> },
  *   tokensRefreshed: boolean,
  *   errors?: { [index: string]: { message: string, status: number, resourceType: string } }
- * }>} Always resolves, never fails.
+ * }>} Always resolves, never rejects.
  *
  *  - `resources` is a map of namespace name to list of `Resource`-based instances as returned
  *      by `create()`. If an error occurs trying to get an resourceType or deserialize
@@ -318,13 +319,13 @@ const _zipFetchResults = function (results, resourcesName = 'resources') {
 /**
  * [ASYNC] Best-try to get all existing resource events from the management cluster, for each
  *  namespace specified.
- * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared if necessary.
+ * @param {DataCloud} dataCloud A DataCloud object. Tokens will be updated/cleared if necessary.
  * @param {Array<Namespace>} namespaces List of namespaces.
  * @returns {Promise<{
  *   resourceEvents: { [index: string]: Array<ResourceEvent> },
  *   tokensRefreshed: boolean,
  *   errorsOccurred: boolean,
- * }>} Always resolves, never fails.
+ * }>} Always resolves, never rejects.
  *
  *  - `resourceEvents` are mapped per namespace name. If an error occurs trying
  *      to get any object, it will be ignored/skipped.
@@ -332,29 +333,29 @@ const _zipFetchResults = function (results, resourcesName = 'resources') {
  *  - `errorsOccurred` is true if at least one error ocurred (that couldn't be safely ignored)
  *      while fetching resources.
  */
-export const fetchResourceEvents = async function (cloud, namespaces) {
+export const fetchResourceEvents = async function (dataCloud, namespaces) {
   const {
     resources: resourceEvents,
     tokensRefreshed,
     errors,
   } = await _fetchCollection({
     resourceType: apiResourceTypes.EVENT,
-    cloud,
+    cloud: dataCloud.cloud,
     namespaces,
-    create: ({ data, namespace }) => {
+    create: ({ kube, namespace }) => {
       // first check if it's at least a valid generic resource event
-      rtv.verify(data, resourceEventTs);
+      rtv.verify(kube, resourceEventTs);
 
-      if (data.involvedObject.kind === apiKinds.CLUSTER) {
+      if (kube.involvedObject.kind === apiKinds.CLUSTER) {
         // now check if it's a valid cluster event
-        const mvvData = rtv.verify(data, clusterEventTs).mvv;
-        return new ClusterEvent({ data: mvvData, namespace, cloud });
+        const mvvKube = rtv.verify(kube, clusterEventTs).mvv;
+        return new ClusterEvent({ kube: mvvKube, namespace, dataCloud });
       }
 
-      if (data.involvedObject.kind === apiKinds.MACHINE) {
+      if (kube.involvedObject.kind === apiKinds.MACHINE) {
         // now check if it's a valid machine event
-        const mvvData = rtv.verify(data, machineEventTs).mvv;
-        return new MachineEvent({ data: mvvData, namespace, cloud });
+        const mvvKube = rtv.verify(kube, machineEventTs).mvv;
+        return new MachineEvent({ kube: mvvKube, namespace, dataCloud });
       }
 
       // since it wasn't a cluster event, and those are the only ones we care
@@ -369,13 +370,13 @@ export const fetchResourceEvents = async function (cloud, namespaces) {
 /**
  * [ASYNC] Best-try to get all existing update history objects from the management
  *  cluster, for each namespace specified.
- * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared if necessary.
+ * @param {DataCloud} dataCloud A DataCloud object. Tokens will be updated/cleared if necessary.
  * @param {Array<Namespace>} namespaces List of namespaces.
  * @returns {Promise<{
  *   resourceUpdates: { [index: string]: Array<ResourceUpdate> },
  *   tokensRefreshed: boolean,
  *   errorsOccurred: boolean,
- * }>} Always resolves, never fails.
+ * }>} Always resolves, never rejects.
  *
  *  - `resourceUpdates` are mapped per namespace name. If an error occurs trying
  *      to get any object, it will be ignored/skipped. Note this includes __ALL updates__
@@ -384,7 +385,7 @@ export const fetchResourceEvents = async function (cloud, namespaces) {
  *  - `errorsOccurred` is true if at least one error ocurred (that couldn't be safely ignored)
  *      while fetching resources.
  */
-export const fetchResourceUpdates = async function (cloud, namespaces) {
+export const fetchResourceUpdates = async function (dataCloud, namespaces) {
   const results = await Promise.all(
     [
       apiResourceTypes.CLUSTER_DEPLOYMENT_STATUS,
@@ -394,33 +395,41 @@ export const fetchResourceUpdates = async function (cloud, namespaces) {
     ].map((resourceType) =>
       _fetchCollection({
         resourceType,
-        cloud,
+        cloud: dataCloud.cloud,
         namespaces,
-        create: ({ data, namespace }) => {
+        create: ({ kube, namespace }) => {
           // first check if it's at least a valid generic resource update
-          rtv.verify(data, resourceUpdateTs);
+          rtv.verify(kube, resourceUpdateTs);
 
           if (resourceType === apiResourceTypes.CLUSTER_DEPLOYMENT_STATUS) {
             // now check if it's a valid cluster deployment
-            const mvvData = rtv.verify(data, clusterDeploymentTs).mvv;
-            return new ClusterDeployment({ data: mvvData, namespace, cloud });
+            const mvvKube = rtv.verify(kube, clusterDeploymentTs).mvv;
+            return new ClusterDeployment({
+              kube: mvvKube,
+              namespace,
+              dataCloud,
+            });
           }
 
           if (resourceType === apiResourceTypes.CLUSTER_UPGRADE_STATUS) {
             // now check if it's a valid cluster upgrade
-            const mvvData = rtv.verify(data, clusterUpgradeTs).mvv;
-            return new ClusterUpgrade({ data: mvvData, namespace, cloud });
+            const mvvKube = rtv.verify(kube, clusterUpgradeTs).mvv;
+            return new ClusterUpgrade({ kube: mvvKube, namespace, dataCloud });
           }
 
           if (resourceType === apiResourceTypes.MACHINE_DEPLOYMENT_STATUS) {
             // now check if it's a valid machine deployment
-            const mvvData = rtv.verify(data, machineDeploymentTs).mvv;
-            return new MachineDeployment({ data: mvvData, namespace, cloud });
+            const mvvKube = rtv.verify(kube, machineDeploymentTs).mvv;
+            return new MachineDeployment({
+              kube: mvvKube,
+              namespace,
+              dataCloud,
+            });
           }
 
           // must be a valid machine upgrade
-          const mvvData = rtv.verify(data, machineUpgradeTs).mvv;
-          return new MachineUpgrade({ data: mvvData, namespace, cloud });
+          const mvvKube = rtv.verify(kube, machineUpgradeTs).mvv;
+          return new MachineUpgrade({ kube: mvvKube, namespace, dataCloud });
         },
       })
     )
@@ -432,14 +441,14 @@ export const fetchResourceUpdates = async function (cloud, namespaces) {
 /**
  * [ASYNC] Best-try to get all existing Credentials from the management cluster, for each
  *  namespace specified.
- * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
+ * @param {DataCloud} dataCloud A DataCloud object. Tokens will be updated/cleared
  *  if necessary.
  * @param {Array<Namespace>} namespaces List of namespaces.
  * @returns {Promise<{
  *   credentials: { [index: string]: Array<Credential> },
  *   tokensRefreshed: boolean,
  *   errorsOccurred: number,
- * }>} Always resolves, never fails.
+ * }>} Always resolves, never rejects.
  *
  *  - `credentials` is a map of namespace name to credential (regardless of type).
  *      If there's an error trying to get any credential, it will be skipped/ignored.
@@ -447,16 +456,16 @@ export const fetchResourceUpdates = async function (cloud, namespaces) {
  *  - `errorsOccurred` is true if at least one error ocurred (that couldn't be safely ignored)
  *      while fetching resources.
  */
-export const fetchCredentials = async function (cloud, namespaces) {
+export const fetchCredentials = async function (dataCloud, namespaces) {
   const results = await Promise.all(
     Object.values(apiCredentialTypes).map((resourceType) =>
       _fetchCollection({
         resourceType,
-        cloud,
+        cloud: dataCloud.cloud,
         namespaces,
-        create: ({ data, namespace }) => {
-          const mvvData = rtv.verify(data, credentialTs).mvv;
-          return new Credential({ data: mvvData, namespace, cloud });
+        create: ({ kube, namespace }) => {
+          const mvvKube = rtv.verify(kube, credentialTs).mvv;
+          return new Credential({ kube: mvvKube, namespace, dataCloud });
         },
       })
     )
@@ -468,14 +477,14 @@ export const fetchCredentials = async function (cloud, namespaces) {
 /**
  * [ASYNC] Best-try to get all existing licenses from the management cluster, for each
  *  namespace specified.
- * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
+ * @param {DataCloud} dataCloud A DataCloud object. Tokens will be updated/cleared
  *  if necessary.
  * @param {Array<Namespace>} namespaces List of namespaces.
  * @returns {Promise<{
  *   licenses: { [index: string]: Array<License> },
  *   tokensRefreshed: boolean,
  *   errorsOccurred: boolean,
- * }>} Always resolves, never fails.
+ * }>} Always resolves, never rejects.
  *
  *  - `licenses` are mapped per namespace name. If an error occurs trying to get
  *      any license, it will be ignored/skipped.
@@ -483,18 +492,18 @@ export const fetchCredentials = async function (cloud, namespaces) {
  *  - `errorsOccurred` is true if at least one error ocurred (that couldn't be safely ignored)
  *      while fetching resources.
  */
-export const fetchLicenses = async function (cloud, namespaces) {
+export const fetchLicenses = async function (dataCloud, namespaces) {
   const {
     resources: licenses,
     tokensRefreshed,
     errors,
   } = await _fetchCollection({
     resourceType: apiResourceTypes.RHEL_LICENSE,
-    cloud,
+    cloud: dataCloud.cloud,
     namespaces,
-    create: ({ data, namespace }) => {
-      const mvvData = rtv.verify(data, licenseTs).mvv;
-      return new License({ data: mvvData, namespace, cloud });
+    create: ({ kube, namespace }) => {
+      const mvvKube = rtv.verify(kube, licenseTs).mvv;
+      return new License({ kube: mvvKube, namespace, dataCloud });
     },
   });
 
@@ -504,14 +513,14 @@ export const fetchLicenses = async function (cloud, namespaces) {
 /**
  * [ASYNC] Best-try to get all existing proxies from the management cluster, for each
  *  namespace specified.
- * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
+ * @param {DataCloud} dataCloud A DataCloud object. Tokens will be updated/cleared
  *  if necessary.
  * @param {Array<Namespace>} namespaces List of namespaces.
  * @returns {Promise<{
  *   proxies: { [index: string]: Array<Proxy> },
  *   tokensRefreshed: boolean,
  *   errorsOccurred: boolean,
- * }>} Always resolves, never fails.
+ * }>} Always resolves, never rejects.
  *
  *  - `proxies` are mapped per namespace name. If an error occurs trying to get
  *      any proxy, it will be ignored/skipped.
@@ -519,18 +528,18 @@ export const fetchLicenses = async function (cloud, namespaces) {
  *  - `errorsOccurred` is true if at least one error ocurred (that couldn't be safely ignored)
  *      while fetching resources.
  */
-export const fetchProxies = async function (cloud, namespaces) {
+export const fetchProxies = async function (dataCloud, namespaces) {
   const {
     resources: proxies,
     tokensRefreshed,
     errors,
   } = await _fetchCollection({
     resourceType: apiResourceTypes.PROXY,
-    cloud,
+    cloud: dataCloud.cloud,
     namespaces,
-    create: ({ data, namespace }) => {
-      const mvvData = rtv.verify(data, proxyTs).mvv;
-      return new Proxy({ data: mvvData, namespace, cloud });
+    create: ({ kube, namespace }) => {
+      const mvvKube = rtv.verify(kube, proxyTs).mvv;
+      return new Proxy({ kube: mvvKube, namespace, dataCloud });
     },
   });
 
@@ -540,14 +549,14 @@ export const fetchProxies = async function (cloud, namespaces) {
 /**
  * [ASYNC] Best-try to get all existing SSH keys from the management cluster, for each
  *  namespace specified.
- * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
+ * @param {DataCloud} dataCloud A DataCloud object. Tokens will be updated/cleared
  *  if necessary.
  * @param {Array<Namespace>} namespaces List of namespaces.
  * @returns {Promise<{
  *   sshKeys: { [index: string]: Array<SshKey> },
  *   tokensRefreshed: boolean,
  *   errorsOccurred: boolean,
- * }>} Always resolves, never fails.
+ * }>} Always resolves, never rejects.
  *
  *  - `sshKeys` are mapped per namespace name. If an error occurs trying
  *      to get any SSH key, it will be ignored/skipped.
@@ -555,18 +564,18 @@ export const fetchProxies = async function (cloud, namespaces) {
  *  - `errorsOccurred` is true if at least one error ocurred (that couldn't be safely ignored)
  *      while fetching resources.
  */
-export const fetchSshKeys = async function (cloud, namespaces) {
+export const fetchSshKeys = async function (dataCloud, namespaces) {
   const {
     resources: sshKeys,
     tokensRefreshed,
     errors,
   } = await _fetchCollection({
     resourceType: apiResourceTypes.PUBLIC_KEY,
-    cloud,
+    cloud: dataCloud.cloud,
     namespaces,
-    create: ({ data, namespace }) => {
-      const mvvData = rtv.verify(data, sshKeyTs).mvv;
-      return new SshKey({ data: mvvData, namespace, cloud });
+    create: ({ kube, namespace }) => {
+      const mvvKube = rtv.verify(kube, sshKeyTs).mvv;
+      return new SshKey({ kube: mvvKube, namespace, dataCloud });
     },
   });
 
@@ -576,14 +585,14 @@ export const fetchSshKeys = async function (cloud, namespaces) {
 /**
  * [ASYNC] Best-try to get all existing Machines from the management cluster, for each
  *  namespace specified.
- * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
+ * @param {DataCloud} dataCloud A DataCloud object. Tokens will be updated/cleared
  *  if necessary.
  * @param {Array<Namespace>} namespaces List of namespaces.
  * @returns {Promise<{
  *   machines: { [index: string]: Array<Machine> },
  *   tokensRefreshed: boolean,
  *   errorsOccurred: boolean,
- * }>} Always resolves, never fails.
+ * }>} Always resolves, never rejects.
  *
  *  - `machines` are mapped per namespace name. If an error occurs trying to get
  *      any Machine, it will be ignored/skipped.
@@ -591,18 +600,18 @@ export const fetchSshKeys = async function (cloud, namespaces) {
  *  - `errorsOccurred` is true if at least one error ocurred (that couldn't be safely ignored)
  *      while fetching resources.
  */
-export const fetchMachines = async function (cloud, namespaces) {
+export const fetchMachines = async function (dataCloud, namespaces) {
   const {
     resources: machines,
     tokensRefreshed,
     errors,
   } = await _fetchCollection({
     resourceType: apiResourceTypes.MACHINE,
-    cloud,
+    cloud: dataCloud.cloud,
     namespaces,
-    create: ({ data, namespace }) => {
-      const mvvData = rtv.verify(data, machineTs).mvv;
-      return new Machine({ data: mvvData, namespace, cloud });
+    create: ({ kube, namespace }) => {
+      const mvvKube = rtv.verify(kube, machineTs).mvv;
+      return new Machine({ kube: mvvKube, namespace, dataCloud });
     },
   });
 
@@ -612,7 +621,7 @@ export const fetchMachines = async function (cloud, namespaces) {
 /**
  * [ASYNC] Best-try to get all existing clusters from the management cluster, for each
  *  namespace specified.
- * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
+ * @param {DataCloud} dataCloud A DataCloud object. Tokens will be updated/cleared
  *  if necessary.
  * @param {Array<Namespace>} namespaces List of namespaces.
  *
@@ -623,7 +632,7 @@ export const fetchMachines = async function (cloud, namespaces) {
  *   clusters: { [index: string]: Array<Cluster> },
  *   tokensRefreshed: boolean,
  *   errorsOccurred: boolean,
- * }>} Always resolves, never fails.
+ * }>} Always resolves, never rejects.
  *
  *  - `clusters` are mapped per namespace name. If an error occurs trying to get
  *      any cluster, it will be ignored/skipped.
@@ -631,18 +640,18 @@ export const fetchMachines = async function (cloud, namespaces) {
  *  - `errorsOccurred` is true if at least one error ocurred (that couldn't be safely ignored)
  *      while fetching resources.
  */
-export const fetchClusters = async function (cloud, namespaces) {
+export const fetchClusters = async function (dataCloud, namespaces) {
   const {
     resources: clusters,
     tokensRefreshed,
     errors,
   } = await _fetchCollection({
     resourceType: apiResourceTypes.CLUSTER,
-    cloud,
+    cloud: dataCloud.cloud,
     namespaces,
-    create: ({ data, namespace }) => {
-      const mvvData = rtv.verify(data, clusterTs).mvv;
-      return new Cluster({ data: mvvData, namespace, cloud });
+    create: ({ kube, namespace }) => {
+      const mvvKube = rtv.verify(kube, clusterTs).mvv;
+      return new Cluster({ kube: mvvKube, namespace, dataCloud });
     },
   });
 
@@ -651,7 +660,7 @@ export const fetchClusters = async function (cloud, namespaces) {
 
 /**
  * [ASYNC] Best-try to get all existing namespaces from the management cluster.
- * @param {Cloud} cloud An Cloud object. Tokens will be updated/cleared
+ * @param {DataCloud} dataCloud A DataCloud object. Tokens will be updated/cleared
  *  if necessary.
  * @param {boolean} [preview] True to create a preview version of the Namespace.
  * @returns {Promise<{
@@ -659,10 +668,10 @@ export const fetchClusters = async function (cloud, namespaces) {
  *   tokensRefreshed: boolean,
  *   preview: boolean,
  *   error?: { message: string, status: number, resourceType: string },
- * }>} Never fails, always resolves. If an error occurs trying to get any namespace, it will
+ * }>} Always resolves, never rejects. If an error occurs trying to get any namespace, it will
  *  be ignored/skipped and then included in the `errors` property.
  */
-export const fetchNamespaces = async function (cloud, preview = false) {
+export const fetchNamespaces = async function (dataCloud, preview = false) {
   // NOTE: we always fetch ALL known namespaces because when we display metadata
   //  about this DataCloud, we always need to show the actual total, not just
   //  what we're syncing
@@ -672,14 +681,14 @@ export const fetchNamespaces = async function (cloud, preview = false) {
     errors,
   } = await _fetchCollection({
     resourceType: apiResourceTypes.NAMESPACE,
-    cloud,
-    create: ({ data }) => {
-      const mvvData = rtv.verify(data, namespaceTs).mvv;
-      return new Namespace({ data: mvvData, cloud, preview });
+    cloud: dataCloud.cloud,
+    create: ({ kube }) => {
+      const mvvKube = rtv.verify(kube, namespaceTs).mvv;
+      return new Namespace({ kube: mvvKube, dataCloud, preview });
     },
   });
 
-  const userRoles = extractJwtPayload(cloud.token).iam_roles || [];
+  const userRoles = extractJwtPayload(dataCloud.cloud.token).iam_roles || [];
 
   const hasReadPermissions = (name) =>
     userRoles.includes(`m:kaas:${name}@reader`) ||
@@ -688,7 +697,7 @@ export const fetchNamespaces = async function (cloud, preview = false) {
     userRoles.includes(`m:kaas:${name}@operator`) ||
     userRoles.includes('m:kaas@global-admin');
 
-  const ignoredNamespaces = cloud?.config?.ignoredNamespaces || [];
+  const ignoredNamespaces = dataCloud.cloud.config?.ignoredNamespaces || [];
 
   return {
     namespaces: filter(
@@ -700,5 +709,63 @@ export const fetchNamespaces = async function (cloud, preview = false) {
     ),
     tokensRefreshed,
     error: errors?.[apiResourceTypes.NAMESPACE],
+  };
+};
+
+/**
+ * [ASYNC] Best-try to get the active MCC release from the management cluster.
+ * @param {DataCloud} dataCloud A DataCloud object. Tokens will be updated/cleared
+ *  if necessary.
+ * @returns {Promise<{
+ *   release: Release,
+ *   tokensRefreshed: boolean,
+ *   error: string,
+ * }>} Always resolves, never rejects.
+ *
+ *  - `release` is the active release only.
+ *  - `tokensRefreshed` is true if the cloud's tokens had to be refreshed during the process.
+ *  - `error` is defined if an error occurred that couldn't be safely ignored.
+ */
+export const fetchActiveRelease = async function (dataCloud) {
+  const resourceType = apiResourceTypes.KAAS_RELEASE;
+  const results = await cloudRequest({
+    cloud: dataCloud.cloud,
+    resourceType,
+    args: {
+      filters: {
+        labelSelector: 'kaas.mirantis.com/active=true',
+      },
+    },
+  });
+
+  const { body, tokensRefreshed } = results;
+  let { error } = results;
+
+  let release;
+  if (!error) {
+    // we're expecting a single item given the filter we applied
+    const kube = body?.items?.[0] || {};
+
+    try {
+      const mvvKube = rtv.verify(kube, releaseTs).mvv;
+      release = new Release({ kube: mvvKube, dataCloud });
+    } catch (err) {
+      logger.error(
+        'apiFetch.fetchActiveRelease()',
+        `Failed to deserialize ${logValue(
+          resourceType
+        )} resource; name=${logValue(kube?.metadata?.name)}; error=${logValue(
+          err
+        )}`,
+        err
+      );
+      error = err.message;
+    }
+  }
+
+  return {
+    release,
+    tokensRefreshed,
+    error,
   };
 };

@@ -1,6 +1,7 @@
 import * as rtv from 'rtvjs';
 import { Cloud, CLOUD_EVENTS } from './Cloud';
 import { Namespace } from '../api/types/Namespace';
+import { Release } from '../api/types/Release';
 import {
   fetchNamespaces,
   fetchCredentials,
@@ -11,10 +12,11 @@ import {
   fetchClusters,
   fetchResourceEvents,
   fetchResourceUpdates,
+  fetchActiveRelease,
 } from '../api/apiFetch';
 import { logger, logValue } from '../util/logger';
 import { EventDispatcher } from './EventDispatcher';
-import { ipcEvents } from '../constants';
+import { ipcEvents, mccCodeName } from '../constants';
 import * as strings from '../strings';
 import { getCloudErrorType } from '../api/apiUtil';
 import { apiCloudErrorTypes } from '../api/apiConstants';
@@ -124,6 +126,7 @@ export class DataCloud extends EventDispatcher {
     let _namespaces = [];
     let _cloud = null; // starts null, but once set, can never be null/undefined again
     let _error = null;
+    let _release = null;
 
     /**
      * @readonly
@@ -264,6 +267,29 @@ export class DataCloud extends EventDispatcher {
     });
 
     /**
+     * @member {Release|null|undefined} release Active release information; `null` if unknown
+     *  (i.e. failed to get release info); `undefined` if never fetched at least once.
+     */
+    Object.defineProperty(this, 'release', {
+      enumerable: true,
+      get() {
+        return _release;
+      },
+      set(newValue) {
+        if (newValue !== _release) {
+          // must either be a Release instance, or `null` when unknown
+          DEV_ENV &&
+            rtv.verify(
+              { release: newValue },
+              { release: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: Release }] }
+            );
+          _release = newValue || null;
+          this.dispatchEvent(DATA_CLOUD_EVENTS.DATA_UPDATED);
+        }
+      },
+    });
+
+    /**
      * @member {boolean} preview True if this instance is for previous purposes
      *  only; false if it's for full use. Use a preview instance when not using
      *  it for sync purposes to reduce the amount of data fetched.
@@ -326,6 +352,14 @@ export class DataCloud extends EventDispatcher {
    */
   get cloudUrl() {
     return this.cloud.cloudUrl;
+  }
+
+  /**
+   * @readonly
+   * @member {string} name Name of the backing/wrapped Cloud object.
+   */
+  get name() {
+    return this.cloud.name;
   }
 
   /**
@@ -529,7 +563,7 @@ export class DataCloud extends EventDispatcher {
 
     // NOTE: we always fetch ALL namespaces (which should be quite cheap to do)
     //  since we need to discover new ones, and know when existing ones are removed
-    const nsResults = await fetchNamespaces(this.cloud, this.preview);
+    const nsResults = await fetchNamespaces(this, this.preview);
 
     // NOTE: if we fail to get namespaces for whatever reason, we MUST abort the fetch;
     //  if we don't, `nsResults.namespaces` will be empty and we'll assume all namespaces
@@ -568,6 +602,21 @@ export class DataCloud extends EventDispatcher {
       return;
     }
 
+    const releaseResults = await fetchActiveRelease(this);
+    let release;
+    if (releaseResults.error) {
+      release = null; // attempted to fetch but unknown
+      logger.warn(
+        'DataCloud.fetchData()',
+        `Active release is unknown: Some features may be unavailable; error=${logValue(
+          releaseResults.error
+        )}`
+      );
+    } else {
+      release = releaseResults.release;
+      logger.log('DataCloud.fetchData()', `Active release info: ${release}`);
+    }
+
     const allNamespaces = nsResults.namespaces.concat();
 
     // if we're not generating a preview, only fetch full data for synced namespaces
@@ -582,29 +631,32 @@ export class DataCloud extends EventDispatcher {
     let errorsOccurred = false;
     if (!this.preview) {
       const resEventResults = await fetchResourceEvents(
-        this.cloud,
+        this,
         fetchedNamespaces
       );
 
-      // NOTE: for now, we only get updates if Webpack enabled the special flag
-      //  since they require MCC v2.22 which adds the expected `status` field
-      //  to stage objects
       let resUpdateResults = {
         resourceUpdates: {},
         tokensRefreshed: false,
         errorsOccurred: false,
       };
-      if (FEAT_CLUSTER_PAGE_HISTORY_ENABLED) {
-        resUpdateResults = await fetchResourceUpdates(
-          this.cloud,
-          fetchedNamespaces
+
+      // NOTE: updates require MCC v2.22+ which adds the expected `status` field to stage objects
+      if (release?.isGTE('2.22.0')) {
+        resUpdateResults = await fetchResourceUpdates(this, fetchedNamespaces);
+      } else {
+        logger.warn(
+          'DataCloud.fetchData()',
+          `Skipping ResourceUpdate objects fetch: ${mccCodeName} >=2.22.0 is required; release=${logValue(
+            release
+          )}`
         );
       }
 
-      const credResults = await fetchCredentials(this.cloud, fetchedNamespaces);
-      const keyResults = await fetchSshKeys(this.cloud, fetchedNamespaces);
-      const proxyResults = await fetchProxies(this.cloud, fetchedNamespaces);
-      const licenseResults = await fetchLicenses(this.cloud, fetchedNamespaces);
+      const credResults = await fetchCredentials(this, fetchedNamespaces);
+      const keyResults = await fetchSshKeys(this, fetchedNamespaces);
+      const proxyResults = await fetchProxies(this, fetchedNamespaces);
+      const licenseResults = await fetchLicenses(this, fetchedNamespaces);
 
       // map all the resources fetched so far into their respective Namespaces
       fetchedNamespaces.forEach((namespace) => {
@@ -628,7 +680,7 @@ export class DataCloud extends EventDispatcher {
 
       // NOTE: fetch machines only AFTER licenses have been fetched and added
       //  into the Namespaces because the Machine resource expects to find Licenses
-      const machineResults = await fetchMachines(this.cloud, fetchedNamespaces);
+      const machineResults = await fetchMachines(this, fetchedNamespaces);
       // map fetched machines into their respective Namespaces
       fetchedNamespaces.forEach((namespace) => {
         namespace.machines = machineResults.machines[namespace.name] || [];
@@ -638,7 +690,7 @@ export class DataCloud extends EventDispatcher {
       // NOTE: fetch clusters only AFTER everything else has been fetched and added
       //  into the Namespaces because the Cluster resource expects to find all the
       //  other resources
-      const clusterResults = await fetchClusters(this.cloud, fetchedNamespaces);
+      const clusterResults = await fetchClusters(this, fetchedNamespaces);
       // map fetched clusters into their respective Namespaces
       fetchedNamespaces.forEach((namespace) => {
         namespace.clusters = clusterResults.clusters[namespace.name] || [];
@@ -674,6 +726,7 @@ export class DataCloud extends EventDispatcher {
     this.cloud.updateNamespaces(allNamespaces);
 
     this.error = null;
+    this.release = release; // setter will dispatch DATA_UPDATED event to listeners
     this.namespaces = allNamespaces; // setter will dispatch DATA_UPDATED event to listeners
 
     if (!this.loaded) {
@@ -724,7 +777,9 @@ export class DataCloud extends EventDispatcher {
   toString() {
     return `{DataCloud loaded: ${this.loaded}, fetching: ${
       this.fetching
-    }, polling: ${this.polling}, preview: ${this.preview}, namespaces: ${
+    }, polling: ${this.polling}, preview: ${this.preview}, release: ${logValue(
+      this.release?.version
+    )}, namespaces: ${
       this.loaded ? this.namespaces.length : '-1'
     }, error: ${logValue(this.error)}, cloud: ${this.cloud}}`;
   }

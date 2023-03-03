@@ -86,6 +86,60 @@ export class AuthorizationClient {
     );
   }
 
+  get() {
+    return Promise.resolve({
+      error: 'Method "get" not supported on AuthorizationClient',
+      response: undefined,
+      expectedStatuses: [],
+      body: undefined,
+    });
+  }
+
+  list() {
+    return Promise.resolve({
+      error: 'Method "list" not supported on AuthorizationClient',
+      response: undefined,
+      expectedStatuses: [],
+      body: undefined,
+    });
+  }
+
+  listAll() {
+    return Promise.resolve({
+      error: 'Method "listAll" not supported on AuthorizationClient',
+      response: undefined,
+      expectedStatuses: [],
+      body: undefined,
+    });
+  }
+
+  create() {
+    return Promise.resolve({
+      error: 'Method "create" not supported on AuthorizationClient',
+      response: undefined,
+      expectedStatuses: [],
+      body: undefined,
+    });
+  }
+
+  update() {
+    return Promise.resolve({
+      error: 'Method "update" not supported on AuthorizationClient',
+      response: undefined,
+      expectedStatuses: [],
+      body: undefined,
+    });
+  }
+
+  delete() {
+    return Promise.resolve({
+      error: 'Method "delete" not supported on AuthorizationClient',
+      response: undefined,
+      expectedStatuses: [],
+      body: undefined,
+    });
+  }
+
   reviewRules(_, { namespaceName }) {
     return this.request('selfsubjectrulesreviews', {
       options: {

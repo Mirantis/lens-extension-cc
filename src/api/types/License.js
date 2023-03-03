@@ -27,12 +27,12 @@ export class License extends NamedResource {
   /**
    * @constructor
    * @param {Object} params
-   * @param {Object} params.data Raw data payload from the API.
+   * @param {Object} params.kube Raw kube object payload from the API.
    * @param {Namespace} params.namespace Namespace to which the object belongs.
-   * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
+   * @param {DataCloud} params.dataCloud Reference to the DataCloud used to get the data.
    */
-  constructor({ data, namespace, cloud }) {
-    super({ data, namespace, cloud, typeset: licenseTs });
+  constructor({ kube, namespace, dataCloud }) {
+    super({ kube, namespace, dataCloud, typeset: licenseTs });
   }
 
   /**
@@ -47,7 +47,7 @@ export class License extends NamedResource {
     return merge({}, model, {
       metadata: {
         labels: {
-          [entityLabels.CLOUD]: this.cloud.name,
+          [entityLabels.CLOUD]: this.dataCloud.name,
           [entityLabels.NAMESPACE]: this.namespace.name,
         },
       },

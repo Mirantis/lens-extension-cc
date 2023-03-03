@@ -335,7 +335,7 @@ export class CloudStore extends Common.Store.ExtensionStore {
       );
       eventNames = [
         CLOUD_EVENTS.SYNC_CHANGE, // selective sync changes only happen on RENDERER
-        CLOUD_EVENTS.PROP_CHANGE, // may change on RENDERER if we allow editing name
+        CLOUD_EVENTS.PROP_CHANGE, // may change on RENDERER (e.g. if we allow editing name)
       ];
     }
 

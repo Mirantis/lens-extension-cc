@@ -22,13 +22,13 @@ export class Node extends NamedResource {
   /**
    * @constructor
    * @param {Object} params
-   * @param {Object} params.data Raw data payload from the API.
+   * @param {Object} params.kube Raw kube object payload from the API.
    * @param {Namespace} params.namespace Namespace to which the object belongs.
-   * @param {Cloud} params.cloud Reference to the Cloud used to get the data.
+   * @param {DataCloud} params.dataCloud Reference to the DataCloud used to get the data.
    * @param {rtv.Typeset} params.typeset Typeset for verifying the data.
    */
-  constructor({ data, namespace, cloud, typeset }) {
-    super({ data, namespace, cloud, typeset });
+  constructor({ kube, namespace, dataCloud, typeset }) {
+    super({ kube, namespace, dataCloud, typeset });
 
     /**
      * @readonly
@@ -38,14 +38,14 @@ export class Node extends NamedResource {
       enumerable: true,
       get() {
         // NOTE: AWS clusters, while they have a 'region' label like all other cluster
-        //  types, also have a `data.spec?.providerSpec?.value?.region` which provides
+        //  types, also have a `kube.spec?.providerSpec?.value?.region` which provides
         //  a better value (i.e. the label will always be 'aws' while the provider
         //  region will be what we want, like 'us-west-2'); we assume here that if
         //  there's a provider-specific region, that will always be more precise than
         //  the label, regardless of cluster provider type
         return (
-          data.spec?.providerSpec?.value?.region ||
-          data.metadata.labels?.[apiLabels.KAAS_REGION] ||
+          kube.spec?.providerSpec?.value?.region ||
+          kube.metadata.labels?.[apiLabels.KAAS_REGION] ||
           null
         );
       },
@@ -58,7 +58,7 @@ export class Node extends NamedResource {
     Object.defineProperty(this, 'provider', {
       enumerable: true,
       get() {
-        return data.metadata.labels?.[apiLabels.KAAS_PROVIDER] || null;
+        return kube.metadata.labels?.[apiLabels.KAAS_PROVIDER] || null;
       },
     });
 
@@ -70,7 +70,7 @@ export class Node extends NamedResource {
     Object.defineProperty(this, 'conditions', {
       enumerable: true,
       get() {
-        return data.status?.providerStatus?.conditions || [];
+        return kube.status?.providerStatus?.conditions || [];
       },
     });
 
@@ -83,7 +83,7 @@ export class Node extends NamedResource {
     Object.defineProperty(this, 'status', {
       enumerable: true,
       get() {
-        const { providerStatus } = data.status || {};
+        const { providerStatus } = kube.status || {};
 
         if (!providerStatus) {
           // we don't have any status-related info yet
@@ -135,7 +135,7 @@ export class Node extends NamedResource {
     Object.defineProperty(this, 'ready', {
       enumerable: true,
       get() {
-        return !!data.status?.providerStatus?.ready;
+        return !!kube.status?.providerStatus?.ready;
       },
     });
   }
