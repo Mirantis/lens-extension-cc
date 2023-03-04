@@ -411,12 +411,6 @@ export const fetchResourceUpdates = async function (dataCloud, namespaces) {
             });
           }
 
-          if (resourceType === apiResourceTypes.CLUSTER_UPGRADE_STATUS) {
-            // now check if it's a valid cluster upgrade
-            const mvvKube = rtv.verify(kube, clusterUpgradeTs).mvv;
-            return new ClusterUpgrade({ kube: mvvKube, namespace, dataCloud });
-          }
-
           if (resourceType === apiResourceTypes.MACHINE_DEPLOYMENT_STATUS) {
             // now check if it's a valid machine deployment
             const mvvKube = rtv.verify(kube, machineDeploymentTs).mvv;
@@ -425,6 +419,12 @@ export const fetchResourceUpdates = async function (dataCloud, namespaces) {
               namespace,
               dataCloud,
             });
+          }
+
+          if (resourceType === apiResourceTypes.CLUSTER_UPGRADE_STATUS) {
+            // now check if it's a valid cluster upgrade
+            const mvvKube = rtv.verify(kube, clusterUpgradeTs).mvv;
+            return new ClusterUpgrade({ kube: mvvKube, namespace, dataCloud });
           }
 
           // must be a valid machine upgrade

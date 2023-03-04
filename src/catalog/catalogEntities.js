@@ -5,6 +5,7 @@
 import path from 'path';
 import * as rtv from 'rtvjs';
 import { Common } from '@k8slens/extensions';
+import * as semver from 'semver';
 import * as consts from '../constants';
 import { logger, logValue } from '../util/logger';
 import { mergeRtvShapes } from '../util/mergeRtvShapes';
@@ -520,4 +521,87 @@ export const entityHasChanged = function (entity, resourceOrModel) {
         clusterUpdatesChanged,
       }
     : undefined; // no changes detected
+};
+
+/**
+ * Checks if the entity/model's release version satisfies a given semantic version range.
+ * @param {Object|CatalogEntity} entityOrModel Catalog Entity or Entity Model to check.
+ * @param {string} range A valid range per https://www.npmjs.com/package/semver#ranges rules.
+ *
+ *  Note: A single version, e.g. '1.2.3', is also considered a valid range. Therefore, it's
+ *   possible to check for a specific release like `satisfies('2.22')`.
+ *
+ * @returns {boolean} True if satisfied; false if not (which could also mean the entity/model
+ *  cloud release version is unknown).
+ */
+export const cloudVersionSatisfies = function (entityOrModel, range) {
+  // NOTE: interface is the same (in terms of `metadata`, `spec`, and `status` properties)
+  //  whether it's a CatalogEntity or a POJO entity model
+  return entityOrModel.metadata.cloudRelease
+    ? semver.satisfies(entityOrModel.metadata.cloudRelease.version, range)
+    : false;
+};
+
+/**
+ * Checks if the entity/model's version is greater-than a given `x.y.z` version.
+ * @param {Object|CatalogEntity} entityOrModel Catalog Entity or Entity Model to check.
+ * @param {string} version Must have all three components, `x.y.z`.
+ * @returns {boolean} True if greater than this release; false otherwise
+ *  (which could also mean the entity/model cloud release version is unknown).
+ * @throws {TypeError} If `version` is not fully specified as `x.y.z`.
+ */
+export const cloudVersionIsGT = function (entityOrModel, version) {
+  if (semver.valid(version)) {
+    return cloudVersionSatisfies(entityOrModel, `>${version}`);
+  }
+
+  throw new TypeError(`"${version}" is not in valid "x.y.z" format`);
+};
+
+/**
+ * Checks if the entity/model's version is greater-than-or-equal to a given `x.y.z` version.
+ * @param {Object|CatalogEntity} entityOrModel Catalog Entity or Entity Model to check.
+ * @param {string} version Must have all three components, `x.y.z`.
+ * @returns {boolean} True if greater than or equal to this release; false otherwise
+ *  (which could also mean the entity/model cloud release version is unknown).
+ * @throws {TypeError} If `version` is not fully specified as `x.y.z`.
+ */
+export const cloudVersionIsGTE = function (entityOrModel, version) {
+  if (semver.valid(version)) {
+    return cloudVersionSatisfies(entityOrModel, `>=${version}`);
+  }
+
+  throw new TypeError(`"${version}" is not in valid "x.y.z" format`);
+};
+
+/**
+ * Checks if the entity/model's version is less-than a given `x.y.z` version.
+ * @param {Object|CatalogEntity} entityOrModel Catalog Entity or Entity Model to check.
+ * @param {string} version Must have all three components, `x.y.z`.
+ * @returns {boolean} True if less than this release; false otherwise
+ *  (which could also mean the entity/model cloud release version is unknown).
+ * @throws {TypeError} If `version` is not fully specified as `x.y.z`.
+ */
+export const cloudVersionIsLT = function (entityOrModel, version) {
+  if (semver.valid(version)) {
+    return cloudVersionSatisfies(entityOrModel, `<${version}`);
+  }
+
+  throw new TypeError(`"${version}" is not in valid "x.y.z" format`);
+};
+
+/**
+ * Checks if the entity/model's version is less-than-or-equal to a given `x.y.z` version.
+ * @param {Object|CatalogEntity} entityOrModel Catalog Entity or Entity Model to check.
+ * @param {string} version Must have all three components, `x.y.z`.
+ * @returns {boolean} True if less than or equal to this release; false otherwise
+ *  (which could also mean the entity/model cloud release version is unknown).
+ * @throws {TypeError} If `version` is not fully specified as `x.y.z`.
+ */
+export const cloudVersionIsLTE = function (entityOrModel, version) {
+  if (semver.valid(version)) {
+    return cloudVersionSatisfies(entityOrModel, `<=${version}`);
+  }
+
+  throw new TypeError(`"${version}" is not in valid "x.y.z" format`);
 };

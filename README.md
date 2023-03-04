@@ -152,9 +152,15 @@ The overview page also provides information about all the cluster's conditions.
 
 Cluster- and machine-related events are available in the second tab.
 
-> 💡 The event list is updated every ~5 minutes. Click on the __Refresh__ button in the toolbar (highlighted in red below) to refresh the event list right away.
+> 💡 Events are updated every ~5 minutes. Click on the __Refresh__ button in the toolbar (highlighted in red below) to refresh the list right away.
 
 ![Cluster pages - Events](./docs/v530-03-cluster-pages-events.png)
+
+(✳️ __New in [v5.6.0](CHANGELOG.md#v560), requires MCC v2.22+__) Cluster- and machine-related deployment and upgrade history are available in the third tab.
+
+> 💡 History is updated every ~5 minutes. Click on the __Refresh__ button in the toolbar (highlighted in red below) to refresh the list right away.
+
+![Cluster pages - History](./docs/v560-01-cluster-pages-history.png)
 
 Finally, the details page provides all the information normally available from the Catalog's "View details" slide-in panel so that it isn't necessary to go back to the Catalog to get that data.
 

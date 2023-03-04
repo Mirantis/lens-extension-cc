@@ -1,6 +1,18 @@
 import { deepFreeze } from './util/deepFreeze';
 
 /**
+ * __Semantic version (`x.y.z` format)__
+ *
+ * Minimum mgmt cluster release version required to enable History features.
+ *
+ * History features require MCC v2.22+ which adds the `status` field to cluster/machine
+ *  deployment/upgrade status stage objects (see `ResourceUpdate` API resource type class
+ *  which looks for this). v2.22 also adds the `release` field to cluster/machine deployment
+ *  objects (see `ClusterDeployment` and `MachineDeployment` resource types).
+ */
+export const historyCloudVersion = '2.22.0';
+
+/**
  * Name of the sub directory in the Lens-designated "extension storage" directory
  *  where kubeConfig files are written.
  * @type {string}

@@ -11,7 +11,7 @@ import { WizardStep } from '../Wizard/WizardStep';
 const getNextEnabled = function (data) {
   const { monitor } = data;
 
-  return !!monitor; // TODO
+  return !!monitor; // TODO[create-cluster]
 };
 
 // describes this step's expected data structure
@@ -26,7 +26,7 @@ export const MonitorStep = function ({ step: { onChange, stepIndex }, data }) {
   if (!data.monitor) {
     // initialize step data
     data.monitor = {
-      // TODO
+      // TODO[create-cluster]
     };
   } else {
     // NOTE: `exactShapes` helps ensure that we know when we've added a new property
