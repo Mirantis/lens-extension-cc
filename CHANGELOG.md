@@ -1,8 +1,9 @@
 # ChangeLog
 
-## UNRELEASED
+## v5.6.0
 
-- Added new __History__ [cluster page](README.md#cluster-pages), showing cluster- and machine-related deployment and upgrade history. Requires MCC v2.22+, otherwise the History tab won't be available.
+- Added new __History__ [cluster page](README.md#cluster-pages), showing cluster- and machine-related deployment and upgrade history.
+    - Requires MCC v2.22+, otherwise the History tab won't be available.
 
 ## v5.5.0
 
