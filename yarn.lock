@@ -1750,10 +1750,10 @@
     "@jridgewell/resolve-uri" "^3.0.3"
     "@jridgewell/sourcemap-codec" "^1.4.10"
 
-"@k8slens/core@^6.4.4":
-  version "6.4.4"
-  resolved "https://registry.yarnpkg.com/@k8slens/core/-/core-6.4.4.tgz#c348696268e406c66ee0659ee2c3e7c2c1c988cf"
-  integrity sha512-4rnUvZUEAfgrpXyZscd6ZTYMWrzU6RkP0wDjRbHdt0Zc/8gp7jiu4Zk5czSRPxBkS1aRihNV7m6ibE6LloyCKg==
+"@k8slens/core@^6.4.5":
+  version "6.4.5"
+  resolved "https://registry.yarnpkg.com/@k8slens/core/-/core-6.4.5.tgz#94b80b623777bee3a4d158fe11f138cf10620369"
+  integrity sha512-5P60l2S8rBpq5i22I/gjfr5aSUoMkGh3nNoFiJ6p1Is51C01sS8/pV8aCNsLEfusg+3NqVKzU3tJyv0Eqc29bg==
   dependencies:
     "@astronautlabs/jsonpath" "^1.1.0"
     "@hapi/call" "^9.0.1"
@@ -1826,12 +1826,12 @@
     ws "^8.12.1"
     xterm-link-provider "^1.3.1"
 
-"@k8slens/extensions@^6.4.4":
-  version "6.4.4"
-  resolved "https://registry.yarnpkg.com/@k8slens/extensions/-/extensions-6.4.4.tgz#809d8d22a3c30592e980a2c76acf0f702ba11c0f"
-  integrity sha512-9mrNUdg8LfV6iO4gD3149e3wSiDoR3b/e/S2jMZY5c/qLcWgTolkl6HmqZKAycqjTiNZKCRcPeaMYnzFZc+nwQ==
+"@k8slens/extensions@^6.4.5":
+  version "6.4.5"
+  resolved "https://registry.yarnpkg.com/@k8slens/extensions/-/extensions-6.4.5.tgz#1d0378d378da635aa8dec1710c0f065de60de69c"
+  integrity sha512-hu/aSng+w1TrLNDejRGwluYESaiPzsZDrSOit6cfNo6Fqgd26PlId9WRGOVia0QeqW9pzkF5NIYnVWezzjFM6Q==
   dependencies:
-    "@k8slens/core" "^6.4.4"
+    "@k8slens/core" "^6.4.5"
 
 "@k8slens/node-fetch@^6.4.0-beta.16":
   version "6.4.0-cron.f678bf4"
