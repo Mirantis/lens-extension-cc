@@ -85,7 +85,7 @@
     "@types/byline": "^4.2.33",
     "@types/chart.js": "^2.9.36",
     "@types/color": "^3.0.3",
-    "@types/crypto-js": "^3.1.47",
+    "@types/crypto-js": "^4.1.1",
     "@types/lodash": "^4.14.191",
     "@types/node": "^18.14.6",
     "@types/proper-lockfile": "^4.1.2",
