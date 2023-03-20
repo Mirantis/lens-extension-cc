@@ -1,5 +1,9 @@
 # ChangeLog
 
+## UNRELEASED
+
+- Updated `kubelogin` binary dependency from [v1.26.0 to v1.27.0](https://github.com/int128/kubelogin/compare/v1.26.0...v1.27.0).
+
 ## v5.6.0
 
 - Added new __History__ [cluster page](README.md#cluster-pages), showing cluster- and machine-related deployment and upgrade history.
