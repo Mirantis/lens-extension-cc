@@ -2,15 +2,15 @@ import mockConsole from 'jest-mock-console';
 import { render, screen } from 'testingUtility';
 import userEvent from '@testing-library/user-event';
 import { EnhancedTableRow } from '../EnhancedTableRow';
-import { Cloud, CONNECTION_STATUSES } from '../../../../common/Cloud'; // MOCKED
-import { CloudProvider } from '../../../store/CloudProvider';
-import { IpcRenderer } from '../../../IpcRenderer';
-import { CloudStore } from '../../../../store/CloudStore';
-import * as strings from '../../../../strings';
+import { Cloud, CONNECTION_STATUSES } from '../../../../../common/Cloud'; // MOCKED
+import { CloudProvider } from '../../../../store/CloudProvider';
+import { IpcRenderer } from '../../../../IpcRenderer';
+import { CloudStore } from '../../../../../store/CloudStore';
+import * as strings from '../../../../../strings';
 
-jest.mock('../../../../common/Cloud');
+jest.mock('../../../../../common/Cloud');
 
-describe('/renderer/components/EnhancedTable/EnhancedTable', () => {
+describe('/renderer/components/GlobalSyncPage/EnhancedTable/EnhancedTable', () => {
   const extension = {};
   let user;
 

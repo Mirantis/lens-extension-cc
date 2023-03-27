@@ -1,5 +1,5 @@
 import mockConsole from 'jest-mock-console';
-import { render, screen, sleep } from 'testingUtility';
+import { render, screen, sleep, act } from 'testingUtility';
 import userEvent from '@testing-library/user-event';
 import { Renderer } from '@k8slens/extensions';
 import { CloudProvider } from '../../../store/CloudProvider';
@@ -14,7 +14,7 @@ const {
   Component: { ConfirmDialog },
 } = Renderer;
 
-describe('/renderer/components/GlobalPage/SyncView', () => {
+describe('/renderer/components/GlobalSyncPage/SyncView', () => {
   const extension = {};
   let user;
   let ipcRenderer;
@@ -91,7 +91,7 @@ describe('/renderer/components/GlobalPage/SyncView', () => {
         </CloudProvider>
       );
 
-      await user.click(screen.getByText('Reconnect'));
+      await act(async () => await user.click(screen.getByText('Reconnect')));
       await sleep(10);
 
       expect(screen.getByText('http://foo.com')).toBeInTheDocument();
@@ -111,7 +111,7 @@ describe('/renderer/components/GlobalPage/SyncView', () => {
         </CloudProvider>
       );
 
-      await user.click(screen.getByText('Remove'));
+      await act(async () => await user.click(screen.getByText('Remove')));
       await sleep(10);
 
       expect(screen.queryByText('http://bar.com')).not.toBeInTheDocument();
@@ -132,10 +132,13 @@ describe('/renderer/components/GlobalPage/SyncView', () => {
         </CloudProvider>
       );
 
-      await user.click(screen.getByText('Remove'));
+      await act(async () => await user.click(screen.getByText('Remove')));
       await sleep(10);
 
-      await user.click(document.querySelector('.confirm-buttons .ok'));
+      await act(
+        async () =>
+          await user.click(document.querySelector('.confirm-buttons .ok'))
+      );
       expect(screen.queryByText('http://bar.com')).not.toBeInTheDocument();
     });
 
@@ -155,7 +158,9 @@ describe('/renderer/components/GlobalPage/SyncView', () => {
         </CloudProvider>
       );
 
-      await user.click(screen.getByText('Open in browser'));
+      await act(
+        async () => await user.click(screen.getByText('Open in browser'))
+      );
 
       const searchInMultiDim = (arr, str) => {
         return (

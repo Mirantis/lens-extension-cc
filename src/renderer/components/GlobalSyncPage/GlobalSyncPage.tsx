@@ -3,11 +3,11 @@ import { ThemeProvider, CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
 import { SyncView } from './SyncView';
 import { CloudProvider } from '../../store/CloudProvider';
-import { useThemeSwitching } from '../useThemeSwitching';
+import { useThemeSwitching } from '../hooks/useThemeSwitching';
 
-export { ContainerCloudIcon as GlobalPageIcon } from '../ContainerCloudIcon';
+export { ContainerCloudIcon as GlobalSyncPageIcon } from '../ContainerCloudIcon';
 
-export const GlobalPage = function () {
+export const GlobalSyncPage = function () {
   const { theme } = useThemeSwitching();
 
   //

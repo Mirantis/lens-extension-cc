@@ -1,4 +1,4 @@
-import { render, screen } from 'testingUtility';
+import { render, screen, act } from 'testingUtility';
 import userEvent from '@testing-library/user-event';
 import mockConsole from 'jest-mock-console';
 import { expectErrorBoundary } from '../../../../tools/tests/testTools';
@@ -118,10 +118,13 @@ describe('/renderer/store/CloudProvider', () => {
 
           expect(screen.getByText(cloudName)).toBeInTheDocument();
 
-          await user.click(
-            screen
-              .getByText(cloudName)
-              .parentNode.querySelector('.remove-cloud')
+          await act(
+            async () =>
+              await user.click(
+                screen
+                  .getByText(cloudName)
+                  .parentNode.querySelector('.remove-cloud')
+              )
           );
           expect(screen.queryByText(cloudName)).not.toBeInTheDocument();
         });
@@ -139,7 +142,9 @@ describe('/renderer/store/CloudProvider', () => {
 
           expect(screen.queryByText(cloudName)).not.toBeInTheDocument();
 
-          await user.click(screen.getByText('Add cloud'));
+          await act(
+            async () => await user.click(screen.getByText('Add cloud'))
+          );
           expect(screen.getByText(cloudName)).toBeInTheDocument();
         });
       });

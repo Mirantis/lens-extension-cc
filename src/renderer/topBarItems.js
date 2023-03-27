@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import propTypes from 'prop-types';
 import styled from '@emotion/styled';
 import { ROUTE_SYNC_VIEW } from '../routes';
-import { GlobalPageIcon } from './components/GlobalPage/GlobalPage';
+import { GlobalSyncPageIcon } from './components/GlobalSyncPage/GlobalSyncPage';
 import { layout } from './components/styles';
 import * as strings from '../strings';
 
@@ -61,7 +61,7 @@ const TopBarItem = function ({ extension }) {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <GlobalPageIcon size={24} fill={hover ? colorHover : colorNormal} />
+      <GlobalSyncPageIcon size={24} fill={hover ? colorHover : colorNormal} />
       <TopBarExtensionTitle hover={hover}>
         {strings.extension.topBar['label']()}
       </TopBarExtensionTitle>

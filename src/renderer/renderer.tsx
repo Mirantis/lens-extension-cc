@@ -1,7 +1,7 @@
 import React from 'react';
 import { computed } from 'mobx';
 import { Renderer } from '@k8slens/extensions';
-import { GlobalPage } from './components/GlobalPage/GlobalPage';
+import { GlobalSyncPage } from './components/GlobalSyncPage/GlobalSyncPage';
 import { ContainerCloudIcon as ClusterPageIcon } from './components/ContainerCloudIcon';
 import { ClusterPage } from './components/ClusterPage/ClusterPage';
 import { ClusterOverviewView } from './components/ClusterPage/Overview/ClusterOverviewView';
@@ -58,7 +58,7 @@ export default class ExtensionRenderer extends LensExtension {
     {
       id: ROUTE_SYNC_VIEW,
       components: {
-        Page: () => <GlobalPage />,
+        Page: () => <GlobalSyncPage />,
       },
     },
   ];

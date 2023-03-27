@@ -1,5 +1,5 @@
 import mockConsole from 'jest-mock-console';
-import { render, screen, sleep } from 'testingUtility';
+import { render, screen, sleep, act } from 'testingUtility';
 import userEvent from '@testing-library/user-event';
 import { AddCloudInstance } from '../AddCloudInstance';
 import { MOCK_CONNECT_FAILURE_CLOUD_NAME } from '../../../../common/Cloud'; // MOCKED
@@ -67,7 +67,7 @@ jest.mock('../../../../common/DataCloud', () => {
   };
 });
 
-describe('/renderer/components/GlobalPage/AddCloudInstance', () => {
+describe('/renderer/components/GlobalSyncPage/AddCloudInstance', () => {
   const extension = {};
   let user;
 
@@ -111,8 +111,11 @@ describe('/renderer/components/GlobalPage/AddCloudInstance', () => {
         await user.type(inputNameEl, testCloudName);
         await user.type(inputUrlEl, testUrl);
 
-        await user.click(
-          screen.getByText(strings.connectionBlock.button.label())
+        await act(
+          async () =>
+            await user.click(
+              screen.getByText(strings.connectionBlock.button.label())
+            )
         );
 
         await sleep(30); // should be more than enough for all mocked timeouts to fire

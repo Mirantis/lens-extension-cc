@@ -3,21 +3,21 @@ import { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { omit } from 'lodash';
 import { Renderer } from '@k8slens/extensions';
-import { layout } from '../styles';
+import { layout } from '../../styles';
 import { AdditionalInfoRows } from './AdditionalInfoRows';
 import {
   checkValues,
   TriStateCheckbox,
-} from '../TriStateCheckbox/TriStateCheckbox';
+} from '../../TriStateCheckbox/TriStateCheckbox';
 import {
   useCheckboxes,
   makeCheckboxesInitialState,
 } from '../hooks/useCheckboxes';
 import { sortNamespaces } from './tableUtil';
-import * as consts from '../../../constants';
-import * as strings from '../../../strings';
-import { getCloudConnectionError } from '../../rendererUtil';
-import { CloudNamespace } from '../../../common/CloudNamespace';
+import * as consts from '../../../../constants';
+import * as strings from '../../../../strings';
+import { getCloudConnectionError } from '../../../rendererUtil';
+import { CloudNamespace } from '../../../../common/CloudNamespace';
 
 const { Icon, MenuItem, MenuActions, Tooltip } = Renderer.Component;
 

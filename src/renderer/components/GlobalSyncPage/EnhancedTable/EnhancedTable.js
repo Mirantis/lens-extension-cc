@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
 import styled from '@emotion/styled';
-import { layout } from '../styles';
+import { layout } from '../../styles';
 import { EnhancedTableHead } from './EnhancedTableHead';
 import { getTableData, sortData } from './tableUtil';
 import { TableRowListenerWrapper } from './TableRowListenerWrapper';

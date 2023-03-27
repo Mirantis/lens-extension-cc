@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as useCheckboxes from '../useCheckboxes';
-import { checkValues } from '../../TriStateCheckbox/TriStateCheckbox';
+import { checkValues } from '../../../TriStateCheckbox/TriStateCheckbox';
 
 describe('/renderer/components/hooks/useCheckboxes', () => {
   const testSyncedNamespaces = {

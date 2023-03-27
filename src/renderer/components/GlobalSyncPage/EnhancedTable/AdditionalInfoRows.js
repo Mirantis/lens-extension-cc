@@ -1,9 +1,9 @@
 import PropTypes from 'prop-types';
 import _ from 'lodash';
 import styled from '@emotion/styled';
-import { layout } from '../styles';
-import { managementClusters } from '../../../strings';
-import { CloudNamespace } from '../../../common/CloudNamespace';
+import { layout } from '../../styles';
+import { managementClusters } from '../../../../strings';
+import { CloudNamespace } from '../../../../common/CloudNamespace';
 
 const EnhInfoRowsWrapper = styled.td`
   display: contents;

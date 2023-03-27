@@ -12,7 +12,7 @@ import { projectsCountBeforeWarning } from '../../../constants';
 import {
   useCheckboxes,
   makeCheckboxesInitialState,
-} from '../hooks/useCheckboxes';
+} from './hooks/useCheckboxes';
 
 const { Button, Icon } = Renderer.Component;
 

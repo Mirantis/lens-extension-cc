@@ -1,5 +1,5 @@
 import mockConsole from 'jest-mock-console';
-import { render, screen } from 'testingUtility';
+import { render, screen, act } from 'testingUtility';
 import userEvent from '@testing-library/user-event';
 import { CloudProvider } from '../../../store/CloudProvider';
 import { IpcRenderer } from '../../../IpcRenderer';
@@ -7,7 +7,7 @@ import { CloudStore } from '../../../../store/CloudStore';
 import * as strings from '../../../../strings';
 import { SyncView } from '../SyncView';
 
-describe('/renderer/components/GlobalPage/SyncView', () => {
+describe('/renderer/components/GlobalSyncPage/SyncView', () => {
   const extension = {};
   let user;
   let ipcRenderer;
@@ -138,10 +138,18 @@ describe('/renderer/components/GlobalPage/SyncView', () => {
 
       expect(screen.queryByText(connectionBlockTitle)).not.toBeInTheDocument();
 
-      await user.click(screen.getByText(strings.syncView.connectButtonLabel()));
+      await act(
+        async () =>
+          await user.click(
+            screen.getByText(strings.syncView.connectButtonLabel())
+          )
+      );
       expect(screen.getByText(connectionBlockTitle)).toBeInTheDocument();
 
-      await user.click(document.querySelector('i[material="close"]'));
+      await act(
+        async () =>
+          await user.click(document.querySelector('i[material="close"]'))
+      );
       expect(screen.queryByText(connectionBlockTitle)).not.toBeInTheDocument();
     });
 
@@ -159,12 +167,20 @@ describe('/renderer/components/GlobalPage/SyncView', () => {
         screen.queryByText(synchronizeProjectsButtonLabel)
       ).not.toBeInTheDocument();
 
-      await user.click(screen.getByText(strings.syncView.syncButtonLabel()));
+      await act(
+        async () =>
+          await user.click(screen.getByText(strings.syncView.syncButtonLabel()))
+      );
       expect(
         screen.getByText(synchronizeProjectsButtonLabel)
       ).toBeInTheDocument();
 
-      await user.click(screen.getByText(strings.syncView.cancelButtonLabel()));
+      await act(
+        async () =>
+          await user.click(
+            screen.getByText(strings.syncView.cancelButtonLabel())
+          )
+      );
       expect(
         screen.queryByText(synchronizeProjectsButtonLabel)
       ).not.toBeInTheDocument();
@@ -178,20 +194,41 @@ describe('/renderer/components/GlobalPage/SyncView', () => {
       );
 
       // after render we shouldn't see unsynced namespace (namespace 5 in our case)
-      await user.click(document.querySelector('i[material="chevron_right"]'));
+      await act(
+        async () =>
+          await user.click(
+            document.querySelector('i[material="chevron_right"]')
+          )
+      );
       expect(screen.queryByText('namespace 5')).not.toBeInTheDocument();
 
       // but we should see it in Selective sync view
       // so let's check it and synchronize selected projects
-      await user.click(screen.getByText(strings.syncView.syncButtonLabel()));
-      await user.click(document.querySelector('i[material="chevron_right"]'));
-      await user.click(screen.getByText('namespace 5'));
-      await user.click(
-        screen.getByText(strings.syncView.synchronizeProjectsButtonLabel())
+      await act(
+        async () =>
+          await user.click(screen.getByText(strings.syncView.syncButtonLabel()))
+      );
+      await act(
+        async () =>
+          await user.click(
+            document.querySelector('i[material="chevron_right"]')
+          )
+      );
+      await act(async () => await user.click(screen.getByText('namespace 5')));
+      await act(
+        async () =>
+          await user.click(
+            screen.getByText(strings.syncView.synchronizeProjectsButtonLabel())
+          )
       );
 
       // now, we should see it in the list of synced namespaces
-      await user.click(document.querySelector('i[material="chevron_right"]'));
+      await act(
+        async () =>
+          await user.click(
+            document.querySelector('i[material="chevron_right"]')
+          )
+      );
       expect(screen.getByText('namespace 5')).toBeInTheDocument();
     });
   });

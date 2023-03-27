@@ -1,4 +1,4 @@
-import { checkValues } from '../TriStateCheckbox/TriStateCheckbox';
+import { checkValues } from '../../TriStateCheckbox/TriStateCheckbox';
 import { useState } from 'react';
 
 // set parent checkbox state based on changes of children checkboxes

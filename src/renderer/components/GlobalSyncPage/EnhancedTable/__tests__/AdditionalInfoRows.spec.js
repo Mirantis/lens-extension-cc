@@ -1,10 +1,10 @@
 import { render } from 'testingUtility';
 import { AdditionalInfoRows } from '../AdditionalInfoRows';
-import { Cloud } from '../../../../common/Cloud'; // MOCKED
+import { Cloud } from '../../../../../common/Cloud'; // MOCKED
 
-jest.mock('../../../../common/Cloud');
+jest.mock('../../../../../common/Cloud');
 
-describe('/renderer/components/EnhancedRable/AdditionalInfoRows', () => {
+describe('/renderer/components/EnhancedTable/AdditionalInfoRows', () => {
   let fakeCloud;
 
   beforeEach(() => {

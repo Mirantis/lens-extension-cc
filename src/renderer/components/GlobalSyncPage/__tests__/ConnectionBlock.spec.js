@@ -1,5 +1,5 @@
 import mockConsole from 'jest-mock-console';
-import { render, screen } from 'testingUtility';
+import { render, screen, act } from 'testingUtility';
 import userEvent from '@testing-library/user-event';
 import { ConnectionBlock } from '../ConnectionBlock';
 import { mkCloudJson, CONNECTION_STATUSES } from '../../../../common/Cloud'; // MOCKED
@@ -10,7 +10,7 @@ import * as strings from '../../../../strings';
 
 jest.mock('../../../../common/Cloud');
 
-describe('/renderer/components/GlobalPage/ConnectionBlock', () => {
+describe('/renderer/components/GlobalSyncPage/ConnectionBlock', () => {
   const extension = {};
 
   const TestConnectionBlockComponent = (props) => {
@@ -173,10 +173,13 @@ describe('/renderer/components/GlobalPage/ConnectionBlock', () => {
         })
       ).toBeEnabled();
 
-      await user.click(
-        screen.getByRole('button', {
-          label: strings.connectionBlock.button.label(),
-        })
+      await act(
+        async () =>
+          await user.click(
+            screen.getByRole('button', {
+              label: strings.connectionBlock.button.label(),
+            })
+          )
       );
 
       expect(handler).toHaveBeenCalled();

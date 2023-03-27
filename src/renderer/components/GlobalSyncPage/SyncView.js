@@ -6,7 +6,7 @@ import { AddCloudInstance } from './AddCloudInstance.js';
 import { useClouds } from '../../store/CloudProvider';
 import { WelcomeView } from './WelcomeView';
 import { syncView } from '../../../strings';
-import { EnhancedTable } from '../EnhancedTable/EnhancedTable';
+import { EnhancedTable } from './EnhancedTable/EnhancedTable';
 import { CreateClusterWizard } from '../CreateClusterWizard/CreateClusterWizard';
 import { CONNECTION_STATUSES } from '../../../common/Cloud';
 import { openBrowser } from '../../../util/netUtil';

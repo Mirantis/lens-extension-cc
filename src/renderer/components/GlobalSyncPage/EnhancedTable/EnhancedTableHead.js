@@ -1,8 +1,8 @@
 import PropTypes from 'prop-types';
 import styled from '@emotion/styled';
 import { Renderer } from '@k8slens/extensions';
-import { layout } from '../styles';
-import { managementClusters } from '../../../strings';
+import { layout } from '../../styles';
+import { managementClusters } from '../../../../strings';
 
 const { Component } = Renderer;
 

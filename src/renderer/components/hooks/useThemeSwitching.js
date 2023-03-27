@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { lightThemeClassName, lightTheme, darkTheme } from './theme';
+import { lightThemeClassName, lightTheme, darkTheme } from '../theme';
 
 /**
  * Meant for use in conjunction with Emotion's ThemeProvider

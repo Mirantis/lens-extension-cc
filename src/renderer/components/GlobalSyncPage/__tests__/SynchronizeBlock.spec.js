@@ -1,5 +1,5 @@
 import mockConsole from 'jest-mock-console';
-import { render, screen } from 'testingUtility';
+import { render, screen, act } from 'testingUtility';
 import userEvent from '@testing-library/user-event';
 import { SynchronizeBlock } from '../SynchronizeBlock';
 import { Cloud } from '../../../../common/Cloud'; // MOCKED
@@ -10,7 +10,7 @@ import * as strings from '../../../../strings';
 
 jest.mock('../../../../common/Cloud');
 
-describe('/renderer/components/GlobalPage/AddCloudInstance', () => {
+describe('/renderer/components/GlobalSyncPage/AddCloudInstance', () => {
   const extension = {};
   let user;
   let fakeCloud;
@@ -140,8 +140,11 @@ describe('/renderer/components/GlobalPage/AddCloudInstance', () => {
       expect(checkbox).not.toBeChecked(); // not checked by default
     });
 
-    await user.click(
-      screen.getByText(strings.synchronizeBlock.checkAllCheckboxLabel())
+    await act(
+      async () =>
+        await user.click(
+          screen.getByText(strings.synchronizeBlock.checkAllCheckboxLabel())
+        )
     );
 
     projectCheckboxes.forEach((checkbox) => {
@@ -160,8 +163,11 @@ describe('/renderer/components/GlobalPage/AddCloudInstance', () => {
       screen.queryByText(strings.synchronizeBlock.warning())
     ).not.toBeInTheDocument(); // not visible by default
 
-    await user.click(
-      screen.getByText(strings.synchronizeBlock.synchronizeFutureProjects())
+    await act(
+      async () =>
+        await user.click(
+          screen.getByText(strings.synchronizeBlock.synchronizeFutureProjects())
+        )
     );
 
     expect(
@@ -191,7 +197,10 @@ describe('/renderer/components/GlobalPage/AddCloudInstance', () => {
     expect(firstRenderProjectsName).toEqual(expectedDefaultProjectsName);
 
     // Projects should be ordered by |asc|
-    await user.click(document.querySelector('i[material="arrow_drop_up"]'));
+    await act(
+      async () =>
+        await user.click(document.querySelector('i[material="arrow_drop_up"]'))
+    );
 
     const firstTimeSortedProjectsName = [];
     document
@@ -203,7 +212,10 @@ describe('/renderer/components/GlobalPage/AddCloudInstance', () => {
     expect(firstTimeSortedProjectsName).toEqual(expectedAscProjectsName);
 
     // Projects should be ordered by |desc|
-    await user.click(document.querySelector('i[material="arrow_drop_up"]'));
+    await act(
+      async () =>
+        await user.click(document.querySelector('i[material="arrow_drop_up"]'))
+    );
 
     const secondTimeSortedProjectsName = [];
     document

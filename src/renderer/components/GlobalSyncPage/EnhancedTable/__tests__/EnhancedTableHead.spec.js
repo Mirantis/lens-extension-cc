@@ -2,9 +2,9 @@ import { render, screen } from 'testingUtility';
 import userEvent from '@testing-library/user-event';
 import { EnhancedTableHead } from '../EnhancedTableHead';
 import { getTableData } from '../tableUtil';
-import { managementClusters } from '../../../../strings';
+import { managementClusters } from '../../../../../strings';
 
-describe('/renderer/components/EnhancedTable/EnhancedTableHead', () => {
+describe('/renderer/components/GlobalSyncPage/EnhancedTable/EnhancedTableHead', () => {
   let user;
 
   beforeEach(() => {

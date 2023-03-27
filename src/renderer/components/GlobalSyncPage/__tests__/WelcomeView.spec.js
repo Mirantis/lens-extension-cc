@@ -4,7 +4,7 @@ import { WelcomeView } from '../WelcomeView';
 import * as strings from '../../../../strings';
 import * as constants from '../../../../constants';
 
-describe('/renderer/components/GlobalPage/WelcomeView', () => {
+describe('/renderer/components/GlobalSyncPage/WelcomeView', () => {
   let user;
 
   beforeEach(() => {

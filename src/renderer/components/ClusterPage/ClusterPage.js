@@ -7,7 +7,7 @@ import * as consts from '../../../constants';
 import { logger } from '../../../util/logger';
 import { clusterEntityModelTs } from '../../../catalog/catalogEntities';
 import { CloudProvider } from '../../store/CloudProvider';
-import { useThemeSwitching } from '../useThemeSwitching';
+import { useThemeSwitching } from '../hooks/useThemeSwitching';
 
 //
 // MAIN COMPONENT

@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import { CLOUD_EVENTS } from '../../../common/Cloud';
+import { CLOUD_EVENTS, CONNECTION_STATUSES } from '../../../../common/Cloud';
+import * as strings from '../../../../strings';
 import { EnhancedTableRow } from './EnhancedTableRow';
-import { CONNECTION_STATUSES } from '../../../common/Cloud';
-import * as strings from '../../../strings';
 
 const colorGreen = {
   color: 'var(--colorSuccess)',

@@ -38,7 +38,7 @@ describe('/renderer/topBarItems', () => {
         ).toBeInTheDocument();
       });
 
-      it('change GlobalPage icon color on hover', async () => {
+      it('change GlobalSyncPage icon color on hover', async () => {
         render(<TopBarItem />);
 
         const colorNormal = 'var(--textColorPrimary)';

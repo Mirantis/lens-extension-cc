@@ -1,20 +1,20 @@
 import mockConsole from 'jest-mock-console';
-import { render, screen, sleep } from 'testingUtility';
+import { render, screen, sleep, act } from 'testingUtility';
 import userEvent from '@testing-library/user-event';
 import { TableRowListenerWrapper } from '../TableRowListenerWrapper';
 import {
   Cloud,
   CONNECTION_STATUSES,
   CLOUD_EVENTS,
-} from '../../../../common/Cloud'; // MOCKED
-import { CloudProvider } from '../../../store/CloudProvider';
-import { IpcRenderer } from '../../../IpcRenderer';
-import { CloudStore } from '../../../../store/CloudStore';
-import * as strings from '../../../../strings';
+} from '../../../../../common/Cloud'; // MOCKED
+import { CloudProvider } from '../../../../store/CloudProvider';
+import { IpcRenderer } from '../../../../IpcRenderer';
+import { CloudStore } from '../../../../../store/CloudStore';
+import * as strings from '../../../../../strings';
 
-jest.mock('../../../../common/Cloud');
+jest.mock('../../../../../common/Cloud');
 
-describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
+describe('/renderer/components/GlobalSyncPage/EnhancedTable/TableRowListenerWrapper', () => {
   const extension = {};
   let user;
 
@@ -251,8 +251,11 @@ describe('/renderer/components/EnhancedTable/TableRowListenerWrapper', () => {
 
     fakeCloud.dispatchEvent(CLOUD_EVENTS.SYNC_CHANGE);
 
-    await user.click(
-      document.querySelector('i[material="chevron_right"]').parentNode
+    await act(
+      async () =>
+        await user.click(
+          document.querySelector('i[material="chevron_right"]').parentNode
+        )
     );
 
     await sleep(10);

@@ -1,15 +1,15 @@
 import mockConsole from 'jest-mock-console';
-import { render, screen } from 'testingUtility';
+import { render, screen, act } from 'testingUtility';
 import userEvent from '@testing-library/user-event';
 import { EnhancedTable } from '../EnhancedTable';
-import { Cloud } from '../../../../common/Cloud'; // MOCKED
-import { CloudProvider } from '../../../store/CloudProvider';
-import { IpcRenderer } from '../../../IpcRenderer';
-import { CloudStore } from '../../../../store/CloudStore';
+import { Cloud } from '../../../../../common/Cloud'; // MOCKED
+import { CloudProvider } from '../../../../store/CloudProvider';
+import { IpcRenderer } from '../../../../IpcRenderer';
+import { CloudStore } from '../../../../../store/CloudStore';
 
-jest.mock('../../../../common/Cloud');
+jest.mock('../../../../../common/Cloud');
 
-describe('/renderer/components/EnhancedTable/EnhancedTable', () => {
+describe('/renderer/components/GlobalSyncPage/EnhancedTable/EnhancedTable', () => {
   const extension = {};
   let fakeCloudFoo;
   let fakeCloudBar;
@@ -102,7 +102,7 @@ describe('/renderer/components/EnhancedTable/EnhancedTable', () => {
     // Clouds should be ordered by |asc|
     // after first clicking on header cell,
     // which is equal to current sortedBy (Name by default)
-    await user.click(screen.getByText('Name'));
+    await act(async () => await user.click(screen.getByText('Name')));
 
     const firstTimeSortedByNameCloudsName = [];
     document.querySelectorAll('i[material="chevron_right"]').forEach((icon) => {
@@ -115,7 +115,7 @@ describe('/renderer/components/EnhancedTable/EnhancedTable', () => {
     // Clouds should be ordered by |desc|
     // after second clicking on header cell,
     // which is equal to current sortedBy
-    await user.click(screen.getByText('Name'));
+    await act(async () => await user.click(screen.getByText('Name')));
 
     const secondTimeSortedByNameCloudsName = [];
     document.querySelectorAll('i[material="chevron_right"]').forEach((icon) => {
@@ -128,7 +128,7 @@ describe('/renderer/components/EnhancedTable/EnhancedTable', () => {
     // Clouds should be ordered by |asc|
     // after third clicking on header cell,
     // which is equal to current sortedBy
-    await user.click(screen.getByText('Name'));
+    await act(async () => await user.click(screen.getByText('Name')));
 
     const thirdTimeSortedByNameCloudsName = [];
     document.querySelectorAll('i[material="chevron_right"]').forEach((icon) => {
@@ -141,7 +141,7 @@ describe('/renderer/components/EnhancedTable/EnhancedTable', () => {
     // Clouds should be ordered by |desc|
     // after clicking on header cell,
     // which is not equal to current sortedBy
-    await user.click(screen.getByText('URL'));
+    await act(async () => await user.click(screen.getByText('URL')));
 
     const firstTimeSortedByUrlCloudsName = [];
     document.querySelectorAll('i[material="chevron_right"]').forEach((icon) => {
