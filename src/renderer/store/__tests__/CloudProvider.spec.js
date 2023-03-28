@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import mockConsole from 'jest-mock-console';
 import { expectErrorBoundary } from '../../../../tools/tests/testTools';
 import { useClouds, CloudProvider } from '../CloudProvider';
-import { CloudStore } from '../../../store/CloudStore';
+import { globalCloudStore } from '../../../store/CloudStore';
 import { Cloud, mkCloudJson, CONNECTION_STATUSES } from '../../../common/Cloud'; // MOCKED
 import { IpcRenderer } from '../../IpcRenderer';
 
@@ -12,6 +12,7 @@ jest.mock('../../../common/Cloud');
 describe('/renderer/store/CloudProvider', () => {
   const extension = {};
   let user;
+  let ipcRenderer;
 
   beforeEach(() => {
     user = userEvent.setup();
@@ -96,14 +97,13 @@ describe('/renderer/store/CloudProvider', () => {
           ],
         });
 
-        CloudStore.initStore('cloud-store', {
+        ipcRenderer = IpcRenderer.createInstance(extension);
+        globalCloudStore.loadExtension(extension, { ipcRenderer });
+        globalCloudStore.fromStore({
           clouds: {
             'http://foo.com': fakeFooCloudJson,
           },
         });
-
-        const ipcRenderer = IpcRenderer.createInstance(extension);
-        CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
       });
 
       describe('cloudActions.removeCloud()', () => {

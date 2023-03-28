@@ -6,8 +6,8 @@ import YAML from 'yaml';
 import { Common } from '@k8slens/extensions';
 import { DATA_CLOUD_EVENTS, DataCloud } from '../common/DataCloud';
 import { CONNECTION_STATUSES } from '../common/Cloud';
-import { cloudStore } from '../store/CloudStore';
-import { syncStore } from '../store/SyncStore';
+import { globalCloudStore } from '../store/CloudStore';
+import { globalSyncStore } from '../store/SyncStore';
 import { apiCredentialKinds, apiKinds } from '../api/apiConstants';
 import { logValue } from '../util/logger';
 import * as consts from '../constants';
@@ -180,7 +180,7 @@ export class SyncManager extends Singleton {
     // @see https://mobx.js.org/reactions.html#reaction
     reaction(
       // react to changes in `clouds` array
-      () => cloudStore.clouds,
+      () => globalCloudStore.clouds,
       this.handleCloudStoreChange,
       {
         // fire right away because it's unclear if the SyncStore will be loaded by now
@@ -198,11 +198,11 @@ export class SyncManager extends Singleton {
     reaction(
       // react to changes in SyncStore lists
       () => ({
-        credentials: syncStore.credentials,
-        sshKeys: syncStore.sshKeys,
-        clusters: syncStore.clusters,
-        licenses: syncStore.licenses,
-        proxies: syncStore.proxies,
+        credentials: globalSyncStore.credentials,
+        sshKeys: globalSyncStore.sshKeys,
+        clusters: globalSyncStore.clusters,
+        licenses: globalSyncStore.licenses,
+        proxies: globalSyncStore.proxies,
       }),
       this.handleSyncStoreChange,
       {
@@ -256,7 +256,7 @@ export class SyncManager extends Singleton {
           ? [this.catalogSource]
           : // NOTE: we can't just flatten all the SyncStore lists into one because it'll lose its observability
             //  and we won't get actual models, we'll get "Mobx binding items" of some kind (not what you think!)
-            syncStore.getListNames().map((name) => syncStore[name]);
+            globalSyncStore.getListNames().map((name) => globalSyncStore[name]);
 
       lists.forEach((list) => {
         let idx;
@@ -1030,7 +1030,7 @@ export class SyncManager extends Singleton {
     const oldSyncedDCs = { ...this.dataClouds };
 
     // add new DataClouds for new Clouds added to CloudStore
-    Object.entries(cloudStore.clouds).forEach(([cloudUrl, cloud]) => {
+    Object.entries(globalCloudStore.clouds).forEach(([cloudUrl, cloud]) => {
       if (!this.dataClouds[cloudUrl]) {
         // NOTE: SyncManager only runs on the MAIN thread and always needs full data
         //  so we create full instances, not preview ones
@@ -1057,7 +1057,7 @@ export class SyncManager extends Singleton {
     //  which will soon dispatch DataCloud.EVENTS.DATA_UPDATED events, calling the
     //  `SyncManager.handleDataCloudUpdated()` handler
     Object.keys(oldSyncedDCs).forEach((cloudUrl) => {
-      if (cloudStore.clouds[cloudUrl]) {
+      if (globalCloudStore.clouds[cloudUrl]) {
         // still exists so remove from the old list so we don't destroy it
         // NOTE: the CloudStore is careful to update existing Cloud instances when
         //  they change in the cloud-store.json file, and those updates will cause
@@ -1317,7 +1317,7 @@ export class SyncManager extends Singleton {
     //  avoid them taking place while we're still churning through Cloud updates
     // NOTE: we can update the `catalogSource` directly because we don't watch it;
     //  it's a one-way change here and reflected in Lens
-    const jsonStore = syncStore.toPureJSON();
+    const jsonStore = globalSyncStore.toPureJSON();
 
     const types = [
       'clusters',
@@ -1343,7 +1343,9 @@ export class SyncManager extends Singleton {
     await this.updateCatalogEntities(dataCloud, resources, jsonStore);
 
     // save the models in the store
-    Object.keys(jsonStore).forEach((key) => (syncStore[key] = jsonStore[key]));
+    Object.keys(jsonStore).forEach(
+      (key) => (globalSyncStore[key] = jsonStore[key])
+    );
 
     this.ipcMain.capture(
       'info',

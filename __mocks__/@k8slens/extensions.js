@@ -117,7 +117,7 @@ class Singleton {
     //  set in the prototype chain directly off the Singleton constructor function (when this
     //  code is distilled down to ES5) and then called as `ExtendingSingletonClass.createInstance()`,
     //  it will be a reference to the constructor function of the class extending from
-    //  Singleton (e.g. the `ExtendingSingleClass` function in this case, which we can "new"
+    //  Singleton (e.g. the `ExtendingSingletonClass` function in this case, which we can "new"
     //  because it's a function).
     // NOTE: The prototype chain will be like this, `ExtendingSingletonClass.__proto__ -> Singleton`
     //  (the Singleton function itself, setup as the "prototype of" the ExtendingSingletonClass
@@ -413,51 +413,19 @@ MenuActions.proptypes = {
 
 // NOTE: in reality, ExtensionStore extends BaseStore, but we don't need to access BaseStore
 //  separately anywhere in our code, so the mock just fakes everything in ExtensionStore
-class ExtensionStore extends Singleton {
-  /**
-   * __MOCK ONLY__
-   * @type {{ [index: string]: { created: boolean, json: Object } }} map of store name to
-   *  object with `created` true if store has been constructed, and `json` being the current
-   *  state of the store from "disk"
-   */
-  static stores = {};
-
-  /**
-   * __MOCK ONLY__
-   *
-   * Initializes a store before it gets created.
-   * @param {string} name Store name.
-   * @param {Object} json Store state as it would be read from disk by Lens in reality.
-   */
-  static initStore(name, json) {
-    ExtensionStore.stores[name] = { created: false, json };
-  }
-
+class ExtensionStore {
   constructor({ configName, defaults }) {
-    super();
-
     this.configName = configName;
     this.defaults = defaults;
   }
 
   loadExtension(extension) {
-    if (!ExtensionStore.stores[this.configName]?.created) {
-      if (!ExtensionStore.stores[this.configName]) {
-        // create store state
-        ExtensionStore.stores[this.configName] = {
-          created: false,
-          json: this.defaults,
-        };
-      }
-    }
-
-    const state = ExtensionStore.stores[this.configName];
-    state.created = true;
-
-    // real impl doesn't appear to have any async behavior in it: calls fromStore() immediately
-    this.fromStore(state.json);
+    this.fromStore(this.defaults);
   }
 
+  // NOTE: in unit tests, call this method directly on the instance (it won't be abstract)
+  //  in order to load the store with some seed data if you're doing on an instance that
+  //  already exists (like the `globalCloudStore` or `globalSyncStore`)
   fromStore(store) {
     throw new Error('abstract');
   }
