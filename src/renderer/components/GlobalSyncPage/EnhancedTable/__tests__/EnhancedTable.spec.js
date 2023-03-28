@@ -5,7 +5,7 @@ import { EnhancedTable } from '../EnhancedTable';
 import { Cloud } from '../../../../../common/Cloud'; // MOCKED
 import { CloudProvider } from '../../../../store/CloudProvider';
 import { IpcRenderer } from '../../../../IpcRenderer';
-import { CloudStore } from '../../../../../store/CloudStore';
+import { globalCloudStore } from '../../../../../store/CloudStore';
 
 jest.mock('../../../../../common/Cloud');
 
@@ -14,6 +14,7 @@ describe('/renderer/components/GlobalSyncPage/EnhancedTable/EnhancedTable', () =
   let fakeCloudFoo;
   let fakeCloudBar;
   let user;
+  let ipcRenderer;
 
   beforeEach(() => {
     user = userEvent.setup();
@@ -55,8 +56,8 @@ describe('/renderer/components/GlobalSyncPage/EnhancedTable/EnhancedTable', () =
       ],
     });
 
-    const ipcRenderer = IpcRenderer.createInstance(extension);
-    CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
+    ipcRenderer = IpcRenderer.createInstance(extension);
+    globalCloudStore.loadExtension(extension, { ipcRenderer });
   });
 
   [true, false].forEach((isSelectiveSyncView) => {

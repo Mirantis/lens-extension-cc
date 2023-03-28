@@ -22,8 +22,8 @@ import {
   EXT_EVENT_ACTIVATE_CLUSTER,
   dispatchExtEvent,
 } from '../common/eventBus';
-import { cloudStore } from '../store/CloudStore';
-import { syncStore } from '../store/SyncStore';
+import { globalCloudStore } from '../store/CloudStore';
+import { globalSyncStore } from '../store/SyncStore';
 import { logger as loggerUtil } from '../util/logger';
 import { IpcRenderer } from './IpcRenderer';
 import { getLensClusters } from './rendererUtil';
@@ -287,8 +287,8 @@ export default class ExtensionRenderer extends LensExtension {
 
     const ipcRenderer = IpcRenderer.createInstance(this);
 
-    cloudStore.loadExtension(this, { ipcRenderer });
-    syncStore.loadExtension(this, { ipcRenderer });
+    globalCloudStore.loadExtension(this, { ipcRenderer });
+    globalSyncStore.loadExtension(this, { ipcRenderer });
 
     const category = catalogCategories.getForGroupKind(
       consts.catalog.entities.kubeCluster.group,

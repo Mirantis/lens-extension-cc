@@ -5,13 +5,14 @@ import { SynchronizeBlock } from '../SynchronizeBlock';
 import { Cloud } from '../../../../common/Cloud'; // MOCKED
 import { CloudProvider } from '../../../store/CloudProvider';
 import { IpcRenderer } from '../../../IpcRenderer';
-import { CloudStore } from '../../../../store/CloudStore';
+import { globalCloudStore } from '../../../../store/CloudStore';
 import * as strings from '../../../../strings';
 
 jest.mock('../../../../common/Cloud');
 
 describe('/renderer/components/GlobalSyncPage/AddCloudInstance', () => {
   const extension = {};
+  let ipcRenderer;
   let user;
   let fakeCloud;
   let fakeCloudWithoutNamespaces;
@@ -94,8 +95,8 @@ describe('/renderer/components/GlobalSyncPage/AddCloudInstance', () => {
       namespaces: [],
     };
 
-    const ipcRenderer = IpcRenderer.createInstance(extension);
-    CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
+    ipcRenderer = IpcRenderer.createInstance(extension);
+    globalCloudStore.loadExtension(extension, { ipcRenderer });
   });
 
   it('renders component', () => {

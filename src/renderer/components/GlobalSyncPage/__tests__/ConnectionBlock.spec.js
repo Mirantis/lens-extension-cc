@@ -5,7 +5,7 @@ import { ConnectionBlock } from '../ConnectionBlock';
 import { mkCloudJson, CONNECTION_STATUSES } from '../../../../common/Cloud'; // MOCKED
 import { CloudProvider } from '../../../store/CloudProvider';
 import { IpcRenderer } from '../../../IpcRenderer';
-import { CloudStore } from '../../../../store/CloudStore';
+import { globalCloudStore } from '../../../../store/CloudStore';
 import * as strings from '../../../../strings';
 
 jest.mock('../../../../common/Cloud');
@@ -29,13 +29,10 @@ describe('/renderer/components/GlobalSyncPage/ConnectionBlock', () => {
     mockConsole(); // automatically restored after each test
 
     ipcRenderer = IpcRenderer.createInstance(extension);
+    globalCloudStore.loadExtension(extension, { ipcRenderer });
   });
 
   describe('renders', () => {
-    beforeEach(() => {
-      CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
-    });
-
     it('renders connection block', () => {
       render(<TestConnectionBlockComponent loading={false} />);
 
@@ -128,10 +125,6 @@ describe('/renderer/components/GlobalSyncPage/ConnectionBlock', () => {
   });
 
   describe('triggers', () => {
-    beforeEach(() => {
-      CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
-    });
-
     it('triggers setUrl() handler by changing cluster url input', async () => {
       render(<TestConnectionBlockComponent loading={false} />);
 
@@ -188,7 +181,6 @@ describe('/renderer/components/GlobalSyncPage/ConnectionBlock', () => {
 
   describe('validators', () => {
     let fakeFooBarCloudJson;
-    let fakeBarFooCloudJson;
 
     beforeEach(() => {
       fakeFooBarCloudJson = mkCloudJson({
@@ -209,30 +201,9 @@ describe('/renderer/components/GlobalSyncPage/ConnectionBlock', () => {
           },
         ],
       });
-
-      fakeBarFooCloudJson = mkCloudJson({
-        __mockStatus: CONNECTION_STATUSES.CONNECTED,
-        name: 'barfoo',
-        cloudUrl: 'http://barfoo.com',
-        namespaces: [
-          {
-            cloudUrl: 'https://barfoo.com',
-            clusterCount: 4,
-            credentialCount: 4,
-            licenseCount: 1,
-            machineCount: 12,
-            name: 'barfoo namespace',
-            proxyCount: 0,
-            sshKeyCount: 2,
-            synced: true,
-          },
-        ],
-      });
     });
 
     it('shows error message if name is invalid', async () => {
-      CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
-
       render(<TestConnectionBlockComponent loading={false} />);
 
       const testInvalidName = '...';
@@ -261,13 +232,11 @@ describe('/renderer/components/GlobalSyncPage/ConnectionBlock', () => {
     });
 
     it('shows error message if cloud with incoming name already synced', async () => {
-      CloudStore.initStore('cloud-store', {
+      globalCloudStore.fromStore({
         clouds: {
           'http://foobar.com': fakeFooBarCloudJson,
         },
       });
-
-      CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
 
       render(<TestConnectionBlockComponent loading={false} />);
 
@@ -294,17 +263,15 @@ describe('/renderer/components/GlobalSyncPage/ConnectionBlock', () => {
     });
 
     it('shows error message if cloud with incoming url already synced', async () => {
-      CloudStore.initStore('cloud-store', {
+      globalCloudStore.fromStore({
         clouds: {
-          'http://barfoo.com': fakeBarFooCloudJson,
+          'http://foobar.com': fakeFooBarCloudJson,
         },
       });
 
-      CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
-
       render(<TestConnectionBlockComponent loading={false} />);
 
-      const testAlreadySyncedUrl = 'http://barfoo.com';
+      const testAlreadySyncedUrl = 'http://foobar.com';
 
       const inputUrlEl = document.getElementById('cclex-cluster-url');
 

@@ -3,18 +3,19 @@ import { render, screen } from 'testingUtility';
 import { GlobalSyncPage } from '../GlobalSyncPage';
 import { CloudProvider } from '../../../store/CloudProvider';
 import { IpcRenderer } from '../../../IpcRenderer';
-import { CloudStore } from '../../../../store/CloudStore';
+import { globalCloudStore } from '../../../../store/CloudStore';
 import { themeModes } from '../../theme';
 import * as strings from '../../../../strings';
 
 describe('/renderer/components/GlobalSyncPage/GlobalSyncPage', () => {
   const extension = {};
+  let ipcRenderer;
 
   beforeEach(() => {
     mockConsole(['log', 'info', 'warn']); // automatically restored after each test
 
-    const ipcRenderer = IpcRenderer.createInstance(extension);
-    CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
+    ipcRenderer = IpcRenderer.createInstance(extension);
+    globalCloudStore.loadExtension(extension, { ipcRenderer });
   });
 
   [themeModes.LIGHT, themeModes.DARK].forEach((themeMode) => {

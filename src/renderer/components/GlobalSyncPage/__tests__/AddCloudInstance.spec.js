@@ -5,7 +5,7 @@ import { AddCloudInstance } from '../AddCloudInstance';
 import { MOCK_CONNECT_FAILURE_CLOUD_NAME } from '../../../../common/Cloud'; // MOCKED
 import { CloudProvider } from '../../../store/CloudProvider';
 import { IpcRenderer } from '../../../IpcRenderer';
-import { CloudStore } from '../../../../store/CloudStore';
+import { globalCloudStore } from '../../../../store/CloudStore';
 import * as strings from '../../../../strings';
 
 jest.mock('../../../../common/Cloud');
@@ -76,7 +76,7 @@ describe('/renderer/components/GlobalSyncPage/AddCloudInstance', () => {
     mockConsole(['log', 'info', 'warn']); // automatically restored after each test
 
     const ipcRenderer = IpcRenderer.createInstance(extension);
-    CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
+    globalCloudStore.loadExtension(extension, { ipcRenderer });
   });
 
   describe('render', () => {

@@ -16,7 +16,23 @@ export const storeTs = {
   proxies: [[proxyEntityModelTs]],
 };
 
-/** Stores Catalog Entity Models sorted by type. */
+/**
+ * @private
+ * Generates default/initial store data.
+ */
+const mkStoreDefaults = function () {
+  return {
+    credentials: [],
+    sshKeys: [],
+    clusters: [],
+    licenses: [],
+    proxies: [],
+  };
+};
+
+/**
+ * Stores Catalog Entity Models sorted by type on disk.
+ */
 export class SyncStore extends Common.Store.ExtensionStore {
   // NOTE: See main.ts#onActivate() and renderer.tsx#onActivate() where this.loadExtension()
   //  is called on the store instance in order to get Lens to load it from storage.
@@ -69,20 +85,26 @@ export class SyncStore extends Common.Store.ExtensionStore {
    */
   ipcRenderer; // NOT observable on purpose; set only once
 
-  static getDefaults() {
-    return {
-      credentials: [],
-      sshKeys: [],
-      clusters: [],
-      licenses: [],
-      proxies: [],
-    };
-  }
+  /**
+   * Makes a new store instance.
+   * @param {Object} [options]
+   * @param {string} [options.storeName] Name/ID of the store. Also name of generated JSON
+   *  file on disk.
+   * @param {Object} [options.initialData] Initial store JSON data. See `storeTs` for
+   *  expected shape.
+   */
+  constructor({ storeName, initialData } = {}) {
+    DEV_ENV &&
+      rtv.verify(
+        { initialData },
+        {
+          initialData: [rtv.OPTIONAL, storeTs],
+        }
+      );
 
-  constructor() {
     super({
-      configName: 'sync-store',
-      defaults: SyncStore.getDefaults(),
+      configName: storeName || 'sync-store',
+      defaults: initialData || mkStoreDefaults(),
     });
     makeObservable(this);
   }
@@ -125,7 +147,7 @@ export class SyncStore extends Common.Store.ExtensionStore {
    *  on this instance.
    */
   getListNames() {
-    return Object.keys(SyncStore.getDefaults()).filter((name) =>
+    return Object.keys(mkStoreDefaults()).filter((name) =>
       Array.isArray(this[name])
     );
   }
@@ -171,7 +193,7 @@ export class SyncStore extends Common.Store.ExtensionStore {
       );
     }
 
-    const json = result.valid ? store : SyncStore.getDefaults();
+    const json = result.valid ? store : mkStoreDefaults();
 
     logger.log(
       'SyncStore.fromStore()',
@@ -187,7 +209,7 @@ export class SyncStore extends Common.Store.ExtensionStore {
     logger.log(
       'SyncStore.fromStore()',
       // NOTE: just using defaults to iterate over expected keys we care about on `this`
-      `Updated store to: ${Object.keys(SyncStore.getDefaults())
+      `Updated store to: ${Object.keys(mkStoreDefaults())
         .map((key) => `${key}=${this[key].length}`)
         .join(', ')}`
     );
@@ -195,7 +217,7 @@ export class SyncStore extends Common.Store.ExtensionStore {
 
   toJSON() {
     // throw-away: just to get keys we care about on this
-    const defaults = SyncStore.getDefaults();
+    const defaults = mkStoreDefaults();
 
     const observableThis = Object.keys(defaults).reduce((obj, key) => {
       obj[key] = this[key];
@@ -212,7 +234,7 @@ export class SyncStore extends Common.Store.ExtensionStore {
   /** @returns {Object} A full clone to pure JSON of this store, void of all Mobx influence. */
   toPureJSON() {
     // throw-away: just to get keys we care about on this
-    const defaults = SyncStore.getDefaults();
+    const defaults = mkStoreDefaults();
 
     const json = Object.keys(defaults).reduce((obj, key) => {
       obj[key] = JSON.parse(JSON.stringify(this[key]));
@@ -223,6 +245,6 @@ export class SyncStore extends Common.Store.ExtensionStore {
   }
 }
 
-// create singleton instance, and export it for convenience (otherwise, one can also
-//  import the exported CloudStore class and call CloudStore.getInstance())
-export const syncStore = SyncStore.createInstance();
+// create global (shared) instance, and export it for convenience (otherwise, one can also
+//  import the exported SyncStore class and call `new SyncStore()`)
+export const globalSyncStore = new SyncStore();

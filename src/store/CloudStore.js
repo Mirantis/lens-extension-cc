@@ -14,7 +14,19 @@ export const storeTs = {
   clouds: [rtv.HASH_MAP, { $values: Cloud.specTs }],
 };
 
-/** Stores Clouds. */
+/**
+ * @private
+ * Generates default/initial store data.
+ */
+const mkStoreDefaults = function () {
+  return {
+    clouds: {},
+  };
+};
+
+/**
+ * Stores Clouds on disk.
+ */
 export class CloudStore extends Common.Store.ExtensionStore {
   // NOTE: See main.ts#onActivate() and renderer.tsx#onActivate() where this.loadExtension()
   //  is called on the store instance in order to get Lens to load it from storage.
@@ -36,16 +48,26 @@ export class CloudStore extends Common.Store.ExtensionStore {
    */
   ipcRenderer; // NOT observable on purpose; set only once
 
-  static getDefaults() {
-    return {
-      clouds: {},
-    };
-  }
+  /**
+   * Makes a new store instance.
+   * @param {Object} [options]
+   * @param {string} [options.storeName] Name/ID of the store. Also name of generated JSON
+   *  file on disk.
+   * @param {Object} [options.initialData] Initial store JSON data. See `storeTs` for
+   *  expected shape.
+   */
+  constructor({ storeName, initialData } = {}) {
+    DEV_ENV &&
+      rtv.verify(
+        { initialData },
+        {
+          initialData: [rtv.OPTIONAL, storeTs],
+        }
+      );
 
-  constructor() {
     super({
-      configName: 'cloud-store',
-      defaults: CloudStore.getDefaults(),
+      configName: storeName || 'cloud-store',
+      defaults: initialData || mkStoreDefaults(),
     });
     makeObservable(this);
   }
@@ -102,7 +124,7 @@ export class CloudStore extends Common.Store.ExtensionStore {
       );
     }
 
-    const json = result.valid ? store : CloudStore.getDefaults();
+    const json = result.valid ? store : mkStoreDefaults();
 
     logger.log(
       'CloudStore.fromStore()',
@@ -169,7 +191,7 @@ export class CloudStore extends Common.Store.ExtensionStore {
 
   toJSON() {
     // throw-away: just to get keys we care about on this
-    const defaults = CloudStore.getDefaults();
+    const defaults = mkStoreDefaults();
 
     const observableThis = Object.keys(defaults).reduce((obj, key) => {
       if (key === 'clouds') {
@@ -195,7 +217,7 @@ export class CloudStore extends Common.Store.ExtensionStore {
   /** @returns {Object} A full clone to pure JSON of this store, void of all Mobx influence. */
   toPureJSON() {
     // throw-away: just to get keys we care about on this
-    const defaults = CloudStore.getDefaults();
+    const defaults = mkStoreDefaults();
 
     const json = Object.keys(defaults).reduce((obj, key) => {
       obj[key] = JSON.parse(JSON.stringify(this[key]));
@@ -370,6 +392,6 @@ export class CloudStore extends Common.Store.ExtensionStore {
   }
 }
 
-// create singleton instance, and export it for convenience (otherwise, one can also
-//  import the exported CloudStore class and call CloudStore.getInstance())
-export const cloudStore = CloudStore.createInstance();
+// create global (shared) instance, and export it for convenience (otherwise, one can also
+//  import the exported CloudStore class and call `new CloudStore()`)
+export const globalCloudStore = new CloudStore();

@@ -5,7 +5,7 @@ import { EnhancedTableRow } from '../EnhancedTableRow';
 import { Cloud, CONNECTION_STATUSES } from '../../../../../common/Cloud'; // MOCKED
 import { CloudProvider } from '../../../../store/CloudProvider';
 import { IpcRenderer } from '../../../../IpcRenderer';
-import { CloudStore } from '../../../../../store/CloudStore';
+import { globalCloudStore } from '../../../../../store/CloudStore';
 import * as strings from '../../../../../strings';
 
 jest.mock('../../../../../common/Cloud');
@@ -13,6 +13,7 @@ jest.mock('../../../../../common/Cloud');
 describe('/renderer/components/GlobalSyncPage/EnhancedTable/EnhancedTable', () => {
   const extension = {};
   let user;
+  let ipcRenderer;
 
   const colorGreen = {
     color: 'var(--colorSuccess)',
@@ -22,13 +23,12 @@ describe('/renderer/components/GlobalSyncPage/EnhancedTable/EnhancedTable', () =
     color: 'var(--halfGray)',
   };
 
-  let ipcRenderer;
-
   beforeEach(() => {
     user = userEvent.setup();
     mockConsole(['log', 'info', 'warn']); // automatically restored after each test
 
     ipcRenderer = IpcRenderer.createInstance(extension);
+    globalCloudStore.loadExtension(extension, { ipcRenderer });
   });
 
   describe('render', () => {
@@ -60,8 +60,6 @@ describe('/renderer/components/GlobalSyncPage/EnhancedTable/EnhancedTable', () =
         name: 'bar',
         cloudUrl: 'http://bar.com',
       });
-
-      CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
     });
 
     [true, false].forEach((isSyncStarted) => {

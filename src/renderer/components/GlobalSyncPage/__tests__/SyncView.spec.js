@@ -3,7 +3,7 @@ import { render, screen, act } from 'testingUtility';
 import userEvent from '@testing-library/user-event';
 import { CloudProvider } from '../../../store/CloudProvider';
 import { IpcRenderer } from '../../../IpcRenderer';
-import { CloudStore } from '../../../../store/CloudStore';
+import { globalCloudStore } from '../../../../store/CloudStore';
 import * as strings from '../../../../strings';
 import { SyncView } from '../SyncView';
 
@@ -17,12 +17,11 @@ describe('/renderer/components/GlobalSyncPage/SyncView', () => {
     mockConsole(['log', 'info', 'warn']); // automatically restored after each test
 
     ipcRenderer = IpcRenderer.createInstance(extension);
+    globalCloudStore.loadExtension(extension, { ipcRenderer });
   });
 
   describe('clouds do not exist', () => {
-    beforeEach(() => {
-      CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
-    });
+    beforeEach(() => {});
 
     it('renders WelcomeView component instead of dataClouds table', () => {
       render(
@@ -39,7 +38,7 @@ describe('/renderer/components/GlobalSyncPage/SyncView', () => {
 
   describe('clouds exist', () => {
     beforeEach(() => {
-      CloudStore.initStore('cloud-store', {
+      globalCloudStore.fromStore({
         clouds: {
           'https://foo.com': {
             cloudUrl: 'https://foo.com',
@@ -114,7 +113,6 @@ describe('/renderer/components/GlobalSyncPage/SyncView', () => {
           },
         },
       });
-      CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
     });
 
     it('renders SyncView component', () => {

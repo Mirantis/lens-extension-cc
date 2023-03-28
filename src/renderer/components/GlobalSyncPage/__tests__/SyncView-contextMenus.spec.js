@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { Renderer } from '@k8slens/extensions';
 import { CloudProvider } from '../../../store/CloudProvider';
 import { IpcRenderer } from '../../../IpcRenderer';
-import { CloudStore } from '../../../../store/CloudStore';
+import { globalCloudStore } from '../../../../store/CloudStore';
 import { mkCloudJson, CONNECTION_STATUSES } from '../../../../common/Cloud'; // MOCKED
 import { SyncView } from '../SyncView';
 
@@ -24,6 +24,7 @@ describe('/renderer/components/GlobalSyncPage/SyncView', () => {
     mockConsole(['log', 'info', 'warn']); // automatically restored after each test
 
     ipcRenderer = IpcRenderer.createInstance(extension);
+    globalCloudStore.loadExtension(extension, { ipcRenderer });
   });
 
   describe('getCloudMenuItems()', () => {
@@ -78,12 +79,11 @@ describe('/renderer/components/GlobalSyncPage/SyncView', () => {
     });
 
     it('triggers reconnect cloud action by clicking on "Reconnect" button', async () => {
-      CloudStore.initStore('cloud-store', {
+      globalCloudStore.fromStore({
         clouds: {
           'http://foo.com': disconnectedFakeCloudJson,
         },
       });
-      CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
 
       render(
         <CloudProvider>
@@ -98,12 +98,11 @@ describe('/renderer/components/GlobalSyncPage/SyncView', () => {
     });
 
     it('cloud |without| namespaces: triggers remove cloud action by clicking on "Remove" button', async () => {
-      CloudStore.initStore('cloud-store', {
+      globalCloudStore.fromStore({
         clouds: {
           'http://bar.com': fakeCloudWithoutNamespacesJson,
         },
       });
-      CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
 
       render(
         <CloudProvider>
@@ -118,12 +117,11 @@ describe('/renderer/components/GlobalSyncPage/SyncView', () => {
     });
 
     it('cloud |with| namespaces: triggers remove cloud action by clicking on "Remove" button', async () => {
-      CloudStore.initStore('cloud-store', {
+      globalCloudStore.fromStore({
         clouds: {
           'http://bar.com': fakeCloudJson,
         },
       });
-      CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
 
       render(
         <CloudProvider>
@@ -145,12 +143,11 @@ describe('/renderer/components/GlobalSyncPage/SyncView', () => {
     it('triggers open in browser action by clicking on "Open in browser" button', async () => {
       const logSpy = jest.spyOn(console, 'log');
 
-      CloudStore.initStore('cloud-store', {
+      globalCloudStore.fromStore({
         clouds: {
           'http://bar.com': fakeCloudJson,
         },
       });
-      CloudStore.createInstance().loadExtension(extension, { ipcRenderer });
 
       render(
         <CloudProvider>

@@ -1,7 +1,7 @@
 import { Main } from '@k8slens/extensions';
 import { observable } from 'mobx';
-import { cloudStore } from '../store/CloudStore';
-import { syncStore } from '../store/SyncStore';
+import { globalCloudStore } from '../store/CloudStore';
+import { globalSyncStore } from '../store/SyncStore';
 import { IpcMain } from './IpcMain';
 import { logger as loggerUtil } from '../util/logger';
 import { SyncManager } from './SyncManager';
@@ -46,8 +46,8 @@ export default class ExtensionMain extends Main.LensExtension {
 
     const ipcMain = IpcMain.createInstance(this);
 
-    cloudStore.loadExtension(this, { ipcMain });
-    syncStore.loadExtension(this, { ipcMain });
+    globalCloudStore.loadExtension(this, { ipcMain });
+    globalSyncStore.loadExtension(this, { ipcMain });
 
     // AFTER load stores
     SyncManager.createInstance({

@@ -3,7 +3,7 @@ import * as rtv from 'rtvjs';
 import { autorun } from 'mobx';
 import { ProviderStore } from './ProviderStore';
 import { cloneDeepWith } from 'lodash';
-import { cloudStore } from '../../store/CloudStore';
+import { globalCloudStore } from '../../store/CloudStore';
 import { Cloud } from '../../common/Cloud';
 import { IpcRenderer } from '../IpcRenderer';
 import { ipcEvents } from '../../constants';
@@ -62,7 +62,7 @@ const _handleAutoRun = function () {
   let storeChanged = false;
 
   // add any new Clouds added to the CloudStore
-  Object.entries(cloudStore.clouds).forEach(([cloudUrl, cloud]) => {
+  Object.entries(globalCloudStore.clouds).forEach(([cloudUrl, cloud]) => {
     if (!pr.store.clouds[cloudUrl]) {
       pr.store.clouds[cloudUrl] = cloud;
       storeChanged = true;
@@ -71,7 +71,7 @@ const _handleAutoRun = function () {
 
   // filter out updated Clouds
   Object.keys(oldStoreClouds).forEach((cloudUrl) => {
-    if (cloudStore.clouds[cloudUrl]) {
+    if (globalCloudStore.clouds[cloudUrl]) {
       // still exists so remove from the old list so we don't destroy it
       // NOTE: the CloudStore is careful to update existing Cloud instances when
       //  they change in the cloud-store.json file, and those updates will cause
@@ -184,7 +184,7 @@ export const useClouds = function () {
        * @param {Cloud} cloud
        */
       addCloud(cloud) {
-        cloudStore.addCloud(cloud);
+        globalCloudStore.addCloud(cloud);
       },
 
       /**
@@ -192,7 +192,7 @@ export const useClouds = function () {
        * @param {string} cloudUrl URL of the Cloud to remove.
        */
       removeCloud(cloudUrl) {
-        cloudStore.removeCloud(cloudUrl);
+        globalCloudStore.removeCloud(cloudUrl);
       },
     },
   };
