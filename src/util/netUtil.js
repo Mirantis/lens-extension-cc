@@ -7,6 +7,15 @@ import * as strings from '../strings';
 
 const { Util } = Common;
 
+/**
+ * Possible network connection error types.
+ * @type {Record<string, string>}
+ */
+export const netErrorTypes = Object.freeze({
+  HOST_NOT_FOUND: 'HostNotFound',
+  CERT_VERIFICATION: 'CertificateVerification',
+});
+
 /** Agent to use for trusted unsafe HTTPS connections (e.g. self-signed certs) */
 const trustedUnsafeAgent = new https.Agent({
   rejectUnauthorized: false,
@@ -226,3 +235,24 @@ export async function request(
 
   return { url, response, expectedStatuses, body };
 }
+
+/**
+ * Determines if a given error is a known network error.
+ * @param {Error|string} error Object or message.
+ * @returns {string|undefined} One of `netErrorTypes` enum identifying the type if known;
+ *  `undefined` if the error couldn't be identified.
+ */
+export const getNetErrorType = function (error) {
+  const msg = (typeof error === 'string' ? error : error?.message) || '';
+
+  if (
+    msg.match(/unable to verify.+certificate/i) ||
+    msg.match(/self signed certificate/i)
+  ) {
+    return netErrorTypes.CERT_VERIFICATION;
+  } else if (msg.match(/getaddrinfo.+ENOTFOUND/i)) {
+    return netErrorTypes.HOST_NOT_FOUND;
+  }
+
+  return undefined;
+};

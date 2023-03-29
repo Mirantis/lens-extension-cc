@@ -3,8 +3,6 @@
 //
 // Environment Variables:
 // - TARGET: Either 'development' or 'production' (default).
-// - FEAT_CLUSTER_PAGE_HEALTH_ENABLED: Set to 1 to enable the "Cluster Page > Overview > Health" panel.
-//     Disabled by default.
 // - ENTITY_CACHE_VERSION: Version to use when caching entities via the SyncManager to disk with the
 //     SyncStore. Changing this version will result in a forced update of all synced resources
 //     the next time a DataCloud connects and syncs from MCC. Defaults to the
@@ -49,10 +47,6 @@ const plugins = [
       (process.env.ENTITY_CACHE_VERSION &&
         JSON.stringify(process.env.ENTITY_CACHE_VERSION)) ||
       JSON.stringify(`v${pkg.version}:${Date.now()}`),
-
-    FEAT_CLUSTER_PAGE_HEALTH_ENABLED: JSON.stringify(
-      !!Number(process.env.FEAT_CLUSTER_PAGE_HEALTH_ENABLED)
-    ),
   }),
 ];
 

@@ -421,6 +421,8 @@ export const clusterPage: Dict = {
       },
       health: {
         title: () => 'Health',
+        showMore: () => '(Show more)',
+        showLess: () => '(Show less)',
         metrics: {
           error: {
             disconnectedManagementCluster: {
@@ -435,6 +437,21 @@ export const clusterPage: Dict = {
                 'Stacklight is disabled.',
                 'Stacklight service is not available.',
               ],
+            },
+            hostNotFound: {
+              title: (url) => `The Prometheus API (${url}) cannot be reached.`,
+              more: () =>
+                'Check your network connection, make sure your VPN is active (if it is required to access the host), make sure the service is enabled via StackLight, and re-open this cluster page.',
+            },
+            untrustedCertificate: {
+              title: (url) =>
+                `The Prometheus API (${url}) appears to be using a self-signed certificate which cannot be verified.`,
+              more: (cloudName) =>
+                `If you trust the host, the management cluster (${cloudName}) itself must be trusted. Remove it from the extension and then re-add it, making sure the "Trust this host" option is enabled when you do (and syncing the same projects as before). Then try re-opening this cluster page.`,
+            },
+            unknownError: {
+              title: () =>
+                'An unknown network error occurred while fetching metrics. Try re-opening this cluster page again.',
             },
           },
           cpu: {

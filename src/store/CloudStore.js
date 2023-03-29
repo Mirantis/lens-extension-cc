@@ -162,6 +162,15 @@ export class CloudStore extends Common.Store.ExtensionStore {
             }
 
             cloudMap[cloudUrl] = cloud;
+
+            if (!cloud.config && this.ipcRenderer) {
+              logger.log(
+                'CloudStore.fromStore()',
+                `<RENDERER> Cloud does not have config: Will trigger config load in parallel; cloud=${cloud}`
+              );
+              cloud.loadConfig(true); // with LATER option as we can't "block" by awaiting a promise here
+            }
+
             return cloudMap;
           },
           {}
@@ -355,6 +364,18 @@ export class CloudStore extends Common.Store.ExtensionStore {
           cloud.cloudUrl
         )}`
       );
+      // NOTE: We ONLY listen to these events on RENDERER because we want to sync status-
+      //  and token-related changes from MAIN -> RENDERER, and sync- and prop-related changes
+      //  from RENDERER -> MAIN (so that each thread is in charge of certain things, but
+      //  none overlap, risking conflicting situations). Generally, Clouds in the CloudStore
+      //  are only used on MAIN to access data, and only on RENDERER to update sync properties.
+      //  But there are exceptions when RENDERER-only features like the 'Cluster Page > Health Panel'
+      //  needs to access Prometheus APIs using Cloud tokens which may have expired and not yet
+      //  been updated by the MAIN thread and synced to RENDERER via the CloudStore. In that case,
+      //  the RENDERER's version of the Cloud may get new tokens, but we don't want to send those
+      //  to the MAIN thread. Instead, we'll use them until the MAIN thread realizes the Cloud's
+      //  tokens are expired, obtains new ones, and sends them over to the RENDERER thread,
+      //  overwriting the ones previously obtained only on RENDERER.
       eventNames = [
         CLOUD_EVENTS.SYNC_CHANGE, // selective sync changes only happen on RENDERER
         CLOUD_EVENTS.PROP_CHANGE, // may change on RENDERER (e.g. if we allow editing name)

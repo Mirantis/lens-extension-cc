@@ -8,7 +8,7 @@ import { AuthorizationClient } from './clients/AuthorizationClient';
 import { KubernetesClient } from './clients/KubernetesClient';
 import { ResourceClient } from './clients/ResourceClient';
 import { logger, logValue } from '../util/logger';
-import { apiCloudErrorTypes, apiResourceTypes } from './apiConstants';
+import { apiResourceTypes } from './apiConstants';
 import { Cloud } from '../common/Cloud';
 
 /**
@@ -264,21 +264,3 @@ export async function cloudRequest({
     path,
   };
 }
-
-/**
- * Determines if a given error is a known Cloud error.
- * @param {Error|string} error Object or message.
- * @returns {string|undefined} One of `apiCloudErrorTypes` enum identifying the type if known;
- *  `undefined` if the error couldn't be identified.
- */
-export const getCloudErrorType = function (error) {
-  const msg = (typeof error === 'string' ? error : error?.message) || '';
-
-  if (msg.match(/unable to verify.+certificate/i)) {
-    return apiCloudErrorTypes.CERT_VERIFICATION;
-  } else if (msg.match(/getaddrinfo.+ENOTFOUND/i)) {
-    return apiCloudErrorTypes.HOST_NOT_FOUND;
-  }
-
-  return undefined;
-};
