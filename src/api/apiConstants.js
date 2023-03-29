@@ -171,12 +171,3 @@ export const apiUpdateStatuses = Object.freeze({
   NOT_STARTED: 'NotStarted',
   FAILURE: 'Fail',
 });
-
-/**
- * Possible Cloud connection error types.
- * @type {Record<string, string>}
- */
-export const apiCloudErrorTypes = Object.freeze({
-  HOST_NOT_FOUND: 'HostNotFound',
-  CERT_VERIFICATION: 'CertificateVerification',
-});

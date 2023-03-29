@@ -549,17 +549,25 @@ export class Cloud extends EventDispatcher {
         //  a config (can't make API calls without it), we have an API token, and
         //  we have the ability to refresh it when it expires
         if (!this.connectError && this.token && this.refreshTokenValid) {
-          // if we're on MAIN and all we're missing is the config, claim we're "connecting"
+          // If we're on MAIN and all we're missing is the config, claim we're "connecting"
           //  because we most likely just restored this Cloud from disk after opening Lens,
-          //  and we just haven't attempted to fetch the config yet as part of a data fetch
-          // if we're on RENDERER (where we never connect other than for preview purposes),
-          //  then we will never have a config so we can't consider this implied 'connecting'
-          //  state
+          //  and we just haven't attempted to fetch the config yet as part of a data fetch.
+          // If we're on RENDERER (where we MAY never connect other than for preview purposes),
+          //  then we MAY never have a config so we can't consider this implied 'connecting'
+          //  state -- unless the `config` is `undefined`, indicating it's being loaded, which
+          //  is triggered by the CloudStore on RENDERER only in order to make sure that all
+          //  Clouds have loaded configs so they are usable on RENDERER even though they're
+          //  being "driven" by MAIN. This is necessary for things like the
+          //  'Cluster Page > Health Panel' that needs to connect to the Prometheus APIs
+          //  and so needs a config because it may need to refresh tokens.
           // NOTE: a Cloud's status on RENDERER is simply driven by IPC events from MAIN
           //  (sent by the sibling Cloud instance there) via the CloudProvider purely for
           //  cosmetic purposes so that the user can see if the Cloud is connected, refreshing,
           //  etc.
-          if (ipcMain && !this.config) {
+          if (
+            (ipcMain && !this.config) ||
+            (!ipcMain && this.config === undefined)
+          ) {
             return CONNECTION_STATUSES.CONNECTING;
           }
 
@@ -570,7 +578,11 @@ export class Cloud extends EventDispatcher {
       },
     });
 
-    /** @member {Object} config Mgmt cluster config object. */
+    /**
+     * @member {undefined|null|Object} config Mgmt cluster config object. When truthy, the
+     *  Config is loaded. When `null`, it's not loaded (either not attempted or failed due
+     *  to a `connectError`). When `undefined`, it's in the process of loading.
+     */
     Object.defineProperty(this, 'config', {
       enumerable: true,
       get() {
@@ -581,11 +593,11 @@ export class Cloud extends EventDispatcher {
           rtv.verify(
             { config: newValue },
             {
-              config: [rtv.EXPECTED, rtv.CLASS_OBJECT, { ctor: CloudConfig }],
+              config: [rtv.OPTIONAL, rtv.CLASS_OBJECT, { ctor: CloudConfig }],
             }
           );
         if (newValue !== _config) {
-          _config = newValue || null;
+          _config = newValue; // object/null/undefined
           this.dispatchEvent(CLOUD_EVENTS.STATUS_CHANGE, {
             isFromStore: _updatingFromStore,
           }); // affects status
@@ -1187,23 +1199,43 @@ export class Cloud extends EventDispatcher {
       validTillStr ? `"${validTillStr}"` : validTillStr
     }, refreshValid: ${this.refreshTokenValid}, offlineAccess: ${
       this.offlineAccess
+    }, config: ${
+      this.config ? '<obj>' : logValue(this.config)
     }, connectError: ${logValue(this.connectError)}}`;
   }
 
   /**
    * Loads the Cloud's config object. On failure, the promise still succeeds, but
    *  the `connectError` property is updated with an error message.
+   * @param {boolean} [later] If true, the `config` property will changed to `undefined`
+   *  while loading, and then will settle on either an object (if successfully loaded)
+   *  or `null` if an error occurred. If false, the `config` property is only updated
+   *  if it's successfully (re)loaded. Either way, the `connectError` property is
+   *  updated according to the results.
    * @returns {Promise} This promise always succeeds.
    */
-  async loadConfig() {
+  async loadConfig(later = false) {
+    if (later) {
+      this.config = undefined; // indicate loading
+    }
+
     try {
       this.config = await _loadConfig(this);
       this.connectError = null;
+      logger.log(
+        'Cloud.loadConfig()',
+        `Config loaded; later=${logValue(later)}, cloud=${this}`
+      );
     } catch (err) {
+      if (later) {
+        this.config = null; // indicate no longer loading
+      }
       this.connectError = err;
       logger.error(
         'Cloud.loadConfig()',
-        `Failed to get config, error=${logValue(err)}, cloud=${this}`
+        `Failed to load config; error=${logValue(err)}, later=${logValue(
+          later
+        )}, cloud=${this}`
       );
     }
   }

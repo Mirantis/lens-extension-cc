@@ -3,14 +3,27 @@ import { deepFreeze } from './util/deepFreeze';
 /**
  * __Semantic version (`x.y.z` format)__
  *
- * Minimum mgmt cluster release version required to enable History features.
+ * Minimum mgmt cluster release version required to enable cluster History features.
  *
  * History features require MCC v2.22+ which adds the `status` field to cluster/machine
  *  deployment/upgrade status stage objects (see `ResourceUpdate` API resource type class
  *  which looks for this). v2.22 also adds the `release` field to cluster/machine deployment
  *  objects (see `ClusterDeployment` and `MachineDeployment` resource types).
  */
-export const historyCloudVersion = '2.22.0';
+export const clusterHistoryCloudVersion = '2.22.0';
+
+/**
+ * __Semantic version (`x.y.z` format)__
+ *
+ * Minimum mgmt cluster release version required to enable cluster Health features.
+ *
+ * Health features require MCC v2.23+ which makes it possible to reach StackLight Prometheus
+ *  APIs using the same SSO AuthN used to access the MCC API. Without this, we'd have to re-auth
+ *  other SSO to the Prometheus or StackLight endpoint to obtain a token with a different role,
+ *  which would require opening the external browser, etc. (same as we do when reconnecting to a
+ *  disconnected mgmt cluster).
+ */
+export const clusterHealthCloudVersion = null; // TODO[metrics]: specify minimum version like '2.24.0';
 
 /**
  * Name of the sub directory in the Lens-designated "extension storage" directory

@@ -16,10 +16,13 @@ import {
 } from '../api/apiFetch';
 import { logger, logValue } from '../util/logger';
 import { EventDispatcher } from './EventDispatcher';
-import { ipcEvents, mccCodeName, historyCloudVersion } from '../constants';
+import {
+  ipcEvents,
+  mccCodeName,
+  clusterHistoryCloudVersion,
+} from '../constants';
 import * as strings from '../strings';
-import { getCloudErrorType } from '../api/apiUtil';
-import { apiCloudErrorTypes } from '../api/apiConstants';
+import { netErrorTypes, getNetErrorType } from '../util/netUtil';
 
 export const DATA_CLOUD_EVENTS = Object.freeze({
   /**
@@ -572,10 +575,10 @@ export class DataCloud extends EventDispatcher {
     if (nsResults.error) {
       this.fetching = false;
 
-      const errorType = getCloudErrorType(nsResults.error);
+      const errorType = getNetErrorType(nsResults.error);
       const disconnected =
-        errorType === apiCloudErrorTypes.CERT_VERIFICATION ||
-        errorType === apiCloudErrorTypes.HOST_NOT_FOUND;
+        errorType === netErrorTypes.CERT_VERIFICATION ||
+        errorType === netErrorTypes.HOST_NOT_FOUND;
 
       this.error = nsResults.error.message;
       logger.error(
@@ -641,12 +644,12 @@ export class DataCloud extends EventDispatcher {
         errorsOccurred: false,
       };
 
-      if (release?.isGTE(historyCloudVersion)) {
+      if (release?.isGTE(clusterHistoryCloudVersion)) {
         resUpdateResults = await fetchResourceUpdates(this, fetchedNamespaces);
       } else {
         logger.warn(
           'DataCloud.fetchData()',
-          `Skipping ResourceUpdate objects fetch: ${mccCodeName} >=${historyCloudVersion} is required; release=${logValue(
+          `Skipping ResourceUpdate objects fetch: ${mccCodeName} >=${clusterHistoryCloudVersion} is required; release=${logValue(
             release
           )}`
         );

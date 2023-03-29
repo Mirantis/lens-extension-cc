@@ -106,12 +106,27 @@ const _promRequest = async function ({
   if (response?.status === 401) {
     // assume token is expired, try to refresh
     logger.log(
-      'metricApi._cloudRequest()',
+      'metricApi._promRequest()',
       `Request failed (tokens expired); url=${logValue(
         response.url
       )}; cloud=${logValue(cloud.cloudUrl)}`
     );
-    tokensRefreshed = await cloudRefresh(cloud);
+
+    // NOTE: we may not always have the config in the RENDERER thread, even though we have
+    //  tokens, that may even be valid, because a lot of the behavior is driven from the MAIN
+    //  thread; if we don't have a config, we need to ask the user to reconnect because we
+    //  can't refresh tokens without it
+    if (cloud.config) {
+      tokensRefreshed = await cloudRefresh(cloud);
+    } else {
+      logger.error(
+        'metricApi._promRequest()',
+        `Unable to refresh expired tokens: Cloud does not have config; url=${logValue(
+          response.url
+        )}; cloud=${logValue(cloud)}`
+      );
+    }
+
     if (!tokensRefreshed) {
       return { cloud, tokensRefreshed, url, error, status: 401 };
     }

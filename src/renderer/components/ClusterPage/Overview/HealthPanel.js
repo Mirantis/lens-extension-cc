@@ -8,15 +8,17 @@ import {
   getMemoryMetrics,
   getDiskMetrics,
 } from '../../../../api/metricApi';
+import { netErrorTypes, getNetErrorType } from '../../../../util/netUtil';
 import { useCloudConnection } from '../useCloudConnection';
 import { PanelTitle } from '../PanelTitle';
-import { DrawerTitleWrapper } from '../clusterPageComponents';
+import { DrawerTitleWrapper, Link } from '../clusterPageComponents';
 import { SingleMetric } from './SingleMetric';
 import { MetricTitle } from './MetricTitle';
 import { InlineNotice, types } from '../../InlineNotice';
 import { layout } from '../../styles';
 import { logger, logValue } from '../../../../util/logger';
 import * as strings from '../../../../strings';
+import { entityLabels } from '../../../../catalog/catalogEntities';
 
 const UPDATE_METRICS_INTERVAL = 60000; // 60000ms = 1min
 
@@ -188,6 +190,10 @@ const MetricItem = styled.div`
 
 export const HealthPanel = ({ clusterEntity }) => {
   const { clouds } = useClouds();
+  const { cloudStatus, handleReconnectCloud } = useCloudConnection(
+    clusterEntity.metadata.cloudUrl
+  );
+
   const [hasPromUrl, setHasPromUrl] = useState(true);
   const [cpuMetrics, setCpuMetrics] = useState(null);
   const [memoryMetrics, setMemoryMetrics] = useState(null);
@@ -200,10 +206,14 @@ export const HealthPanel = ({ clusterEntity }) => {
   const [storagePercentage, setStoragePercentage] = useState(0);
   const [timerTrigger, setTimerTrigger] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [showFullFetchError, setShowFullFetchError] = useState(false);
 
-  const { cloudStatus, handleReconnectCloud } = useCloudConnection(
-    clusterEntity.metadata.cloudUrl
-  );
+  // {string|null|undefined} one of the `netErrorTypes` enum values; null if none;
+  //  undefined if the error is unknown
+  const [fetchErrorType, setFetchErrorType] = useState(null);
+
+  const promUrl = clusterEntity.spec.lma?.prometheusUrl || '';
+  const cloud = clouds[clusterEntity.metadata.cloudUrl];
 
   useEffect(() => {
     if (cloudStatus !== CONNECTION_STATUSES.CONNECTING) {
@@ -218,8 +228,8 @@ export const HealthPanel = ({ clusterEntity }) => {
      * Gets CPU, Memory and Storage metrics from Prometheus.
      * @param {Object} cloud Cloud.
      */
-    const getMetrics = async (cloud) => {
-      const promUrl = clusterEntity.spec.lma?.prometheusUrl || '';
+    const getMetrics = async () => {
+      let keepData = false;
 
       if (promUrl) {
         setHasPromUrl(true);
@@ -231,9 +241,11 @@ export const HealthPanel = ({ clusterEntity }) => {
             getDiskMetrics(cloud, promUrl),
           ]);
 
+        let cpuErrorType;
         if (cpuDataRes.status === 'fulfilled') {
           setCpuMetrics(cpuDataRes.value);
         } else {
+          cpuErrorType = getNetErrorType(cpuDataRes.reason);
           setCpuMetrics({});
           logger.error(
             'HealthPanel.useEffect.getMetrics()',
@@ -241,9 +253,11 @@ export const HealthPanel = ({ clusterEntity }) => {
           );
         }
 
+        let memoryErrorType;
         if (memoryDataRes.status === 'fulfilled') {
           setMemoryMetrics(memoryDataRes.value);
         } else {
+          memoryErrorType = getNetErrorType(memoryDataRes.reason);
           setMemoryMetrics({});
           logger.error(
             'HealthPanel.useEffect.getMetrics()',
@@ -253,9 +267,11 @@ export const HealthPanel = ({ clusterEntity }) => {
           );
         }
 
+        let storageErrorType;
         if (storageDataRes.status === 'fulfilled') {
           setStorageMetrics(storageDataRes.value);
         } else {
+          storageErrorType = getNetErrorType(storageDataRes.reason);
           setStorageMetrics({});
           logger.error(
             'HealthPanel.useEffect.getMetrics()',
@@ -265,24 +281,65 @@ export const HealthPanel = ({ clusterEntity }) => {
           );
         }
 
-        // Changes timer trigger every minute to update metrics.
-        timeoutId = setTimeout(() => {
-          setTimerTrigger(timerTrigger + 1);
-        }, UPDATE_METRICS_INTERVAL);
+        const handledErrors = [
+          netErrorTypes.CERT_VERIFICATION,
+          netErrorTypes.HOST_NOT_FOUND,
+        ];
+        if (
+          handledErrors.includes(cpuErrorType) ||
+          handledErrors.includes(memoryErrorType) ||
+          handledErrors.includes(storageErrorType)
+        ) {
+          // any one of the known network error types for one fetch likely means every fetch
+          //  failed the same way since they're all going to the same endpoint
+          const errorTypes = [cpuErrorType, memoryErrorType, storageErrorType];
+
+          // in order of precedence (worst to least)
+          if (errorTypes.includes(netErrorTypes.HOST_NOT_FOUND)) {
+            setFetchErrorType(netErrorTypes.HOST_NOT_FOUND);
+          } else {
+            setFetchErrorType(netErrorTypes.CERT_VERIFICATION);
+          }
+
+          setShowFullFetchError(false); // reset as error may have changed
+        } else if (
+          cpuDataRes.reason &&
+          memoryDataRes.reason &&
+          storageDataRes.reason
+        ) {
+          // all 3 types of fetches failed for some unknown reason
+          keepData = false;
+          setFetchErrorType(undefined);
+          setShowFullFetchError(false);
+        } else {
+          // one or more metrics may have failed, but since we don't specifically handle the
+          //  reason why, we keep whatever data we may have and try again later
+          keepData = true;
+          setFetchErrorType(null);
+          setShowFullFetchError(false);
+
+          // refresh at next interval
+          timeoutId = setTimeout(() => {
+            setTimerTrigger(timerTrigger + 1);
+          }, UPDATE_METRICS_INTERVAL);
+        }
       } else {
         setHasPromUrl(false);
+      }
+
+      if (!keepData) {
         setCpuMetrics({});
         setMemoryMetrics({});
         setStorageMetrics({});
       }
     };
 
-    getMetrics(clouds[clusterEntity.metadata.cloudUrl]);
+    getMetrics();
 
     return () => {
       clearTimeout(timeoutId);
     };
-  }, [clouds, clusterEntity, timerTrigger, cloudStatus]);
+  }, [cloud, promUrl, timerTrigger, cloudStatus]);
 
   useEffect(() => {
     if (cpuMetrics) {
@@ -345,6 +402,17 @@ export const HealthPanel = ({ clusterEntity }) => {
     handleReconnectCloud();
   }, [handleReconnectCloud]);
 
+  const handleShowMoreClick = useCallback(
+    (event) => {
+      event.preventDefault();
+      setShowFullFetchError(!showFullFetchError);
+    },
+    [showFullFetchError]
+  );
+
+  const cloudName = clusterEntity.metadata.labels[entityLabels.CLOUD];
+  const cloudConnected = cloudStatus !== CONNECTION_STATUSES.DISCONNECTED;
+
   return (
     <>
       <DrawerTitleWrapper>
@@ -364,13 +432,60 @@ export const HealthPanel = ({ clusterEntity }) => {
           </ol>
         </ErrorMessage>
       ) : null}
-      {hasPromUrl && cloudStatus === CONNECTION_STATUSES.DISCONNECTED ? (
+      {hasPromUrl && !cloudConnected ? (
         <ErrorMessage type={types.ERROR}>
           <p>
             {strings.clusterPage.pages.overview.health.metrics.error.disconnectedManagementCluster.title()}
             <ReconnectButton onClick={handleReconnect}>
               {strings.clusterPage.pages.overview.health.metrics.error.disconnectedManagementCluster.reconnectButtonLabel()}
             </ReconnectButton>
+          </p>
+        </ErrorMessage>
+      ) : null}
+      {hasPromUrl &&
+      cloudConnected &&
+      fetchErrorType === netErrorTypes.HOST_NOT_FOUND ? (
+        <ErrorMessage type={types.ERROR}>
+          <p>
+            {strings.clusterPage.pages.overview.health.metrics.error.hostNotFound.title(
+              promUrl
+            )}{' '}
+            {showFullFetchError
+              ? strings.clusterPage.pages.overview.health.metrics.error.hostNotFound.more()
+              : null}{' '}
+            <Link href="#" onClick={handleShowMoreClick}>
+              {showFullFetchError
+                ? strings.clusterPage.pages.overview.health.showLess()
+                : strings.clusterPage.pages.overview.health.showMore()}
+            </Link>
+          </p>
+        </ErrorMessage>
+      ) : null}
+      {hasPromUrl &&
+      cloudConnected &&
+      fetchErrorType === netErrorTypes.CERT_VERIFICATION ? (
+        <ErrorMessage type={types.ERROR}>
+          <p>
+            {strings.clusterPage.pages.overview.health.metrics.error.untrustedCertificate.title(
+              promUrl
+            )}{' '}
+            {showFullFetchError
+              ? strings.clusterPage.pages.overview.health.metrics.error.untrustedCertificate.more(
+                  cloudName
+                )
+              : null}{' '}
+            <Link href="#" onClick={handleShowMoreClick}>
+              {showFullFetchError
+                ? strings.clusterPage.pages.overview.health.showLess()
+                : strings.clusterPage.pages.overview.health.showMore()}
+            </Link>
+          </p>
+        </ErrorMessage>
+      ) : null}
+      {hasPromUrl && cloudConnected && fetchErrorType === undefined ? (
+        <ErrorMessage type={types.ERROR}>
+          <p>
+            {strings.clusterPage.pages.overview.health.metrics.error.unknownError.title()}
           </p>
         </ErrorMessage>
       ) : null}

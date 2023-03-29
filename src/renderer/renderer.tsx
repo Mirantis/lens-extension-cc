@@ -367,7 +367,8 @@ export default class ExtensionRenderer extends LensExtension {
           if (showClusterPage()) {
             const entity = this.getActiveClusterEntity();
             return (
-              entity && cloudVersionIsGTE(entity, consts.historyCloudVersion)
+              entity &&
+              cloudVersionIsGTE(entity, consts.clusterHistoryCloudVersion)
             );
           }
           return false;

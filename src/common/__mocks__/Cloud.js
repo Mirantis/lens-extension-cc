@@ -305,7 +305,10 @@ export class Cloud extends EventDispatcher {
     });
   }
 
-  async loadConfig() {
+  async loadConfig(later = false) {
+    if (later) {
+      this.config = undefined; // indicate loading
+    }
     return new Promise((resolve) => {
       setTimeout(() => {
         this.config = {};

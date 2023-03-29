@@ -169,7 +169,6 @@ export const baseConfig = function ({
       globals: {
         DEV_ENV: 'true',
         TEST_ENV: 'true',
-        FEAT_CLUSTER_PAGE_HEALTH_ENABLED: true,
       },
       transform: {
         '^.+\\.(t|j)sx?$': 'babel-jest',
