@@ -137,7 +137,7 @@
     "semver": "^7.3.8",
     "ts-loader": "^9.4.2",
     "typed-emitter": "^2.1.0",
-    "typescript": "^5.0.2",
+    "typescript": "^5.0.3",
     "webpack": "^5.77.0",
     "webpack-cli": "^5.0.1",
     "xterm-addon-fit": "^0.7.0",
