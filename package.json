@@ -77,7 +77,7 @@
     "@emotion/jest": "^11.10.5",
     "@emotion/react": "^11.10.6",
     "@emotion/styled": "^11.10.6",
-    "@k8slens/extensions": "^6.4.14",
+    "@k8slens/extensions": "^6.4.15",
     "@testing-library/dom": "^9.2.0",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^12.1.4",
