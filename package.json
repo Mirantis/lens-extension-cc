@@ -134,7 +134,7 @@
     "react-select": "^5.7.2",
     "rtvjs": "^4.1.0",
     "run-script-os": "^1.1.6",
-    "semver": "^7.3.8",
+    "semver": "^7.4.0",
     "ts-loader": "^9.4.2",
     "typed-emitter": "^2.1.0",
     "typescript": "^5.0.4",
