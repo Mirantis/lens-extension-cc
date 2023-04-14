@@ -14,7 +14,11 @@ describe('/renderer/components/GlobalSyncPage/SyncView', () => {
 
   beforeEach(() => {
     user = userEvent.setup();
-    mockConsole(['log', 'info', 'warn']); // automatically restored after each test
+
+    // NOTE: we mock 'error' also because we're using fake URLs given to Cloud instances
+    //  which will attempt to load MCC configs from them and will fail, generating console
+    //  errors which are inconsequential to our tests herein
+    mockConsole(); // automatically restored after each test
 
     ipcRenderer = IpcRenderer.createInstance(extension);
     globalCloudStore.loadExtension(extension, { ipcRenderer });

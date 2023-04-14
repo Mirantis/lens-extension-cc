@@ -13,8 +13,8 @@ $ git clone https://github.com/Mirantis/lens-extension-cc.git /cloned/repo/path
 $ mkdir -p ~/.k8slens/extensions
 $ ln -s /cloned/repo/path ~/.k8slens/extensions/lens-extension-cc
 $ cd /cloned/repo/path
-$ yarn       # install dependencies
-$ yarn start # start dev build in watch mode
+$ npm install # install dependencies
+$ npm start   # start dev build in watch mode
 ```
 
 This will put the development build into watch mode.
@@ -23,7 +23,7 @@ Restart Lens and go to the Extensions View (`CMD+SHIFT+E` on macOS) to enable it
 
 Now, as you make source changes, the build will run, and __usually__ all you need to do is __reload the Lens window__ (`CMD+R` on macOS) to see your changes. If you make changes under `/src/main` (or any shared code that's used by that code), however, you will need to __restart Lens__ because code on the main thread does not get reloaded with `CMD+R`.
 
-You can also run a one-off development build with `yarn dev`.
+You can also run a one-off development build with `npm run dev`.
 
 > Note these steps will get much easier once [this Lens issue](https://github.com/lensapp/lens/issues/1741) is fixed.
 
@@ -57,8 +57,8 @@ First, __update the CHANGELOG__:
 Then __use NPM__:
 
 ```bash
-$ npm version <patch|minor|major>
-$ npm publish --access public        # <- NOTE the '--access public' part!
+$ npm run version <patch|minor|major>
+$ npm run publish --access public        # <- NOTE the '--access public' part!
 $ git push && git push --tags
 ```
 
