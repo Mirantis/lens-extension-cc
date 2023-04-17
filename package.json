@@ -108,7 +108,7 @@
     "browserslist": "^4.21.5",
     "chart.js": "^4.2.1",
     "dayjs": "^1.11.7",
-    "electron": "^19.1.9",
+    "electron": "^22.3.3",
     "eslint": "^8.38.0",
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-jest": "^27.2.1",
