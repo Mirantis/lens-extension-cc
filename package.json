@@ -139,7 +139,7 @@
     "typed-emitter": "^2.1.0",
     "typescript": "^5.0.4",
     "webpack": "^5.80.0",
-    "webpack-cli": "^5.0.1",
+    "webpack-cli": "^5.0.2",
     "xterm-addon-fit": "^0.7.0",
     "yaml": "^2.2.1"
   }
