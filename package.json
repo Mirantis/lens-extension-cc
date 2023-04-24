@@ -125,7 +125,7 @@
     "mobx-react": "^8.0.0",
     "monaco-editor": "^0.37.1",
     "node-fetch": "^2.6.9",
-    "prettier": "^2.8.7",
+    "prettier": "^2.8.8",
     "prop-types": "^15.8.1",
     "query-string": "^8.1.0",
     "react": "^17.0.2",
