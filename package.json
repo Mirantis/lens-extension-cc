@@ -62,7 +62,7 @@
     "download:kubelogin:license:windows": "npm run create:bin:windows && sh -c \"[[ -f ./bin/kubelogin-license.txt ]] || curl -slL https://raw.githubusercontent.com/int128/kubelogin/v1.27.0/LICENSE > ./bin/kubelogin-license.txt\""
   },
   "devDependencies": {
-    "@babel/cli": "^7.20.7",
+    "@babel/cli": "^7.21.5",
     "@babel/core": "^7.21.5",
     "@babel/eslint-parser": "^7.21.3",
     "@babel/plugin-proposal-class-properties": "^7.17.12",
